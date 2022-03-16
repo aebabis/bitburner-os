@@ -1,33 +1,63 @@
-import { execAnyHost, uuid } from './scheduler';
-import { by, write } from './lib/util';
-import { getTotalFreeRam, getNonPurchasedServers } from './lib/servers';
-import { getHThreads, getGWThreads, getWThreads, isServerGroomed } from './lib/hacking';
-
-export const WEAKEN = '/bin/weaken.js';
-export const GROW = '/bin/grow.js';
-export const HACK = '/bin/hack.js';
-
-const WEAKEN_SRC = `export async function main(ns) {
-    const target = ns.args[0];
-    await ns.weaken(target);
-}`;
-const GROW_SRC = `export async function main(ns) {
-    const target = ns.args[0];
-    await ns.grow(target);
-}`;
-const HACK_SRC = `export async function main(ns) {
-    const target = ns.args[0];
-    await ns.write('ledger.txt', await ns.hack(target) + '\\n');
-}`;
+import { WEAKEN, GROW, HACK } from './etc/filenames';
+import { uuid } from './lib/util';
+import { execAnyHost } from './lib/scheduler-api';
+import { logger } from './logger';
 
 const THEFT_PORTION = .25;
 const SUBTASK_SPACING = 50;
 const DEFAULT_THREAD_COUNT = 1024;
 
 /** @param {NS} ns **/
+const getWThreads = (ns, targetDecrease, cores=1) => {
+    const weakSize = ns.getScriptRam(WEAKEN);
+    const maxRam = ns.getPurchasedServerMaxRam();
+    let min = 0;
+    let max = Math.ceil(maxRam / weakSize);
+    while (max > min) {
+        const weakThreads = Math.floor((min + max) / 2);
+        const secDecrease = ns.weakenAnalyze(weakThreads, cores);
+        if (secDecrease < targetDecrease) {
+            min = weakThreads + 1;
+        } else {
+            max = weakThreads - 1;
+        }
+    }
+    return Math.ceil(min) || 1;
+}
+
+/** @param {NS} ns **/
+const getHThreads = (ns, target, portion) => Math.floor(portion / ns.hackAnalyze(target));
+
+/** @param {NS} ns **/
+const getGWThreads = (ns, server, multiplier, maxThreads, cores=1) => {
+    if (multiplier === Infinity) {
+        return { grow: maxThreads, weak: 0 };
+    }
+    const threads = Math.min(maxThreads, ns.growthAnalyze(server, multiplier, cores))
+    let min = 0;
+    let max = threads;
+    while (min < max) {
+        const growThreads = Math.floor((min + max) / 2);
+        const weakThreads = threads - growThreads;
+        const secIncrease = ns.growthAnalyzeSecurity(growThreads);
+        const secDecrease = ns.weakenAnalyze(weakThreads, cores);
+        if (secIncrease < secDecrease) {
+            min = growThreads + 1;
+        } else {
+            max = growThreads - 1;
+        }
+    }
+    const grow = Math.floor(min);
+    const weak = maxThreads - grow;
+    return { grow, weak };
+}
+
+/** @param {NS} ns **/
 const neededGrowth = (ns, hostname) => ns.getServerMaxMoney(hostname) / ns.getServerMoneyAvailable(hostname);
 
+/** @param {NS} ns **/
 const groom = async (ns, hostname) => {
+    const console = logger(ns);
     ns.print('Attempting to groom ' + hostname);
     const security = ns.getServerSecurityLevel(hostname);
     const minSecurity = ns.getServerMinSecurityLevel(hostname);
@@ -65,12 +95,11 @@ const groom = async (ns, hostname) => {
             }
             await ns.sleep(weakenWait);
         } catch (error) {
-            ns.print('ERROR: ', error);
+            await console.error(error);
         }
         await ns.sleep(200);
     }
 }
-
 
 /** @param {NS} ns **/
 const getHackSchedule = async (ns, target) => {
@@ -129,62 +158,31 @@ const getHackSchedule = async (ns, target) => {
     }
 }
 
+export const isServerGroomed = ({
+    hasAdminRights, moneyAvailable, moneyMax,
+    minDifficulty, hackDifficulty, purchasedByPlayer,
+}) => (
+    hasAdminRights && !purchasedByPlayer &&
+    moneyAvailable / moneyMax > .99 &&
+    minDifficulty / hackDifficulty > .99
+);
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    const THIEF = ns.getScriptName();
-    const hostname = ns.args[0];
-
-    const getThief = server => ns.getRunningScript(THIEF, 'home', server.hostname);
-
-    if (hostname == null) { // Main process
-        await write(ns)(WEAKEN, WEAKEN_SRC, 'w');
-        await write(ns)(GROW, GROW_SRC, 'w');
-        await write(ns)(HACK, HACK_SRC, 'w');
-        while(true) {
-            try {
-                ns.clearLog();
-    
-                const hackingLevel = ns.getHackingLevel();
-                const freeRam = getTotalFreeRam(ns);
-                const expectedValue = ({ hostname, moneyMax }) => ns.hackAnalyzeChance(hostname) * moneyMax;
-                const canHack = ({ requiredHackingSkill, hasAdminRights }) =>
-                    hasAdminRights && requiredHackingSkill <= hackingLevel;
-
-                ns.print(freeRam);
-                if (freeRam >= ns.getScriptRam(WEAKEN) * 100) {
-                    const servers = getNonPurchasedServers(ns)
-                        .filter(canHack)
-                        .filter(server => getThief(server) == null)
-                        .filter(server => expectedValue(server) > 0)
-                        .sort(by(expectedValue));
-                    ns.print(`${servers.length} eligible servers:`);
-                    ns.print(servers.map(s=>s.hostname.padEnd(20) + ' ' + s.requiredHackingSkill).join('\n'));
-                    if (servers.length > 0) {
-                        ns.print('SPAWNING ' + THIEF + ' home ' + 1 + ' ' + servers[0].hostname);
-                        ns.exec(THIEF, 'home', 1, servers[0].hostname);
-                    }
-                } else {
-                    ns.print('No available ram to steal with');
-                }
-            } catch (error) {
-                ns.print('ERROR in thief spawing: ' + error.message);
+    const console = logger(ns);
+    const target = ns.args[0];
+    while(true) {
+        try {
+            while (isServerGroomed(ns.getServer(target))) {
+                const hwgwFrame = await getHackSchedule(ns, target);
+                await hwgwFrame();
+                await ns.sleep(50);
             }
-            await ns.sleep(1000);
+            await groom(ns, target);
+        } catch (error) {
+            await console.error(error);
         }
-    } else { // Child process
-        while(true) {
-            try {
-                while (isServerGroomed(ns.getServer(hostname))) {
-                    const hwgwFrame = await getHackSchedule(ns, hostname);
-                    await hwgwFrame();
-                    await ns.sleep(50);
-                }
-                await groom(ns, hostname);
-            } catch (error) {
-                ns.print('ERROR in HWGW execution: ' + error);
-            }
-            await ns.sleep(50);
-        }
+        await ns.sleep(50);
     }
 }

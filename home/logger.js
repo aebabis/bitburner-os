@@ -7,7 +7,7 @@ const history = [];
 
 const process = (arg) => {
 	if (arg instanceof Error) {
-		return arg.name + ' ' + arg.message + ' ' + arg.lineNumber + ':' + arg.columnNumber;
+		return arg.name + ' ' + arg.message + ' ' + arg.lineNumber + ':' + arg.columnNumber + '\n' + arg.stack;
 	}
 	return arg;
 }
@@ -19,14 +19,15 @@ export const logger = (ns) => {
 		const lead = `${type} ${script}`;
 		const message = args.map(process).join(' ');
 		const output =  `${lead.padEnd(20)} ${message}`;
+		ns.print(output);
 		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output))
 			await ns.sleep(10);
 	}
 	return {
-		log:   async (...args) => send('SUCCESS', ...args),
-		error: async (...args) => send('ERROR', ...args),
-		info:  async (...args) => send('INFO', ...args),
-		warn:  async (...args) => send('WARN', ...args),
+		log:   async (...args) => await send('SUCCESS', ...args),
+		error: async (...args) => await send('ERROR', ...args),
+		info:  async (...args) => await send('INFO', ...args),
+		warn:  async (...args) => await send('WARN', ...args),
 	}
 }
 

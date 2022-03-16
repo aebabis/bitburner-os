@@ -34,20 +34,22 @@ const sendToScheduler = async (ns, message) => {
 }
 
 /** @param {NS} ns **/
-export const exec = (ns) => async(script, host=ns.getHostname(), numThreads=1, ...args) => {
+export const exec = (ns, beforeRun) => async(script, host=ns.getHostname(), numThreads=1, ...args) => {
 	const messageFilename = getTicket();
 	const sender = ns.getHostname();
 	await sendToScheduler(ns, { script, host, numThreads, args, messageFilename, sender });
 	// await systemLog(ns, 'SEND', script, messageFilename);
 	const { hostname, ram } = await ticketComplete(ns, messageFilename);
 	// await systemLog(ns, hostname, ram);
+	if (beforeRun != null)
+		await beforeRun(hostname);
 	const threads = Math.floor(ram / ns.getScriptRam(script, host));
 	const pid = ns.exec(script, hostname, threads, ...args);
 	return { pid, hostname, threads };
 }
 
 /** @param {NS} ns **/
-export const execAnyHost = (ns) => async(script, numThreads=1, ...args) => {
+export const execAnyHost = (ns, beforeRun) => async(script, numThreads=1, ...args) => {
 	const messageFilename = getTicket();
 	const sender = ns.getHostname();
 	await sendToScheduler(ns, { script, host: null, numThreads, args, messageFilename, sender });
@@ -55,6 +57,8 @@ export const execAnyHost = (ns) => async(script, numThreads=1, ...args) => {
 	if (!ns.fileExists(script, hostname)) {
 		await ns.scp(script, hostname);
 	}
+	if (beforeRun != null)
+		await beforeRun(hostname);
 	const threads = Math.floor(ram / ns.getScriptRam(script, hostname));
 	const pid = ns.exec(script, hostname, threads, ...args);
 	return { pid, hostname, threads };

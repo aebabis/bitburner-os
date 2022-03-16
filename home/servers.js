@@ -25,7 +25,7 @@ const serverString = (ns, server) => {
 	const status = backdoorInstalled ? 'BD' : hasAdminRights ? 'A' : '';
 	const ram = `RAM=${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
 	// const cores = `Cores=${cpuCores}`;
-	const money = `${ns.nFormat(moneyAvailable, '0.000a')}/${ns.nFormat(moneyMax, '0.000a')}`;
+	const money = `${ns.nFormat(moneyAvailable, '0.00a')}/${ns.nFormat(moneyMax, '0.00a')}`;
 	const ports = 'Ports=' + numOpenPortsRequired;
 	const hacking = `Hack=${~~requiredHackingSkill}(${~~minDifficulty}/${~~hackDifficulty}/${~~baseDifficulty})`;
 	const grow = `Grow=${serverGrowth}`;

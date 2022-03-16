@@ -1,25 +1,30 @@
-import { exec } from './scheduler.js';
+import { THIEF_HOME } from './etc/config';
+import { exec } from './lib/scheduler-api.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.exec('nmap.js');
+    ns.exec('nmap.js', 'home');
 	ns.exec('scheduler.js', 'home', 1);
     ns.tprint('scheduler.js');
 
-    const start = async (script, ...args) => {
-        await exec(ns)(script, 'home', 1, ...args);
-        ns.tprint(script);
+    const startAt = async (script, hostname, ...args) => {
+        try {
+            await exec(ns)(script, hostname, 1, ...args);
+            ns.tprint(script);
+        } catch (error) {
+            ns.tprint(error);
+        }
     };
 
-    await start('scheduler.js', 'cleaner');
+    const start = async (script, ...args) => startAt(script, 'home', ...args);
+
     await start('access.js');
-    await start('servers.js');
     await start('hacknet.js');
-	await start('thief-2.0.js');
+	await startAt('ringleader.js', THIEF_HOME);
+	await start('assistant.js', 'service');
+    await start('servers.js');
 	await start('logger.js');
-	await start('backdoor-assistant.js', 'daemon');
-	await start('backdoor-assistant.js', 'monitor');
-	await start('money.js', 'thief-2.0.js');
+	await start('money.js', 'ringleader.js');
 	await start('share.js', 0); // No faction, no share
 	await start('share.js');
 	await start('broker.js', 'reserve', 1e10);
