@@ -1,36 +1,31 @@
 import { by } from './lib/util';
 import { nmap } from './nmap';
 
-const d1 = n=>n.toFixed(1);
+/** @param {NS} ns **/
+const getServers = (ns) => nmap(ns)
+	.map(ns.getServer)
+	.sort(by('hostname'))
+	.sort(by('maxRam'))
+	.sort(by('requiredHackingSkill'));
 
-const moneyFormat = (amount) => {
-	if (amount < 1e3) {
-		return `$${d1(amount)}`;
-	} else if (amount < 1e6) {
-		return `$${d1(amount / 1e3)}k`;
-	} else if (amount < 1e9) {
-		return `$${d1(amount / 1e6)}M`;
-	} else if (amount < 1e12) {
-		return `$${d1(amount / 1e9)}B`;
-	} else if (amount < 1e15) {
-		return `$${d1(amount / 1e12)}T`;
-	} else {
-		return `$${d1(amount / 1e15)}Q`;
-	}
-}
-
-export const serverString = (ns, server) => {
+const serverString = (ns, server) => {
 	const {
 		backdoorInstalled, hasAdminRights, hostname, ip,
-		ramUsed,maxRam,
-		numOpenPortsRequired, serverGrowth,
+		// organizationName,contracts,purchasedByPlayer,
+		cpuCores,ramUsed,maxRam,
+		// sshPortOpen,ftpPortOpen,smtpPortOpen,httpPortOpen,sqlPortOpen,
+		numOpenPortsRequired, serverGrowth, //openPortCount,
+		// messages, textFiles,programs,scripts,
+		// runningScripts, serversOnNetwork, isConnectedTo,
 		requiredHackingSkill,baseDifficulty,hackDifficulty,minDifficulty,
 		moneyAvailable, moneyMax,
 	} = server;
+	// const bit = (open) => open ? '1' : '0';
 	const GB = 1024 ** 3;
 	const status = backdoorInstalled ? 'BD' : hasAdminRights ? 'A' : '';
 	const ram = `RAM=${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
-	const money = `${moneyFormat(moneyAvailable)}/${moneyFormat(moneyMax)}`;
+	// const cores = `Cores=${cpuCores}`;
+	const money = `${ns.nFormat(moneyAvailable, '0.000a')}/${ns.nFormat(moneyMax, '0.000a')}`;
 	const ports = 'Ports=' + numOpenPortsRequired;
 	const hacking = `Hack=${~~requiredHackingSkill}(${~~minDifficulty}/${~~hackDifficulty}/${~~baseDifficulty})`;
 	const grow = `Grow=${serverGrowth}`;
@@ -42,13 +37,18 @@ export const serverString = (ns, server) => {
 export async function main(ns) {
 	ns.disableLog('ALL');
 	
-	while (true) {
-		ns.clearLog();
-		nmap(ns).map(hostname => ns.getServer(hostname))
-			.sort(by('hostname'))
-			.sort(by('maxRam'))
-			.sort(by('requiredHackingSkill'))
-			.forEach(server => ns.print(serverString(ns, server)));
-		await ns.sleep(5000);
+	const [command, p1] = ns.args;
+	switch (command) {
+		case ('purchased'):
+			return getServers(ns, server=>server.purchasedByPlayer).forEach(server => ns.tprint(serverString(ns, server)));
+		case ('kill'):
+			ns.killall(p1);
+			return ns.deleteServer(p1);
+		case(undefined):
+			while (true) {
+				ns.clearLog();
+				getServers(ns).forEach(server => ns.print(serverString(ns, server)));
+				await ns.sleep(5000);
+			}
 	}
 }

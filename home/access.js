@@ -1,35 +1,30 @@
-import { FILES } from './etc/filenames';
+import { HOSTSFILE } from './etc/filenames';
+import { waitToRead } from './lib/util';
 
 /** @param {NS} ns **/
 export const access = (ns) => async (target) => {
-    const {
-        openPortCount,
-        numOpenPortsRequired,
-        sshPortOpen,
-        ftpPortOpen,
-        smtpPortOpen,
-        httpPortOpen,
-        sqlPortOpen,
-        hasAdminRights,
-    } = ns.getServer(target);
-
-    if (!sshPortOpen && ns.fileExists("BruteSSH.exe", "home")) {
+    if (ns.fileExists("BruteSSH.exe", "home")) {
         ns.brutessh(target);
     }
-    if (!ftpPortOpen && ns.fileExists("FTPCrack.exe", "home")) {
+    if (ns.fileExists("FTPCrack.exe", "home")) {
         ns.ftpcrack(target);
     }
-    if (!smtpPortOpen && ns.fileExists("relaySMTP.exe", "home")) {
+    if ( ns.fileExists("relaySMTP.exe", "home")) {
         ns.relaysmtp(target);
     }
-    if (!httpPortOpen && ns.fileExists("HTTPWorm.exe", "home")) {
+    if ( ns.fileExists("HTTPWorm.exe", "home")) {
         ns.httpworm(target);
     }
-    if (!sqlPortOpen && ns.fileExists("SQLInject.exe", "home")) {
+    if (ns.fileExists("SQLInject.exe", "home")) {
         ns.sqlinject(target);
     }
-    if (!hasAdminRights && openPortCount >= numOpenPortsRequired)
+    try {
         ns.nuke(target);
+        return true;
+    } catch {
+        return false;
+    }
+    // await ns['installBackdoor'](target);
 }
 
 /** @param {NS} ns **/
@@ -38,11 +33,22 @@ export async function main(ns) {
     if (ns.args[0] != null) {
         return access(ns.args[0]);
     }
-    const hostnames = (await (ns.read(FILES.HOSTS)).split(','));
+
+    let hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
+
     while (hostnames.length > 0) {
-        for (const hostname of hostnames) {
-            await access(ns)(hostname);
-        }
+        const startingLength = hostnames.length;
+        const unvisited = hostnames;
+        hostnames = [];
+        let hostname;
+        let success;
+        while (hostname = unvisited.shift())
+            if (await access(ns)(hostname))
+                success = true;
+            else
+                hostnames.push(hostname);
+        if (success)
+            ns.print(`Hacked ${startingLength - hostnames.length} servers. ${hostnames.length} remaining`);
         await ns.sleep(1000);
     }
 }

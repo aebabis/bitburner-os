@@ -1,11 +1,10 @@
-import { write } from './lib/util';
 import { getBestPurchase } from './lib/hacknet';
-
-const DATFILE = '/var/data-hacknet.txt';
+import { logger } from './logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
+	const console = logger(ns);
 	
 	const BUFFER_FACTOR = 1.25;
 	let waitMessageShown = false;
@@ -19,7 +18,7 @@ export async function main(ns) {
 			waitMessageShown = false;
 		} else {
 			if (!waitMessageShown && (Date.now() - lastMessageTime > 10000)) {
-				await write(ns)(DATFILE, `WA: ${purchase.toString()}`, 'w');
+				await console.log(`WA: ${purchase.toString()}`);
 				ns.print(`WA: ${purchase.toString()}`);
 				waitMessageShown = true;
 				lastMessageTime = Date.now();

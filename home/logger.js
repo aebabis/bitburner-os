@@ -1,32 +1,33 @@
-import { PORTS } from './etc/ports.js';
+import { PORT_LOGGER } from './etc/ports.js';
 
+const MAX_HISTORY = 100;
 const LOGGER_HOME = 'home';
 
-const pad8 = (input) => {
-	const str = input.toString();
-	return str + ' '.repeat(str.length % 8);
-}
-
-/** @param {NS} ns **/
-const log = async (ns, script, ...args) => {
-	const output = script.padEnd(20) + ' ' + args.map(pad8).join(' ') + '\n';
-	ns.print(script + ' ' + output);
-}
+const history = [];
 
 const process = (arg) => {
 	if (arg instanceof Error) {
-		return 'ERROR ' + error.name + ' ' + error.message + ' ' + error.lineNumber + ':' + error.columnNumber;
+		return arg.name + ' ' + arg.message + ' ' + arg.lineNumber + ':' + arg.columnNumber;
 	}
 	return arg;
 }
 
 /** @param {NS} ns **/
-export const logger = (ns) => async (...args) => {
-	args = args.map(process);
-	const script = ns.getScriptName();
-	const message = { script, args };
-	while (!ns.getPortHandle(PORTS.LOGGER).tryWrite(JSON.stringify(message)))
-		await ns.sleep(10);
+export const logger = (ns) => {
+	const send = async (type, ...args) => {
+		const script = ns.getScriptName();
+		const lead = `${type} ${script}`;
+		const message = args.map(process).join(' ');
+		const output =  `${lead.padEnd(20)} ${message}`;
+		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output))
+			await ns.sleep(10);
+	}
+	return {
+		log:   async (...args) => send('SUCCESS', ...args),
+		error: async (...args) => send('ERROR', ...args),
+		info:  async (...args) => send('INFO', ...args),
+		warn:  async (...args) => send('WARN', ...args),
+	}
 }
 
 /** @param {NS} ns **/
@@ -43,16 +44,22 @@ export async function main(ns) {
 			default:
 				throw new Error(`Unrecognized command: ${ns.args[0]}`);
 		}
-	} else if (ns.getServer().hostname !== LOGGER_HOME){
+	} else if (ns.getHostname() !== LOGGER_HOME){
 		throw new Error('Logger only runs on the home server');
 	}
 	while (true) {
 		try {
-			const port = ns.getPortHandle(PORTS.LOGGER);
+			const port = ns.getPortHandle(PORT_LOGGER);
+			let changed = false;
 			while (!port.empty()) {
-				const message = port.read();
-				const { script, args } = JSON.parse(message);
-				log(ns, script, args);
+				changed = true;
+				history.push(port.read());
+				while (history.length > MAX_HISTORY)
+					history.shift();
+			}
+			if (changed) {
+				ns.clearLog();
+				history.forEach(m=>ns.print(m));
 			}
 		} catch(error) {
 			ns.print('ERROR ' + error.name + ' ' + error.message + ' ' + error.lineNumber + ':' + error.columnNumber); // TODO: Pretty
