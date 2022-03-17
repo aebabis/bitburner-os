@@ -108,13 +108,13 @@ const getHackSchedule = async (ns, target) => {
     const hackThreads = Math.min(1024, getHThreads(ns, target, THEFT_PORTION));
     const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
     
-    const weakThreads1 = getWThreads(ns, secIncrease1) + 1;
+    const weakThreads1 = getWThreads(ns, secIncrease1);
 
     const growFactor  = 1 / (1 - THEFT_PORTION);
     const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
 
     const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
-    const weakThreads2 = getWThreads(ns, secIncrease2) + 3; // ????
+    const weakThreads2 = getWThreads(ns, secIncrease2);
 
     // WINDOWS:
     // WWWWWWWWWWWWWWWWWWWWWWWWWWWW

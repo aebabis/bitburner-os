@@ -1,11 +1,16 @@
-import { THIEF_HOME } from './etc/config';
-import { exec } from './lib/scheduler-api.js';
+import { SHARE_FILE, BROKER_FILE } from './etc/filenames';
+import { exec, execAnyHost } from './lib/scheduler-api.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.exec('nmap.js', 'home');
-	ns.exec('scheduler.js', 'home', 1);
-    ns.tprint('scheduler.js');
+    ns.disableLog('ALL');
+
+    const copyJS = async (destination) => {
+        const JS_FILES = ns.ls('home').filter(f=>f.endsWith('.js'));
+        const TXT_FILES = ns.ls('home').filter(f=>f.endsWith('.txt'));
+        await ns.scp(JS_FILES, 'home', destination);
+        await ns.scp(TXT_FILES, 'home', destination);
+    }
 
     const startAt = async (script, hostname, ...args) => {
         try {
@@ -16,25 +21,35 @@ export async function main(ns) {
         }
     };
 
+    const startAny = async (script, ...args) => {
+        try {
+            await execAnyHost(ns, copyJS)(script, 1, ...args);
+            ns.tprint(script);
+        } catch (error) {
+            ns.tprint(error);
+        }
+    };
+
     const start = async (script, ...args) => startAt(script, 'home', ...args);
 
+
+    await ns.write(SHARE_FILE,  0,    'w');  // No faction, no share
+    await ns.write(BROKER_FILE, 1e10, 'w');
+
+    ns.exec('nmap.js', 'home');
+	ns.exec('scheduler.js', 'home', 1);
+    ns.tprint('scheduler.js');
+    ns.tail('scheduler.js');
+    
 	await start('logger.js');
     await start('access.js');
-    if (ns.getServerMaxRam('home') >= 64) {
-        await ns.sleep(50);
-        ns.exec('infect.js', 'home', 1, THIEF_HOME);
-	    await startAt('ringleader.js', THIEF_HOME);
-	    await start('money.js', 'ringleader.js');
-    } else {
-        await startAt('thief.js', THIEF_HOME, 'n00dles');
-    }
-    await start('hacknet.js');
-	await start('assistant.js', 'service');
-    await start('servers.js');
-	await start('share.js', 0); // No faction, no share
-	await start('share.js');
-	await start('broker.js', 'reserve', 1e10);
-	await start('broker.js');
+	await startAt('ringleader.js', 'foodnstuff');
+    await startAny('hacknet.js');
+	await startAny('assistant.js', 'service');
+    await startAny('servers.js', 'service');
+	// await startAny('share.js');
+	// await startAny('broker.js');
+	await startAny('money.js', 'ringleader.js');
 
     ns.tprint('init complete');
     ns.tprint('-'.repeat(20));

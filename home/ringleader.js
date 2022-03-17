@@ -1,8 +1,8 @@
 import { HOSTSFILE, THIEF, WEAKEN, GROW, HACK } from './etc/filenames';
 import { execAnyHost } from './lib/scheduler-api';
 import { by, waitToRead } from './lib/util';
-import { logger } from './logger';
-import { nmap } from './nmap';
+import { logger } from 'logger';
+import { nmap } from 'nmap';
 
 const WEAKEN_SRC = `export async function main(ns) {
     const target = ns.args[0];
@@ -65,14 +65,14 @@ export async function main(ns) {
             const freeRam = nmap(ns)
                 .map(ns.getServer)
                 .filter(server=>server.hasAdminRights)
-                .map(({ ramUsed, maxRam }) => maxRam - ramUsed)
+                .map(({ ramUsed, maxRam }) => maxRam - (ramUsed||0))
                 .reduce((a, b) => a + b, 0);
             const expectedValue = ({ hostname, moneyMax }) => ns.hackAnalyzeChance(hostname) * moneyMax;
             const canHack = ({ requiredHackingSkill, hasAdminRights }) =>
                 hasAdminRights && requiredHackingSkill <= hackingLevel;
 
             ns.print(freeRam);
-            if (freeRam >= ns.getScriptRam(WEAKEN) * 100) {
+            // if (freeRam >= ns.getScriptRam(WEAKEN) * 100) {
                 const servers = hostnames.map(ns.getServer)
                     .filter(s=>!s.purchasedByPlayer)
                     .filter(canHack)
@@ -88,9 +88,9 @@ export async function main(ns) {
                     })(THIEF, 1, hostname);
                     procs[hostname] = handle;
                 }
-            } else {
-                ns.print('No available ram to steal with');
-            }
+            // } else {
+            //     ns.print('No available ram to steal with');
+            // }
         } catch (error) {
             ns.print(error);
             await console.error(error);

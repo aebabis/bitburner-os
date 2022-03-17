@@ -1,0 +1,9 @@
+NULL PORT DATA 
+purchasedServerCostTable
+purchasedServerLimit
+maxPurchaseableRam
+
+
+
+
+USE tail!

@@ -1,4 +1,5 @@
 import { PORT_SCH_THREADPOOL } from './etc/ports';
+// import { execAnyHost } from './lib/scheduler-api';
 
 const THREADPOOL_NAME = 'THREADPOOL';
 const PURCHASE = '/bin/purchase-threadpool.js';
@@ -34,7 +35,7 @@ export async function main(ns) {
 			}
 		} else {
 			let ram = ns.getPurchasedServerMaxRam();
-			while (ram >= 8) {
+			while (ram >= 2) {
 				const cost = ns.getPurchasedServerCost(ram);
 				if (cost <= money)
 					return ns.purchaseServer('${THREADPOOL_NAME}', ram);
@@ -45,10 +46,26 @@ export async function main(ns) {
 	ns.writePort(${PORT_SCH_THREADPOOL}, getServer() || '');
 }`;
 
+let wrotePurchaseSrc = false;
+/** @param {NS} ns **/
 export const purchaseThreadpoolServer = async (ns) => {
-	await ns.write(PURCHASE, PURCHASE_SRC, 'w');
+	if (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(2))
+		return false;
+	if (!wrotePurchaseSrc) {
+		wrotePurchaseSrc = true;
+		await ns.write(PURCHASE, PURCHASE_SRC, 'w');
+	}
+	// await execAnyHost(ns)(PURCHASE);
 	let hostname;
-	while ((hostname = await ns.readPort(PORT_SCH_THREADPOOL)) !== '')
+	if (hostname = ns.purchaseServer(THREADPOOL_NAME, 2))
+		return hostname;
+	
+	ns.exec(PURCHASE, 'home');
+
+	ns.print('buying?');
+	while ((await ns.peek(PORT_SCH_THREADPOOL)) === 'NULL PORT DATA')
 		await ns.sleep(50);
+	hostname = await ns.readPort(PORT_SCH_THREADPOOL);
+	ns.print(hostname);
 	return hostname;
 }

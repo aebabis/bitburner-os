@@ -1,6 +1,8 @@
+import { logger } from 'logger';
+
 const RUN_FILE = '/run/assistant.txt';
 
-const PRIORITIES = ['CSEC', 'I.I.I.I', 'run4theh111z', 'The-Cave'];
+const PRIORITIES = ['CSEC', 'I.I.I.I', 'run4theh111z', 'The-Cave', 'w0r1d_d43m0n'];
 
 /** @param {NS} ns **/
 const usage = (ns) => {
@@ -13,6 +15,7 @@ const usage = (ns) => {
 
 /** @param {NS} ns **/
 const runDaemon = async (ns) => {
+	const console = logger(ns);
 	const visited = ["home"];
 	const agenda = [];
 	for (let i = 0; i < visited.length; i++) {
@@ -24,6 +27,8 @@ const runDaemon = async (ns) => {
 			}
 		});
 	}
+	// ns.print(agenda.map(l=>l.join(', ')).join('\n'));
+	// return
 
 	// Get shortest array of manual server hops to end target
 	const backtrack = (end) => {
@@ -36,7 +41,7 @@ const runDaemon = async (ns) => {
 		return path;
 	}
 
-	const priorities = PRIORITIES.map(target => backtrack(target)).flat();
+	const priorities = PRIORITIES.filter(p=>visited.includes(p)).map(target => backtrack(target)).flat();
 	const byPriority = (a,b)=>priorities.includes(b[b.length-1])-priorities.includes(a[a.length-1]);
 
 	const removeCompleted = () => {
@@ -59,50 +64,85 @@ const runDaemon = async (ns) => {
 			const canBackdoor = hasAdminRights && requiredHackingSkill <= skill;
 			return canApproach && canBackdoor;
 		}).map(([,t])=>backtrack(t))      // Convert each edge to a path
-		  .sort((a,b)=>b.length-a.length) // Prefer long paths to save typing
+
+		const immediateTarget = available
+			.find(list=>list[list.length-1] === currentServer);
+
+		if (immediateTarget)
+			return immediateTarget;
+
+	    available.sort((a,b)=>b.length-a.length) // Prefer long paths to save typing
 		  .sort((a,b)=>(b[0]===currentServer)-(a[0]===currentServer))
-		  .sort((a,b)=>(b[b.length-1]===currentServer)-(a[a.length-1]===currentServer))
 		  .sort(byPriority);              // Story servers come first
 		return available[0];
 	}
 
-	let previousEntrypoint;
+	let wentOffPath = false;
+	let previousTarget;
+
+	let cachedCurrent;
+	let cachedTarget;
+	let cachedHostname;
+	let cachedMessage;
 	const getMessage = (server) => {
 		if (server != null) {
 			const [current, target] = server;
+			const hostname = visited.find(hostname => ns.getServer(hostname).isConnectedTo);
+			// ns.print(cachedCurrent + ' ' + current);
+			// ns.print(cachedTarget + ' ' + target);
+			// ns.print(cachedHostname + ' ' + hostname);
+			if (current === cachedCurrent && target === cachedTarget && hostname === cachedHostname) {
+				return cachedMessage;
+			}
+			cachedCurrent = current;
+			cachedTarget = target;
+			cachedHostname = hostname;
 			let step = 0;
 			const steps = [
 				`connect ${current}`,
 				`connect ${target}`,
 				`backdoor`];
 			if (ns.getServer(target).isConnectedTo) {
-				previousEntrypoint = current;
+				if (!wentOffPath) {
+					steps[0] = '';
+					if (previousTarget == null) {
+						steps[1] = '';
+					}
+				}
 				step = 2;
+				wentOffPath = false;
+				previousTarget = target;
 			} else if (ns.getServer(current).isConnectedTo) {
+				if (!wentOffPath) {
+					steps[0] = '';
+				}
 				step = 1;
-			} else if (ns.getServer(previousEntrypoint).isConnectedTo) {
-				steps.shift();
-				step = 0;
 			} else {
+				wentOffPath = true;
 				step = 0;
 			}
 			const lead = i=>i===step?'> ':'  ';
-			return steps.map((l,i) =>lead(i)+l).join('\n');
+			return cachedMessage = steps.map((l,i) =>lead(i)+l).join('\n');
 		} else if (agenda.length === 0) {
-			return 'All servers backdoored';
+			return cachedMessage = 'All servers backdoored';
 		} else {
-			return 'No backdoor for current level and programs';
+			return cachedMessage = 'No backdoor for current level and programs';
 		}
 	}
 
 	while (agenda.length > 0) {
-		removeCompleted();
-		const server = getNextTarget();
-		const message = getMessage(server);
-		ns.clearLog();
-		ns.print(message);
-		await ns.write(RUN_FILE, message, 'w');
-		await ns.sleep(50);
+		try {
+			removeCompleted();
+			ns.clearLog();
+			const server = getNextTarget();
+			const message = getMessage(server);
+			ns.print(message);
+			await ns.write(RUN_FILE, message, 'w');
+		} catch (error) {
+			console.error(error);
+		} finally {
+			await ns.sleep(50);
+		}
 	}
 }
 

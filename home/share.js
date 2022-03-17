@@ -1,6 +1,8 @@
-import { execAnyHost, uuid } from './scheduler';
+import { SHARE_FILE } from './etc/filenames';
+import { execAnyHost } from './lib/scheduler-api';
+import { uuid } from './lib/util';
+import { nmap } from './nmap';
 
-const CONFIG_FILE = '/etc/share.txt';
 const SHARE = '/bin/share.js';
 const SHARE_SRC = `export async function main(ns) {
     while (true) {
@@ -13,10 +15,13 @@ const sum = (a,b)=>a+b;
 let MIN_WAIT = 50;
 let MAX_WAIT = 10000;
 
-const getPlayerServers = (ns) => ['home', ...ns.getPurchasedServers()];
+/** @param {NS} ns **/
+export const getTotalRam = (ns) => nmap(ns).map(ns.getServer)
+	.map(({ maxRam }) => maxRam).reduce(sum, 0);
 
+/** @param {NS} ns **/
 const getSharedThreads = (ns) => {
-    return getPlayerServers(ns).map((server) => {
+    return nmap(ns).map((server) => {
         return ns.ps(server)
             .filter(({filename}) => filename === SHARE)
             .map(({ threads }) => threads)
@@ -24,14 +29,11 @@ const getSharedThreads = (ns) => {
     }).reduce(sum, 0);
 }
 
-const getTotalRam = (ns) => getPlayerServers(ns)
-    .map(ns.getServer)
-    .map(({ ramUsed, maxRam })=>maxRam-ramUsed)
-    .reduce((a,b)=>a+b);
-
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
+    await ns.write(SHARE, SHARE_SRC, 'w');
+    const RAM_PER_SHARE = ns.getScriptRam(SHARE);
 
     if (ns.args[0] != null) {
         const rate = +ns.args[0];
@@ -41,20 +43,17 @@ export async function main(ns) {
         }
         return;
     }
-    
-    await ns.write(SHARE, SHARE_SRC, 'w');
-    const RAM_PER_SHARE = ns.getScriptRam(SHARE);
 
     let wait = MIN_WAIT;
     while (true) {
-        const shareRate = +(await ns.read(CONFIG_FILE));
+        const shareRate = +(await ns.read(SHARE_FILE));
 
         const ramToUse = shareRate * getTotalRam(ns);
         const desiredThreads = Math.floor(ramToUse / RAM_PER_SHARE);
         const maxDesiredThreads = desiredThreads * 1.1;
     
         function* ps() {
-            const servers = ['home', ...ns.getPurchasedServers()];
+            const servers = nmap(ns);
             while (servers.length > 0) {
                 const server = servers.shift();
                 const processes = ns.ps(server);

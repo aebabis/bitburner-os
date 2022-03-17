@@ -28,27 +28,28 @@ const serverString = (ns, server) => {
 	const money = `${ns.nFormat(moneyAvailable, '0.00a')}/${ns.nFormat(moneyMax, '0.00a')}`;
 	const ports = 'Ports=' + numOpenPortsRequired;
 	const hacking = `Hack=${~~requiredHackingSkill}(${~~minDifficulty}/${~~hackDifficulty}/${~~baseDifficulty})`;
-	const grow = `Grow=${serverGrowth}`;
+	const gr0w = `Grow=${serverGrowth}`;
 	const name = `${hostname} (${ip}) ${status}`;
-	return `${name.padEnd(32)} ${ram.padEnd(15)}  ${ports}  ${money.padEnd(15)}  ${hacking.padEnd(20)} ${grow}`;
+	return `${name.padEnd(32)} ${ram.padEnd(15)}  ${ports}  ${money.padEnd(15)}  ${hacking.padEnd(20)} ${gr0w}`;
 }
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
 	
-	const [command, p1] = ns.args;
-	switch (command) {
-		case ('purchased'):
-			return getServers(ns, server=>server.purchasedByPlayer).forEach(server => ns.tprint(serverString(ns, server)));
-		case ('kill'):
-			ns.killall(p1);
-			return ns.deleteServer(p1);
-		case(undefined):
+	const [command] = ns.args;
+
+	if (command == null) {
+			getServers(ns).forEach(server => ns.tprint(serverString(ns, server)));
+	} else {
+		if (command === 'service') {
 			while (true) {
 				ns.clearLog();
 				getServers(ns).forEach(server => ns.print(serverString(ns, server)));
 				await ns.sleep(5000);
 			}
+		} else {
+			throw new Error('Illegal argument: ' + command); // TODO: Usage
+		}
 	}
 }
