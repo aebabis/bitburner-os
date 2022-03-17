@@ -18,13 +18,19 @@ export async function main(ns) {
 
     const start = async (script, ...args) => startAt(script, 'home', ...args);
 
+	await start('logger.js');
     await start('access.js');
+    if (ns.getServerMaxRam('home') >= 64) {
+        await ns.sleep(50);
+        ns.exec('infect.js', 'home', 1, THIEF_HOME);
+	    await startAt('ringleader.js', THIEF_HOME);
+	    await start('money.js', 'ringleader.js');
+    } else {
+        await startAt('thief.js', THIEF_HOME, 'n00dles');
+    }
     await start('hacknet.js');
-	await startAt('ringleader.js', THIEF_HOME);
 	await start('assistant.js', 'service');
     await start('servers.js');
-	await start('logger.js');
-	await start('money.js', 'ringleader.js');
 	await start('share.js', 0); // No faction, no share
 	await start('share.js');
 	await start('broker.js', 'reserve', 1e10);

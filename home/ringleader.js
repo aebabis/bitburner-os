@@ -1,6 +1,6 @@
 import { HOSTSFILE, THIEF, WEAKEN, GROW, HACK } from './etc/filenames';
 import { execAnyHost } from './lib/scheduler-api';
-import { by, write, waitToRead } from './lib/util';
+import { by, waitToRead } from './lib/util';
 import { logger } from './logger';
 import { nmap } from './nmap';
 
@@ -17,16 +17,18 @@ const HACK_SRC = `export async function main(ns) {
     await await ns.hack(target);
 }`;
 
+/** @param {NS} ns **/
 export const copyDeps = async (ns, target) => {
     if (target === 'home')
         return;
-    ns.print('Copying Dependencies to ' + target);
     await ns.scp('logger.js', 'home', target);
     await ns.scp(ns.ls('home', 'etc/'), 'home', target);
     await ns.scp(ns.ls('home', 'lib/'), 'home', target);
     await ns.scp(ns.ls('home', 'bin/'), 'home', target);
     await ns.scp([THIEF, WEAKEN, GROW, HACK], 'home', target);
 }
+
+
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -47,9 +49,14 @@ export async function main(ns) {
 
     const hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
 
-    await write(ns)(WEAKEN, WEAKEN_SRC, 'w');
-    await write(ns)(GROW, GROW_SRC, 'w');
-    await write(ns)(HACK, HACK_SRC, 'w');
+    try {
+        await write(WEAKEN, WEAKEN_SRC, 'w');
+        await write(GROW, GROW_SRC, 'w');
+        await write(HACK, HACK_SRC, 'w');
+    } catch (error) {
+        await console.error(error);
+    }
+    
     while(true) {
         try {
             ns.clearLog();
@@ -57,7 +64,7 @@ export async function main(ns) {
             const hackingLevel = ns.getHackingLevel();
             const freeRam = nmap(ns)
                 .map(ns.getServer)
-                .filter(server=>server.backdoorInstalled)
+                .filter(server=>server.hasAdminRights)
                 .map(({ ramUsed, maxRam }) => maxRam - ramUsed)
                 .reduce((a, b) => a + b, 0);
             const expectedValue = ({ hostname, moneyMax }) => ns.hackAnalyzeChance(hostname) * moneyMax;
@@ -76,11 +83,9 @@ export async function main(ns) {
                 ns.print(servers.map(s=>s.hostname.padEnd(20) + ' ' + s.requiredHackingSkill).join('\n'));
                 if (servers.length > 0) {
                     const { hostname } = servers[0];
-                    ns.print('ATTEMPTING TO SPAWN ' + THIEF + ' ' + 1 + ' ' + hostname);
                     const handle = await execAnyHost(ns, async (env) => {
                         return copyDeps(ns, env);
                     })(THIEF, 1, hostname);
-                    ns.print('SUCCESS: ' + JSON.stringify(handle));
                     procs[hostname] = handle;
                 }
             } else {

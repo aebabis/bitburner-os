@@ -1,4 +1,6 @@
-import { HOSTSFILE } from './etc/filenames';
+import { HOSTSFILE, INFECT } from './etc/filenames';
+import { PORT_INFECT } from './etc/ports';
+import { delegateAny } from './lib/scheduler-delegate';
 import { waitToRead } from './lib/util';
 
 /** @param {NS} ns **/
@@ -43,10 +45,12 @@ export async function main(ns) {
         let hostname;
         let success;
         while (hostname = unvisited.shift())
-            if (await access(ns)(hostname))
+            if (await access(ns)(hostname)) {
                 success = true;
-            else
+                await delegateAny(ns)(INFECT, 1, hostname);
+            } else {
                 hostnames.push(hostname);
+            }
         if (success)
             ns.print(`Hacked ${startingLength - hostnames.length} servers. ${hostnames.length} remaining`);
         await ns.sleep(1000);

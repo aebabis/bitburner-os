@@ -1,5 +1,7 @@
-import { PORT_SCHEDULER } from './etc/ports';
+import { PORT_SCH_REQUEST_THREADS } from './etc/ports';
 import { uuid } from './lib/util';
+import { logger } from './logger';
+import { getDelegatedTasks } from './lib/scheduler-delegate';
 
 const CANCELLED = '0';
 const JOB_TIMEOUT = 60 * 1000 * 5;
@@ -29,7 +31,7 @@ const ticketComplete = async (ns, ticket) => {
 }
 
 const sendToScheduler = async (ns, message) => {
-	while (!ns.getPortHandle(PORT_SCHEDULER).tryWrite(JSON.stringify(message)))
+	while (!ns.getPortHandle(PORT_SCH_REQUEST_THREADS).tryWrite(JSON.stringify(message)))
 		await ns.sleep(100);
 }
 
@@ -64,37 +66,32 @@ export const execAnyHost = (ns, beforeRun) => async(script, numThreads=1, ...arg
 	return { pid, hostname, threads };
 }
 
+const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, ...rest }) => {
+	const time = Date.now();
+	const waitTime = () => Date.now() - time;
+	const wait = () => (waitTime()/1000).toFixed(3);
+	return {
+		...rest,
+		script, host, numThreads, args,
+		sender, messageFilename,
+		time, waitTime,
+		toString: () => `${script} ${host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
+	};
+}
+
 /** @param {NS} ns **/
 export const checkPort = async (ns, queue) => {
-	const port = ns.getPortHandle(PORT_SCHEDULER);
+	const port = ns.getPortHandle(PORT_SCH_REQUEST_THREADS);
 	while (!port.empty()) {
 		const message = port.read();
 		try {
-			const { script, host, numThreads, args, sender, messageFilename, ...rest } = JSON.parse(message);
-			const time = Date.now();
-			const waitTime = () => Date.now() - time;
-			const wait = () => ns.tFormat(waitTime());
-			const getRam = () => ns.getScriptRam(script, sender) * numThreads;
-			// if (getRam() > ns.getPurchasedServerMaxRam()) {
-				// await systemLog(ns, `Cancelling Process Because Impossible RAM`);
-			// 	await write(ns, messageFilename, CANCELLED, sender);
-			// 	continue;
-			// }
-			queue.push({
-				...rest,
-				script, host, numThreads, args,
-				sender,
-				time,
-				waitTime,
-				getRam,
-				messageFilename,
-				getScriptRam: () => ns.getScriptRam(script, sender),
-				toString: () => `${script} ${host} ${numThreads} ${args.join(' ')} (${wait()})`,
-			});
+			queue.push(TicketItem(JSON.parse(message)));
 		} catch(error) {
-			ns.print('ERROR ' + error.message); // TODO: Pretty
+			await logger(ns).error(error); // TODO: Pretty
 		}
 	}
+	const delegated = (await getDelegatedTasks(ns))
+	delegated.forEach(data => queue.push(TicketItem(data)));
 }
 
 /** @param {NS} ns **/
@@ -135,15 +132,27 @@ export const clean = (() => {
 	
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
-	const { messageFilename, sender } = process;
-	const { hostname } = server;
-	const ram = Math.min(process.getRam(), ns.getServerMaxRam(hostname));
-	const message = JSON.stringify({ hostname, ram });
-	await write(ns, messageFilename, message, sender);
+	if (!process.isDelegated) {
+		const { script, messageFilename, sender, numThreads } = process;
+		const { hostname } = server;
+		const processRam = ns.getScriptRam(script, sender) * numThreads;
+		const ram = Math.min(processRam, ns.getServerMaxRam(hostname));
+		const message = JSON.stringify({ hostname, ram });
+		await write(ns, messageFilename, message, sender);
+	} else {
+		const { script, numThreads, sender, args } = process;
+		// TODO: Copy the script to server first
+		await ns.scp(script, sender, server);
+		ns.exec(script, server, numThreads, ...args);
+	}
 }
 
 /** @param {NS} ns **/
 export const reject = async (ns, process) => {
-	const { messageFilename, sender } = process;
-	await write(ns, messageFilename, CANCELLED, sender);
+	if (!process.isDelegated) {
+		const { messageFilename, sender } = process;
+		await write(ns, messageFilename, CANCELLED, sender);
+	} else {
+		// Delegated processes have no return address
+	}
 }

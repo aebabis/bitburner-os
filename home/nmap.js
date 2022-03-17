@@ -1,8 +1,7 @@
 import { HOSTSFILE } from './etc/filenames';
-import { write } from './lib/util';
 
 /** @param {NS} ns **/
-export const nmap = async(ns) => {
+export const nmap = (ns) => {
 	const hostnames = ["home"];
 	for (let i = 0; i < hostnames.length; i++) {
 		let hostname = hostnames[i];
@@ -17,6 +16,6 @@ export const nmap = async(ns) => {
 
 /** @param {NS} ns **/
 export const main = async(ns) => {
-	const hostnames = await nmap(ns);
-	await write(ns)(HOSTSFILE, hostnames.join(','), 'w');
+	const hostnames = nmap(ns);
+	await ns.write(HOSTSFILE, hostnames.join(','), 'w');
 }

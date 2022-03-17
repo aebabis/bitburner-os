@@ -1,4 +1,4 @@
-import { PORT_THREADPOOL } from './etc/ports';
+import { PORT_SCH_THREADPOOL } from './etc/ports';
 
 const THREADPOOL_NAME = 'THREADPOOL';
 const PURCHASE = '/bin/purchase-threadpool.js';
@@ -42,13 +42,13 @@ export async function main(ns) {
 			}
 		}
 	}
-	ns.writePort('${PORT_THREADPOOL}', getServer() || '');
+	ns.writePort(${PORT_SCH_THREADPOOL}, getServer() || '');
 }`;
 
 export const purchaseThreadpoolServer = async (ns) => {
 	await ns.write(PURCHASE, PURCHASE_SRC, 'w');
 	let hostname;
-	while ((hostname = await ns.readPort(PORT_THREADPOOL)) !== '')
+	while ((hostname = await ns.readPort(PORT_SCH_THREADPOOL)) !== '')
 		await ns.sleep(50);
 	return hostname;
 }
