@@ -46,6 +46,7 @@ export const exec = (ns, beforeRun) => async(script, host=ns.getHostname(), numT
 	if (beforeRun != null)
 		await beforeRun(hostname);
 	const threads = Math.floor(ram / ns.getScriptRam(script, host));
+	ns.tprint(script + ' ' + hostname + ' ' + threads + ' ' + args);
 	const pid = ns.exec(script, hostname, threads, ...args);
 	return { pid, hostname, threads };
 }
@@ -144,7 +145,7 @@ export const fulfill = async (ns, process, server) => {
 	} else {
 		const { script, numThreads, args, sender } = process;
 		// TODO: Copy the script to server first
-		if (sender !== hostname)
+		if (sender !== hostname && hostname !== 'home')
 			await ns.scp(script, sender, hostname);
 		ns.exec(script, hostname, numThreads, ...args);
 	}

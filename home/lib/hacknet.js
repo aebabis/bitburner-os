@@ -17,16 +17,16 @@ export const getNodeData = (ns) => {
         const lp = prodFactor * levelUpgradeProfit(stats.level, stats.ram, stats.cores);
         const rp = prodFactor * ramUpgradeProfit(stats.level, stats.ram, stats.cores);
         const cp = prodFactor * coreUpgradeProfit(stats.level, stats.ram, stats.cores);
-        const lc = ns.hacknet.getLevelUpgradeCost(i);
-        const rc = ns.hacknet.getRamUpgradeCost(i);
-        const cc = ns.hacknet.getCoreUpgradeCost(i);
+        const lc = ns.hacknet.getLevelUpgradeCost(i, 1);
+        const rc = ns.hacknet.getRamUpgradeCost(i, 1);
+        const cc = ns.hacknet.getCoreUpgradeCost(i, 1);
         const upgrades = {
             level: { type: 'level', index: i, profit: lp, cost: lc, profitPerCost: lp / lc, breakEvenTime: lc / lp,
-                purchase: () => ns.hacknet.upgradeLevel(i), toString: () => `${i}-level ${m(lp)}/${m(lc)}` },
+                purchase: () => ns.hacknet.upgradeLevel(i, 1), toString: () => `${i}-level ${m(lp)}/${m(lc)}` },
             ram: { type: 'ram', index: i, profit: rp, cost: rc, profitPerCost: rp / rc, breakEvenTime: rc / rp,
-                purchase: () => ns.hacknet.upgradeRam(i) , toString: () => `${i}-ram ${m(rp)}/${m(rc)}` },
+                purchase: () => ns.hacknet.upgradeRam(i, 1) , toString: () => `${i}-ram ${m(rp)}/${m(rc)}` },
             core: { type: 'core', index: i, profit: cp, cost: cc, profitPerCost: cp / cc, breakEvenTime: cc / cp,
-                purchase: () => ns.hacknet.upgradeCore(i), toString: () => `${i}-core ${m(cp)}/${m(cc)}` },
+                purchase: () => ns.hacknet.upgradeCore(i, 1), toString: () => `${i}-core ${m(cp)}/${m(cc)}` },
             getBest: () => [upgrades.level, upgrades.ram, upgrades.core].reduce(
                 (a, b) => {
                     if (a.profitPerCost > b.profitPerCost)

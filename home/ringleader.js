@@ -50,9 +50,9 @@ export async function main(ns) {
     const hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
 
     try {
-        await write(WEAKEN, WEAKEN_SRC, 'w');
-        await write(GROW, GROW_SRC, 'w');
-        await write(HACK, HACK_SRC, 'w');
+        await ns.write(WEAKEN, WEAKEN_SRC, 'w');
+        await ns.write(GROW, GROW_SRC, 'w');
+        await ns.write(HACK, HACK_SRC, 'w');
     } catch (error) {
         await console.error(error);
     }

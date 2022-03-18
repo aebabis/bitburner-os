@@ -31,6 +31,8 @@ export const logger = (ns) => {
 	}
 }
 
+export const logger_inline = logger.toString().replace('PORT_LOGGER', PORT_LOGGER);
+
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');

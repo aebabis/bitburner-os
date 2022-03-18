@@ -14,7 +14,7 @@ export async function main(ns) {
 
     do {
         await delegate(ns)('/bin/gang/gang-data.js', 'home');
-        await ns.sleep(5000);
+        await ns.sleep(1000);
     } while((await ns.read(GANG_DATA) === ''));
 
     // TODO: Enable automatic gang creation
@@ -28,7 +28,7 @@ export async function main(ns) {
                 await ns.write('${GANG_CACHE}', data);
             }
         `), 'home')
-        await ns.sleep(5000)
+        await ns.sleep(1000)
     }
 
     // If the gang cache has data, we have a gang.
@@ -52,6 +52,10 @@ export async function main(ns) {
                 ns.gang.recruitMember(NAME_GEN);`));
     }, 10000);
 
+    const assign = RepeatingTask(async() => {
+        return delegate(ns)('/bin/gang/assign-members.js', 'home');
+    }, 5000);
+
     // Next RepeatingTask:
     // - Update cache 5000?
     //      ns.gang.getGangInformation() // 	Get information about your gang.
@@ -61,16 +65,16 @@ export async function main(ns) {
     //          ns.gang.setTerritoryWarfare(engage) // 	Enable/Disable territory warfare.
     //      Allocate crime and level-ups
     //          ns.gang.getMemberInformation(name) // 	Get information about a specific gang member.
-    //          ns.gang.getMemberNames() // 	List all gang members.
+            //  ns.gang.getMemberNames() // 	List all gang members.
     //          ns.gang.setMemberTask(memberName, taskName) // 	Set gang member to task.
     // - Buy equipment
     //      ns.gang.getEquipmentCost(equipName) //	Get cost of equipment.
     //      ns.gang.purchaseEquipment(memberName, equipName) // 	Purchase an equipment for a gang member.
     // - Ascensions
-    //      ns.gang.ascendMember(memberName) //	Ascend a gang member.
-    //      ns.gang.getAscensionResult(memberName) //	Get the result of an ascension without ascending.
+        //  ns.gang.ascendMember(memberName) //	Ascend a gang member.
+        //  ns.gang.getAscensionResult(memberName) //	Get the result of an ascension without ascending.
 
-    const tasks = [recruit];
+    const tasks = [recruit, assign];
     while (true) {
         for (const task of tasks) {
             if (task.ready())

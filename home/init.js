@@ -1,5 +1,6 @@
-import { SHARE_FILE, BROKER_FILE } from './etc/filenames';
+import { HOSTSFILE, SHARE_FILE, BROKER_FILE } from './etc/filenames';
 import { exec, execAnyHost } from './lib/scheduler-api.js';
+import { infect } from 'infect';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -44,17 +45,25 @@ export async function main(ns) {
 	ns.exec('scheduler.js', 'home', 1);
     ns.tprint('scheduler.js');
     ns.tail('scheduler.js');
+
+    // const hostnames = (await ns.read(HOSTSFILE)).split(',');
+    // ns.tprint(hostnames);
+    // for (const hostname of hostnames){
+    //     ns.tprint(hostname);
+    //     await infect(ns, hostname);
+    //     await ns.sleep(200);
+    // }
     
 	await start('logger.js');
     await start('access.js');
-    await start('gang-controller.js');
 	await startAt('ringleader.js', 'foodnstuff');
     await startAny('hacknet.js');
+    await startAny('gang.js', 'service');
 	await startAny('assistant.js', 'service');
     await startAny('servers.js', 'service');
 	// await startAny('share.js');
 	// await startAny('broker.js');
-	await startAny('money.js', 'ringleader.js');
+	await startAny('money.js', 'thief.js');
 
     ns.tprint('init complete');
     ns.tprint('-'.repeat(20));

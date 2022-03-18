@@ -3,7 +3,7 @@ import { execAnyHost } from './lib/scheduler-api';
 import { uuid } from './lib/util';
 import { nmap } from './nmap';
 
-const SHARE = '/bin/share.js';
+const SHARE = '/bin/gen/share.js';
 const SHARE_SRC = `export async function main(ns) {
     while (true) {
         await ns.share();
