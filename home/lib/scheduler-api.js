@@ -1,13 +1,13 @@
 import { PORT_SCH_REQUEST_THREADS } from './etc/ports';
+import { SCHEDULER_TMP } from './etc/config';
 import { uuid } from './lib/util';
 import { logger } from './logger';
 import { getDelegatedTasks } from './lib/scheduler-delegate';
 
 const CANCELLED = '0';
 const JOB_TIMEOUT = 60 * 1000 * 5;
-const SCHEDULER_DIR = '/run/sch/';
 
-const getTicket = () => SCHEDULER_DIR + uuid() + '.txt';
+const getTicket = () => SCHEDULER_TMP + uuid() + '.txt';
 
 /** @param {NS} ns **/
 const ticketComplete = async (ns, ticket) => {
@@ -114,17 +114,19 @@ export const clean = (() => {
 
 	const timestamps = {};
 	let lastRun = 0;
+	/** @param {NS} ns **/
 	return (ns) => {
 		if (Date.now() - lastRun < 1000)
 			return;
 		lastRun = Date.now();
-		const ls = ns.ls('home');
-		Object.entries(timestamps).forEach(([filename, time]) => {
-			if (!ls.includes(filename)) {
-				delete timestamps[filename];
+		ls('home', SCHEDULER_TMP).forEach((filename) => {
+			const time = timestamps[filename];
+			if (time == null) {
+				timestamps[filename] = Date.now();
 			} else if (Date.now() - time > JOB_TIMEOUT) {
 				ns.rm(filename);
 				ns.print('JOB CANCELLED: ' + filename);
+				delete timestamps[filename];
 			}
 		})
 	}
@@ -132,18 +134,19 @@ export const clean = (() => {
 	
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
+	const { hostname } = server;
 	if (!process.isDelegated) {
 		const { script, messageFilename, sender, numThreads } = process;
-		const { hostname } = server;
 		const processRam = ns.getScriptRam(script, sender) * numThreads;
 		const ram = Math.min(processRam, ns.getServerMaxRam(hostname));
 		const message = JSON.stringify({ hostname, ram });
 		await write(ns, messageFilename, message, sender);
 	} else {
-		const { script, numThreads, sender, args } = process;
+		const { script, numThreads, args, sender } = process;
 		// TODO: Copy the script to server first
-		await ns.scp(script, sender, server);
-		ns.exec(script, server, numThreads, ...args);
+		if (sender !== hostname)
+			await ns.scp(script, sender, hostname);
+		ns.exec(script, hostname, numThreads, ...args);
 	}
 }
 

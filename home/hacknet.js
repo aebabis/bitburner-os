@@ -6,13 +6,13 @@ export async function main(ns) {
 	ns.disableLog('ALL');
 	const console = logger(ns);
 	
-	const BUFFER_FACTOR = 1.25;
+	const BUFFER_FACTOR = 1.2;
 	let waitMessageShown = false;
 	let lastMessageTime = 0;
 	while (true) {
 		const purchase = await getBestPurchase(ns);
 		const money = ns.getServerMoneyAvailable('home');
-		if (money > BUFFER_FACTOR * purchase.cost) {
+		if (money >= BUFFER_FACTOR * purchase.cost) {
 			ns.print(`PO: ${purchase.toString()}`)
 			purchase.purchase();
 			waitMessageShown = false;

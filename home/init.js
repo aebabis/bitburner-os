@@ -36,6 +36,10 @@ export async function main(ns) {
     await ns.write(SHARE_FILE,  0,    'w');  // No faction, no share
     await ns.write(BROKER_FILE, 1e10, 'w');
 
+    // Clear all ports
+    for (let i = 1; i <= 20; i++)
+        ns.clearPort(i);
+
     ns.exec('nmap.js', 'home');
 	ns.exec('scheduler.js', 'home', 1);
     ns.tprint('scheduler.js');
@@ -43,6 +47,7 @@ export async function main(ns) {
     
 	await start('logger.js');
     await start('access.js');
+    await start('gang-controller.js');
 	await startAt('ringleader.js', 'foodnstuff');
     await startAny('hacknet.js');
 	await startAny('assistant.js', 'service');

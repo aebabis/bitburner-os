@@ -103,13 +103,10 @@ export async function main(ns) {
 						let hostname;
 						// ns.print(settleServer.hostname + ' ' + ram + ' ' + scriptRam + ' ' + ramToBuy);
 						if (ram > ramToBuy) {
-							ns.print(1);
 							await fulfill(ns, queue.shift(), settleServer);
 						} else if (hostname = await purchaseThreadpoolServer(ns)) {
-							ns.print(2);
 							await fulfill(ns, queue.shift(), ns.getServer(hostname));
 						} else if (ram >= scriptRam) {
-							ns.print(3);
 							await fulfill(ns, queue.shift(), settleServer);
 						}
 					}

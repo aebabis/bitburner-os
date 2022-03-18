@@ -56,16 +56,26 @@ export const purchaseThreadpoolServer = async (ns) => {
 		await ns.write(PURCHASE, PURCHASE_SRC, 'w');
 	}
 	// await execAnyHost(ns)(PURCHASE);
-	let hostname;
-	if (hostname = ns.purchaseServer(THREADPOOL_NAME, 2))
+	let hostname = ns.purchaseServer(THREADPOOL_NAME, 2);
+	if (hostname !== '') {
 		return hostname;
+	}
 	
-	ns.exec(PURCHASE, 'home');
+	if (ns.exec(PURCHASE, 'home') === 0) {
+		ns.print('Could not run purchase script');
+		return null;
+	}
 
-	ns.print('buying?');
-	while ((await ns.peek(PORT_SCH_THREADPOOL)) === 'NULL PORT DATA')
+	const start = Date.now();
+	const waitTime = () => Date.now() - start;
+	while (waitTime < 5000 && (await ns.peek(PORT_SCH_THREADPOOL)) === 'NULL PORT DATA')
 		await ns.sleep(50);
 	hostname = await ns.readPort(PORT_SCH_THREADPOOL);
-	ns.print(hostname);
-	return hostname;
+	if (hostname === 'NULL PORT DATA') {
+		ns.print('Server purchase timed out')
+		return null;
+	} else {
+		ns.print('Failed to purchase server');
+		return hostname;
+	}
 }
