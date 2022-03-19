@@ -1,5 +1,5 @@
 import { by } from './lib/util';
-import { nmap } from './nmap';
+import { nmap } from './lib/nmap';
 
 /** @param {NS} ns **/
 const getServers = (ns) => nmap(ns)

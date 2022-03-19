@@ -1,8 +1,8 @@
 import { PORT_SCH_THREADPOOL } from './etc/ports';
-// import { execAnyHost } from './lib/scheduler-api';
+import { infect } from './bin/infect';
 
 const THREADPOOL_NAME = 'THREADPOOL';
-const PURCHASE = '/bin/purchase-threadpool.js';
+const PURCHASE = '/bin/gen/purchase-threadpool.js';
 const PURCHASE_SRC = `
 import { by } from './lib/util';
 
@@ -55,7 +55,7 @@ export const purchaseThreadpoolServer = async (ns) => {
 		wrotePurchaseSrc = true;
 		await ns.write(PURCHASE, PURCHASE_SRC, 'w');
 	}
-	// await execAnyHost(ns)(PURCHASE);
+
 	let hostname = ns.purchaseServer(THREADPOOL_NAME, 2);
 	if (hostname !== '') {
 		return hostname;
@@ -74,8 +74,11 @@ export const purchaseThreadpoolServer = async (ns) => {
 	if (hostname === 'NULL PORT DATA') {
 		ns.print('Server purchase timed out')
 		return null;
-	} else {
+	} else if (hostname === '') {
 		ns.print('Failed to purchase server');
+		return hostname;
+	} else {
+		await infect(ns, hostname);
 		return hostname;
 	}
 }

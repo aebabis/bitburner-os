@@ -1,21 +1,13 @@
 import { HOSTSFILE, SHARE_FILE, BROKER_FILE } from './etc/filenames';
-import { exec, execAnyHost } from './lib/scheduler-api.js';
-import { infect } from 'infect';
+import { delegate, delegateAny } from './lib/scheduler-delegate.js';
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
 
-    const copyJS = async (destination) => {
-        const JS_FILES = ns.ls('home').filter(f=>f.endsWith('.js'));
-        const TXT_FILES = ns.ls('home').filter(f=>f.endsWith('.txt'));
-        await ns.scp(JS_FILES, 'home', destination);
-        await ns.scp(TXT_FILES, 'home', destination);
-    }
-
     const startAt = async (script, hostname, ...args) => {
         try {
-            await exec(ns)(script, hostname, 1, ...args);
+            await delegate(ns, true)(script, hostname, 1, ...args);
             ns.tprint(script);
         } catch (error) {
             ns.tprint(error);
@@ -24,7 +16,7 @@ export async function main(ns) {
 
     const startAny = async (script, ...args) => {
         try {
-            await execAnyHost(ns, copyJS)(script, 1, ...args);
+            await delegateAny(ns, true)(script, 1, ...args);
             ns.tprint(script);
         } catch (error) {
             ns.tprint(error);
@@ -41,18 +33,27 @@ export async function main(ns) {
     for (let i = 1; i <= 20; i++)
         ns.clearPort(i);
 
-    ns.exec('nmap.js', 'home');
+    ns.exec('/bin/nmap.js', 'home');
 	ns.exec('scheduler.js', 'home', 1);
     ns.tprint('scheduler.js');
     ns.tail('scheduler.js');
 
-    // const hostnames = (await ns.read(HOSTSFILE)).split(',');
-    // ns.tprint(hostnames);
-    // for (const hostname of hostnames){
-    //     ns.tprint(hostname);
-    //     await infect(ns, hostname);
-    //     await ns.sleep(200);
-    // }
+    const hostnames = (await ns.read(HOSTSFILE)).split(',');
+    // nmap(ns).forEach((hostname) => {
+    //     if (hostname === 'home')
+    //         return;
+    //     ns.ls(hostname, '.js').forEach(filename=>ns.rm(filename, hostname));
+    //     ns.ls(hostname, '.txt').forEach(filename=>ns.rm(filename, hostname));
+    // })
+    for (const hostname of hostnames){
+        const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
+        // await ns.scp('logger.js',           'home', hostname);
+        // await ns.scp('/bin/infect.js',      'home', hostname);
+        await ns.scp(rootJS,                'home', hostname);
+        await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);
+        await ns.scp(ns.ls('home', 'lib/'), 'home', hostname);
+        await ns.scp(ns.ls('home', 'bin/'), 'home', hostname);
+    }
     
 	await start('logger.js');
     await start('access.js');

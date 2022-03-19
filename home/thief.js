@@ -1,6 +1,6 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
 import { uuid } from './lib/util';
-import { execAnyHost } from './lib/scheduler-api';
+import { delegateAny } from './lib/scheduler-delegate';
 import { logger } from './logger';
 
 const THEFT_PORTION = .25;
@@ -77,7 +77,7 @@ const groom = async (ns, hostname) => {
         let threadsRemaining = weakThreads;
         ns.print(`Starting W-attack server=${hostname} W=${weakThreads} (${weakenTime}ms)`);
         while (threadsRemaining > 0) {
-            const { threads } = await execAnyHost(ns)(WEAKEN, threadsRemaining, hostname, uuid());
+            const { threads } = await delegateAny(ns, true)(WEAKEN, threadsRemaining, hostname, uuid());
             threadsRemaining -= threads;
         }
         await ns.sleep(weakenTime);
@@ -89,9 +89,9 @@ const groom = async (ns, hostname) => {
         ns.print(`Starting GW-attack server=${hostname} G=${grow} W=${weak}`);
         try {
             if (weak > 0)
-                await execAnyHost(ns)(WEAKEN, weak, hostname, uuid());
+                await delegateAny(ns, true)(WEAKEN, weak, hostname, uuid());
             if (grow > 0) {
-                await execAnyHost(ns)(GROW, grow, hostname, uuid());
+                await delegateAny(ns, true)(GROW, grow, hostname, uuid());
             }
             await ns.sleep(weakenWait);
         } catch (error) {
@@ -127,20 +127,20 @@ const getHackSchedule = async (ns, target) => {
     // const hackStart  = weakTime - SUBTASK_SPACING * 3 - growTime;
 
     return async () => {
-        await execAnyHost(ns)(WEAKEN, weakThreads1, target);
+        await delegateAny(ns, true)(WEAKEN, weakThreads1, target);
         const start = Date.now();
         const ts = () => Date.now() - start;
         ns.print(`Attack started on ${target}. W=[${weak1Start}, ${weak2Start} ? ?]`);
         ns.print(`  (${ts()}) weaken T=${weakThreads1}`);
         await ns.sleep(weak2Start - ts());
 
-        await execAnyHost(ns)(WEAKEN, weakThreads2, target);
+        await delegateAny(ns, true)(WEAKEN, weakThreads2, target);
         ns.print(`  (${ts()}) weaken T=${weakThreads2}`);
         const growTime = ns.getGrowTime(target);
         const growStart = weakTime + SUBTASK_SPACING - growTime;
         await ns.sleep(growStart - ts());
 
-        await execAnyHost(ns)(GROW, growThreads, target);
+        await delegateAny(ns, true)(GROW, growThreads, target);
         ns.print(`  (${ts()}) grow   T=${growThreads}`);
         const hackTime  = ns.getHackTime(target);
         const hackStart = weakTime - SUBTASK_SPACING - hackTime;
@@ -150,7 +150,7 @@ const getHackSchedule = async (ns, target) => {
         // if (hackDelay > 0) {
             await ns.sleep(hackDelay);
             const actualHackThreads = getHThreads(ns, target, THEFT_PORTION);
-            await execAnyHost(ns)(HACK, actualHackThreads, target);
+            await delegateAny(ns, true)(HACK, actualHackThreads, target);
             ns.print(`  (${ts()}) hack   T=${actualHackThreads}`);
         // } else {
         //     ns.print(`  (${ts()}) hack WINDOW CLOSED`);
@@ -158,30 +158,26 @@ const getHackSchedule = async (ns, target) => {
     }
 }
 
-export const isServerGroomed = ({
-    hasAdminRights, moneyAvailable, moneyMax,
-    minDifficulty, hackDifficulty, purchasedByPlayer,
-}) => (
-    hasAdminRights && !purchasedByPlayer &&
-    moneyAvailable / moneyMax > .99 &&
-    minDifficulty / hackDifficulty > .99
+const isServerGroomed = (ns, hostname) => (
+    ns.getServerMoneyAvailable(hostname) / ns.getServerMaxMoney(hostname) > .99 &&
+    ns.getServerMinSecurityLevel(hostname) / ns.getServerSecurityLevel(hostname) > .99
 );
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    const console = logger(ns);
+    // const console = logger(ns);
     const target = ns.args[0];
     while(true) {
         try {
-            while (isServerGroomed(ns.getServer(target))) {
+            while (isServerGroomed(ns, target)) {
                 const hwgwFrame = await getHackSchedule(ns, target);
                 await hwgwFrame();
                 await ns.sleep(50);
             }
             await groom(ns, target);
         } catch (error) {
-            await console.error(error);
+            await logger(ns).error(error);
         }
         await ns.sleep(50);
     }

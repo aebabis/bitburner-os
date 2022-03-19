@@ -1,4 +1,4 @@
-import { nmap } from './nmap';
+import { nmap } from './lib/nmap';
 
 /** @param {NS} ns **/
 export async function main(ns) {

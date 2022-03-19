@@ -1,5 +1,9 @@
-export const PORT_SCHEDULER = 1;
-export const PORT_THREADPOOL = 2;
-export const PORT_LOGGER = 2;
-export const PORT_INFECT = 3;
-export const PORT_ACCOUNTANT = 4;
+let port = 1;
+
+export const PORT_SCH_DELEGATE_TASK = port++;
+export const PORT_SCH_THREADPOOL = port++;
+export const PORT_SCH_RETURN = port++;
+
+export const PORT_LOGGER = port++;
+export const PORT_INFECT = port++;
+export const PORT_ACCOUNTANT = port++;

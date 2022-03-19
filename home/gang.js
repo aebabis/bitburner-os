@@ -8,6 +8,6 @@ export async function main(ns) {
     if (command === 'tasks') {
         await printTaskTable(ns, args[0]);
     } else if (command === 'service') {
-        delegate(ns)('/bin/gang/gang-controller.js', 'home');
+        await delegate(ns)('/bin/gang/gang-controller.js', 'home');
     }
 }

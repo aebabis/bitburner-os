@@ -1,8 +1,8 @@
 import { by } from './lib/util';
+import { nmap } from './lib/nmap';
 import { checkPort, clean, fulfill, reject } from './lib/scheduler-api';
 import { purchaseThreadpoolServer } from './lib/scheduler-threadpool';
-import { nmap } from 'nmap';
-import { logger } from 'logger';
+import { logger } from './logger';
 
 const SCHEDULER_HOME = 'home';
 
@@ -15,8 +15,8 @@ export async function main(ns) {
 			case 'ls':
 				showQueue(ns);
 				return;
-			case 'schedule':
-				return exec(ns)(...ns.args.slice(1));
+			// case 'schedule':
+				// return delegate(ns)(...ns.args.slice(1));
 			case 'grow-pool':
 				const hostname = await purchaseThreadpoolServer(ns);
 				if (hostname != null) {
@@ -33,6 +33,12 @@ export async function main(ns) {
 	} else if (ns.getServer().hostname !== SCHEDULER_HOME){
 		throw new Error(`Scheduler only runs on ${SCHEDULER_HOME}`);
 	}
+
+	// Since we're restarting, clear queued jobs.
+    nmap(ns).forEach((hostname) => {
+        ns.tprint(hostname);
+        ns.ls(hostname, 'run/sch').forEach(filename=>ns.rm(filename, hostname));
+    });
 
 	const queue = [];
 	while (true) {
@@ -114,7 +120,7 @@ export async function main(ns) {
 				}
 			}
 			if (queue.length > 0) {
-					queue.forEach(item => ns.print(item.toString()));
+				queue.forEach(item => ns.print(item.toString()));
 			}
 			await ns.sleep(1);
 		} catch(error) {

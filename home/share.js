@@ -1,7 +1,7 @@
 import { SHARE_FILE } from './etc/filenames';
-import { execAnyHost } from './lib/scheduler-api';
+import { delegateAny } from './lib/scheduler-delegate';
 import { uuid } from './lib/util';
-import { nmap } from './nmap';
+import { nmap } from './lib/nmap';
 
 const SHARE = '/bin/gen/share.js';
 const SHARE_SRC = `export async function main(ns) {
@@ -81,7 +81,7 @@ export async function main(ns) {
             ns.print(`Need ${threadsNeeded} more threads`);
             wait = MIN_WAIT;
             try {
-                await execAnyHost(ns)(SHARE, threadsNeeded, uuid());
+                await delegateAny(ns)(SHARE, threadsNeeded, uuid());
             } catch (error) {
                 ns.print(`ERROR ` + error);
             }
