@@ -1,4 +1,5 @@
 export const HOSTSFILE = '/etc/hosts.txt';
+export const STATIC_DATA = '/etc/static-data.txt';
 export const BROKER_FILE = '/etc/broker-file.txt';
 export const SHARE_FILE = '/run/share.txt';
 export const GANG_DATA = '/run/fixed-gang-data.txt';

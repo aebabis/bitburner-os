@@ -14,8 +14,12 @@ export const nmap = (ns) => {
 	return hostnames;
 }
 
-/** @param {NS} ns **/
-export const main = async(ns) => {
+export const writeHostsfile = async (ns) => {
 	const hostnames = nmap(ns);
 	await ns.write(HOSTSFILE, hostnames.join(','), 'w');
+}
+
+/** @param {NS} ns **/
+export const main = async(ns) => {
+	await writeHostsfile(ns);
 }

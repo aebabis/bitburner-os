@@ -11,7 +11,7 @@ const DEFAULT_THREAD_COUNT = 1024;
 const getWThreads = (ns, targetDecrease, cores=1) => {
     const weakSize = ns.getScriptRam(WEAKEN);
     const maxRam = ns.getPurchasedServerMaxRam();
-    let min = 0;
+    let min = 1;
     let max = Math.ceil(maxRam / weakSize);
     while (max > min) {
         const weakThreads = Math.floor((min + max) / 2);
@@ -26,7 +26,7 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
 }
 
 /** @param {NS} ns **/
-const getHThreads = (ns, target, portion) => Math.floor(portion / ns.hackAnalyze(target));
+const getHThreads = (ns, target, portion) => Math.ceil(portion / ns.hackAnalyze(target));
 
 /** @param {NS} ns **/
 const getGWThreads = (ns, server, multiplier, maxThreads, cores=1) => {
@@ -34,7 +34,7 @@ const getGWThreads = (ns, server, multiplier, maxThreads, cores=1) => {
         return { grow: maxThreads, weak: 0 };
     }
     const threads = Math.min(maxThreads, ns.growthAnalyze(server, multiplier, cores))
-    let min = 0;
+    let min = 1;
     let max = threads;
     while (min < max) {
         const growThreads = Math.floor((min + max) / 2);

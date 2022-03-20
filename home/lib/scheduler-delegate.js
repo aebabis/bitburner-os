@@ -1,5 +1,5 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from './etc/ports';
-import { SCH_TMP_DIR } from './etc/config';
+// import { SCH_TMP_DIR } from './etc/config';
 import Ports from './lib/ports';
 import { logger } from './logger';
 
@@ -7,11 +7,18 @@ export const snippet = (statements) => `export async function main(ns) {\n${stat
 
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
-    const {reap} = options;
+    if (!script.endsWith('.js') || isNaN(numThreads) || numThreads < 1) {
+        if (host == null) {
+            throw new Error(`Illegal process description: ${script} ${numThreads} ${args.join(' ')}`);
+        } else {
+            throw new Error(`Illegal process description: ${script} ${host} ${numThreads} ${args.join(' ')}`);
+        }
+    }
+    // const {reap} = options;
     const ticket = response ? crypto.randomUUID() : undefined;
     const sender = ns.getHostname();
     const message = JSON.stringify({
-        script, host, numThreads, args, sender, ticket, reap, isDelegated: true });
+        script, host, numThreads, args, sender, ticket, /*reap,*/ isDelegated: true });
     while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message))
         await ns.sleep(50);
     await ns.sleep(50);
@@ -34,17 +41,6 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
 /** @param {NS} ns **/
 export const delegateAny = (ns, response, options) => async (script, numThreads=1, ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
-
-/** @param {NS} ns **/
-export const delegateAnonymous = (ns, response) => async(src, host=null, numThreads=1, ...args) => {
-    const filename = '/' + SCH_TMP_DIR + crypto.randomUUID() + '.js';
-    await ns.write(filename, src, 'w');
-    return delegate(ns, response, { reap: true })(filename, host, numThreads, ...args);
-}
-
-/** @param {NS} ns **/
-export const delegateAnonymousAny = (ns, response) => async (src, numThreads=1, ...args) =>
-    await delegateAnonymous(ns, response)(src, null, numThreads, ...args);
 
 /** @param {NS} ns **/
 export const getDelegatedTasks = async (ns) => {

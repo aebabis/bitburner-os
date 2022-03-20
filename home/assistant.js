@@ -149,7 +149,10 @@ const runDaemon = async (ns) => {
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
-	const [param] = ns.args;
+	const { _, tail } = ns.flags([['tail', false]]);
+	if (tail)
+		ns.tail();
+	const [param] = _;
 	if (param == null) {
 		const currentTarget = await ns.read(RUN_FILE);
 		ns.tprint(currentTarget);

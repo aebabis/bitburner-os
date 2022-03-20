@@ -1,4 +1,5 @@
 import { delegate } from './lib/scheduler-delegate.js';
+import { logger } from './logger';
 
 const HOME = 'home';
 
@@ -9,30 +10,20 @@ export async function main(ns) {
     const Task = (condition=()=>true, interval=0) => (script, target=null, numThreads=1, ...args) => {
         let pid;
         let lastRun = 0;
-        const isRunning = () => {
-            if (pid == null)
-                return false;
-            else if (ns.isRunning(pid) == null) {
-                pid = null;
-                return false;
-            } else {
-                return true;
-            }
-        };
+        const isRunning = () => pid && ns.isRunning(pid);
         const check = async () => {
-            if (isRunning()) {
-                if (!condition()) {
-                    ns.kill(pid);
-                    pid = null;
+            const running = isRunning();
+            const shouldBe = condition();
+            if (!running && shouldBe) {
+                const now = Date.now();
+                if (now - lastRun >= interval) {
+                    lastRun = now;
+                    const handle = await delegate(ns, true)(script, target, numThreads, ...args);
+                    pid = handle.pid;
                 }
-            } else {
-                if (condition()) {
-                    const now = Date.now();
-                    if (now - lastRun >= interval) {
-                        lastRun = now;
-                        pid = await delegate(ns, true)(script, target, numThreads, ...args);
-                    }
-                }
+            } else if (running && !shouldBe) {
+                ns.kill(pid);
+                pid = null;
             }
         }
 
@@ -47,12 +38,13 @@ export async function main(ns) {
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
     const tasks = [
+        Task()('server-purchaser.js'),
         Task()('hacknet.js'),
         Task()('access.js'),
-        Task()('assistant.js', null, 'service'),
+        Task()('assistant.js', null, 1, '--tail', 'service'),
         Task()('ringleader.js'),
         Task(canHaveGang)
-              ('gang.js', null, 'service'),
+              ('gang.js', null, 1, 'service'),
         Task(canTradeStocks, 5000)
               ('broker.js'),
         Task(canShare, 5000)
@@ -62,20 +54,11 @@ export async function main(ns) {
     ]
 
     while (true) {
-        if (!ns.scriptRunning('scheduler.js', HOME)) {
-            ns.exec('scheduler.js', HOME);
-        }
-        if (!ns.scriptRunning('logger.js', HOME)) {
-            ns.exec('logger.js', HOME);
-        }
-        if (!ns.scriptRunning('server-purchaser.js', HOME)) {
-            ns.exec('server-purchaser.js', HOME);
-        }
         for (const task of tasks) {
             try {
                 await task.check();
             } catch (error) {
-                ns.tprint(error);
+                logger(ns).error(error);
             }
         }
         await ns.sleep(1000);

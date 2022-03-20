@@ -1,5 +1,5 @@
 import { GANG_DATA, GANG_CACHE } from './etc/filenames';
-import { snippet, delegate, delegateAnonymous } from './lib/scheduler-delegate';
+import { snippet, delegate } from './lib/scheduler-delegate';
 
 // import { printTaskTable } from './bin/gang/task-table';
 // import { by } from './lib/util';
@@ -20,13 +20,7 @@ export async function main(ns) {
     // ns.gang.createGang('Slum Snakes');
     while ((await ns.read(GANG_CACHE)) === '') {
         // Schedule in-gang check
-        await delegateAnonymous(ns)(snippet(`
-            const inGang = ns.gang.inGang();
-            if (inGang) {
-                const data = JSON.stringify(ns.gang.getGangInformation());
-                await ns.write('${GANG_CACHE}', data);
-            }
-        `), 'home')
+        await delegate(ns)('/bin/gang/gang-info.js');
         await ns.sleep(1000)
     }
 
