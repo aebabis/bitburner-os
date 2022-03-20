@@ -1,8 +1,8 @@
-import { PORT_SCH_THREADPOOL, PORT_SCH_RAM_DATA } from './etc/ports';
+import { PORT_SCH_RAM_DATA } from './etc/ports';
+import Ports from './lib/ports';
 import { by } from './lib/util';
 import { nmap } from './lib/nmap';
 import { checkPort, clean, fulfill, reject } from './lib/scheduler-api';
-import { purchaseThreadpoolServer } from './lib/scheduler-threadpool';
 import { logger } from './logger';
 
 const SCHEDULER_HOME = 'home';
@@ -47,16 +47,16 @@ export async function main(ns) {
 				}
 				const scriptRam = ns.getScriptRam(process.script, process.sender);
 				const ramRequired = scriptRam * process.numThreads;
-				if (process.host != null) {
+				if (process.hostname != null) {
 					// Specific server requested
-					const { maxRam, ramUsed } = gitServer(process.host);
+					const { maxRam, ramUsed } = gitServer(process.hostname);
 					let ram = maxRam - (ramUsed||0);
 					if (process.host === 'home') {
 						ram -= 4; // Allow 4GB for user to run scripts
 					}
-					if (ramRequired < ram) {
+					if (ramRequired <= ram) {
 						// await systemLog(ns, 'APPR', process.script, process.messageFilename);
-						await fulfill(ns, queue.splice(i, 1)[0], process.host);
+						await fulfill(ns, queue.splice(i, 1)[0], process.hostname);
 						continue;
 					}
 				} else {
@@ -77,53 +77,44 @@ export async function main(ns) {
 							.sort(by(availableRam));
 						const purchasedServers = ns.getPurchasedServers().map(gitServer);
 						const purchasedServerMaxRam = ns.getPurchasedServerMaxRam();
-						const purchasedServersMaxedOut = purchasedServers.every(server=>server.maxRam===purchasedServerMaxRam);
+						const purchasedServerLimit = ns.getPurchasedServerLimit();
+						const purchasedServersMaxedOut = purchasedServers.length === purchasedServerLimit &&
+							purchasedServers.every(server=>server.maxRam===purchasedServerMaxRam);
 						const totalMaxRam = rootServers.map(s=>s.maxRam).reduce((a,b)=>a+b,0);
 						const totalRamUsed = rootServers.map(s=>s.ramUsed).reduce((a,b)=>a+b,0);
 						const totalRamUnused = totalMaxRam - totalRamUsed;
 						const demand = queue.map(({ script, sender, numThreads }) => numThreads * ns.getScriptRam(script, sender))
 							.reduce((a,b)=>a+b, 0);
 						const data = {
+							rootServers,
 							purchasedServers,
 							purchasedServerMaxRam,
 							purchasedServersMaxedOut,
+							purchasedServerLimit,
 							totalRamUsed,
 							totalRamUnused,
 							totalMaxRam,
 							demand,
 						};
-						ns.getPortHandle(PORT_SCH_RAM_DATA).clear();
-						ns.getPortHandle(PORT_SCH_RAM_DATA).write(JSON.stringify(data));
 						return data;
 					}
-					const { purchasedServers, purchasedServersMaxedOut } = getRamData(ns);
-					const servers = nmap(ns)
-						.filter(ns.hasRootAccess)
-						.map(gitServer)//.filter(server=>server.hasAdminRights)
-						.sort(by(availableRam));
-					// ns.print(servers.map(s=>s.hostname))
-					if (!purchasedServersMaxedOut && purchasedServers.length + 2 > ns.getPurchasedServerLimit()) {
-						// Free smallest servers so they can
-						// be deleted for bigger ones
-						servers.shift();
-						servers.shift();
-					}
+					const ramData = getRamData(ns);
+					const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
+					port.clear();
+					port.write(ramData);
+
+					const { rootServers, purchasedServers,
+						purchasedServersMaxedOut, purchasedServerLimit } = ramData;
+					const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);
+					const skip = purchasedServersMaxedOut ? 0 : Math.min(2, empty);
+					const servers = rootServers.slice(skip);
+
 					const server = servers.find(server => availableRam(server) >= ramRequired);
+					const settleServer = servers[servers.length - 1];
 					if (server != null) {
 						await fulfill(ns, queue.shift(), server.hostname);
-					} else {
-						const ramToBuy = 1 << Math.ceil(Math.log2(ramRequired));
-						const settleServer = servers[servers.length - 1];
-						const ram = availableRam(settleServer);
-						let hostname;
-						// ns.print(settleServer.hostname + ' ' + ram + ' ' + scriptRam + ' ' + ramToBuy);
-						if (ram > ramToBuy) {
-							await fulfill(ns, queue.shift(), settleServer.hostname);
-						} else if (hostname = await purchaseThreadpoolServer(ns)) {
-							await fulfill(ns, queue.shift(), hostname);
-						} else if (ram >= scriptRam) {
-							await fulfill(ns, queue.shift(), settleServer.hostname);
-						}
+					} else if (settleServer && availableRam(settleServer) >= scriptRam) {
+						await fulfill(ns, queue.shift(), settleServer.hostname);
 					}
 					continue;
 				}

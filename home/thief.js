@@ -1,5 +1,5 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
-import { uuid } from './lib/util';
+// import { uuid } from './lib/util';
 import { delegateAny } from './lib/scheduler-delegate';
 import { logger } from './logger';
 
@@ -77,7 +77,7 @@ const groom = async (ns, hostname) => {
         let threadsRemaining = weakThreads;
         ns.print(`Starting W-attack server=${hostname} W=${weakThreads} (${weakenTime}ms)`);
         while (threadsRemaining > 0) {
-            const { threads } = await delegateAny(ns, true)(WEAKEN, threadsRemaining, hostname, uuid());
+            const { threads } = await delegateAny(ns, true)(WEAKEN, threadsRemaining, hostname, crypto.randomUUID());
             threadsRemaining -= threads;
         }
         await ns.sleep(weakenTime);
@@ -89,9 +89,9 @@ const groom = async (ns, hostname) => {
         ns.print(`Starting GW-attack server=${hostname} G=${grow} W=${weak}`);
         try {
             if (weak > 0)
-                await delegateAny(ns, true)(WEAKEN, weak, hostname, uuid());
+                await delegateAny(ns, true)(WEAKEN, weak, hostname, crypto.randomUUID());
             if (grow > 0) {
-                await delegateAny(ns, true)(GROW, grow, hostname, uuid());
+                await delegateAny(ns, true)(GROW, grow, hostname, crypto.randomUUID());
             }
             await ns.sleep(weakenWait);
         } catch (error) {

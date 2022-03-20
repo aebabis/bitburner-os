@@ -1,4 +1,4 @@
-export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
+// export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
 
 export const by = (prop) => {
 	let val = prop;

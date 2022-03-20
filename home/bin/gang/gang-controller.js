@@ -1,6 +1,5 @@
 import { GANG_DATA, GANG_CACHE } from './etc/filenames';
 import { snippet, delegate, delegateAnonymous } from './lib/scheduler-delegate';
-import { uuid } from './lib/util';
 
 // import { printTaskTable } from './bin/gang/task-table';
 // import { by } from './lib/util';
@@ -47,7 +46,7 @@ export async function main(ns) {
 
     const recruit = RepeatingTask(async() => {
         return delegateAnonymous(ns)(snippet(`
-            const NAME_GEN = '${uuid()}';
+            const NAME_GEN = '${crypto.randomUUID()}';
             while(ns.gang.canRecruitMember())
                 ns.gang.recruitMember(NAME_GEN);`));
     }, 10000);

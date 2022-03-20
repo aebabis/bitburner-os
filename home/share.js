@@ -1,6 +1,6 @@
 import { SHARE_FILE } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
-import { uuid } from './lib/util';
+// import { uuid } from './lib/util';
 import { nmap } from './lib/nmap';
 
 const SHARE = '/bin/gen/share.js';
@@ -81,7 +81,7 @@ export async function main(ns) {
             ns.print(`Need ${threadsNeeded} more threads`);
             wait = MIN_WAIT;
             try {
-                await delegateAny(ns)(SHARE, threadsNeeded, uuid());
+                await delegateAny(ns)(SHARE, threadsNeeded, crypto.randomUUID());
             } catch (error) {
                 ns.print(`ERROR ` + error);
             }

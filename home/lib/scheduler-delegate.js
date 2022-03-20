@@ -1,19 +1,14 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from './etc/ports';
 import { SCH_TMP_DIR } from './etc/config';
-import { logger } from './logger';
-import { uuid } from './lib/util';
 import Ports from './lib/ports';
-
-// Fire-and-forget scheduler routines for
-// tasks that don't need process info
-// and want to save RAM
+import { logger } from './logger';
 
 export const snippet = (statements) => `export async function main(ns) {\n${statements}\n}`;
 
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
     const {reap} = options;
-    const ticket = response ? uuid() : undefined;
+    const ticket = response ? crypto.randomUUID() : undefined;
     const sender = ns.getHostname();
     const message = JSON.stringify({
         script, host, numThreads, args, sender, ticket, reap, isDelegated: true });
@@ -42,7 +37,7 @@ export const delegateAny = (ns, response, options) => async (script, numThreads=
 
 /** @param {NS} ns **/
 export const delegateAnonymous = (ns, response) => async(src, host=null, numThreads=1, ...args) => {
-    const filename = SCH_TMP_DIR + uuid() + '.js';
+    const filename = '/' + SCH_TMP_DIR + crypto.randomUUID() + '.js';
     await ns.write(filename, src, 'w');
     return delegate(ns, response, { reap: true })(filename, host, numThreads, ...args);
 }

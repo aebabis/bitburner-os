@@ -9,6 +9,6 @@ export const infect = async (ns, ...hostnames) => {
 }
 
 /** @param {NS} ns **/
-export const main = async (ns) => {
+export async function main (ns) {
     return infect(ns, ...ns.args);
 }

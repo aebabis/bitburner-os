@@ -58,7 +58,7 @@ export async function main(ns) {
             if (servers.length > 0) {
                 const { hostname } = servers[0];
                 const handle = await delegateAny(ns, true)(THIEF, 1, hostname);
-                ns.tprint(JSON.stringify(handle));
+                logger(ns).log(handle);
                 procs[hostname] = handle;
             }
         } catch (error) {
