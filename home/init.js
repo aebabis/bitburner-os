@@ -1,5 +1,7 @@
+import { SCH_TMP_DIR } from './etc/config';
 import { HOSTSFILE, SHARE_FILE, BROKER_FILE } from './etc/filenames';
 import { delegate, delegateAny } from './lib/scheduler-delegate.js';
+import { nmap } from './lib/nmap';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -25,19 +27,26 @@ export async function main(ns) {
 
     const start = async (script, ...args) => startAt(script, 'home', ...args);
 
-
+    ns.rm(HOSTSFILE);
     await ns.write(SHARE_FILE,  0,    'w');  // No faction, no share
     await ns.write(BROKER_FILE, 1e10, 'w');
+
+	// Since we're restarting, clear queued jobs.
+    nmap(ns).forEach((hostname) => {
+        ns.ls(hostname, SCH_TMP_DIR).forEach(filename=>ns.rm(filename, hostname));
+    });
 
     // Clear all ports
     for (let i = 1; i <= 20; i++)
         ns.clearPort(i);
 
-    ns.exec('/bin/nmap.js', 'home');
+    ns.exec('/lib/nmap.js', 'home');
 	ns.exec('scheduler.js', 'home', 1);
     ns.tprint('scheduler.js');
     ns.tail('scheduler.js');
 
+    while (await ns.read(HOSTSFILE) === '')
+        await ns.sleep(50);
     const hostnames = (await ns.read(HOSTSFILE)).split(',');
     // nmap(ns).forEach((hostname) => {
     //     if (hostname === 'home')

@@ -55,7 +55,7 @@ export const purchaseThreadpoolServer = async (ns) => {
 		wrotePurchaseSrc = true;
 		await ns.write(PURCHASE, PURCHASE_SRC, 'w');
 	}
-
+	// await execAnyHost(ns)(PURCHASE);
 	let hostname = ns.purchaseServer(THREADPOOL_NAME, 2);
 	if (hostname !== '') {
 		return hostname;

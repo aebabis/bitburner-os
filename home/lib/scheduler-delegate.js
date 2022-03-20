@@ -1,5 +1,5 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from './etc/ports';
-import { SCHEDULER_TMP } from './etc/config';
+import { SCH_TMP_DIR } from './etc/config';
 import { logger } from './logger';
 import { uuid } from './lib/util';
 import Ports from './lib/ports';
@@ -42,7 +42,7 @@ export const delegateAny = (ns, response, options) => async (script, numThreads=
 
 /** @param {NS} ns **/
 export const delegateAnonymous = (ns, response) => async(src, host=null, numThreads=1, ...args) => {
-    const filename = SCHEDULER_TMP + uuid() + '.js';
+    const filename = SCH_TMP_DIR + uuid() + '.js';
     await ns.write(filename, src, 'w');
     return delegate(ns, response, { reap: true })(filename, host, numThreads, ...args);
 }

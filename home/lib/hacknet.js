@@ -11,7 +11,7 @@ export function coreUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
 export const getNodeData = (ns) => {
     const numNodes = ns.hacknet.numNodes();
     const nodes = new Array(numNodes).fill(null).map((_, i) => ns.hacknet.getNodeStats(i));
-    const prodFactor = ns.getHacknetMultipliers().production;
+    const prodFactor = 1; // ns.getHacknetMultipliers().production;
     const m = n => ns.nFormat(n, '$0.a');
     return nodes.map((stats, i) => {
         const lp = prodFactor * levelUpgradeProfit(stats.level, stats.ram, stats.cores);

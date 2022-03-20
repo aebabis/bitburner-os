@@ -1,4 +1,4 @@
-import { SCHEDULER_TMP } from './etc/config';
+import { SCH_TMP_DIR } from './etc/config';
 import { logger } from './logger';
 import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
 
@@ -11,7 +11,7 @@ export const clean = (() => {
 		if (Date.now() - lastRun < 1000)
 			return;
 		lastRun = Date.now();
-		ls('home', SCHEDULER_TMP).forEach((filename) => {
+		ls('home', SCH_TMP_DIR).forEach((filename) => {
 			const pid = filePids[filename];
 			if (pid != null && !ns.getRunningScript(pid)) {
 				ns.rm(filename);
@@ -51,9 +51,8 @@ export const checkPort = async (ns, queue) => {
 }
 	
 /** @param {NS} ns **/
-export const fulfill = async (ns, process, server) => {
+export const fulfill = async (ns, process, hostname) => {
 	const { script, numThreads, args, sender, ticket } = process;
-	const { hostname } = server;
 	const scriptRam = ns.getServerUsedRam(hostname)
 	const ramAvailable = ns.getServerMaxRam(hostname) - scriptRam;
 	const maxThreads = Math.floor(ramAvailable / scriptRam);
