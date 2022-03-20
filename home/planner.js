@@ -58,7 +58,7 @@ export async function main(ns) {
             try {
                 await task.check();
             } catch (error) {
-                logger(ns).error(error);
+                await logger(ns).error(error);
             }
         }
         await ns.sleep(1000);

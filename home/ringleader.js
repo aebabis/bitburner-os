@@ -58,11 +58,11 @@ export async function main(ns) {
             if (servers.length > 0) {
                 const { hostname } = servers[0];
                 const handle = await delegateAny(ns, true)(THIEF, 1, hostname);
-                logger(ns).log(handle);
+                // logger(ns).log(handle);
                 procs[hostname] = handle;
             }
         } catch (error) {
-            ns.print(error);
+            await logger(ns)(error);
             await console.error(error);
         }
         await ns.sleep(1000);

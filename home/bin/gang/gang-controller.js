@@ -39,14 +39,11 @@ export async function main(ns) {
     };
 
     const recruit = RepeatingTask(async() => {
-        return delegateAnonymous(ns)(snippet(`
-            const NAME_GEN = '${crypto.randomUUID()}';
-            while(ns.gang.canRecruitMember())
-                ns.gang.recruitMember(NAME_GEN);`));
+        return delegate(ns)('/bin/gang/recruit.js');
     }, 10000);
 
     const assign = RepeatingTask(async() => {
-        return delegate(ns)('/bin/gang/assign-members.js', 'home');
+        return delegate(ns)('/bin/gang/assign-members.js');
     }, 5000);
 
     // Next RepeatingTask:

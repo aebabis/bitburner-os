@@ -54,7 +54,7 @@ export async function main(ns) {
 		const rootServers = hostnames
 			.filter(ns.hasRootAccess)
 			.map(getRamInfo)//.filter(server=>server.hasAdminRights)
-			.sort(by('ramAvailable'));
+			.sort(by(s=>-s.ramAvailable));
 		const purchasedServers = hostnames
 			.filter(hostname=>hostname.startsWith(THREADPOOL_NAME))
 			.map(getRamInfo);
@@ -105,6 +105,12 @@ export async function main(ns) {
 				}
 				const scriptRam = ns.getScriptRam(process.script, process.sender);
 				const ramRequired = scriptRam * process.numThreads;
+
+				const ramData = getRamData(ns);
+				const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
+				port.clear();
+				port.write(ramData);
+
 				if (process.host != null) {
 					// Specific server requested
 					const { maxRam, ramUsed } = getRamInfo(process.host);
@@ -119,11 +125,6 @@ export async function main(ns) {
 					}
 				} else {
 					// No preference; choose
-					const ramData = getRamData(ns);
-					const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
-					port.clear();
-					port.write(ramData);
-
 					const { rootServers, purchasedServers,
 						purchasedServersMaxedOut, purchasedServerLimit } = ramData;
 					const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);

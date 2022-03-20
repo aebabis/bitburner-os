@@ -8,7 +8,8 @@ const history = [];
 const process = (arg) => {
 	if (arg instanceof Error) {
 		return arg.name + ' ' + arg.message + ' ' + arg.lineNumber + ':' + arg.columnNumber + '\n' + arg.stack;
-	}
+	} else if (typeof arg === 'object')
+		return JSON.stringify(arg, null, 2);
 	return arg;
 }
 
