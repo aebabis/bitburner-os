@@ -1,7 +1,7 @@
 import { delegate } from './lib/scheduler-delegate.js';
 import { logger } from './logger';
 
-export const Service = (condition=()=>true, interval=0) => (script, target=null, numThreads=1, ...args) => {
+export const Service = (ns, condition=()=>true, interval=0) => (script, target=null, numThreads=1, ...args) => {
     const desc = (target == null) ?
         [script, numThreads, ...args].join(' ') :
         [script, target, numThreads, ...args].join(' ');
@@ -36,5 +36,5 @@ export const Service = (condition=()=>true, interval=0) => (script, target=null,
     }
 }
 
-export const AnyHostService = (condition=()=>true, interval) => (script, numThreads, ...args) =>
-    Service(condition, interval)(script, null, numThreads, ...args);
+export const AnyHostService = (ns, condition=()=>true, interval) => (script, numThreads, ...args) =>
+    Service(ns, condition, interval)(script, null, numThreads, ...args);

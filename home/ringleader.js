@@ -1,4 +1,6 @@
 import { HOSTSFILE, THIEF, WEAKEN, GROW, HACK } from './etc/filenames';
+import { PORT_SCH_RAM_DATA } from './etc/ports';
+import Ports from './lib/ports';
 import { delegateAny } from './lib/scheduler-delegate';
 import { by, waitToRead } from './lib/util';
 import { logger } from './logger';
@@ -35,6 +37,13 @@ export async function main(ns) {
     while(true) {
         try {
             ns.clearLog();
+            
+            const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
+            const ramData = port.peek();
+            if (ramData == null)
+                continue;
+            if (ramData.totalRamAvailable < 10 * 1.75)
+                continue;
 
             const hackingLevel = ns.getHackingLevel();
             // const freeRam = hostnames
@@ -62,9 +71,9 @@ export async function main(ns) {
                 procs[hostname] = handle;
             }
         } catch (error) {
-            await logger(ns)(error);
             await console.error(error);
+        } finally {
+            await ns.sleep(1000);
         }
-        await ns.sleep(1000);
     }
 }

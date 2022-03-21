@@ -4,7 +4,6 @@ import Ports from './lib/ports';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLog('ALL');
     while (true) {
         const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
         const ramData = port.peek();
@@ -24,7 +23,7 @@ export async function main(ns) {
             if (atCapacity) {
 		        const money = ns.getServerMoneyAvailable('home');
                 const atMaxServers = purchasedServers.length === purchasedServerLimit;
-                const lowerLimit = 2;
+                let lowerLimit = 2;
                 if (atMaxServers)
                     lowerLimit = purchasedServers[0].maxRam * 2;
                 let ram = purchasedServerMaxRam;

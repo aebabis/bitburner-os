@@ -60,8 +60,8 @@ export async function main(ns) {
 			.map(getRamInfo);
 		const purchasedServersMaxedOut = purchasedServers.length === purchasedServerLimit &&
 			purchasedServers.every(server=>server.maxRam===purchasedServerMaxRam);
-		const totalMaxRam = rootServers.map(s=>s.maxRam).reduce((a,b)=>a+b,0);
-		const totalRamUsed = rootServers.map(s=>s.ramUsed).reduce((a,b)=>a+b,0);
+		const totalMaxRam = rootServers.map(s=>s.maxRam).reduce((a,b)=>a+b,0) || 0;
+		const totalRamUsed = rootServers.map(s=>s.ramUsed).reduce((a,b)=>a+b,0) || 0;
 		const totalRamUnused = totalMaxRam - totalRamUsed;
 		const demand = queue.map(({ script, sender, numThreads }) => numThreads * ns.getScriptRam(script, sender))
 			.reduce((a,b)=>a+b, 0);
@@ -113,12 +113,8 @@ export async function main(ns) {
 
 				if (process.host != null) {
 					// Specific server requested
-					const { maxRam, ramUsed } = getRamInfo(process.host);
-					let ram = maxRam - (ramUsed||0);
-					if (process.host === 'home') {
-						ram -= 4; // Allow 4GB for user to run scripts
-					}
-					if (ramRequired <= ram) {
+					const { ramAvailable } = getRamInfo(process.host);
+					if (ramRequired <= ramAvailable) {
 						// await systemLog(ns, 'APPR', process.script, process.messageFilename);
 						await fulfill(ns, queue.splice(i, 1)[0], process.host);
 						continue;
