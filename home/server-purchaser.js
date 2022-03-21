@@ -4,6 +4,7 @@ import Ports from './lib/ports';
 
 /** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLog('ALL');
     while (true) {
         const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
         const ramData = port.peek();
