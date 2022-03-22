@@ -11,9 +11,11 @@ export async function main(ns) {
     await ns.write(GANG_DATA, '', 'w');
     await ns.write(GANG_CACHE, '', 'w');
 
+    let wait = 1000;
     do {
         await delegate(ns)('/bin/gang/gang-data.js', 'home');
-        await ns.sleep(1000);
+        await ns.sleep(wait);
+        wait = Math.min(60000, wait * 2);
     } while((await ns.read(GANG_DATA) === ''));
 
     // TODO: Enable automatic gang creation

@@ -35,11 +35,11 @@ export async function main(ns) {
 
 	const console = logger(ns);
 
-	const getRamInfo = (hostname) => {
+	const getRamInfo = (hostname, isHighPriority) => {
 		const maxRam = ns.getServerMaxRam(hostname);
 		const ramUsed = ns.getServerUsedRam(hostname);
 		const ramUnused = maxRam - ramUsed;
-		const ramAvailable = (hostname === 'home') ?
+		const ramAvailable = (hostname === 'home' && !isHighPriority) ?
 			Math.max(0, ramUnused - 8) : ramUnused;
 		return {
 			hostname,
@@ -113,7 +113,7 @@ export async function main(ns) {
 
 				if (process.host != null) {
 					// Specific server requested
-					const { ramAvailable } = getRamInfo(process.host);
+					const { ramAvailable } = getRamInfo(process.host, true);
 					if (ramRequired <= ramAvailable) {
 						// await systemLog(ns, 'APPR', process.script, process.messageFilename);
 						await fulfill(ns, queue.splice(i, 1)[0], process.host);
@@ -128,7 +128,7 @@ export async function main(ns) {
 					const servers = rootServers.slice(skip);
 
 					const server = servers.find(server => server.ramAvailable >= ramRequired);
-					const settleServer = servers[servers.length - 1];
+					const settleServer = servers[0];
 					if (server != null) {
 						await fulfill(ns, queue.shift(), server.hostname);
 					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {
