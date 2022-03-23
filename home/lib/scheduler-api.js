@@ -10,7 +10,7 @@ const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, .
 		script, host, numThreads, args,
 		sender, messageFilename,
 		time, waitTime,
-		toString: () => `${script} ${host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
+		toString: (hostname) => `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
 	};
 }
 
@@ -35,11 +35,15 @@ export const fulfill = async (ns, process, hostname) => {
 	const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
 	const maxThreads = Math.floor(ramAvailable / scriptRam);
 	const threads = Math.min(numThreads, maxThreads);
+	// logger(ns).info('Attempting to start: ' + process.toString(hostname) + ' ' + threads + '/' + maxThreads);
 	let pid = 0;
 	if (threads > 0) {
 		pid = ns.exec(script, hostname, threads, ...args);
+		if (pid === 0) {
+			logger(ns).error('Unable to start process: ' + process.toString(hostname))
+		}
 	} else {
-		logger(ns).error('Scheduler tried to run: ', script, hostname, threads+'/'+numThreads, ...args);
+		logger(ns).error('Scheduler tried to run: ' + process.toString());
 		// logger(ns).error('                        ', ns.getScriptRam(script, sender), ramAvailable);
 		return reject(ns, process);
 	}

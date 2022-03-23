@@ -19,7 +19,9 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
     const sender = ns.getHostname();
     const message = JSON.stringify({
         script, host, numThreads, args, sender, ticket, /*reap,*/ isDelegated: true });
-    while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message))
+    let start = Date.now();
+    while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message) && Date.now() - start < 60000)
+    // Timeout occurs if scheduler restarts
         await ns.sleep(50);
     await ns.sleep(50);
     if (response) {
@@ -34,6 +36,9 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
                 }
             }
             await ns.sleep(10);
+            if (Date.now() - start >= 60000) {
+                throw new Error('Timed-out');
+            }
         }
     }
 }

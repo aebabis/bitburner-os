@@ -28,7 +28,7 @@ export async function main(ns) {
             if (atCapacity) {
 		        const money = ns.getServerMoneyAvailable('home');
                 const atMaxServers = purchasedServers.length === purchasedServerLimit;
-                const [smallest] = purchasedServers.slice().sort(by(s=>s.availableRam));
+                const smallest = purchasedServers.reduce((s1,s2)=>s1.maxRam<s2.maxRam?s1:s2, purchasedServers[0]);
                 let lowerLimit = 2;
                 if (atMaxServers)
                     lowerLimit = smallest.maxRam * 2;

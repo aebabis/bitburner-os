@@ -1,7 +1,8 @@
 /** @param {NS} ns **/
 export const infect = async (ns, ...hostnames) => {
     for (const hostname of hostnames){
-        await ns.scp('logger.js', 'home', hostname);
+        const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
+        await ns.scp(rootJS               , 'home', hostname);
         await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);
         await ns.scp(ns.ls('home', 'lib/'), 'home', hostname);
         await ns.scp(ns.ls('home', 'bin/'), 'home', hostname);

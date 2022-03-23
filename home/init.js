@@ -1,9 +1,20 @@
-import { HOSTSFILE, SHARE_FILE, BROKER_FILE, STATIC_DATA } from './etc/filenames';
+import {
+    HOSTSFILE,
+    SHARE_FILE,
+    BROKER_FILE,
+    STATIC_DATA,
+    THIEF,
+    WEAKEN,
+    GROW,
+    HACK,
+} from './etc/filenames';
 import { writeHostsfile } from './lib/nmap';
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
+
+    ns.rm(HOSTSFILE);
 
     await ns.write(SHARE_FILE,  0,    'w');  // No faction, no share
     await ns.write(BROKER_FILE, 1e10, 'w');
@@ -26,10 +37,14 @@ export async function main(ns) {
         ns.clearPort(i);
     
     await ns.write(STATIC_DATA, JSON.stringify({
+        thiefScriptRam: ns.getScriptRam(THIEF),
+        weakenScriptRam: ns.getScriptRam(WEAKEN),
+        growScriptRam: ns.getScriptRam(GROW),
+        hackScriptRam: ns.getScriptRam(HACK),
 		purchasedServerMaxRam: ns.getPurchasedServerMaxRam(),
 		purchasedServerLimit: ns.getPurchasedServerLimit(),
     }, null, 2), 'w');
 
     ns.tprint('Starting scheduler');
-	ns.exec('scheduler.js', 'home');
+	ns.exec('scheduler.js', 'home', 1, 'bootstrap');
 }

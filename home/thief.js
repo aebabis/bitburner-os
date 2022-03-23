@@ -1,11 +1,10 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
-// import { uuid } from './lib/util';
 import { delegateAny } from './lib/scheduler-delegate';
+import { report } from './lib/thief-port';
 import { logger } from './logger';
 
-const THEFT_PORTION = .25;
+const THEFT_PORTION = .05;
 const SUBTASK_SPACING = 50;
-const DEFAULT_THREAD_COUNT = 1024;
 
 /** @param {NS} ns **/
 const getWThreads = (ns, targetDecrease, cores=1) => {
@@ -25,160 +24,148 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
     return Math.ceil(min) || 1;
 }
 
-/** @param {NS} ns **/
-const getHThreads = (ns, target, portion) => Math.ceil(portion / ns.hackAnalyze(target));
-
-/** @param {NS} ns **/
-const getGWThreads = (ns, server, multiplier, maxThreads, cores=1) => {
-    if (multiplier === Infinity) {
-        return { grow: maxThreads, weak: 0 };
+/** @param {NS} ns
+ * Gets a relative-time window for the start
+ * and end of a single HWGW frame.
+ **/
+const getNextHackFrame = async (ns, target, portion, [avoidBegin, avoidEnd]) => {
+    let newInterval = avoidBegin + ns.getHackTime(target) < avoidEnd;
+    let endAfter = avoidEnd;
+    if (newInterval) {
+        endAfter = avoidEnd + ns.getHackTime(target);
     }
-    const threads = Math.min(maxThreads, ns.growthAnalyze(server, multiplier, cores))
-    let min = 1;
-    let max = threads;
-    while (min < max) {
-        const growThreads = Math.floor((min + max) / 2);
-        const weakThreads = threads - growThreads;
-        const secIncrease = ns.growthAnalyzeSecurity(growThreads);
-        const secDecrease = ns.weakenAnalyze(weakThreads, cores);
-        if (secIncrease < secDecrease) {
-            min = growThreads + 1;
-        } else {
-            max = growThreads - 1;
-        }
-    }
-    const grow = Math.floor(min);
-    const weak = maxThreads - grow;
-    return { grow, weak };
-}
+    if (Date.now() + ns.getWeakenTime(target) - SUBTASK_SPACING < endAfter)
+        return null;
 
-/** @param {NS} ns **/
-const neededGrowth = (ns, hostname) => ns.getServerMaxMoney(hostname) / ns.getServerMoneyAvailable(hostname);
-
-/** @param {NS} ns **/
-const groom = async (ns, hostname) => {
-    const console = logger(ns);
-    ns.print('Attempting to groom ' + hostname);
-    const security = ns.getServerSecurityLevel(hostname);
-    const minSecurity = ns.getServerMinSecurityLevel(hostname);
-    const money = ns.getServerMoneyAvailable(hostname);
-    const maxMoney = ns.getServerMaxMoney(hostname);
-    const cores = 1; // TODO
-    const weakenTime = ns.getWeakenTime(hostname);
-
-    const secDecrease = security - minSecurity;
-    if (secDecrease > 0) {
-        const weakThreads = getWThreads(ns, secDecrease, cores);
-        if (weakThreads === Infinity) {
-            ns.print(`ERROR - Computed hack for ineligible server ${hostname}`);
-            await ns.sleep(10000);
-            return;
-        }
-        let threadsRemaining = weakThreads;
-        ns.print(`Starting W-attack server=${hostname} W=${weakThreads} (${weakenTime}ms)`);
-        while (threadsRemaining > 0) {
-            const { threads } = await delegateAny(ns, true)(WEAKEN, threadsRemaining, hostname, crypto.randomUUID());
-            threadsRemaining -= threads;
-        }
-        await ns.sleep(weakenTime);
-    } else if (security > minSecurity || money < maxMoney) {
-        const growTime = ns.getGrowTime(hostname);
-        const weakenWait = Math.max(growTime + 50 - weakenTime, 0);
-        const growAmount = neededGrowth(ns, hostname);
-        const { grow, weak } = getGWThreads(ns, hostname, growAmount, DEFAULT_THREAD_COUNT, cores);
-        ns.print(`Starting GW-attack server=${hostname} G=${grow} W=${weak}`);
-        try {
-            if (weak > 0)
-                await delegateAny(ns, true)(WEAKEN, weak, hostname, crypto.randomUUID());
-            if (grow > 0) {
-                await delegateAny(ns, true)(GROW, grow, hostname, crypto.randomUUID());
-            }
-            await ns.sleep(weakenWait);
-        } catch (error) {
-            await console.error(error);
-        }
-        await ns.sleep(200);
-    }
-}
-
-/** @param {NS} ns **/
-const getHackSchedule = async (ns, target) => {
-    const weakTime = ns.getWeakenTime(target);
-
-    const hackThreads = Math.min(1024, getHThreads(ns, target, THEFT_PORTION));
+    const hackThreads = Math.floor(portion / ns.hackAnalyze(target));
     const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
-    
-    const weakThreads1 = getWThreads(ns, secIncrease1);
+
+    const weaken1Threads = getWThreads(ns, secIncrease1);
 
     const growFactor  = 1 / (1 - THEFT_PORTION);
     const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
 
     const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
-    const weakThreads2 = getWThreads(ns, secIncrease2);
+    const weaken2Threads = getWThreads(ns, secIncrease2);
 
-    // WINDOWS:
-    // WWWWWWWWWWWWWWWWWWWWWWWWWWWW
-    //   WWWWWWWWWWWWWWWWWWWWWWWWWWWW
-    //        GGGGGGGGGGGGGGGGGGGGGG
-    //                   HHHHHHHHH
-    const weak1Start = 0;
-    const weak2Start = weak1Start + SUBTASK_SPACING * 2;
-    // const growStart  = weakTime + SUBTASK_SPACING - growTime;
-    // const hackStart  = weakTime - SUBTASK_SPACING * 3 - growTime;
-
-    return async () => {
-        await delegateAny(ns, true)(WEAKEN, weakThreads1, target);
-        const start = Date.now();
-        const ts = () => Date.now() - start;
-        ns.print(`Attack started on ${target}. W=[${weak1Start}, ${weak2Start} ? ?]`);
-        ns.print(`  (${ts()}) weaken T=${weakThreads1}`);
-        await ns.sleep(weak2Start - ts());
-
-        await delegateAny(ns, true)(WEAKEN, weakThreads2, target);
-        ns.print(`  (${ts()}) weaken T=${weakThreads2}`);
-        const growTime = ns.getGrowTime(target);
-        const growStart = weakTime + SUBTASK_SPACING - growTime;
-        await ns.sleep(growStart - ts());
-
-        await delegateAny(ns, true)(GROW, growThreads, target);
-        ns.print(`  (${ts()}) grow   T=${growThreads}`);
-        const hackTime  = ns.getHackTime(target);
-        const hackStart = weakTime - SUBTASK_SPACING - hackTime;
-        const hackDelay = hackStart - ts();
-
-        // TODO: Write a batcher to prevent excessive job delay
-        // if (hackDelay > 0) {
-            await ns.sleep(hackDelay);
-            const actualHackThreads = getHThreads(ns, target, THEFT_PORTION);
-            await delegateAny(ns, true)(HACK, actualHackThreads, target);
-            ns.print(`  (${ts()}) hack   T=${actualHackThreads}`);
-        // } else {
-        //     ns.print(`  (${ts()}) hack WINDOW CLOSED`);
-        // }
+    const startSubtask = async (task, taskThreads) => {
+        // ns.print('Attempting ' + task + ' with t=' + taskThreads);
+        const { threads } = await delegateAny(ns, true)(task, taskThreads, target, crypto.randomUUID());
+        // ns.print('  t_a=' + threads);
+        if (threads < taskThreads) {
+            return threads;
+        } else {
+            canProceed = null;
+            return threads;
+        }
     }
-}
 
-const isServerGroomed = (ns, hostname) => (
-    ns.getServerMoneyAvailable(hostname) / ns.getServerMaxMoney(hostname) > .99 &&
-    ns.getServerMinSecurityLevel(hostname) / ns.getServerSecurityLevel(hostname) > .99
-);
+    const status = {
+        weaken1Threads: weaken1Threads.toString(),
+        weaken2Threads: '?',
+        growThreads: '?',
+        hackThreads: '?',
+    };
+
+    let startTime;
+    let weaken1End;
+
+    let canProceed;
+    let next;
+
+    const dispatchWeaken1 = async () => {
+        if (await startSubtask(WEAKEN, weaken1Threads) === weaken1Threads) {
+            startTime = Date.now();
+            weaken1End = startTime + ns.getWeakenTime(target);
+            canProceed = () => Date.now() + ns.getWeakenTime(target) >= weaken1End + SUBTASK_SPACING * 2;
+            next = dispatchWeaken2;
+            const intervalStart = newInterval ? weaken1End - SUBTASK_SPACING : avoidBegin;
+            const intervalEnd = weaken1End + SUBTASK_SPACING * 4;
+            return [intervalStart, intervalEnd];
+        }
+        return null;
+    }
+
+    const dispatchWeaken2 = async () => {
+        if (await startSubtask(WEAKEN, weaken2Threads) === weaken2Threads) {
+            status.weaken2Threads = weaken2Threads.toString();
+            canProceed = () => Date.now() + ns.getGrowTime(target) >= weaken1End - SUBTASK_SPACING;
+            next = dispatchGrow;
+        }
+    }
+
+    const dispatchGrow = async () => {
+        const neededGrowth = ns.getServerMaxMoney(target) / ns.getServerMoneyAvailable(target);
+        const actualGrowthFactor = neededGrowth * growFactor;
+        const actualGrowThreads = Math.ceil(ns.growthAnalyze(target, actualGrowthFactor));
+        if (await startSubtask(GROW, actualGrowThreads) === actualGrowThreads) {
+            status.growThreads = actualGrowThreads.toString();
+            canProceed = () => Date.now() < avoidBegin && Date.now() + ns.getHackTime(target) >= endAfter;
+            next = dispatchHack;
+        }
+    }
+
+    const dispatchHack = async () => {
+        const preferredHackThreads = Math.ceil(portion / ns.hackAnalyze(target));
+        const actualHackThreads = await startSubtask(HACK, preferredHackThreads);
+        status.hackThreads = actualHackThreads.toString();
+        canProceed = null;
+    }
+
+    const done = () => canProceed == null || Date.now() > endAfter;
+    const ended = () => Date.now() > endAfter;
+
+    const tableString = () => {
+        const ago = startTime - Date.now();
+        const weaken1T = status.weaken1Threads.padStart(4);
+        const weaken2T = status.weaken2Threads.padStart(4);
+        const growT = status.growThreads.padStart(4);
+        const hackT = status.hackThreads.padStart(4);
+        return `${startTime}(${ago})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
+    };
+
+    const interval = await dispatchWeaken1();
+    if (interval == null)
+        return null;
+
+    return {
+        next: () => next(),
+        canProceed: () => canProceed(),
+        done,
+        ended,
+        getProtectedInterval: () => interval,
+        tableString,
+    };
+}
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    // const console = logger(ns);
     const target = ns.args[0];
+    report(ns, target, null);
+    let frames = [];
+    let interval = [0, 0];
     while(true) {
         try {
-            while (isServerGroomed(ns, target)) {
-                const hwgwFrame = await getHackSchedule(ns, target);
-                await hwgwFrame();
-                await ns.sleep(50);
+            ns.print(1);
+            frames = frames.filter(frame=>!frame.ended());
+            ns.print(frames.length);
+            for (const frame of frames)
+                if (!frame.done() && frame.canProceed())
+                    await frame.next();
+            ns.print('?');
+            const nextFrame = await getNextHackFrame(ns, target, THEFT_PORTION, interval);
+            ns.print(nextFrame);
+            if (nextFrame) {
+                frames.push(nextFrame);
+                interval = nextFrame.getProtectedInterval();
             }
-            await groom(ns, target);
+            ns.clearLog();
+            frames.slice().reverse().forEach(frame=>ns.print(frame.tableString()));
         } catch (error) {
             await logger(ns).error(error);
+        } finally {
+            await ns.sleep(SUBTASK_SPACING / 5);
         }
-        await ns.sleep(50);
     }
 }

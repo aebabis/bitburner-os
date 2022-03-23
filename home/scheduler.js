@@ -5,6 +5,7 @@ import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
 import { logger } from './logger';
+import { nmap } from './lib/nmap';
 
 const SCHEDULER_HOME = 'home';
 
@@ -20,18 +21,27 @@ export async function main(ns) {
 	// by starting the planner and the logger.
 	// This is done since these 3 programs can't
 	// run on 8GB ram when init.js is still running.
-	await ns.sleep(50);
-	ns.exec('planner.js', 'home');
-	ns.exec('logger.js', 'home');
+	if (ns.args[0] === 'bootstrap') {
+		await ns.sleep(50);
+		ns.exec('planner.js', 'home');
+		ns.exec('logger.js', 'home');
+	} else {
+		// If not running in bootstrap mode, then
+		// assume init.js hasn't copied files.
+		const hostnames = nmap(ns);
+		for (const hostname of hostnames){
+			const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
+			await ns.scp(rootJS,                'home', hostname);
+			await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);
+			await ns.scp(ns.ls('home', 'lib/'), 'home', hostname);
+			await ns.scp(ns.ls('home', 'bin/'), 'home', hostname);
+		}
+	}
 
 	const {
 		purchasedServerMaxRam,
 		purchasedServerLimit,
 	} = JSON.parse(await ns.read(STATIC_DATA));
-
-    while (await ns.read(HOSTSFILE) === '')
-        await ns.sleep(50);
-    const hostnames = (await ns.read(HOSTSFILE)).split(',');
 
 	const console = logger(ns);
 
@@ -51,6 +61,7 @@ export async function main(ns) {
 	};
 
 	const getRamData = (ns) => {
+		const hostnames = nmap(ns);
 		const rootServers = hostnames
 			.filter(ns.hasRootAccess)
 			.map(getRamInfo)//.filter(server=>server.hasAdminRights)
@@ -83,7 +94,7 @@ export async function main(ns) {
 	const queue = [];
 	while (true) {
 		try {
-			ns.clearLog();
+			// ns.clearLog();
 			// clean(ns);
 			await checkPort(ns, queue);
 			if (queue.length === 0) {
@@ -123,16 +134,16 @@ export async function main(ns) {
 					// No preference; choose
 					const { rootServers, purchasedServers,
 						purchasedServersMaxedOut, purchasedServerLimit } = ramData;
-					const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);
-					const skip = purchasedServersMaxedOut ? 0 : empty;
-					const servers = rootServers.slice(skip);
+					// const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);
+					// const skip = purchasedServersMaxedOut ? 0 : empty;
+					// const servers = rootServers.slice(0, rootServers.length - skip);
 
-					const server = servers.find(server => server.ramAvailable >= ramRequired);
-					const settleServer = servers[0];
+					const server = rootServers.find(server => server.ramAvailable >= ramRequired);
+					const settleServer = rootServers[0];
 					if (server != null) {
-						await fulfill(ns, queue.shift(), server.hostname);
+						await fulfill(ns, queue.splice(i, 1)[0], server.hostname);
 					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {
-						await fulfill(ns, queue.shift(), settleServer.hostname);
+						await fulfill(ns, queue.splice(i, 1)[0], settleServer.hostname);
 					}
 					continue;
 				}
