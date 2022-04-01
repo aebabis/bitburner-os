@@ -29,13 +29,12 @@ export const checkPort = async (ns, queue) => {
 }
 	
 /** @param {NS} ns **/
-export const fulfill = async (ns, process, hostname) => {
+export const fulfill = async (ns, process, server) => {
+	const { hostname, ramAvailable } = server;
 	const { script, numThreads, args, sender, ticket } = process;
 	const scriptRam = ns.getScriptRam(script, sender);
-	const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
 	const maxThreads = Math.floor(ramAvailable / scriptRam);
 	const threads = Math.min(numThreads, maxThreads);
-	// logger(ns).info('Attempting to start: ' + process.toString(hostname) + ' ' + threads + '/' + maxThreads);
 	let pid = 0;
 	if (threads > 0) {
 		pid = ns.exec(script, hostname, threads, ...args);
@@ -44,7 +43,6 @@ export const fulfill = async (ns, process, hostname) => {
 		}
 	} else {
 		logger(ns).error('Scheduler tried to run: ' + process.toString());
-		// logger(ns).error('                        ', ns.getScriptRam(script, sender), ramAvailable);
 		return reject(ns, process);
 	}
 	if (ticket != null)

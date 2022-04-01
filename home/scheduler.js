@@ -94,7 +94,7 @@ export async function main(ns) {
 	const queue = [];
 	while (true) {
 		try {
-			// ns.clearLog();
+			ns.clearLog();
 			// clean(ns);
 			await checkPort(ns, queue);
 			if (queue.length === 0) {
@@ -124,10 +124,10 @@ export async function main(ns) {
 
 				if (process.host != null) {
 					// Specific server requested
-					const { ramAvailable } = getRamInfo(process.host, true);
-					if (ramRequired <= ramAvailable) {
+					const server = getRamInfo(process.host, true);
+					if (ramRequired <= server.ramAvailable) {
 						// await systemLog(ns, 'APPR', process.script, process.messageFilename);
-						await fulfill(ns, queue.splice(i, 1)[0], process.host);
+						await fulfill(ns, queue.splice(i, 1)[0], server);
 						continue;
 					}
 				} else {
@@ -141,9 +141,9 @@ export async function main(ns) {
 					const server = rootServers.find(server => server.ramAvailable >= ramRequired);
 					const settleServer = rootServers[0];
 					if (server != null) {
-						await fulfill(ns, queue.splice(i, 1)[0], server.hostname);
+						await fulfill(ns, queue.splice(i, 1)[0], server);
 					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {
-						await fulfill(ns, queue.splice(i, 1)[0], settleServer.hostname);
+						await fulfill(ns, queue.splice(i, 1)[0], settleServer);
 					}
 					continue;
 				}

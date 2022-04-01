@@ -21,8 +21,14 @@ export const logger = (ns) => {
 		const message = args.map(process).join(' ');
 		const output =  `${lead.padEnd(20)} ${message}`;
 		ns.print(output);
-		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output))
+		let time = Date.now();
+		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output)) {
+			if (Date.now() - time > 1000) {
+				ns.tprint('ERROR - Log stream blocked. Do you need to start the logger?');
+				return;
+			}
 			await ns.sleep(10);
+		}
 	}
 	return {
 		log:   async (...args) => await send('SUCCESS', ...args),
