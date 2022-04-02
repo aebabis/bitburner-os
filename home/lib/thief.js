@@ -167,14 +167,14 @@ class HWGWFrame {
         const { ns, target, state } = this;
         switch (state) {
             case 'START':
-                return Date.now() + ns.getWeakenTime(target) - SUBTASK_SPACING > this.endAfter;
+                return Date.now() + ns.getWeakenTime(target) > this.endAfter + SUBTASK_SPACING;
             case 'WEAKEN1':
                 return Date.now() + ns.getWeakenTime(target) >= this.weaken1End + SUBTASK_SPACING * 2;
             case 'WEAKEN2':
                 return Date.now() + ns.getGrowTime(target) >= this.weaken1End + SUBTASK_SPACING;
             case 'GROW':
                 return Date.now() < this.protectedIntervalStart &&
-                       Date.now() + ns.getHackTime(target) >= this.protectedIntervalEnd;
+                       Date.now() + ns.getHackTime(target) >= this.weaken1End + SUBTASK_SPACING * 3;
             case 'HACK':
             case 'DEAD':
             case 'DONE':
@@ -208,7 +208,7 @@ class HWGWFrame {
                 break;
             case 'WEAKEN2':
                 this.actual.growThreads = await startSubtask(ns, this.target, GROW, this.predicted.growThreads);
-                if (this.actual.growThreads !== this.predicted.growThreads) {
+                if (this.actual.growThreads === 0) {
                     this.state = 'DEAD'
                 } else {
                     this.state = 'GROW';
@@ -218,14 +218,32 @@ class HWGWFrame {
                 const maxMoney = ns.getServerMaxMoney(this.target);
                 const moneyAvailable = ns.getServerMoneyAvailable(this.target);
                 if (moneyAvailable / maxMoney < .99) {
-                    // ns.tprint(`dying ${this.target}: ${moneyAvailable}/${maxMoney}`);
                     this.state = 'DEAD';
                     return;
                 }
-                // Recompute, in case hack level has changed.
-                // const preferredHackThreads = Math.ceil(this.portion / ns.hackAnalyze(this.target));
-                this.actual.hackThreads = await startSubtask(ns, this.target, HACK, this.predicted.hackThreads);
-                // ns.tprint(this.actual.hackThreads + '/' + preferredHackThreads);
+
+                // Adjust hack threads requested
+                // based on current level and actual
+                // grow threads obtained.
+                let requestedHackThreads = this.predicted.hackThreads;
+                while (requestedHackThreads > 0) {
+                    const actualPortion = requestedHackThreads * ns.hackAnalyze(target);
+                    const growFactor = 1 / (1 - actualPortion);
+                    const requiredGrowThreads = Math.ceil(
+                        ns.growthAnalyze(target, growFactor));
+                    if (requiredGrowThreads <= this.actual.growThreads)
+                        break;
+                    else
+                        requestedHackThreads--;
+                }
+
+                if (requestedHackThreads === 0) {
+                    this.state = 'DEAD';
+                    break;
+                }
+
+                this.actual.hackThreads = await startSubtask(
+                    ns, this.target, HACK, requestedHackThreads);
                 if (this.actual.hackThreads === 0) {
                     this.state = 'DEAD';
                 } else {
@@ -244,12 +262,14 @@ class HWGWFrame {
     }
 
     toString() {
+        const num = (a, b) => a != null ? a : b;
+        const state = this.state.padEnd(7);
         const ago = this.startTime - Date.now();
-        const weaken1T = this.actual.weaken1Threads || small(this.predicted.weaken1Threads);
-        const weaken2T = this.actual.weaken2Threads || small(this.predicted.weaken2Threads);
-        const growT = this.actual.growThreads || small(this.predicted.growThreads);
-        const hackT = this.actual.hackThreads || small(this.predicted.hackThreads);
-        return `${this.target} ${this.startTime}(${ago})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
+        const weaken1T = num(this.actual.weaken1Threads, small(this.predicted.weaken1Threads));
+        const weaken2T = num(this.actual.weaken2Threads, small(this.predicted.weaken2Threads));
+        const growT = num(this.actual.growThreads, small(this.predicted.growThreads));
+        const hackT = num(this.actual.hackThreads, small(this.predicted.hackThreads));
+        return `${this.target} ${state}(${ago.toString().padStart(6)})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
     }
 }
 
@@ -326,5 +346,6 @@ export default class Thief {
 export async function main(ns) {
     ns.disableLog('ALL');
     const thief = new Thief(ns, ns.args[0]);
+    ns.tprint(ns.getHackTime(ns.args[0]));
     ns.tprint(thief.getPredictedIncomeRatePerThread(ns.args[1] || .01) + '$/thread-second');
 }
