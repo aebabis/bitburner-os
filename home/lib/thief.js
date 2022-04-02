@@ -73,6 +73,54 @@ class HWGWFrame {
         this.actual = {};
     }
 
+    static computeMaxTheftPortion(ns, target, processThreadLimit) {
+        // TODO: bin search for optimal params
+        let min = 0;
+        let max = 1;
+        let attemptsRemaining = 20;
+        while (attemptsRemaining --> 0) {
+            const portion = (min + max) / 2;
+            const frame = new HWGWFrame(ns, target, portion, [0, 0]);
+            const threads = Math.max(frame.predicted.growThreads,
+                frame.predicted.hackThreads);
+            if (threads < processThreadLimit)
+                min = portion;
+            else if (threads > processThreadLimit)
+                max = portion;
+            else
+                return portion;
+        }
+        return min;
+    }
+
+    static getOptimalFrame(ns, target, processThreadLimit, interval) {
+        const maxPortion = this.computeMaxTheftPortion(
+            ns, target, processThreadLimit);
+        // ns.print('MAX PORTION: ', maxPortion);
+        // TODO: bin search for optimal params
+        let min = new HWGWFrame(ns, target, .00001, interval);
+        let mid = new HWGWFrame(ns, target, maxPortion/2, interval);
+        let max = new HWGWFrame(ns, target, maxPortion, interval);
+        let attemptsRemaining = 20;
+        while (attemptsRemaining --> 0) {
+            const portion1 = (min.portion + mid.portion) / 2;
+            const portion2 = (mid.portion + max.portion) / 2;
+            const quart1 = new HWGWFrame(ns, target, portion1, interval);
+            const quart3 = new HWGWFrame(ns, target, portion2, interval);
+            if (quart1.getPredictedIncomeRatePerThread() >
+                mid.getPredictedIncomeRatePerThread()) {
+                    max = mid;
+                    mid = quart1;
+                }
+            else {
+                min = mid;
+                mid = quart3;
+            }
+        }
+        // ns.print('SELECTED PORTION: ', mid.portion);
+        return mid;
+    }
+
     getPredictedThreads() {
         const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
         return weaken1Threads + weaken2Threads + growThreads + hackThreads;
@@ -167,9 +215,17 @@ class HWGWFrame {
                 }
                 break;
             case 'GROW':
+                const maxMoney = ns.getServerMaxMoney(this.target);
+                const moneyAvailable = ns.getServerMoneyAvailable(this.target);
+                if (moneyAvailable / maxMoney < .99) {
+                    // ns.tprint(`dying ${this.target}: ${moneyAvailable}/${maxMoney}`);
+                    this.state = 'DEAD';
+                    return;
+                }
                 // Recompute, in case hack level has changed.
-                const preferredHackThreads = Math.ceil(this.portion / ns.hackAnalyze(this.target));
-                this.actual.hackThreads = await startSubtask(ns, this.target, HACK, preferredHackThreads);
+                // const preferredHackThreads = Math.ceil(this.portion / ns.hackAnalyze(this.target));
+                this.actual.hackThreads = await startSubtask(ns, this.target, HACK, this.predicted.hackThreads);
+                // ns.tprint(this.actual.hackThreads + '/' + preferredHackThreads);
                 if (this.actual.hackThreads === 0) {
                     this.state = 'DEAD';
                 } else {
@@ -210,7 +266,7 @@ export default class Thief {
     }
 
     canHack() {
-        return this.ns.getHackingLevel() >= this.ns.getServerRequiredHackingLevel(this.server);
+        return this.ns.hasRootAccess(this.server);
     }
 
     getCurrentFrame() {
@@ -222,8 +278,12 @@ export default class Thief {
         return currentFrame == null || currentFrame.hasDispatchedWeaken2();
     }
 
-    async startNextFrame() {
-        const nextFrame = new HWGWFrame(this.ns, this.server, .01, this.protectedInterval);
+    async startNextFrame(growThreadLimit) {
+        const { ns, server, protectedInterval } = this;
+        const nextFrame = HWGWFrame.getOptimalFrame(
+            ns, server, growThreadLimit, protectedInterval);
+        if (nextFrame.predicted.hackThreads === 0)
+            return;
         this.frames.push(nextFrame);
         if (nextFrame.canProceed())
             await nextFrame.next();

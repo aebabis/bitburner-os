@@ -19,7 +19,14 @@ export async function main(ns) {
 
     const prioritze = () => thieves
         .filter(thief => thief.canHack())
-        .sort(by(thief => -thief.getPredictedIncomeRatePerThread()));
+        // .sort(by(thief => -thief.getPredictedIncomeRatePerThread()))
+        .sort(by(thief => {
+            const hostname = thief.getHostname();
+            return ns.getServerMinSecurityLevel(hostname);
+            // const maxedOut = ns.getServerMoneyAvailable(hostname)
+            //     / ns.getServerMaxMoney(hostname) >= .99;
+            // return maxedOut ? -1 : 1;
+        }));
 
     let viableThieves;
     let lastPriorization = 0;
@@ -47,15 +54,19 @@ export async function main(ns) {
                 .reduce((a,b)=>a+b, 0);
             
             const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
-
+            const maxServerRamAvailable = ramData.rootServers
+                .map(server => server.ramAvailable)
+                .reduce((a,b)=>a>b?a:b,0);
+            const processThreadLimit = Math.floor(maxServerRamAvailable / 1.75);
             
-            if (ramAvailable > 0) {
-                const thief = viableThieves[0];
-                if (thief.canStartNextFrame())
-                    await thief.startNextFrame();
-            }
             ns.clearLog();
-            viableThieves[0].printFrames();
+            viableThieves.forEach(thief => thief.printFrames());
+            if (ramAvailable > 0) {
+                const thief = viableThieves
+                    .find(thief => thief.canStartNextFrame());
+                if (thief != null)
+                    await thief.startNextFrame(processThreadLimit);
+            }
             // ns.print('----------------------------');
             // ns.print(reservedThreads, ramAvailable);
 

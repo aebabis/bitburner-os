@@ -9,9 +9,11 @@ export async function main(ns) {
 	} else if (command === 'replace') {
 		const hostnameToKill = ns.args[1];
 		const ram = +ns.args[2];
-		ns.killall(hostnameToKill);
-		ns.deleteServer(hostnameToKill);
-		await infect(ns, ns.purchaseServer('THREADPOOL', ram));
+		if (ns.getPurchasedServerCost(ram) <= ns.getServerMoneyAvailable('home')) {
+			ns.killall(hostnameToKill);
+			ns.deleteServer(hostnameToKill);
+			await infect(ns, ns.purchaseServer('THREADPOOL', ram));
+		}
 	} else {
 		throw new Error('Illegal command type ' + command);
 	}
