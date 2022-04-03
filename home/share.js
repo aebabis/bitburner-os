@@ -39,7 +39,7 @@ export async function main(ns) {
         const rate = +ns.args[0];
         if (rate === rate) {
             ns.tprint(`Setting share rate to ${rate}`);
-            await ns.write(CONFIG_FILE, rate, 'w');
+            await ns.write(SHARE_FILE, rate, 'w');
         }
         return;
     }
