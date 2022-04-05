@@ -23,7 +23,7 @@ export async function main(ns) {
 	// run on 8GB ram when init.js is still running.
 	if (ns.args[0] === 'bootstrap') {
 		await ns.sleep(50);
-		ns.exec('planner.js', 'home');
+		ns.exec('/bin/planner.js', 'home');
 		ns.exec('logger.js', 'home');
 	} else {
 		// If not running in bootstrap mode, then

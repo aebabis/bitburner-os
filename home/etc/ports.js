@@ -9,3 +9,6 @@ export const PORT_LOGGER = port++;
 export const PORT_RL_TO_THIEVES = port++;
 export const PORT_THIEVES_TO_RL = port++;
 export const PORT_INFECT = port++;
+
+export const PORT_SERVICES_LIST = port++;
+export const PORT_SERVICES_REPL = port++;

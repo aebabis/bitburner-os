@@ -18,6 +18,17 @@ export default (ns) => {
     }
     const writePort = (handle, data) => ns.getPortHandle(handle).write(s(data));
     const tryWritePort = (handle, data) => ns.getPortHandle(handle).tryWrite(s(data));
+    const blockingWritePort = async (handle, data, timeout=60000) => {
+        let start = Date.now();
+        let outcome = false;
+        while (true) {
+            outcome = ns.getPortHandle(handle).tryWrite(s(data));
+            if (!outcome && Date.now() - start <= timeout)
+                await ns.sleep(50);
+            else break;
+        }
+        return outcome;
+    };
     const clearPort = (handle) => ns.getPortHandle(handle).clear();
 
     const peek = (handle) => {
@@ -33,11 +44,13 @@ export default (ns) => {
         readPort,
         writePort,
         tryWritePort,
+        blockingWritePort,
         clearPort,
         getPortHandle: (handle) => ({
             read: () => readPort(handle),
             write: (data) => writePort(handle, data),
             tryWrite: (data) => tryWritePort(handle, data),
+            blockingWrite: (data, timeout) => blockingWritePort(handle, data, timeout),
             clear: () => clearPort(handle),
             peek: () => peek(handle),
             full: () => full(handle),

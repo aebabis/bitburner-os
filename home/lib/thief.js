@@ -215,12 +215,12 @@ class HWGWFrame {
                 }
                 break;
             case 'GROW':
-                const maxMoney = ns.getServerMaxMoney(this.target);
-                const moneyAvailable = ns.getServerMoneyAvailable(this.target);
-                if (moneyAvailable / maxMoney < .99) {
-                    this.state = 'DEAD';
-                    return;
-                }
+                // const maxMoney = ns.getServerMaxMoney(this.target);
+                // const moneyAvailable = ns.getServerMoneyAvailable(this.target);
+                // if (moneyAvailable / maxMoney < (1 - this.portion)) {
+                //     this.state = 'DEAD';
+                //     return;
+                // }
 
                 // Adjust hack threads requested
                 // based on current level and actual
@@ -236,8 +236,11 @@ class HWGWFrame {
                     else
                         requestedHackThreads--;
                 }
+                
+                // One less so that grow wins?
+                requestedHackThreads--;
 
-                if (requestedHackThreads === 0) {
+                if (requestedHackThreads <= 0) {
                     this.state = 'DEAD';
                     break;
                 }
@@ -269,7 +272,7 @@ class HWGWFrame {
         const weaken2T = num(this.actual.weaken2Threads, small(this.predicted.weaken2Threads));
         const growT = num(this.actual.growThreads, small(this.predicted.growThreads));
         const hackT = num(this.actual.hackThreads, small(this.predicted.hackThreads));
-        return `${this.target} ${state}(${ago.toString().padStart(6)})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
+        return `${this.target.padEnd(18)} ${state}(${ago.toString().padStart(6)})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
     }
 }
 

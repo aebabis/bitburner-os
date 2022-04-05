@@ -31,7 +31,7 @@ export const checkPort = async (ns, queue) => {
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
 	const { hostname, ramAvailable } = server;
-	const { script, numThreads, args, sender, ticket } = process;
+	const { script, numThreads, args, sender, ticket, requestTime } = process;
 	const scriptRam = ns.getScriptRam(script, sender);
 	const maxThreads = Math.floor(ramAvailable / scriptRam);
 	const threads = Math.min(numThreads, maxThreads);
@@ -45,8 +45,12 @@ export const fulfill = async (ns, process, server) => {
 		logger(ns).error('Scheduler tried to run: ' + process.toString());
 		return reject(ns, process);
 	}
-	if (ticket != null)
+	if (ticket != null) {
+		const waitTime = Date.now() - requestTime;
+		if (waitTime > 25)
+			ns.tprint('WARN - process waited ' + waitTime + 'ms');
 		await closeTicket(ns)(ticket, pid, hostname, threads);
+	}
 }
 
 /** @param {NS} ns **/

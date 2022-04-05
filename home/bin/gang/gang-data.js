@@ -3,13 +3,15 @@ import { logger } from 'logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    let taskNames;
-    try {
-        taskNames = ns.gang.getTaskNames();
-    } catch (error) {
-        logger(ns).info('No access to gang API');
+    // let taskNames;
+    if (!ns.gang.inGang())
         return;
-    }
+    // try {
+    const taskNames = ns.gang.getTaskNames();
+    // } catch (error) {
+    //     logger(ns).info('No access to gang API');
+    //     return;
+    // }
     try {
         const taskStats = taskNames.reduce((obj, name) => {
             obj[name] = ns.gang.getTaskStats(name);
