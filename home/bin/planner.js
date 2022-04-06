@@ -1,14 +1,14 @@
 import { AnyHostService } from './lib/service';
 import { logger } from './logger';
+
 import {
     ENABLE, DISABLE,
-    writeServices, checkQueue
+    writeServices, checkQueue, getTableString,
 } from './lib/planner-api.js';
 
 const go = async(ns) => {
     ns.disableLog('ALL');
 
-    ns.tprint(2);
     const canHaveGang = () => ns.getPlayer().bitNodeN >= 2;
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
@@ -30,7 +30,13 @@ const go = async(ns) => {
         // await startAny('money.js', 'thief.js');
     ]
 
-    ns.tprint(3);
+    const showServices = () => {
+        ns.clearLog();
+        const taskData = tasks.map(task => task.toData());
+        writeServices(ns, taskData);
+        ns.print(getTableString(ns, taskData));
+    }
+
     while (true) {
         checkQueue(ns).forEach((order) => {
             const { identifier, type, force } = order;
@@ -43,21 +49,20 @@ const go = async(ns) => {
 
         for (const task of tasks) {
             try {
-                await task.check();
+                await task.check(showServices);
             } catch (error) {
                 await logger(ns).error(error);
             }
         }
-        ns.clearLog();
-        writeServices(ns, tasks.map(t => t.toString()));
-        tasks.forEach(task => ns.print(task.toString()));
+
+        showServices();
+
         await ns.sleep(1000);
     }
 }
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.tprint(1);
     try {
         await go(ns);
     } catch (error) {

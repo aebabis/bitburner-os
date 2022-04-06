@@ -14,13 +14,16 @@ const process = (arg) => {
 }
 
 /** @param {NS} ns **/
-export const logger = (ns) => {
+export const logger = (ns, options = {}) => {
+	const { echo = true } = options;
 	const send = async (type, ...args) => {
 		const script = ns.getScriptName();
 		const lead = `${type} ${script}`;
 		const message = args.map(process).join(' ');
 		const output =  `${lead.padEnd(20)} ${message}`;
-		ns.print(output);
+		if (echo) {
+			ns.print(output);
+		}
 		let time = Date.now();
 		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output)) {
 			if (Date.now() - time > 1000) {
