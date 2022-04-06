@@ -34,4 +34,3 @@ export const table = (ns, columns, data, options={}) => {
         ...data.map(row => row.map((cell, i) => columns[i].pad(cell, widths[i])).join(joiner)),
     ].map(x=>` ${x} `);
     return lines.join('\n');
-}
