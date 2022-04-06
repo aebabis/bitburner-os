@@ -1,8 +1,14 @@
 import Ports from './lib/ports';
 import { PORT_SERVICES_LIST, PORT_SERVICES_REPL } from './etc/ports';
+import { table } from './lib/table';
 
 export const DISABLE = 'DISABLE';
 export const ENABLE = 'ENABLE';
+
+export const getTableString = (ns, taskData) => {
+    return table(ns, ['ID', 'NAME', '', 'PID', 'DESC'], taskData.map(
+        ({ id, name, status, pid, desc }) => [id, name, status, pid, desc]));
+}
 
 export const getServices = (ns) => {
     return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
