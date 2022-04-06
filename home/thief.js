@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from './lib/logger';
 import Thief from './lib/thief';
 
 import { THREADPOOL_NAME } from './etc/config';
@@ -10,6 +10,8 @@ import { by, waitToRead } from './lib/util';
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
+
+    ns.tail();
     
     const hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
@@ -19,14 +21,14 @@ export async function main(ns) {
 
     const prioritze = () => thieves
         .filter(thief => thief.canHack())
-        // .sort(by(thief => -thief.getPredictedIncomeRatePerThread()))
-        .sort(by(thief => {
-            const hostname = thief.getHostname();
-            return ns.getServerMinSecurityLevel(hostname);
-            // const maxedOut = ns.getServerMoneyAvailable(hostname)
-            //     / ns.getServerMaxMoney(hostname) >= .99;
-            // return maxedOut ? -1 : 1;
-        }));
+        .sort(by(thief => -thief.getPredictedIncomeRatePerThread()))
+        // .sort(by(thief => {
+        //     const hostname = thief.getHostname();
+        //     return ns.getServerMinSecurityLevel(hostname);
+        //     // const maxedOut = ns.getServerMoneyAvailable(hostname)
+        //     //     / ns.getServerMaxMoney(hostname) >= .99;
+        //     // return maxedOut ? -1 : 1;
+        // }));
 
     let viableThieves;
     let lastPriorization = 0;
@@ -50,7 +52,7 @@ export async function main(ns) {
             // });
 
             const reservedThreads = viableThieves
-                .map(thief => thief.getReservedThreads())
+                .map(thief => thief.estimateReservedThreads())
                 .reduce((a,b)=>a+b, 0);
             
             const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;

@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { logger } from './lib/logger';
 import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
 
 const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, ...rest }) => {

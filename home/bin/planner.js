@@ -1,5 +1,5 @@
 import { AnyHostService } from './lib/service';
-import { logger } from './logger';
+import { logger } from './lig/logger';
 
 import {
     ENABLE, DISABLE,
@@ -13,11 +13,11 @@ const go = async(ns) => {
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
     const tasks = [
-        AnyHostService(ns)('server-purchaser.js'),
         AnyHostService(ns)('hacknet.js'),
-        AnyHostService(ns)('access.js'),
-        AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
         AnyHostService(ns)('thief.js'),
+        AnyHostService(ns)('access.js'),
+        AnyHostService(ns)('/bin/server-purchaser.js'),
+        AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
         AnyHostService(ns, ()=>true, 10000)
                         ('/lib/nmap.js'),
         AnyHostService(ns, canHaveGang)

@@ -1,5 +1,5 @@
 import { getBestPurchase } from './lib/hacknet';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {

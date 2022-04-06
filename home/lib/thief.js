@@ -1,7 +1,7 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
 import { report } from './lib/thief-port';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 
 const SUBTASK_SPACING = 50;
 const SMALL = '₀₁₂₃₄₅₆₇₈₉'.split('');
@@ -126,6 +126,11 @@ class HWGWFrame {
         return weaken1Threads + weaken2Threads + growThreads + hackThreads;
     }
 
+    getAverageThreads() {
+        const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
+        return weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
+    }
+
     getReservedThreads() {
         const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
         const { state } = this;
@@ -145,9 +150,30 @@ class HWGWFrame {
         }
     }
 
+    estimateReservedThreads() {
+        const { weaken1Threads, weaken2Threads, growThreads, hackThreads, duration } = this.predicted;
+        const { ns, target, state } = this;
+        const estGrowThreads = () => growThreads * ns.getGrowTime(target) / (this.weaken1End - Date.now());
+        const estHackThreads = () => hackThreads * ns.getHackTime(target) / (this.weaken1End - Date.now());
+        switch (state) {
+            case 'START':
+                return weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
+            case 'WEAKEN1':
+                return weaken2Threads + growThreads*3.2/4 + hackThreads/4;
+            case 'WEAKEN2':
+                return estGrowThreads() + estHackThreads();
+            case 'GROW':
+                return estHackThreads();
+            case 'HACK':
+            case 'DEAD':
+            case 'DONE':
+                return 0;
+        }
+    }
+
     // TODO: Take into account different utilization times per operation
     getPredictedIncomeRatePerThread() {
-        return this.predicted.income * this.ns.hackAnalyzeChance(this.target) / (this.getPredictedThreads() * this.predicted.duration);
+        return this.predicted.income * this.ns.hackAnalyzeChance(this.target) / (this.getAverageThreads() * this.predicted.duration);
     }
 
     hasDispatchedWeaken2() {
@@ -238,9 +264,9 @@ class HWGWFrame {
                 }
                 
                 // One less so that grow wins?
-                requestedHackThreads--;
-
-                if (requestedHackThreads <= 0) {
+                if (requestedHackThreads > 1) {
+                    requestedHackThreads--;
+                } else if (requestedHackThreads <= 0) {
                     this.state = 'DEAD';
                     break;
                 }
@@ -327,6 +353,12 @@ export default class Thief {
     getReservedThreads() {
         return this.frames
             .map(frame => frame.getReservedThreads())
+            .reduce((a,b)=>a+b, 0);
+    }
+
+    estimateReservedThreads() {
+        return this.frames
+            .map(frame => frame.estimateReservedThreads())
             .reduce((a,b)=>a+b, 0);
     }
 

@@ -28,7 +28,9 @@ export const enableService = async(ns, idOrName, override=false) => {
 }
 
 export const writeServices = (ns, services) => {
-    Ports(ns).getPortHandle(PORT_SERVICES_LIST).write(services);
+    const handle = Ports(ns).getPortHandle(PORT_SERVICES_LIST);
+    handle.clear();
+    handle.write(services);
 }
 
 export const checkQueue = (ns) => {

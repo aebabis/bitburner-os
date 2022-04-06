@@ -1,7 +1,7 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from './etc/ports';
 // import { SCH_TMP_DIR } from './etc/config';
 import Ports from './lib/ports';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 
 export const snippet = (statements) => `export async function main(ns) {\n${statements}\n}`;
 

@@ -4,7 +4,7 @@ import { HOSTSFILE, STATIC_DATA } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
 
 const SCHEDULER_HOME = 'home';
@@ -24,7 +24,7 @@ export async function main(ns) {
 	if (ns.args[0] === 'bootstrap') {
 		await ns.sleep(50);
 		ns.exec('/bin/planner.js', 'home');
-		ns.exec('logger.js', 'home');
+		ns.exec('/bin/logger.js', 'home');
 	} else {
 		// If not running in bootstrap mode, then
 		// assume init.js hasn't copied files.

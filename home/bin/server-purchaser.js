@@ -3,7 +3,7 @@ import { PURCHASE_THREADPOOL } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { delegate } from './lib/scheduler-delegate';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -37,16 +37,20 @@ export async function main(ns) {
                     ram >>= 1;
                 }
                 if (ram >= lowerLimit) {
-                    let pid;
-                    if (atMaxServers) {
-                        await console.log(`Attempting to replace ${smallest.hostname}`);
-                        pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'replace', smallest.hostname, ram)).pid;
-                    } else {
-                        await console.log(`Attempting to buy new server`);
-                        pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'purchase', ram)).pid;
+                    try {
+                        let pid;
+                        if (atMaxServers) {
+                            await console.log(`Attempting to replace ${smallest.hostname}`);
+                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'replace', smallest.hostname, ram)).pid;
+                        } else {
+                            await console.log(`Attempting to buy new server`);
+                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'purchase', ram)).pid;
+                        }
+                        while (ns.isRunning(pid))
+                            await ns.sleep(50);
+                    } catch (error) {
+                        await console.error(error);
                     }
-                    while (ns.isRunning(pid))
-                        await ns.sleep(50);
                 }
             }
         }

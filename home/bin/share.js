@@ -1,6 +1,5 @@
 import { SHARE_FILE } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
-// import { uuid } from './lib/util';
 import { nmap } from './lib/nmap';
 
 const SHARE = '/bin/gen/share.js';
@@ -34,15 +33,6 @@ export async function main(ns) {
     ns.disableLog('ALL');
     await ns.write(SHARE, SHARE_SRC, 'w');
     const RAM_PER_SHARE = ns.getScriptRam(SHARE);
-
-    if (ns.args[0] != null) {
-        const rate = +ns.args[0];
-        if (rate === rate) {
-            ns.tprint(`Setting share rate to ${rate}`);
-            await ns.write(SHARE_FILE, rate, 'w');
-        }
-        return;
-    }
 
     let wait = MIN_WAIT;
     while (true) {

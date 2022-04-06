@@ -1,6 +1,6 @@
 import { delegate } from './lib/scheduler-delegate.js';
 import { getServices } from './lib/planner-api.js';
-import { logger } from './logger';
+import { logger } from './lib/logger';
 
 const getExistingPid = (ns, desc) => {
     try {
