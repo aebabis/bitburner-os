@@ -4,10 +4,9 @@ import { report } from './lib/thief-port';
 import { logger } from './lib/logger';
 
 const SUBTASK_SPACING = 50;
-const SMALL = '₀₁₂₃₄₅₆₇₈₉'.split('');
 
 const small = number => number.toString()
-    .split('').map(n=>SMALL[n]).join('');
+    .split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]).join('');
 
 /** @param {NS} ns **/
 const getWThreads = (ns, targetDecrease, cores=1) => {
@@ -28,14 +27,118 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
 }
 
 const startSubtask = async (ns, target, task, taskThreads) => {
-    // ns.print('Attempting ' + task + ' with t=' + taskThreads);
     const { threads } = await delegateAny(ns, true)(task, taskThreads, target, crypto.randomUUID());
     return threads;
 }
 
+const STATE_START = 'START';
+const STATE_WEAKEN1 = 'WEAKEN1';
+const STATE_WEAKEN2 = 'WEAKEN2';
+const STATE_GROW = 'GROW';
+const STATE_HACK = 'HACK';
+const STATE_DEAD = 'DEAD';
+
 class HWGWFrame {
-    constructor(ns, target, portion, [avoidBegin, avoidEnd]) {
-        const duration = ns.getWeakenTime(target) + SUBTASK_SPACING * 2;
+    constructor(ns, target,
+        [weaken1Start, weaken2Start, growStart, hackStart],
+        [weaken1Threads, weaken2Threads, growThreads, hackThreads]) {
+        this.ns = ns;
+        this.target = target;
+        this.state = STATE_START;
+        this.weaken1Start = weaken1Start;
+        this.weaken2Start = weaken2Start;
+        this.growStart = growStart;
+        this.hackStart = hackStart;
+        this.weaken1Threads = weaken1Threads;
+        this.weaken2Threads = weaken2Threads;
+        this.growThreads = growThreads;
+        this.hackThreads = hackThreads;
+        this.actual = {};
+    }
+
+    async tick() {
+        const { ns, target, state } = this;
+        const now = Date.now();
+        if (state === STATE_START && now >= this.weaken1Start) {
+            const threads = await startSubtask(ns, target, WEAKEN, this.weaken1Threads);
+            this.actual.weaken1Threads = threads;
+            this.state = (threads === this.weaken1Threads) ? STATE_WEAKEN1 : STATE_DEAD;
+        } else if (state === STATE_WEAKEN1 && now >= this.weaken2Start) {
+            const threads = await startSubtask(ns, target, WEAKEN, this.weaken2Threads);
+            this.actual.weaken2Threads = threads;
+            this.state = (threads === this.weaken2Threads) ? STATE_WEAKEN2 : STATE_DEAD;
+        } else if (state === STATE_WEAKEN2 && now >= this.growStart) {
+            const threads = await startSubtask(ns, target, GROW, this.growThreads);
+            this.actual.growThreads = threads;
+            this.state = (threads === this.growThreads) ? STATE_GROW : STATE_DEAD;
+        } else if (state === STATE_GROW && now >= this.hackStart) {
+            let requestedHackThreads = this.hackThreads;
+            while (requestedHackThreads > 0) {
+                const actualPortion = requestedHackThreads * ns.hackAnalyze(target);
+                const growFactor = 1 / (1 - actualPortion);
+                const requiredGrowThreads = Math.ceil(
+                    ns.growthAnalyze(target, growFactor));
+                if (requiredGrowThreads <= this.growThreads)
+                    break;
+                requestedHackThreads--;
+            }
+
+            // One less so that grow wins?
+            if (requestedHackThreads > 1) {
+                requestedHackThreads--;
+            }
+            if (requestedHackThreads <= 0) {
+                this.state = STATE_DEAD;
+            } else {
+                const threads = await startSubtask(ns, target, HACK, requestedHackThreads);
+                this.actual.hackThreads = threads;
+                this.state = (threads > 0) ? STATE_HACK : STATE_DEAD;
+            }
+        }
+        return this.state === STATE_DEAD || this.state === STATE_HACK;
+    }
+
+    getReservedThreads() {
+        switch (this.state) {
+            case STATE_START: return this.weaken1Threads + this.weaken2Threads + this.growThreads + this.hackThreads;
+            case STATE_WEAKEN1: return this.weaken2Threads + this.growThreads + this.hackThreads;
+            case STATE_WEAKEN2: return this.growThreads + this.hackThreads;
+            case STATE_GROW: return this.hackThreads;
+            default: return 0;
+        }
+    }
+
+    estimateReservedThreads() {
+        let threads = 0;
+        const timeRemaining = this.weaken2End - Date.now();
+        switch (this.state) {
+            case STATE_START: threads += this.weaken1Threads;
+            case STATE_WEAKEN1: threads += this.weaken2Threads;
+            case STATE_WEAKEN2: threads += this.growThreads * this.growTime / timeRemaining;
+            case STATE_GROW: threads += this.hackThreads * this.hackTime / timeRemaining;
+        }
+        return threads;
+    }
+
+    toString() {
+        const num = (a, b) => a != null ? a : b;
+        const state = this.state.padEnd(8);
+        const ago = this.weaken1Start - Date.now();
+        const weaken1T = num(this.actual.weaken1Threads, small(this.weaken1Threads));
+        const weaken2T = num(this.actual.weaken2Threads, small(this.weaken2Threads));
+        const growT = num(this.actual.growThreads, small(this.growThreads));
+        const hackT = num(this.actual.hackThreads, small(this.hackThreads));
+        // const est = this.estimateReservedThreads();
+        return `${this.target.padEnd(18)} ${state}(${ago.toString().padStart(6)})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
+    }
+}
+
+class HWGWBatch {
+    constructor(ns, target, portion, ram, endAfter=Date.now()) {
+        const weakenTime = ns.getWeakenTime(target);
+        const growTime = ns.getGrowTime(target);
+        const hackTime = ns.getHackTime(target);
+        
         const income = ns.getServerMaxMoney(target) * portion;
 
         const hackThreads = Math.floor(portion / ns.hackAnalyze(target));
@@ -47,30 +150,51 @@ class HWGWFrame {
         const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
         const weaken2Threads = getWThreads(ns, secIncrease2);
 
+        const totalThreads = weaken1Threads + weaken2Threads + growThreads + hackThreads;
+        const averageThreads = weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
+	const ramPerFrame = totalThreads * 1.75;
+        ns.tprint(ram);
+        ns.tprint(totalThreads);
+        ns.tprint(totalThreads * 1.75);
+
+        let startBefore = endAfter;
+
+        const frames = this.frames = [];
+
         this.ns = ns;
         this.target = target;
         this.portion = portion;
+        this.income = income;
 
-        // If the hack threads would be dispatched during the 
-        // disallowed window, instead shift the start of the entire
-        // frame to start a new frame group.
-        this.startsGroup = avoidEnd - avoidBegin < ns.getHackTime(target);
-        this.protectedIntervalStart = this.startsGroup ? null : avoidBegin;
-        this.previousProtectedInterval = [avoidBegin, avoidEnd];
+        if (hackThreads < 1)
+            return;
 
-        // Earliest weaken1 end time
-        this.endAfter = !this.startsGroup ? avoidEnd : avoidEnd + ns.getHackTime(target);
+        while (ram >= ramPerFrame) {
+            const hackEnd = endAfter;
+            const weaken1End = hackEnd + SUBTASK_SPACING;
+            const growEnd = weaken1End + SUBTASK_SPACING;
+            const weaken2End = growEnd + SUBTASK_SPACING;
 
-        this.state = 'START';
-        this.predicted = {
-            weaken1Threads,
-            weaken2Threads,
-            growThreads,
-            hackThreads,
-            duration,
-            income,
-        };
-        this.actual = {};
+            const weaken1Start = weaken1End - weakenTime;
+            const weaken2Start = weaken2End - weakenTime;
+            const growStart = growEnd - growTime;
+            const hackStart = hackEnd - hackTime;
+
+            if (hackStart >= startBefore)
+                break;
+
+            const frame = new HWGWFrame(ns, target,
+		[weaken1Start, weaken2Start, growStart, hackStart],
+                [weaken1Threads, weaken2Threads, growThreads, hackThreads]);
+            
+            frames.push(frame);
+            ns.tprint(frame.getReservedThreads());
+
+            ram -= ramPerFrame;
+            endAfter = weaken2End + SUBTASK_SPACING;
+        }
+        ns.tprint(this.frames.length);
+        this.endAfter = endAfter;
     }
 
     static computeMaxTheftPortion(ns, target, processThreadLimit) {
@@ -80,9 +204,8 @@ class HWGWFrame {
         let attemptsRemaining = 20;
         while (attemptsRemaining --> 0) {
             const portion = (min + max) / 2;
-            const frame = new HWGWFrame(ns, target, portion, [0, 0]);
-            const threads = Math.max(frame.predicted.growThreads,
-                frame.predicted.hackThreads);
+            const growFactor  = 1 / (1 - portion);
+            const threads = Math.ceil(ns.growthAnalyze(target, growFactor));
             if (threads < processThreadLimit)
                 min = portion;
             else if (threads > processThreadLimit)
@@ -93,212 +216,40 @@ class HWGWFrame {
         return min;
     }
 
-    static getOptimalFrame(ns, target, processThreadLimit, interval) {
-        const maxPortion = this.computeMaxTheftPortion(
-            ns, target, processThreadLimit);
-        // ns.print('MAX PORTION: ', maxPortion);
-        // TODO: bin search for optimal params
-        let min = new HWGWFrame(ns, target, .00001, interval);
-        let mid = new HWGWFrame(ns, target, maxPortion/2, interval);
-        let max = new HWGWFrame(ns, target, maxPortion, interval);
-        let attemptsRemaining = 20;
-        while (attemptsRemaining --> 0) {
-            const portion1 = (min.portion + mid.portion) / 2;
-            const portion2 = (mid.portion + max.portion) / 2;
-            const quart1 = new HWGWFrame(ns, target, portion1, interval);
-            const quart3 = new HWGWFrame(ns, target, portion2, interval);
-            if (quart1.getPredictedIncomeRatePerThread() >
-                mid.getPredictedIncomeRatePerThread()) {
-                    max = mid;
-                    mid = quart1;
-                }
-            else {
-                min = mid;
-                mid = quart3;
-            }
-        }
-        // ns.print('SELECTED PORTION: ', mid.portion);
-        return mid;
-    }
-
-    getPredictedThreads() {
-        const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
-        return weaken1Threads + weaken2Threads + growThreads + hackThreads;
-    }
-
-    getAverageThreads() {
-        const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
-        return weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
+    // TODO: Take into account different utilization times per operation
+    getPredictedIncomeRatePerThread() {
+        const predictedIncome = this.income * this.ns.hackAnalyzeChance(this.target);
+        const duration = this.weaken2End - this.weaken1Start;
+        return predictedIncome / (this.averageThreads * duration);
     }
 
     getReservedThreads() {
-        const { weaken1Threads, weaken2Threads, growThreads, hackThreads } = this.predicted;
-        const { state } = this;
-        switch (state) {
-            case 'START':
-                return weaken1Threads + weaken2Threads + growThreads + hackThreads;
-            case 'WEAKEN1':
-                return weaken2Threads + growThreads + hackThreads;
-            case 'WEAKEN2':
-                return growThreads + hackThreads;
-            case 'GROW':
-                return hackThreads;
-            case 'HACK':
-            case 'DEAD':
-            case 'DONE':
-                return 0;
-        }
+        return this.frames
+            .map(frame => frame.getReservedThreads())
+            .reduce((a,b)=>a+b,0);
     }
 
     estimateReservedThreads() {
-        const { weaken1Threads, weaken2Threads, growThreads, hackThreads, duration } = this.predicted;
-        const { ns, target, state } = this;
-        const estGrowThreads = () => growThreads * ns.getGrowTime(target) / (this.weaken1End - Date.now());
-        const estHackThreads = () => hackThreads * ns.getHackTime(target) / (this.weaken1End - Date.now());
-        switch (state) {
-            case 'START':
-                return weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
-            case 'WEAKEN1':
-                return weaken2Threads + growThreads*3.2/4 + hackThreads/4;
-            case 'WEAKEN2':
-                return estGrowThreads() + estHackThreads();
-            case 'GROW':
-                return estHackThreads();
-            case 'HACK':
-            case 'DEAD':
-            case 'DONE':
-                return 0;
-        }
+        return this.frames
+            .map(frame => frame.estimateReservedThreads())
+            .reduce((a,b)=>a+b,0);
     }
 
-    // TODO: Take into account different utilization times per operation
-    getPredictedIncomeRatePerThread() {
-        return this.predicted.income * this.ns.hackAnalyzeChance(this.target) / (this.getAverageThreads() * this.predicted.duration);
-    }
-
-    hasDispatchedWeaken2() {
-        return this.state !== 'START' && this.state !== 'WEAKEN1';
-    }
-
-    getNextFrameProtectedInterval() {
-        if (this.state === 'START' || this.state === 'WEAKEN1') {
-            throw new Error('Cannot determine protected interval until weaken 2 has started');
-        }
-        if (this.state === 'DEAD') // Guaranteed no hack threads
-            return this.previousProtectedInterval;
-        return [this.protectedIntervalStart, this.protectedIntervalEnd];
-    }
-
-    canProceed() {
-        const { ns, target, state } = this;
-        switch (state) {
-            case 'START':
-                return Date.now() + ns.getWeakenTime(target) > this.endAfter + SUBTASK_SPACING;
-            case 'WEAKEN1':
-                return Date.now() + ns.getWeakenTime(target) >= this.weaken1End + SUBTASK_SPACING * 2;
-            case 'WEAKEN2':
-                return Date.now() + ns.getGrowTime(target) >= this.weaken1End + SUBTASK_SPACING;
-            case 'GROW':
-                return Date.now() < this.protectedIntervalStart &&
-                       Date.now() + ns.getHackTime(target) >= this.weaken1End + SUBTASK_SPACING * 3;
-            case 'HACK':
-            case 'DEAD':
-            case 'DONE':
-                return false;
-        }
-    }
-
-    async next() {
-        const { ns, target, state } = this;
-        switch (state) {
-            case 'START':
-                this.actual.weaken1Threads = await startSubtask(ns, this.target, WEAKEN, this.predicted.weaken1Threads);
-                if (this.actual.weaken1Threads !== this.predicted.weaken1Threads) {
-                    this.state = 'DEAD';
-                } else {
-                    this.startTime = Date.now();
-                    this.weaken1End = this.startTime + ns.getWeakenTime(target);
-                    if (this.startsGroup)
-                        this.protectedIntervalStart = this.weaken1End - SUBTASK_SPACING; 
-                    this.state = 'WEAKEN1';
-                }
-                break;
-            case 'WEAKEN1':
-                this.actual.weaken2Threads = await startSubtask(ns, this.target, WEAKEN, this.predicted.weaken2Threads);
-                if (this.actual.weaken2Threads !== this.predicted.weaken2Threads) {
-                    this.state = 'DEAD';
-                } else {
-                    this.protectedIntervalEnd = Date.now() + ns.getWeakenTime(target) + SUBTASK_SPACING;
-                    this.state = 'WEAKEN2';
-                }
-                break;
-            case 'WEAKEN2':
-                this.actual.growThreads = await startSubtask(ns, this.target, GROW, this.predicted.growThreads);
-                if (this.actual.growThreads === 0) {
-                    this.state = 'DEAD'
-                } else {
-                    this.state = 'GROW';
-                }
-                break;
-            case 'GROW':
-                // const maxMoney = ns.getServerMaxMoney(this.target);
-                // const moneyAvailable = ns.getServerMoneyAvailable(this.target);
-                // if (moneyAvailable / maxMoney < (1 - this.portion)) {
-                //     this.state = 'DEAD';
-                //     return;
-                // }
-
-                // Adjust hack threads requested
-                // based on current level and actual
-                // grow threads obtained.
-                let requestedHackThreads = this.predicted.hackThreads;
-                while (requestedHackThreads > 0) {
-                    const actualPortion = requestedHackThreads * ns.hackAnalyze(target);
-                    const growFactor = 1 / (1 - actualPortion);
-                    const requiredGrowThreads = Math.ceil(
-                        ns.growthAnalyze(target, growFactor));
-                    if (requiredGrowThreads <= this.actual.growThreads)
-                        break;
-                    else
-                        requestedHackThreads--;
-                }
-                
-                // One less so that grow wins?
-                if (requestedHackThreads > 1) {
-                    requestedHackThreads--;
-                } else if (requestedHackThreads <= 0) {
-                    this.state = 'DEAD';
-                    break;
-                }
-
-                this.actual.hackThreads = await startSubtask(
-                    ns, this.target, HACK, requestedHackThreads);
-                if (this.actual.hackThreads === 0) {
-                    this.state = 'DEAD';
-                } else {
-                    this.state = 'HACK';
-                }
-                break;
-            case 'HACK':
-            case 'DEAD':
-            case 'DONE':
-                throw new Error ('Nothing to do in state ' + this.state);
+    async tick() {
+        for (const frame of this.frames) {
+            await frame.tick();
         }
     }
 
     hasEnded() {
-        return Date.now() > this.protectedIntervalEnd;
+        const last = this.frames[this.frames.length - 1];
+        if (last != null)
+            return Date.now() > last.weaken2End;
+        else return true;
     }
 
     toString() {
-        const num = (a, b) => a != null ? a : b;
-        const state = this.state.padEnd(7);
-        const ago = this.startTime - Date.now();
-        const weaken1T = num(this.actual.weaken1Threads, small(this.predicted.weaken1Threads));
-        const weaken2T = num(this.actual.weaken2Threads, small(this.predicted.weaken2Threads));
-        const growT = num(this.actual.growThreads, small(this.predicted.growThreads));
-        const hackT = num(this.actual.hackThreads, small(this.predicted.hackThreads));
-        return `${this.target.padEnd(18)} ${state}(${ago.toString().padStart(6)})  ${weaken1T} ${weaken2T} ${growT} ${hackT}`;
+        return this.frames.map(frame=>frame.toString()).join('\n');
     }
 }
 
@@ -306,75 +257,57 @@ export default class Thief {
     constructor(ns, server) {
         this.ns = ns;
         this.server = server;
-        this.frames = [];
-        this.protectedInterval = [0, 0];
     }
 
-    getHostname() {
-        return this.server;
-    }
+    getHostname = () => this.server;
+    canHack = () => this.ns.hasRootAccess(this.server);
+    canStartNextBatch = () => this.currentBatch == null ||
+        this.currentBatch.hasEnded();
 
-    canHack() {
-        return this.ns.hasRootAccess(this.server);
-    }
-
-    getCurrentFrame() {
-        return this.frames[this.frames.length - 1] || null;
-    }
-
-    canStartNextFrame() {
-        const currentFrame = this.getCurrentFrame();
-        return currentFrame == null || currentFrame.hasDispatchedWeaken2();
-    }
-
-    async startNextFrame(growThreadLimit) {
-        const { ns, server, protectedInterval } = this;
-        const nextFrame = HWGWFrame.getOptimalFrame(
-            ns, server, growThreadLimit, protectedInterval);
-        if (nextFrame.predicted.hackThreads === 0)
-            return;
-        this.frames.push(nextFrame);
-        if (nextFrame.canProceed())
-            await nextFrame.next();
+    async startNextBatch(ram, maxProcessThreads) {
+        const { ns, server } = this;
+        const portion = HWGWBatch.computeMaxTheftPortion(ns, server, maxProcessThreads);
+        if (this.currentBatch == null)
+            this.currentBatch = new HWGWBatch(ns, server, portion, ram);
+        else
+            this.currentBatch = new HWGWBatch(ns, server, portion, ram, this.currentBatch.endAfter);
+	ns.tprint(this.currentBatch.getReservedThreads() * 1.75);
     }
 
     async advance() {
-        this.frames = this.frames.filter(frame => !frame.hasEnded());
-        for (const frame of this.frames) {
-            if (frame.canProceed())
-                await frame.next();
-        }
+        const batch = this.currentBatch;
+        if (batch != null && !batch.hasEnded())
+            await batch.tick();
     }
 
     getPredictedIncomeRatePerThread(portionOrMaxGrowThreads = .01) {
-        return new HWGWFrame(this.ns, this.server, portionOrMaxGrowThreads, [0, 0]).getPredictedIncomeRatePerThread();
+        const { ns, server } = this;
+        const portion = portionOrMaxGrowThreads < 1 ? portionOrMaxGrowThreads :
+            HWGWBatch.computeMaxTheftPortion(ns, server, portionOrMaxGrowThreads);
+        const income = ns.getServerMaxMoney(server) * portion;
+
+        const weakenTime = ns.getWeakenTime(server);
+        const hackThreads = Math.floor(portion / ns.hackAnalyze(server));
+        const growFactor  = 1 / (1 - portion);
+        const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
+
+        return income / (growThreads + hackThreads) / weakenTime;
     }
 
     getReservedThreads() {
-        return this.frames
-            .map(frame => frame.getReservedThreads())
-            .reduce((a,b)=>a+b, 0);
+        return this.currentBatch == null ? 0 :
+            this.currentBatch.getReservedThreads();
     }
 
     estimateReservedThreads() {
-        return this.frames
-            .map(frame => frame.estimateReservedThreads())
-            .reduce((a,b)=>a+b, 0);
-    }
-
-    // TODO?
-    atCapacity() {
-        return false;
+        return this.currentBatch == null ? 0 :
+            this.currentBatch.estimateReservedThreads();
     }
 
     printFrames() {
-        this.frames.slice().reverse()
-            .forEach(frame => this.ns.print(frame.toString()));
+        if (this.currentBatch != null && !this.currentBatch.hasEnded())
+            this.ns.print(this.currentBatch.toString());
     }
-
-    // getPredictedConsumptionAt(time) {
-
-    // }
 }
 
 /** @param {NS} ns **/

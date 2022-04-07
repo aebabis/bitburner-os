@@ -1,4 +1,4 @@
-import { logger } from 'logger';
+import { logger } from './lib/logger';
 
 const RUN_FILE = '/run/assistant.txt';
 
@@ -60,9 +60,9 @@ const runDaemon = async (ns) => {
 		const skill = ns.getHackingLevel();
 		const available = agenda.filter(([entry, target]) => {
 			const { hasAdminRights, requiredHackingSkill } = ns.getServer(target);
-			const canApproach = ns.getServer(entry).hasAdminRights;
-			const canBackdoor = hasAdminRights && requiredHackingSkill <= skill;
-			return canApproach && canBackdoor;
+			// const canApproach = ns.getServer(entry).hasAdminRights;
+			return hasAdminRights && requiredHackingSkill <= skill;
+			// return canApproach && canBackdoor;
 		}).map(([,t])=>backtrack(t))      // Convert each edge to a path
 
 		const immediateTarget = available
@@ -86,7 +86,8 @@ const runDaemon = async (ns) => {
 	let cachedMessage;
 	const getMessage = (server) => {
 		if (server != null) {
-			const [current, target] = server;
+			const [current, ...rest] = server;
+			const target = rest.pop();
 			const hostname = visited.find(hostname => ns.getServer(hostname).isConnectedTo);
 			// ns.print(cachedCurrent + ' ' + current);
 			// ns.print(cachedTarget + ' ' + target);
@@ -100,6 +101,7 @@ const runDaemon = async (ns) => {
 			let step = 0;
 			const steps = [
 				`connect ${current}`,
+				...rest.map(hostname => `connect ${hostname}`),
 				`connect ${target}`,
 				`backdoor`];
 			if (ns.getServer(target).isConnectedTo) {
@@ -118,8 +120,13 @@ const runDaemon = async (ns) => {
 				}
 				step = 1;
 			} else {
-				wentOffPath = true;
-				step = 0;
+				const index = rest.findIndex(hostname => ns.getServer(hostname).isConnectedTo);
+				if (index !== -1) {
+					step = index + 2;
+				} else {
+					wentOffPath = true;
+					step = 0;
+				}
 			}
 			const lead = i=>i===step?'> ':'  ';
 			return cachedMessage = steps.map((l,i) =>lead(i)+l).join('\n');
