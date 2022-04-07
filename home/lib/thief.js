@@ -153,6 +153,7 @@ class HWGWBatch {
         const totalThreads = weaken1Threads + weaken2Threads + growThreads + hackThreads;
         const averageThreads = weaken1Threads + weaken2Threads + growThreads*3.2/4 + hackThreads/4;
 	const ramPerFrame = totalThreads * 1.75;
+
         ns.tprint(ram);
         ns.tprint(totalThreads);
         ns.tprint(totalThreads * 1.75);
@@ -194,6 +195,10 @@ class HWGWBatch {
             endAfter = weaken2End + SUBTASK_SPACING;
         }
         ns.tprint(this.frames.length);
+
+        this.peakThreads = this.frames.length * averageThreads;
+        this.peakConsumption = this.peakThreads * 1.75;
+        this.duration = endAfter - this.weaken1Start;
         this.endAfter = endAfter;
     }
 
@@ -317,3 +322,4 @@ export async function main(ns) {
     ns.tprint(ns.getHackTime(ns.args[0]));
     ns.tprint(thief.getPredictedIncomeRatePerThread(ns.args[1] || .01) + '$/thread-second');
 }
+
