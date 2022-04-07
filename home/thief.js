@@ -52,22 +52,22 @@ export async function main(ns) {
             // });
 
             const reservedThreads = viableThieves
-                .map(thief => thief.estimateReservedThreads())
+                .map(thief => thief.getReservedThreads())
                 .reduce((a,b)=>a+b, 0);
             
             const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
             const maxServerRamAvailable = ramData.rootServers
                 .map(server => server.ramAvailable)
                 .reduce((a,b)=>a>b?a:b,0);
-            const processThreadLimit = Math.floor(maxServerRamAvailable / 1.75);
+            const processThreadLimit = Math.floor(maxServerRamAvailable / 1.75 / 10);
             
             ns.clearLog();
             viableThieves.forEach(thief => thief.printFrames());
             if (ramAvailable > 0) {
                 const thief = viableThieves
-                    .find(thief => thief.canStartNextFrame());
+                    .find(thief => thief.canStartNextBatch());
                 if (thief != null)
-                    await thief.startNextFrame(processThreadLimit);
+                    await thief.startNextBatch(ramAvailable, processThreadLimit);
             }
             // ns.print('----------------------------');
             // ns.print(reservedThreads, ramAvailable);

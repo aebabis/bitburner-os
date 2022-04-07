@@ -1,5 +1,5 @@
 import { AnyHostService } from './lib/service';
-import { logger } from './lig/logger';
+import { logger } from './lib/logger';
 
 import {
     ENABLE, DISABLE,
@@ -15,7 +15,7 @@ const go = async(ns) => {
     const tasks = [
         AnyHostService(ns)('hacknet.js'),
         AnyHostService(ns)('thief.js'),
-        AnyHostService(ns)('access.js'),
+        AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/server-purchaser.js'),
         AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
         AnyHostService(ns, ()=>true, 10000)
@@ -25,7 +25,7 @@ const go = async(ns) => {
         AnyHostService(ns, canTradeStocks, 5000)
                         ('broker.js'),
         AnyHostService(ns, canShare, 5000)
-                        ('share.js'), // TODO: Deadman's switch for share?
+                        ('/bin/share.js'), // TODO: Deadman's switch for share?
         // await startAny('servers.js', 'service');
         // await startAny('money.js', 'thief.js');
     ]
