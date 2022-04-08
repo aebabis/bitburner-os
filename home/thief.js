@@ -62,12 +62,13 @@ export async function main(ns) {
             const processThreadLimit = Math.floor(maxServerRamAvailable / 1.75 / 10);
             
             ns.clearLog();
+            ns.print('Hi');
             viableThieves.forEach(thief => thief.printFrames());
             if (ramAvailable > 0) {
                 const thief = viableThieves
                     .find(thief => thief.canStartNextBatch());
                 if (thief != null)
-                    await thief.startNextBatch(ramAvailable, processThreadLimit);
+                    await thief.startNextBatch(ramAvailable * .9, processThreadLimit);
             }
             // ns.print('----------------------------');
             // ns.print(reservedThreads, ramAvailable);
