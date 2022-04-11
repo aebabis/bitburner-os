@@ -91,11 +91,15 @@ class HWGWBatch {
             hackThreads = Math.floor(portion / ns.hackAnalyze(target));
         }
         const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
+        if (secIncrease1 === Infinity)
+            return;
         const weaken1Threads = getWThreads(ns, secIncrease1);
 
         const growFactor  = 1 / (1 - portion);
         const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
         const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
+        if (secIncrease2 === Infinity)
+            return;
         const weaken2Threads = getWThreads(ns, secIncrease2);
 
         const totalThreads = weaken1Threads + weaken2Threads + growThreads + hackThreads;
@@ -158,20 +162,24 @@ export default class Thief {
     }
 
     getHostname = () => this.server;
-    canHack = () => this.ns.hasRootAccess(this.server);
+    canHack = () => {
+        const hasRoot = this.ns.hasRootAccess(this.server);
+        const maxServerLevel = Math.ceil(this.ns.getHackingLevel() / 2);
+        const serverLevel = this.ns.getServerMinSecurityLevel(this.server);
+        return hasRoot && serverLevel <= maxServerLevel;
+    }
+
     canStartNextBatch = () => {
         if (this.currentBatch == null)
             return true;
-        this.ns.tprint(this.server + ': ' + this.currentBatch.hasEnded());
         return this.currentBatch.hasEnded();
         // return this.currentBatch == null || this.currentBatch.hasEnded();
     }
 
     async startNextBatch(ram, maxProcessThreads) {
         const { ns, server } = this;
-        ns.tprint(server);
         this.currentBatch = new HWGWBatch(ns, server, .01, ram, this.currentBatch?.endAfter || Date.now());
-        ns.tprint(this.currentBatch.frames.map(f=>f.startTime - Date.now()));
+        // ns.tprint(this.currentBatch.frames.map(f=>f.startTime - Date.now()));
         console.log(this.currentBatch);
     }
 
