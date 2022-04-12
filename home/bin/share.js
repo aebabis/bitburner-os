@@ -1,6 +1,6 @@
-import { SHARE_FILE } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
 import { nmap } from './lib/nmap';
+import getConfig from './lib/config';
 
 const SHARE = '/bin/gen/share.js';
 const SHARE_SRC = `export async function main(ns) {
@@ -33,10 +33,11 @@ export async function main(ns) {
     ns.disableLog('ALL');
     await ns.write(SHARE, SHARE_SRC, 'w');
     const RAM_PER_SHARE = ns.getScriptRam(SHARE);
+    const config = getConfig(ns);
 
     let wait = MIN_WAIT;
     while (true) {
-        const shareRate = +(await ns.read(SHARE_FILE));
+        const shareRate = config.get('share');
 
         const ramToUse = shareRate * getTotalRam(ns);
         const desiredThreads = Math.floor(ramToUse / RAM_PER_SHARE);
