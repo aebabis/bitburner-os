@@ -19,6 +19,10 @@ export const writeHostsfile = async (ns) => {
 	await ns.write(HOSTSFILE, hostnames.join(','), 'w');
 }
 
+export const graph = (ns) => {
+	
+}
+
 /** @param {NS} ns **/
 export const main = async(ns) => {
 	await writeHostsfile(ns);

@@ -13,8 +13,8 @@ const go = async(ns) => {
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
     const tasks = [
-        AnyHostService(ns)('hacknet.js'),
-        AnyHostService(ns)('thief.js'),
+        AnyHostService(ns)('/bin/hacknet.js'),
+        AnyHostService(ns)('/bin/thief.js'),
         AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/server-purchaser.js'),
         AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
@@ -23,7 +23,7 @@ const go = async(ns) => {
         AnyHostService(ns, canHaveGang)
                         ('/bin/gang/gang-controller.js', 1, 'service'),
         AnyHostService(ns, canTradeStocks, 5000)
-                        ('broker.js'),
+                        ('/bin/broker.js'),
         AnyHostService(ns, canShare, 5000)
                         ('/bin/share.js'), // TODO: Deadman's switch for share?
         // await startAny('servers.js', 'service');
