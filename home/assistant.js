@@ -1,4 +1,5 @@
 import { logger } from './lib/logger';
+import { disableService } from './lib/planner-api.js';
 
 const RUN_FILE = '/run/assistant.txt';
 
@@ -151,6 +152,10 @@ const runDaemon = async (ns) => {
 			await ns.sleep(50);
 		}
 	}
+
+	// Prevent restart of service once all servers
+	// have been backdoored
+	disableService(ns, 'assistant');
 }
 
 /** @param {NS} ns **/

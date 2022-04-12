@@ -12,3 +12,5 @@ export const PORT_INFECT = port++;
 
 export const PORT_SERVICES_LIST = port++;
 export const PORT_SERVICES_REPL = port++;
+
+export const PORT_RUN_CONFIG = port++;

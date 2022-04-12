@@ -1,6 +1,5 @@
 import {
     HOSTSFILE,
-    SHARE_FILE,
     BROKER_FILE,
     STATIC_DATA,
     THIEF,
@@ -9,14 +8,13 @@ import {
     HACK,
 } from './etc/filenames';
 import { writeHostsfile } from './lib/nmap';
+import getConfig from './lib/config';
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
 
-    // ns.rm(HOSTSFILE);
-
-    await ns.write(SHARE_FILE,  0,    'w');  // No faction, no share
+    getConfig(ns).set('share', 0);    // No faction, no share
     await ns.write(BROKER_FILE, 1e10, 'w');
 
     // Generate list of hostnames
@@ -47,5 +45,5 @@ export async function main(ns) {
     }, null, 2), 'w');
 
     ns.tprint('Starting scheduler');
-	ns.exec('scheduler.js', 'home', 1, 'bootstrap');
+	ns.exec('/bin/scheduler.js', 'home', 1, 'bootstrap');
 }
