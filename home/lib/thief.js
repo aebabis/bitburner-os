@@ -129,6 +129,7 @@ class HWGWBatch extends Batch {
         const { weakenTime, growTime, hackTime,
             weaken1Threads, weaken2Threads,
             growThreads, hackThreads } = frame;
+        ns.print(`Planning batch ${weaken1Threads} ${weaken2Threads} ${growThreads} ${hackThreads}`);
 
         this.ns = ns;
         this.target = target;

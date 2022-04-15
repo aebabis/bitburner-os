@@ -58,8 +58,8 @@ const broker = async(ns) => {
         await Promise.all(stocks.map(async (stock) => {
             const [shares] = stock.position;
             if (stock.forecast < .5 && shares > 0) {
-                if (await stock.getSaleGain(shares) > 0) {
-                    await stock.sell(shares);
+                if (stock.getSaleGain(shares) > 0) {
+                    stock.sell(shares);
                 }
             }
         }));
@@ -75,7 +75,7 @@ const broker = async(ns) => {
             const stock = eligiblePurchases.shift();
             const maxPurchase = stock.maxShares - stock.position[0];
             const shares = await optimizeShares(ns, stock, maxPurchase, moneyToSpend);
-            const price = await stock.buy(shares);
+            const price = stock.buy(shares);
             moneyToSpend -= shares * price;
         }
 

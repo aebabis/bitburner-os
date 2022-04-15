@@ -1,5 +1,4 @@
 import { HOSTSFILE, INFECT } from './etc/filenames';
-import { PORT_INFECT } from './etc/ports';
 import { delegateAny } from './lib/scheduler-delegate';
 import { waitToRead } from './lib/util';
 
