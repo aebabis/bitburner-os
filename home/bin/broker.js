@@ -1,8 +1,7 @@
 import { by } from './lib/util';
+import getConfig from './lib/config';
 
-const CONFIG_FILE = '/etc/broker.txt';
-const DEFAULT_RESERVE_AMOUNT = 1e10;
-
+/** @param {NS} ns **/
 const getStocks = (ns) => ns.stock.getSymbols().map(sym => ({
     sym,
     forecast: ns.stock.getForecast(sym),
@@ -10,12 +9,13 @@ const getStocks = (ns) => ns.stock.getSymbols().map(sym => ({
     position: ns.stock.getPosition(sym),
     price: ns.stock.getPrice(sym),
     volatility: ns.stock.getVolatility(sym),
-    getPurchaseCost: async (shares) => await ns.stock.getPurchaseCost(sym, shares, 'Long'),
-    getSaleGain: async (shares) => await ns.stock.getSaleGain(sym, shares, 'Long'),
-    buy: async (shares) => await ns.stock.buy(sym, shares),
-    sell: async (shares) => await ns.stock.sell(sym, shares),
+    getPurchaseCost: (shares) => ns.stock.getPurchaseCost(sym, shares, 'Long'),
+    getSaleGain: (shares) => ns.stock.getSaleGain(sym, shares, 'Long'),
+    buy: (shares) => ns.stock.buy(sym, shares),
+    sell: (shares) => ns.stock.sell(sym, shares),
 }));
 
+/** @param {NS} ns **/
 const optimizeShares = async (ns, stock, maxPurchase, money) => {
     let min = 0;
     let max = maxPurchase;
@@ -34,8 +34,9 @@ const optimizeShares = async (ns, stock, maxPurchase, money) => {
 const getHoldings = (stocks) => stocks.map(stock => stock.position[0] * stock.position[1])
         .reduce((a,b)=>a+b,0);
 
+/** @param {NS} ns **/
 const getSpendableFunds = async (ns, stocks) => {
-    const reserveParam = (+ await ns.read(CONFIG_FILE)) || DEFAULT_RESERVE_AMOUNT;
+    const reserveParam = getConfig(ns).get('reserved-funds');
     const money = ns.getServerMoneyAvailable('home');
     if (reserveParam > 1) { // reserve is flat amount;
         return Math.max(0, money - reserveParam);
@@ -47,6 +48,7 @@ const getSpendableFunds = async (ns, stocks) => {
     }
 }
 
+/** @param {NS} ns **/
 const broker = async(ns) => {
     while (true) {
         ns.clearLog();
@@ -68,7 +70,7 @@ const broker = async(ns) => {
             .sort(by(stock=>-stock.forecast));
     
         let moneyToSpend = await getSpendableFunds(ns, stocks);
-        ns.print('EARMARKED FUNDS: ' + ns.nFormat(moneyToSpend, '$0.000a'));
+        ns.print('EARMARKED FUNDS: ' + ns.nFormat(moneyToSpend, '0.000a'));
         while (moneyToSpend > 1e9 && eligiblePurchases.length > 0) {
             const stock = eligiblePurchases.shift();
             const maxPurchase = stock.maxShares - stock.position[0];
@@ -111,11 +113,10 @@ export async function main(ns) {
             case 'reserve':
                 if (param > 1) {
                     ns.tprint(`Setting reserve amount to ${param}`);
-                    await ns.write(CONFIG_FILE, param, 'w');
                 } else {
                     ns.tprint(`Setting reserve proportion to ${param}`);
-                    await ns.write(CONFIG_FILE, param, 'w');
                 }
+                getConfig(ns).set('reserved-funds', param);
                 return;
             case 'invest':
                 // TODO: Invest flat amount once. Shouldn't need to adjust param
@@ -127,17 +128,13 @@ export async function main(ns) {
             case 'dump':
                 const stocks = getStocks(ns);
                 ns.tprint(`Selling all holdings and setting reserve proportion to 100%`);
-                await ns.write(CONFIG_FILE, 1, 'w');
-                let stock;
-                while (stock = stocks.shift())
-                    await stock.sell(stock.position[0]);
-                // TODO: Sell all holdings
+                getConfig(ns).set('reserved-funds', 1);
+                for (const stock of stocks)
+                    stock.sell(stock.position[0]);
                 return;
             case 'help':
                 // TODO: Maybe
                 return;
-                
-
         }
     }
 }

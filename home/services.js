@@ -14,5 +14,15 @@ export async function main(ns) {
         // TODO
     } else if (command === 'stop') {
         // TODO
+    } else if (command === 'tail') {
+        const services = getServices(ns);
+        const service = services
+            .find(service => service.id === target || service.name === target);
+        if (service != null)
+            ns.tail(service.pid);
+        else {
+            ns.tprint(`Service not found with descriptor "${target}"`);
+            ns.tprint(`Available services: ${services.map(s=>s.name).join(', ')}`);
+        }
     }
 }
