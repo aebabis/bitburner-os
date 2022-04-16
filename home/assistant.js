@@ -50,6 +50,9 @@ const getPath = (ns) => {
 		.filter(server => !server.backdoorInstalled)
 		.filter(server => server.requiredHackingSkill <= skill);
 
+	if (servers.length === 0)
+		return null;
+
 	const questTarget = servers.find(server => PRIORITIES.includes(server.hostname));
 	
 	if (questTarget != null)
@@ -66,8 +69,8 @@ const runDaemon = async (ns) => {
 	let previousTarget;
 	while (true) {
 		const path = getPath(ns);
+		ns.clearLog();
 		if (path != null) {
-			ns.clearLog();
 			ns.print(path.map(s => s === 'home' ? 'home' : 'connect ' + s).join('\n') + '\nbackdoor');
 			await ns.sleep(50);
 		} else {

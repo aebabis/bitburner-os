@@ -1,11 +1,11 @@
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { THREADPOOL_NAME } from './etc/config';
-import { STATIC_DATA } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
+import { getStaticData } from './lib/data-store';
 
 const SCHEDULER_HOME = 'home';
 
@@ -30,7 +30,7 @@ export async function main(ns) {
 	const {
 		purchasedServerMaxRam,
 		purchasedServerLimit,
-	} = JSON.parse(await ns.read(STATIC_DATA));
+	} = getStaticData(ns);
 
 	const console = logger(ns);
 

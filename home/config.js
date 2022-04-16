@@ -9,7 +9,7 @@ export async function main(ns) {
     const config = getConfig(ns);
 
     if (prop == null)
-        ns.tprint('\n'+table(ns, ['NAME', 'VALUE'], Object.entries(config.getAll())));
+        ns.tprint('\n'+table(ns, ['NAME', 'DESC', 'VALUE'], config.getRows().map(({name, desc, value})=>[name, desc, value])));
     else if (value == null)
         ns.tprint(config.get(prop));
     else

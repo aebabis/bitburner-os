@@ -13,9 +13,9 @@ export async function main(ns) {
 
     ns.tail();
     
-    const hostnames = getHostnames();
+    const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
-        !hostname.startsWith(THREADPOOL_NAME));
+        !hostname.startsWith(THREADPOOL_NAME) && ns.getServerMaxMoney(hostname) > 0);
 
     const thieves = possibleTargets.map(hostname => new Thief(ns, hostname));
 
@@ -70,6 +70,7 @@ export async function main(ns) {
 
             // frames.slice().reverse().forEach(frame=>ns.print(frame.tableString()));
         } catch (error) {
+            console.log(error);
             await logger(ns).error(error);
         } finally {
             await ns.sleep(5);

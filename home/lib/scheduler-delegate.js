@@ -1,5 +1,4 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from './etc/ports';
-// import { SCH_TMP_DIR } from './etc/config';
 import Ports from './lib/ports';
 import { logger } from './lib/logger';
 

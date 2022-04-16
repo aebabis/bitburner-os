@@ -12,7 +12,8 @@ export async function main(ns) {
 	while (true) {
 		const purchase = await getBestPurchase(ns);
 		const money = ns.getServerMoneyAvailable('home');
-		if (money >= BUFFER_FACTOR * purchase.cost) {
+		const factor = purchase.cost <= 1000 ? 1 : BUFFER_FACTOR;
+		if (money >= factor * purchase.cost) {
 			ns.print(`PO: ${purchase.toString()}`)
 			purchase.purchase();
 			waitMessageShown = false;
