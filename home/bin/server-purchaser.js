@@ -3,7 +3,7 @@ import { PURCHASE_THREADPOOL } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { delegate } from './lib/scheduler-delegate';
-import { logger } from './lib/logger';
+import { logger } from './bin/logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {
