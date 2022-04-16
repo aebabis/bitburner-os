@@ -1,6 +1,6 @@
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { THREADPOOL_NAME } from './etc/config';
-import { HOSTSFILE, STATIC_DATA } from './etc/filenames';
+import { STATIC_DATA } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
@@ -25,17 +25,6 @@ export async function main(ns) {
 		await ns.sleep(50);
 		ns.exec('/bin/planner.js', 'home');
 		ns.exec('/bin/logger.js', 'home');
-	} else {
-		// If not running in bootstrap mode, then
-		// assume init.js hasn't copied files.
-		const hostnames = nmap(ns);
-		for (const hostname of hostnames){
-			const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
-			await ns.scp(rootJS,                'home', hostname);
-			await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);
-			await ns.scp(ns.ls('home', 'lib/'), 'home', hostname);
-			await ns.scp(ns.ls('home', 'bin/'), 'home', hostname);
-		}
 	}
 
 	const {
@@ -137,9 +126,12 @@ export async function main(ns) {
 					// const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);
 					// const skip = purchasedServersMaxedOut ? 0 : empty;
 					// const servers = rootServers.slice(0, rootServers.length - skip);
+					const eligibleServers = process.isHacking ?
+						rootServers :
+						rootServers.filter(server => !server.hostname.startsWith(THREADPOOL_NAME));
 
-					const server = rootServers.find(server => server.ramAvailable >= ramRequired);
-					const settleServer = rootServers[0];
+					const server = eligibleServers.find(server => server.ramAvailable >= ramRequired);
+					const settleServer = eligibleServers[0];
 					if (server != null) {
 						await fulfill(ns, queue.splice(i, 1)[0], server);
 					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {

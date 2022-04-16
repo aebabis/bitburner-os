@@ -1,6 +1,6 @@
-import { HOSTSFILE, INFECT } from './etc/filenames';
+import { INFECT } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
-import { waitToRead } from './lib/util';
+import { getHostnames } from './lib/data-store';
 
 /** @param {NS} ns **/
 export const access = (ns) => async (target) => {
@@ -35,7 +35,7 @@ export async function main(ns) {
         return access(ns.args[0]);
     }
 
-    let hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
+    let hostnames = getHostnames();
 
     while (hostnames.length > 0) {
         const startingLength = hostnames.length;

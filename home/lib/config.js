@@ -5,6 +5,7 @@ const PROPS = {
     share: ['Share Rate', 0, (x) => x >= 0 && x <= 1],
     "share-cap": ['Max Share Threads', 1<<20, (x) => x >= 0],
     "reserved-funds": ['Threshold for Investment', 1e10, (x) => x >= 0],
+    "theft-portion": ['Default hack portion', .01, (x) => x > 0 && x < 1],
 };
 
 export default (ns) => {

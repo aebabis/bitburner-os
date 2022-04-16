@@ -1,15 +1,18 @@
 import { logger } from './lib/logger';
 import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
+import { HACK, GROW, WEAKEN } from './etc/filenames';
+const HACKING = [HACK, GROW, WEAKEN];
 
 const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, ...rest }) => {
 	const time = Date.now();
 	const waitTime = () => Date.now() - time;
 	const wait = () => (waitTime()/1000).toFixed(3);
+	const isHacking = HACKING.includes(script);
 	return {
 		...rest,
 		script, host, numThreads, args,
 		sender, messageFilename,
-		time, waitTime,
+		time, waitTime, isHacking,
 		toString: (hostname) => `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
 	};
 }
@@ -37,6 +40,13 @@ export const fulfill = async (ns, process, server) => {
 	const threads = Math.min(numThreads, maxThreads);
 	let pid = 0;
 	if (threads > 0) {
+		if (!process.isHacking && hostname !== 'home') {
+			const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
+			await ns.scp(rootJS,                'home', hostname);
+			await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);
+			await ns.scp(ns.ls('home', 'lib/'), 'home', hostname);
+			await ns.scp(ns.ls('home', 'bin/'), 'home', hostname);
+		}
 		pid = ns.exec(script, hostname, threads, ...args);
 		if (pid === 0) {
 			logger(ns).error('Unable to start process: ' + process.toString(hostname))

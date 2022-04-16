@@ -18,13 +18,13 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
     const ticket = response ? crypto.randomUUID() : undefined;
     const sender = ns.getHostname();
     const message = JSON.stringify({
-        script, host, numThreads, args, sender, ticket, /*reap,*/ isDelegated: true, requestTime: Date.now() });
+        script, host, numThreads, args, sender, ticket, requestTime: Date.now() });
     let start = Date.now();
     while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message) && Date.now() - start < 60000)
-    // Timeout occurs if scheduler restarts
+        // Timeout occurs if scheduler restarts
         await ns.sleep(50);
-    await ns.sleep(50);
     if (response) {
+        await ns.sleep(50);
         const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
         while (true) {
             const job = port.peek();
@@ -37,7 +37,7 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
             }
             await ns.sleep(10);
             if (Date.now() - start >= 60000) {
-                throw new Error('Timed-out');
+                throw new Error(`Timed-out: ${script} ${host||'*'} ${numThreads} ${args.join(' ')}`);
             }
         }
     }

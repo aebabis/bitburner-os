@@ -2,10 +2,10 @@ import { logger } from './lib/logger';
 import Thief from './lib/thief';
 
 import { THREADPOOL_NAME } from './etc/config';
-import { HOSTSFILE } from './etc/filenames';
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import Ports from './lib/ports';
-import { by, waitToRead } from './lib/util';
+import { by } from './lib/util';
+import { getHostnames } from './lib/data-store';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -13,7 +13,7 @@ export async function main(ns) {
 
     ns.tail();
     
-    const hostnames = (await waitToRead(ns)(HOSTSFILE)).split(',');
+    const hostnames = getHostnames();
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
         !hostname.startsWith(THREADPOOL_NAME));
 
@@ -56,10 +56,6 @@ export async function main(ns) {
                 .reduce((a,b)=>a+b, 0);
             
             const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
-            const maxServerRamAvailable = ramData.rootServers
-                .map(server => server.ramAvailable)
-                .reduce((a,b)=>a>b?a:b,0);
-            const processThreadLimit = Math.floor(maxServerRamAvailable / 1.75 / 10);
             
             ns.clearLog();
             viableThieves.forEach(thief => thief.printFrames());
@@ -67,7 +63,7 @@ export async function main(ns) {
                 const thief = viableThieves
                     .find(thief => thief.canStartNextBatch());
                 if (thief != null)
-                    await thief.startNextBatch(ramAvailable * .9, processThreadLimit);
+                    await thief.startNextBatch(ramAvailable * .9);
             }
             // ns.print('----------------------------');
             // ns.print(reservedThreads, ramAvailable);

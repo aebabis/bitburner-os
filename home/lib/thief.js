@@ -2,6 +2,7 @@ import { WEAKEN, GROW, HACK } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
 // import { logger } from './lib/logger';
 import { by } from './lib/util';
+import getConfig from './lib/config';
 
 const SUBTASK_SPACING = 50;
 
@@ -33,10 +34,11 @@ class Job {
             return false;
         const { script, threads, target } = this;
         const uuid = crypto.randomUUID();
-        const process = await delegateAny(this.ns, true)(script, threads, target, uuid);
-        this.pid = process.pid;
-        if (process.threads !== threads && this.next != null)
-            this.die();
+        await delegateAny(this.ns)(script, threads, target, uuid);
+        // const process = await delegateAny(this.ns, true)(script, threads, target, uuid);
+        // this.pid = process.pid;
+        // if (process.threads !== threads && this.next != null)
+        //     this.die();
         return true;
     }
 
@@ -107,7 +109,7 @@ class Batch {
     }
 
     getReservedThreads = () => this.jobs.map(job=>job.threads).reduce((a,b)=>a+b,0);
-    hasEnded = () => this.jobs.length === 0;
+    hasEnded = () => new Date() >= this.endAfter;
 }
 
 class HWGWBatch extends Batch {
@@ -172,6 +174,7 @@ class HWGWBatch extends Batch {
             endAfter = weaken2End + SUBTASK_SPACING;
         }
         this.jobs.sort(by('startTime'));
+        this.endAfter = endAfter;
     }
     toString() {
         return this.target.padEnd(20) + ' HWGW ' + this.jobs.length + ' ' + (this.jobs[0]?.startTime - Date.now());
@@ -203,27 +206,30 @@ class WGWBatch extends Batch {
         this.ns = ns;
         this.target = target;
 
+        const threadsPerJob = Math.max(8, ram/24/1.75/2);
+
         while (ram > 0 && weaken1Threads > 0) {
-            const threads = Math.min(weaken1Threads, 8);
+            const threads = Math.min(weaken1Threads, threadsPerJob);
             this.addJobs(new Job(ns, target, WEAKEN, threads, weaken1Start, null));
             weaken1Threads -= threads;
             ram -= threads * 1.75;
         }
 
         while (ram > 0 && growThreads > 0) {
-            const threads = Math.min(growThreads, 8);
+            const threads = Math.min(growThreads, threadsPerJob);
             this.addJobs(new Job(ns, target, GROW, threads, growStart, null));
             growThreads -= threads;
             ram -= threads * 1.75;
         }
 
         while (ram > 0 && weaken2Threads > 0) {
-            const threads = Math.min(weaken2Threads, 8);
+            const threads = Math.min(weaken2Threads, threadsPerJob);
             this.addJobs(new Job(ns, target, WEAKEN, threads, weaken2Start, null));
             weaken2Threads -= threads;
             ram -= threads * 1.7;
         }
         this.jobs.sort(by('startTime'));
+        this.endAfter = weaken2Start + ns.getWeakenTime(target) + SUBTASK_SPACING;
     }
 
     toString() {
@@ -260,10 +266,10 @@ export default class Thief {
         // return this.currentBatch == null || this.currentBatch.hasEnded();
     }
 
-    async startNextBatch(ram, maxProcessThreads) {
+    async startNextBatch(ram) {
         const { ns, server } = this;
         if (this.isGroomed())
-            this.currentBatch = new HWGWBatch(ns, server, .01, ram, this.currentBatch?.endAfter || Date.now());
+            this.currentBatch = new HWGWBatch(ns, server, getConfig(ns).get('theft-portion'), ram, this.currentBatch?.endAfter || Date.now());
         else
             this.currentBatch = new WGWBatch(ns, server, ram, this.currentBatch?.endAfter || Date.now());
     }

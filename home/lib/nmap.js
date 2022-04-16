@@ -1,8 +1,8 @@
-import { HOSTSFILE } from './etc/filenames';
+import { putHostnames } from './lib/data-store';
 
 /** @param {NS} ns **/
 export const nmap = (ns) => {
-	const hostnames = ["home"];
+	const hostnames = ['home'];
 	for (let i = 0; i < hostnames.length; i++) {
 		let hostname = hostnames[i];
 		ns.scan(hostname).forEach(hostname => {
@@ -14,16 +14,8 @@ export const nmap = (ns) => {
 	return hostnames;
 }
 
-export const writeHostsfile = async (ns) => {
-	const hostnames = nmap(ns);
-	await ns.write(HOSTSFILE, hostnames.join(','), 'w');
-}
-
-export const graph = (ns) => {
-	
-}
+/** @param {NS} ns **/
+export const saveHostnames = (ns) => putHostnames(ns, nmap(ns));
 
 /** @param {NS} ns **/
-export const main = async(ns) => {
-	await writeHostsfile(ns);
-}
+export const main = saveHostnames;
