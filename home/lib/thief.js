@@ -314,15 +314,31 @@ export default class Thief {
     }
 
     async startNextBatch(ram) {
-        const { ns, server } = this;
+        const { ns, server, currentBatch } = this;
+        const endAfter = currentBatch ? currentBatch.endAfter : Date.now();
+
         if (!this.isGroomed())
-            this.currentBatch = new WGWBatch(ns, server, ram, this.currentBatch?.endAfter || Date.now());
+            this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         else if (this.canHG())
-            this.currentBatch = new HGBatch(ns, server, getConfig(ns).get('theft-portion'), ram, this.currentBatch?.endAfter || Date.now());
+            this.currentBatch = new HGBatch(ns, server, getConfig(ns).get('theft-portion'), ram, endAfter);
         else
-            this.currentBatch = new HWGWBatch(ns, server, getConfig(ns).get('theft-portion'), ram, this.currentBatch?.endAfter || Date.now());
+            this.currentBatch = new HWGWBatch(ns, server, getConfig(ns).get('theft-portion'), ram, endAfter);
         await this.currentBatch.send();
         logger(ns).log('Started batch for ' + this.server);
+    }
+
+    getTableData() {
+        const boolStr = b => b === true ? 'Y' : b === false ? 'N' : '-';
+        const { server, currentBatch } = this;
+        if (currentBatch == null) {
+            return { hostname: server };
+        }
+        const { type, jobs } = currentBatch;
+        const ended = boolStr(currentBatch.hasEnded());
+        const timeLeft = (currentBatch.endAfter - Date.now()) / 1000;
+        const minutes = Math.trunc(timeLeft / 60);
+        const seconds = Math.floor(Math.abs(timeLeft % 60)).toString().padStart(2, '0');
+        return { hostname: server, type, jobs: jobs.length, ended, timeLeft: `${minutes}:${seconds}` };
     }
 
     getPredictedIncomeRatePerThread(portionOrMaxGrowThreads = .01) {
@@ -341,9 +357,4 @@ export default class Thief {
 
     getReservedThreads = () => this.currentBatch == null ? 0 :
         this.currentBatch.getReservedThreads();
-
-    printFrames() {
-        if (this.currentBatch != null /*&& !this.currentBatch.hasEnded()*/)
-            this.ns.print(this.currentBatch.toString());
-    }
 }

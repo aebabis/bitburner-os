@@ -5,6 +5,7 @@ import { THREADPOOL_NAME } from './etc/config';
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import Ports from './lib/ports';
 import { by } from './lib/util';
+import { table } from './lib/table';
 import { getHostnames } from './lib/data-store';
 
 /** @param {NS} ns **/
@@ -56,7 +57,14 @@ export async function main(ns) {
             const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
             
             ns.clearLog();
-            viableThieves.forEach(thief => thief.printFrames());
+            const rows = viableThieves
+                .filter(thief=>thief.currentBatch != null)
+                .map(thief => thief.getTableData())
+                .map(({ hostname, type, jobs, ended, timeLeft }) => [hostname, type, jobs, ended, timeLeft])
+                .sort(by(0));
+            const tString = table(ns, ['SERVER', 'FRAME', 'JOBS', 'ENDED', 'TIME'], rows);
+            ns.print('-'.repeat(tString.indexOf('\n')+1));
+            ns.print(tString);
             if (ramAvailable > 0) {
                 const thief = viableThieves
                     .find(thief => thief.canStartNextBatch());
