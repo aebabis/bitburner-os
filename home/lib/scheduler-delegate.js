@@ -6,6 +6,7 @@ export const snippet = (statements) => `export async function main(ns) {\n${stat
 
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
+    const { startTime = Date.now() } = options;
     if (!script.endsWith('.js') || isNaN(numThreads) || numThreads < 1) {
         if (host == null) {
             throw new Error(`Illegal process description: ${script} ${numThreads} ${args.join(' ')}`);
@@ -17,7 +18,7 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
     const ticket = response ? crypto.randomUUID() : undefined;
     const sender = ns.getHostname();
     const message = JSON.stringify({
-        script, host, numThreads, args, sender, ticket, requestTime: Date.now() });
+        script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() });
     let start = Date.now();
     while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message) && Date.now() - start < 60000)
         // Timeout occurs if scheduler restarts

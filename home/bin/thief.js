@@ -44,8 +44,6 @@ export async function main(ns) {
                 viableThieves = prioritze();
                 lastPriorization = Date.now();
             }
-            for (const thief of viableThieves)
-                await thief.advance();
 
             // viableThieves.forEach((thief) => {
             //     ns.print(thief.getHostname());

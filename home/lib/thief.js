@@ -1,6 +1,6 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
-// import { logger } from './lib/logger';
+import { logger } from './lib/logger';
 import { by } from './lib/util';
 import getConfig from './lib/config';
 
@@ -24,49 +24,33 @@ class Job {
         this.prev = prev;
         if (prev)
             prev.next = this;
-        this.dead = false;
     }
 
-    async check() {
-        if (this.prev?.dead)
-            return true;
-        if (Date.now() < this.startTime)
-            return false;
-        const { script, threads, target } = this;
+    async send() {
+        const { script, threads, target, startTime } = this;
         const uuid = crypto.randomUUID();
-        await delegateAny(this.ns)(script, threads, target, uuid);
-        // const process = await delegateAny(this.ns, true)(script, threads, target, uuid);
-        // this.pid = process.pid;
-        // if (process.threads !== threads && this.next != null)
-        //     this.die();
-        return true;
+        await delegateAny(this.ns, false, { startTime })(script, threads, target, uuid);
     }
+}
 
-    die() {
-        this.dead = true;
-        this.ns.kill(this.pid);
-        this.prev?.die();
-    }
-
-    // toString() {
+// toString() {
 
 // const small = number => number.toString()
 // .split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]).join('');
-    //     let str = '';
-    //     let width = 50;
-    //     let job = this;
-    //     while (width > 0 && job != null) {
-    //         const ahead = job.startTime - Date.now();
-    //         if (ahead > 0) {
-    //             const future = Math.min(width, Math.floor(ahead / SUBTASK_SPACING));
-    //             str += ' '.repeat(future) + small(this.threads);
-    //             width -= future;
-    //         }
-    //         job = job.next;
-    //     }
-    //     return str;
-    // }
-}
+//     let str = '';
+//     let width = 50;
+//     let job = this;
+//     while (width > 0 && job != null) {
+//         const ahead = job.startTime - Date.now();
+//         if (ahead > 0) {
+//             const future = Math.min(width, Math.floor(ahead / SUBTASK_SPACING));
+//             str += ' '.repeat(future) + small(this.threads);
+//             width -= future;
+//         }
+//         job = job.next;
+//     }
+//     return str;
+// }
 
 const computeThreads = (ns, target, portion) => {
     const weakenTime = ns.getWeakenTime(target);
@@ -98,6 +82,7 @@ class Batch {
         this.ns = ns;
         this.target = target;
         this.jobs = [];
+        this.type = this.constructor.name.replace('Batch', '');
     }
 
     addJobs(...jobs) {
@@ -110,8 +95,17 @@ class Batch {
             jobs.shift();
     }
 
+    async send() {
+        const { jobs } = this;
+        for (const job of jobs) {
+            await job.send();
+        }
+    }
     getReservedThreads = () => this.jobs.map(job=>job.threads).reduce((a,b)=>a+b,0);
     hasEnded = () => new Date() >= this.endAfter;
+    toString() {
+        return this.target.padEnd(20) + ' ' + this.type + ' ' + this.jobs.length + ' ' + (this.endAfter - Date.now());
+    }
 }
 
 class HGBatch extends Batch {
@@ -146,7 +140,6 @@ class HGBatch extends Batch {
             return;
 
         while (ram >= ramPerFrame) {
-            ns.tprint('???');
             const hackEnd = endAfter;
             const growEnd = hackEnd + SUBTASK_SPACING;
             const growStart = growEnd - growTime;
@@ -166,9 +159,6 @@ class HGBatch extends Batch {
         }
         this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
-    }
-    toString() {
-        return this.target.padEnd(20) + '   HG ' + this.jobs.length + ' ' + (this.jobs[0]?.startTime - Date.now());
     }
 }
 
@@ -234,9 +224,6 @@ class HWGWBatch extends Batch {
         this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
     }
-    toString() {
-        return this.target.padEnd(20) + ' HWGW ' + this.jobs.length + ' ' + (this.jobs[0]?.startTime - Date.now());
-    }
 }
 
 class WGWBatch extends Batch {
@@ -289,10 +276,6 @@ class WGWBatch extends Batch {
         this.jobs.sort(by('startTime'));
         this.endAfter = weaken2Start + ns.getWeakenTime(target) + SUBTASK_SPACING;
     }
-
-    toString() {
-        return this.target.padEnd(20) + ' WGW  ' + (this.jobs[0]?.startTime - Date.now());
-    }
 }
 
 export default class Thief {
@@ -338,12 +321,8 @@ export default class Thief {
             this.currentBatch = new HGBatch(ns, server, getConfig(ns).get('theft-portion'), ram, this.currentBatch?.endAfter || Date.now());
         else
             this.currentBatch = new HWGWBatch(ns, server, getConfig(ns).get('theft-portion'), ram, this.currentBatch?.endAfter || Date.now());
-    }
-
-    async advance() {
-        const batch = this.currentBatch;
-        if (batch != null && !batch.hasEnded())
-            await batch.tick();
+        await this.currentBatch.send();
+        logger(ns).log('Started batch for ' + this.server);
     }
 
     getPredictedIncomeRatePerThread(portionOrMaxGrowThreads = .01) {

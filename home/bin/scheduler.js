@@ -85,19 +85,20 @@ export async function main(ns) {
 		try {
 			ns.clearLog();
 			// clean(ns);
+			const { length } = queue;
 			await checkPort(ns, queue);
 			if (queue.length === 0) {
-				await ns.sleep(100);
+				await ns.sleep(20);
 				continue;
-			}
+			} else if (queue.length !== length)
+				queue.sort(by(job=>job.startTime));
 
-			queue.sort(by(job=>job.numThreads/(1 << job.waitTime())));
 
-			const maxJobsThisTick = Math.ceil(queue.length / 2);
-			for (let i = 0; i < Math.min(maxJobsThisTick, queue.length); i++) {
+			const now = Date.now();
+			for (let i = 0; i < queue.length; i++) {
 				const process = queue[i];
-				if (process == null)
-					await console.log(queue);
+				if (process.startTime > now)
+					break;
 				// await systemLog(ns, process);
 				if (process.waitTime() > 60000) {
 					await reject(ns, queue.splice(i--, 1)[0]);
@@ -121,11 +122,7 @@ export async function main(ns) {
 					}
 				} else {
 					// No preference; choose
-					const { rootServers, purchasedServers,
-						purchasedServersMaxedOut, purchasedServerLimit } = ramData;
-					// const empty = Math.max(0, purchasedServers.length + 2 - purchasedServerLimit);
-					// const skip = purchasedServersMaxedOut ? 0 : empty;
-					// const servers = rootServers.slice(0, rootServers.length - skip);
+					const { rootServers } = ramData;
 					const eligibleServers = process.isHacking ?
 						rootServers :
 						rootServers.filter(server => !server.hostname.startsWith(THREADPOOL_NAME));
@@ -137,16 +134,16 @@ export async function main(ns) {
 					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {
 						await fulfill(ns, queue.splice(i, 1)[0], settleServer);
 					}
-					continue;
 				}
 			}
 			if (queue.length > 0) {
-				queue.forEach(item => ns.print(item.toString()));
+				ns.print(`${queue.length} items queued`);
+				queue.slice(0, 10).forEach(item => ns.print(item.toString()));
 			}
-			await ns.sleep(1);
 		} catch(error) {
 			await logger(ns).error(error);
-			await ns.sleep(1000);
+		} finally {
+			await ns.sleep(10);
 		}
 	}
 }
