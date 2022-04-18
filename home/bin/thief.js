@@ -13,6 +13,13 @@ export async function main(ns) {
     ns.disableLog('ALL');
 
     ns.tail();
+
+    const feed = [];
+    const log = (message) => {
+        feed.push(message);
+        while (feed.length > 10)
+            feed.shift();
+    }
     
     const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
@@ -22,14 +29,7 @@ export async function main(ns) {
 
     const prioritze = () => thieves
         .filter(thief => thief.canHack())
-        .sort(by(thief => -thief.getPredictedIncomeRatePerThread()))
-        // .sort(by(thief => {
-        //     const hostname = thief.getHostname();
-        //     return ns.getServerMinSecurityLevel(hostname);
-        //     // const maxedOut = ns.getServerMoneyAvailable(hostname)
-        //     //     / ns.getServerMaxMoney(hostname) >= .99;
-        //     // return maxedOut ? -1 : 1;
-        // }));
+        .sort(by(thief => -thief.getDesirability()))
 
     let viableThieves;
     let lastPriorization = 0;
@@ -46,10 +46,6 @@ export async function main(ns) {
                 lastPriorization = Date.now();
             }
 
-            // viableThieves.forEach((thief) => {
-            //     ns.print(thief.getHostname());
-            // });
-
             const reservedThreads = viableThieves
                 .map(thief => thief.getReservedThreads())
                 .reduce((a,b)=>a+b, 0);
@@ -58,23 +54,31 @@ export async function main(ns) {
             
             ns.clearLog();
             const rows = viableThieves
-                .filter(thief=>thief.currentBatch != null)
+                .filter(thief=>thief.currentBatch != null && !thief.currentBatch.hasEnded())
                 .map(thief => thief.getTableData())
-                .map(({ hostname, type, jobs, ended, timeLeft }) => [hostname, type, jobs, ended, timeLeft])
+                .map(({ hostname, type, frame, portion, jobs, ended, timeLeft }) => {
+                    const money = ns.getServerMoneyAvailable(hostname);
+                    const maxMoney = ns.getServerMaxMoney(hostname);
+                    const curSecurity = ns.getServerSecurityLevel(hostname);
+                    const minSecurity = ns.getServerMinSecurityLevel(hostname);
+                    const moneyStr = `${ns.nFormat(money, '0.00a')}/${ns.nFormat(maxMoney, '0.00a')}`;
+                    const secStr = `${+curSecurity.toFixed(1)}/${minSecurity}`;
+                    return [hostname, moneyStr, secStr, type, frame, portion, jobs, timeLeft];
+                })
                 .sort(by(0));
-            const tString = table(ns, ['SERVER', 'FRAME', 'JOBS', 'ENDED', 'TIME'], rows);
-            ns.print('-'.repeat(tString.indexOf('\n')+1));
+            const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
+            ns.print('-'.repeat(tString.indexOf('\n')+1));
+            feed.forEach(message => ns.print(message));
             if (ramAvailable > 0) {
+                const mayGroom = viableThieves.filter(thief => thief.isGrooming()).length < 2;
                 const thief = viableThieves
-                    .find(thief => thief.canStartNextBatch());
-                if (thief != null)
-                    await thief.startNextBatch(ramAvailable * .9);
+                    .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
+                if (thief != null) {
+                    await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
+                    log(`Started batch on ${thief.getHostname()}`);
+                }
             }
-            // ns.print('----------------------------');
-            // ns.print(reservedThreads, ramAvailable);
-
-            // frames.slice().reverse().forEach(frame=>ns.print(frame.tableString()));
         } catch (error) {
             console.log(error);
             await logger(ns).error(error);

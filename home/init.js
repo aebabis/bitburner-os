@@ -3,13 +3,17 @@ import { saveHostnames  } from './lib/nmap';
 import { putStaticData } from './lib/data-store';
 import getConfig from './lib/config';
 
+import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
+const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
 
     // Clear all ports
     for (let i = 1; i <= 20; i++)
-        ns.clearPort(i);
+        if (!PERSISTENT_PORTS.includes(i))
+            ns.clearPort(i);
 
     getConfig(ns).set('share', 0);    // No faction, no share
 

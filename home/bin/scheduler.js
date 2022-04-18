@@ -63,6 +63,7 @@ export async function main(ns) {
 		const totalMaxRam = rootServers.map(s=>s.maxRam).reduce((a,b)=>a+b,0) || 0;
 		const totalRamUsed = rootServers.map(s=>s.ramUsed).reduce((a,b)=>a+b,0) || 0;
 		const totalRamUnused = totalMaxRam - totalRamUsed;
+		const maxRamSlot = rootServers.map(s=>s.maxRam-s.ramUsed).reduce((a,b)=>a>b?a:b,0);
 		const demand = queue.map(({ script, sender, numThreads }) => numThreads * ns.getScriptRam(script, sender))
 			.reduce((a,b)=>a+b, 0);
 		const data = {
@@ -74,6 +75,7 @@ export async function main(ns) {
 			totalRamUsed,
 			totalRamUnused,
 			totalMaxRam,
+			maxRamSlot,
 			demand,
 		};
 		// ns.tprint(JSON.stringify(purchasedServers, null, 2));
