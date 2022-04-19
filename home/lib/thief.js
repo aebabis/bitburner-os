@@ -4,6 +4,7 @@ import { by } from './lib/util';
 import getConfig from './lib/config';
 
 const SUBTASK_SPACING = 50;
+const FRAME_SPACING = SUBTASK_SPACING * 4;
 
 /** @param {NS} ns **/
 const getWThreads = (ns, targetDecrease, cores=1) => {
@@ -57,7 +58,7 @@ const computeThreads = (ns, target, portion) => {
     const hackTime = ns.getHackTime(target);
 
     let hackThreads = Math.floor(portion / ns.hackAnalyze(target));
-    while (hackThreads < 1 && portion < .5) {
+    while (hackThreads < 1 && portion < 1) {
         portion += .01;
         hackThreads = Math.floor(portion / ns.hackAnalyze(target));
     }
@@ -75,6 +76,31 @@ const computeThreads = (ns, target, portion) => {
 
     return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads };
 }
+
+// const computeHGWThreads = (ns, target, portion) => {
+//     const weakenTime = ns.getWeakenTime(target);
+//     const growTime = ns.getGrowTime(target);
+//     const hackTime = ns.getHackTime(target);
+
+//     let hackThreads = Math.floor(portion / ns.hackAnalyze(target));
+//     while (hackThreads < 1 && portion < 1) {
+//         portion += .01;
+//         hackThreads = Math.floor(portion / ns.hackAnalyze(target));
+//     }
+//     const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
+//     if (secIncrease1 === Infinity)
+//         return null;
+//     const weaken1Threads = getWThreads(ns, secIncrease1);
+
+//     const growFactor  = 1 / (1 - portion);
+//     const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
+//     const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
+//     if (secIncrease2 === Infinity)
+//         return null;
+//     const weaken2Threads = getWThreads(ns, secIncrease2);
+
+//     return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads };
+// }
 
 class Batch {
     constructor(ns, target) {
@@ -114,9 +140,9 @@ class HGBatch extends Batch {
             throw new Error('Portion must be a number. Got ' + portion);
         if (isNaN(ram))
             throw new Error('Ram must be a number. Got ' + ram);
-        if (portion > .5) {
-            ns.tprint('WARN - Hack portion cannot exceed .5');
-            portion = .5;
+        if (portion >= 1) {
+            ns.tprint('WARN - Hack portion cannot meet or exceed 1');
+            portion = 63/64;
         }
 
         const frame = computeThreads(ns, target, portion);
@@ -155,7 +181,7 @@ class HGBatch extends Batch {
             frames.push(growJob);
 
             ram -= ramPerFrame;
-            endAfter = growEnd + SUBTASK_SPACING;
+            endAfter = growEnd + FRAME_SPACING;
         }
         this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
@@ -171,9 +197,9 @@ class HWGWBatch extends Batch {
             throw new Error('Portion must be a number. Got ' + portion);
         if (isNaN(ram))
             throw new Error('Ram must be a number. Got ' + ram);
-        if (portion > .5) {
-            ns.tprint('WARN - Hack portion cannot exceed .5');
-            portion = .5;
+        if (portion >= 1) {
+            ns.tprint('WARN - Hack portion cannot meet or exceed 1');
+            portion = 63/64;
         }
 
         const frame = computeThreads(ns, target, portion);
@@ -221,7 +247,7 @@ class HWGWBatch extends Batch {
             frames.push(weaken1);
 
             ram -= ramPerFrame;
-            endAfter = weaken2End + SUBTASK_SPACING;
+            endAfter = weaken2End + FRAME_SPACING;
         }
         this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
@@ -280,7 +306,7 @@ class WGWBatch extends Batch {
             ram -= threads * 1.7;
         }
         this.jobs.sort(by('startTime'));
-        this.endAfter = weaken2Start + ns.getWeakenTime(target) + SUBTASK_SPACING;
+        this.endAfter = weaken2Start + ns.getWeakenTime(target) + FRAME_SPACING;
         if (this.jobs.length === 0)
             this.endAfter = Date.now();
     }
@@ -332,11 +358,13 @@ export default class Thief {
         const { ns, server, currentBatch } = this;
         const endAfter = currentBatch ? currentBatch.endAfter : Date.now();
 
-        let portion = .5;
-        while (portion > .01 && ns.growthAnalyze(server, 1 / (1-portion)) > maxRamPerJob/1.75) {
-            portion -= .01;
+        let den = 64;
+        let num = ~~(3 * den / 4);
+        while (num>1 && ns.growthAnalyze(server, 1 / (1-num/den)) > maxRamPerJob/1.75) {
+            num--;
         }
 
+        const portion = num/den;
         if (!this.isGroomed())
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         else if (this.canHG())
@@ -344,6 +372,7 @@ export default class Thief {
         else
             this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
         await this.currentBatch.send();
+        return this.currentBatch.jobs.length > 0;
     }
 
     getTableData() {

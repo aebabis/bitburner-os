@@ -1,5 +1,6 @@
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { THREADPOOL_NAME } from './etc/config';
+import { HACK } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
@@ -126,7 +127,7 @@ export async function main(ns) {
 					// No preference; choose
 					const { rootServers } = ramData;
 					const eligibleServers = process.isHacking ?
-						rootServers :
+						rootServers.filter(server => ns.fileExists(HACK, server.hostname)) :
 						rootServers.filter(server => !server.hostname.startsWith(THREADPOOL_NAME));
 
 					const server = eligibleServers.find(server => server.ramAvailable >= ramRequired);

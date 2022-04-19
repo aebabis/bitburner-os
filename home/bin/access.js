@@ -1,6 +1,7 @@
 import { INFECT } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
 import { getHostnames } from './lib/data-store';
+import { disableService } from './lib/planner-api';
 
 /** @param {NS} ns **/
 export const access = (ns) => async (target) => {
@@ -35,7 +36,7 @@ export async function main(ns) {
         return access(ns.args[0]);
     }
 
-    let hostnames = getHostnames();
+    let hostnames = getHostnames(ns);
 
     while (hostnames.length > 0) {
         const startingLength = hostnames.length;
@@ -54,4 +55,5 @@ export async function main(ns) {
             ns.print(`Hacked ${startingLength - hostnames.length} servers. ${hostnames.length} remaining`);
         await ns.sleep(1000);
     }
+    disableService(ns, 'access');
 }

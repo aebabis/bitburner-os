@@ -75,8 +75,8 @@ export async function main(ns) {
                 const thief = viableThieves
                     .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
                 if (thief != null) {
-                    await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
-                    log(`Started batch on ${thief.getHostname()}`);
+                    if (await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2))
+                        log(`Started batch on ${thief.getHostname()}`);
                 }
             }
         } catch (error) {
