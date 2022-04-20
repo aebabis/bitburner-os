@@ -8,6 +8,7 @@ export function coreUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
     return (currentLevel*1.5) * Math.pow(1.035,currentRam-1) * (1/6);
 }
 
+/** @param {NS} ns **/
 export const getNodeData = (ns) => {
     const numNodes = ns.hacknet.numNodes();
     const nodes = new Array(numNodes).fill(null).map((_, i) => ns.hacknet.getNodeStats(i));
@@ -39,17 +40,22 @@ export const getNodeData = (ns) => {
     });
 }
 
+/** @param {NS} ns **/
 export const getBestUpgrade = (ns) => {
     const upgrades = getNodeData(ns).map(stats => stats.upgrades.getBest());
     return upgrades.reduce((a, b) => a.profitPerCost > b.profitPerCost ? a : b, upgrades[0] || null);
 }
 
+/** @param {NS} ns **/
 export const getBestPurchase = (ns) => {
     const bestUpgrade = getBestUpgrade(ns);
     const nodeCost = ns.hacknet.getPurchaseNodeCost();
     if (bestUpgrade == null || nodeCost < bestUpgrade.cost) {
-        return { profit: null, cost: nodeCost, profitPerCost: null, breakEvenTime: null,
-            purchase: () => ns.hacknet.purchaseNode(), toString: () => `core $${nodeCost}`}
+        const profit = ns.hacknet.numNodes > 0 ? ns.hacknet.getNodeStats(0).production : 0;
+        const profitPerCost = profit / nodeCost;
+        const breakEvenTime = profit === 0 ? 0 : nodeCost / profit;
+        return { type: 'node', profit, cost: nodeCost, profitPerCost, breakEvenTime,
+            purchase: () => ns.hacknet.purchaseNode(), toString: () => `node $${nodeCost}`}
     } else {
         return bestUpgrade;
     }

@@ -3,7 +3,7 @@ import { PURCHASE_THREADPOOL } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { delegate } from './lib/scheduler-delegate';
-import { logger } from './bin/logger';
+import { logger } from './lib/logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -19,11 +19,11 @@ export async function main(ns) {
                 purchasedServerLimit,
                 totalRamUsed,
                 totalMaxRam,
-                demand,
+                ramQueued,
             } = ramData;
 
             // Allow a 20% buffer
-            const atCapacity = totalRamUsed + demand > totalMaxRam * .8;
+            const atCapacity = totalRamUsed + ramQueued > totalMaxRam * .8;
         
             if (atCapacity) {
 		        const money = ns.getServerMoneyAvailable('home');

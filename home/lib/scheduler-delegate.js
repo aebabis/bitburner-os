@@ -20,9 +20,17 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
     const message = JSON.stringify({
         script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() });
     let start = Date.now();
-    while (!await ns.tryWritePort(PORT_SCH_DELEGATE_TASK, message) && Date.now() - start < 60000)
-        // Timeout occurs if scheduler restarts
-        await ns.sleep(50);
+    const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
+    if (!port.full()) {
+        port.write(message);
+    } else {
+        const list = [];
+        let item;
+        while (item = port.read())
+            list.push(item);
+        list.push(message);
+        port.write(list);
+    }
     if (response) {
         await ns.sleep(50);
         const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
@@ -49,12 +57,12 @@ export const delegateAny = (ns, response, options) => async (script, numThreads=
 
 /** @param {NS} ns **/
 export const getDelegatedTasks = async (ns) => {
-	const port = ns.getPortHandle(PORT_SCH_DELEGATE_TASK);
+	const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     const tasks = [];
 	while (!port.empty()) {
-		const message = port.read();
+		const messages = [port.read()].flat(Infinity);
 		try {
-            tasks.push(JSON.parse(message))
+            tasks.push(...messages);
 		} catch(error) {
 			await logger(ns).error(error) // TODO: Pretty
 		}

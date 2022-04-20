@@ -110,7 +110,10 @@ export async function main(ns) {
 				const scriptRam = ns.getScriptRam(process.script, process.sender);
 				const ramRequired = scriptRam * process.numThreads;
 
-				const ramData = getRamData(ns);
+				const ramQueued = queue.map(({ script, numThreads }) => ns.getScriptRam(script) * numThreads)
+					.reduce((a,b) => a+b, 0);
+				const ramData = getRamData(ns)
+				ramData.ramQueued = ramQueued;
 				const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
 				port.clear();
 				port.write(ramData);

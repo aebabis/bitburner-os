@@ -50,7 +50,7 @@ export async function main(ns) {
                 .map(thief => thief.getReservedThreads())
                 .reduce((a,b)=>a+b, 0);
             
-            const ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
+            let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
             
             ns.clearLog();
             const rows = viableThieves
@@ -68,16 +68,23 @@ export async function main(ns) {
                 .sort(by(0));
             const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
+            ns.print(' RAM AVAILABLE: ' + ns.nFormat(ramAvailable, '0.00'));
             ns.print('-'.repeat(tString.indexOf('\n')+1));
             feed.forEach(message => ns.print(message));
-            if (ramAvailable > 0) {
-                const mayGroom = viableThieves.filter(thief => thief.isGrooming()).length < 2;
-                const thief = viableThieves
-                    .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
-                if (thief != null) {
-                    if (await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2))
-                        log(`Started batch on ${thief.getHostname()}`);
-                }
+            const stealing = viableThieves.filter(thief => thief.isStealing());
+            const grooming = viableThieves.filter(thief => thief.isGrooming());
+            ns.print(stealing.length + '/' + grooming.length);
+            const mayGroom = grooming.length <= stealing.length;
+            const thief = viableThieves
+                .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
+            if (thief != null) {
+                    // break;
+            ns.print(thief.getHostname());
+                const threads = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
+                if (threads > 0)
+                    // break;
+                log(`Started batch on ${thief.getHostname()}`);
+                ramAvailable -= threads * 1.75;
             }
         } catch (error) {
             console.log(error);

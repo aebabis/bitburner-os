@@ -65,42 +65,19 @@ const computeThreads = (ns, target, portion) => {
     const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
     if (secIncrease1 === Infinity)
         return null;
-    const weaken1Threads = getWThreads(ns, secIncrease1);
 
     const growFactor  = 1 / (1 - portion);
     const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
     const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
     if (secIncrease2 === Infinity)
         return null;
+
+    const weaken1Threads = getWThreads(ns, secIncrease1);
     const weaken2Threads = getWThreads(ns, secIncrease2);
+    const weakenThreads = getWThreads(ns, weaken1Threads + weaken2Threads);
 
-    return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads };
+    return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads, weakenThreads };
 }
-
-// const computeHGWThreads = (ns, target, portion) => {
-//     const weakenTime = ns.getWeakenTime(target);
-//     const growTime = ns.getGrowTime(target);
-//     const hackTime = ns.getHackTime(target);
-
-//     let hackThreads = Math.floor(portion / ns.hackAnalyze(target));
-//     while (hackThreads < 1 && portion < 1) {
-//         portion += .01;
-//         hackThreads = Math.floor(portion / ns.hackAnalyze(target));
-//     }
-//     const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
-//     if (secIncrease1 === Infinity)
-//         return null;
-//     const weaken1Threads = getWThreads(ns, secIncrease1);
-
-//     const growFactor  = 1 / (1 - portion);
-//     const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
-//     const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
-//     if (secIncrease2 === Infinity)
-//         return null;
-//     const weaken2Threads = getWThreads(ns, secIncrease2);
-
-//     return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads };
-// }
 
 class Batch {
     constructor(ns, target) {
@@ -133,7 +110,7 @@ class Batch {
     }
 }
 
-class HGBatch extends Batch {
+class HGWBatch extends Batch {
     constructor(ns, target, portion, ram, startAfter=Date.now()) {
         super(ns, target);
         if (isNaN(portion))
@@ -149,15 +126,15 @@ class HGBatch extends Batch {
         if (frame == null)
             return;
         
-        const { growTime, hackTime, growThreads, hackThreads } = frame;
-        this.frame = [growThreads, hackThreads];
+        const { weakenTime, growTime, hackTime, weakenThreads, growThreads, hackThreads } = frame;
+        this.frame = [weakenThreads, growThreads, hackThreads];
 
         this.portion = portion;
 
-        const totalThreads = growThreads + hackThreads;
+        const totalThreads = weakenThreads + growThreads + hackThreads;
 	    const ramPerFrame = totalThreads * 1.75;
 
-        let endAfter = startAfter + growTime;
+        let endAfter = startAfter + weakenTime;
         let startBefore = endAfter;
 
         const frames = this.frames = [];
@@ -167,21 +144,25 @@ class HGBatch extends Batch {
 
         while (ram >= ramPerFrame) {
             const hackEnd = endAfter;
-            const growEnd = hackEnd + SUBTASK_SPACING;
+            const weakenEnd = hackEnd + SUBTASK_SPACING;
+            const growEnd = weakenEnd + SUBTASK_SPACING;
+
+            const weakenStart = weakenEnd - weakenTime;
             const growStart = growEnd - growTime;
             const hackStart = hackEnd - hackTime;
 
             if (hackStart >= startBefore)
                 break;
 
-            const growJob = new Job(ns, target, GROW, growThreads, growStart, null);
+            const weaken = new Job(ns, target, WEAKEN, weakenThreads, weakenStart, null);
+            const growJob = new Job(ns, target, GROW, growThreads, growStart, weaken);
             const hackJob = new Job(ns, target, HACK, hackThreads, hackStart, growJob);
 
-            this.addJobs(growJob, hackJob);
-            frames.push(growJob);
+            this.addJobs(weaken, growJob, hackJob);
+            frames.push(weaken);
 
             ram -= ramPerFrame;
-            endAfter = growEnd + FRAME_SPACING;
+            endAfter = weakenEnd + FRAME_SPACING;
         }
         this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
@@ -341,6 +322,13 @@ export default class Thief {
         return currentBatch.type === 'WGW';
     }
 
+    isStealing = () => {
+        const { currentBatch } = this;
+        if (currentBatch == null || currentBatch.hasEnded())
+            return false;
+        return currentBatch.type !== 'WGW';
+    }
+
     canHG = () => {
         const minSecurity = this.ns.getServerMinSecurityLevel(this.server);
         const baseSecurity = this.ns.getServerBaseSecurityLevel(this.server);
@@ -358,19 +346,27 @@ export default class Thief {
         const { ns, server, currentBatch } = this;
         const endAfter = currentBatch ? currentBatch.endAfter : Date.now();
 
-        let den = 64;
-        let num = ~~(3 * den / 4);
-        while (num>1 && ns.growthAnalyze(server, 1 / (1-num/den)) > maxRamPerJob/1.75) {
-            num--;
-        }
 
-        const portion = num/den;
-        if (!this.isGroomed())
+        if (!this.isGroomed()) {
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
-        else if (this.canHG())
-            this.currentBatch = new HGBatch(ns, server, portion, ram, endAfter);
-        else
-            this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
+        } else {
+            let portion = 1;
+            const incr = 1/256;
+            const maxThreads = maxRamPerJob / 1.75;
+            while (true) {
+                portion -= incr;
+                if (portion === 0)
+                    return false;
+                const growThreads = ns.growthAnalyze(server, 1 / (1-portion));
+                const hackThreads = portion/ns.hackAnalyze(server);
+                if (growThreads < maxThreads && hackThreads < maxThreads)
+                    break;
+            }
+            if (this.canHG())
+                this.currentBatch = new HGWBatch(ns, server, portion, ram, endAfter);
+            else
+                this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
+        }
         await this.currentBatch.send();
         return this.currentBatch.jobs.length > 0;
     }
@@ -397,20 +393,20 @@ export default class Thief {
 
         const weakenTime = ns.getWeakenTime(server);
         const maxMoney = ns.getServerMaxMoney(server);
-        const money = ns.getServerMoneyAvailable(server);
-        if (money / maxMoney > .99) {
+        // const money = ns.getServerMoneyAvailable(server);
+       // if (money / maxMoney > .99) {
 
-            const portion = .01;
-            const income = money * portion;
+        const portion = .01;
+        const income = maxMoney * portion;
 
-            const hackThreads = Math.floor(.01 / ns.hackAnalyze(server));
-            const growFactor  = 1 / (1 - portion);
-            const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
+        const hackThreads = Math.floor(.01 / ns.hackAnalyze(server));
+        const growFactor  = 1 / (1 - portion);
+        const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
 
-            return income / (growThreads + hackThreads) / weakenTime;
-        } else {
-            return 1 / maxMoney / weakenTime;
-        }
+        return income / (growThreads + hackThreads) / weakenTime / weakenTime;
+        //} else {
+        //    return 1 / maxMoney / weakenTime;
+        //}
     }
 
     getReservedThreads = () => this.currentBatch == null ? 0 :

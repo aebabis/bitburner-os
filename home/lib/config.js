@@ -1,5 +1,6 @@
 import { PORT_RUN_CONFIG } from './etc/ports';
 import Ports from './lib/ports';
+const DAY = 24 * 60 * 60 * 1000;
 
 const PROPS = {
     'share': 'Share rate',
@@ -8,6 +9,7 @@ const PROPS = {
     'theft-portion': 'Default hack portion',
     'reserved-home-ram': 'On-demand RAM',
     'threadpool-name': 'Name of purchased servers',
+    'next-aug-time': 'Estimated time of next aug',
 };
 
 const VALIDATORS = {
@@ -17,6 +19,7 @@ const VALIDATORS = {
     'theft-portion': (x) => x > 0 && x < 1,
     'reserved-home-ram': (x) => x > 0 && x <= 1<<20,
     'threadpool-name': (x) => typeof x === 'string' && x.length > 0,
+    'next-aug-time': (x) => typeof x === 'number',
 };
 
 const DEFAULT_VALUES = {
@@ -26,6 +29,7 @@ const DEFAULT_VALUES = {
     'theft-portion': .01,
     'reserved-home-ram': 8,
     'threadpool-name': 'THREADPOOL',
+    'next-aug-time': Date.now() + 1 * DAY,
 };
 
 export default (ns) => {
