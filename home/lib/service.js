@@ -23,55 +23,49 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
     const shortname = script.split('/').pop().split('.').shift();
     let pid = getExistingPid(ns, desc);
     let lastRun = 0;
-    let status = '💤';
     let enabled = true;
-    let isForced = false;
+    let queued = false;
 
     const isRunning = () => pid && ns.isRunning(pid);
 
-    const enable = (forced=false) => {
-        enabled = true;
-        isForced = forced;
-        status = '💤';
-    }
-
-    const disable = () => {
-        enabled = false;
-        isForced = false;
-        status = '🔴';
-    }
+    const enable = () => enabled = true;
+    const disable = () => enabled = false;
 
     const stop = () => {
         ns.kill(pid);
         pid = null;
+    };
+
+    const statusCode = () => {
         if (!enabled)
-            status = '🔴';
+            return '🔴';
+        else if (queued)
+            return '🟡';
+        else if (isRunning())
+            return '🟢';
         else
-            status = '💤';
+            return '💤';
     };
 
     const check = async (beforeRun) => {
         const running = isRunning();
-        const shouldBe = enabled && (isForced || condition());
-        if (running)
-            status = '🟢';
+        const shouldBe = enabled && condition();
         if (!running && shouldBe) {
-            status = '🟡';
             const now = Date.now();
-            if (now - lastRun >= interval) {
+            const isReady = now - lastRun >= interval;
+            if (isReady) {
                 lastRun = now;
                 await console.info(pid ? 'Attempting to restart' : 'Attempting to start', desc);
+                queued = true;
                 if (beforeRun)
                     beforeRun();
                 const handle = await delegate(ns, true)(script, target, numThreads, ...args);
-                status = '🟢';
+                queued = false;
                 pid = handle.pid;
                 if (pid != null)
                     await console.info('Successfully started', desc, `(PID=${pid})`);
                 else
                     await console.error('Failed to start', desc);
-            } else {
-                status = '💤';
             }
         } else if (running && !shouldBe) {
             stop();
@@ -79,8 +73,7 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
     }
 
     const matches = (identifier) => identifier == id || identifier === shortname;
-    const toData = () => ({id, name: shortname, status, pid, desc});
-    const toString = () => ` ${id.toString().padStart(2)}  ${shortname.padEnd(16)} ${status} ${(pid||'').toString().padStart(7)}  ${desc}`;
+    const toData = () => ({id, name: shortname, status: statusCode(), pid, desc});
 
     return {
         isRunning,
@@ -92,6 +85,7 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
         disable,
         stop,
         matches,
+        statusCode,
     }
 }
 

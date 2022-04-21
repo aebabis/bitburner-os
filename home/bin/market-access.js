@@ -10,5 +10,6 @@ export async function main(ns) {
         return;
     if (!ns.stock.purchase4SMarketDataTixApi())
         return;
-    disableService(ns, 'purchase-market-access');
+    const serviceName = ns.getScriptName().split('/').pop().split('.').shift();
+    disableService(ns, serviceName);
 }

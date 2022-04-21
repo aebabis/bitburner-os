@@ -69,25 +69,22 @@ export async function main(ns) {
             const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
             ns.print(' RAM AVAILABLE: ' + ns.nFormat(ramAvailable, '0.00'));
-            ns.print('-'.repeat(tString.indexOf('\n')+1));
-            feed.forEach(message => ns.print(message));
+            ns.print(' ' + '-'.repeat(tString.indexOf('\n')+1));
+            feed.forEach(message => ns.print(' ' + message));
             const stealing = viableThieves.filter(thief => thief.isStealing());
             const grooming = viableThieves.filter(thief => thief.isGrooming());
-            ns.print(stealing.length + '/' + grooming.length);
             const mayGroom = grooming.length <= stealing.length;
             const thief = viableThieves
                 .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
             if (thief != null) {
-                    // break;
-            ns.print(thief.getHostname());
+                ns.print(thief.getHostname());
                 const threads = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
                 if (threads > 0)
-                    // break;
-                log(`Started batch on ${thief.getHostname()}`);
+                    log(`Started batch on ${thief.getHostname()}`);
                 ramAvailable -= threads * 1.75;
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
             await logger(ns).error(error);
         } finally {
             await ns.sleep(5);

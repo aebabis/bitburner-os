@@ -57,6 +57,9 @@ const computeThreads = (ns, target, portion) => {
     const growTime = ns.getGrowTime(target);
     const hackTime = ns.getHackTime(target);
 
+    if (portion <= 0 || portion >= 1)
+        throw new Error(`Invalid theft portion: ${portion}`);
+
     let hackThreads = Math.floor(portion / ns.hackAnalyze(target));
     while (hackThreads < 1 && portion < 1) {
         portion += .01;
@@ -248,7 +251,7 @@ class WGWBatch extends Batch {
         let weaken1Threads = getWThreads(ns, curSecurity - minSecurity);
 
         const maxMoney = ns.getServerMaxMoney(target);
-        const money = ns.getServerMoneyAvailable(target);
+        const money = ns.getServerMoneyAvailable(target) || 1;
 
         if (maxMoney === 0)
             throw new Error('Cannot hack server with no money: ' + target);
@@ -355,7 +358,7 @@ export default class Thief {
             const maxThreads = maxRamPerJob / 1.75;
             while (true) {
                 portion -= incr;
-                if (portion === 0)
+                if (portion <= 0)
                     return false;
                 const growThreads = ns.growthAnalyze(server, 1 / (1-portion));
                 const hackThreads = portion/ns.hackAnalyze(server);
@@ -399,7 +402,7 @@ export default class Thief {
         const portion = .01;
         const income = maxMoney * portion;
 
-        const hackThreads = Math.floor(.01 / ns.hackAnalyze(server));
+        const hackThreads = Math.floor(portion / ns.hackAnalyze(server));
         const growFactor  = 1 / (1 - portion);
         const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
 

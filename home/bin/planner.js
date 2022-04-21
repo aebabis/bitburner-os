@@ -24,7 +24,7 @@ const go = async(ns) => {
         AnyHostService(ns, canHaveGang)
                         ('/bin/gang/gang-controller.js', 1, 'service'),
         AnyHostService(ns, canBuyTixAccess, 5000)
-                        ('/bin/purchase-market-access.js'),
+                        ('/bin/market-access.js'),
         AnyHostService(ns, canTradeStocks, 5000)
                         ('/bin/broker.js'),
         AnyHostService(ns, canShare, 5000)
