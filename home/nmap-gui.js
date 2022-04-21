@@ -1,6 +1,6 @@
 import { nmap } from './lib/nmap';
 import { getTailModal } from './lib/modal';
-import * as d3 from './lib/d3' // import * as d3 from 'https://unpkg.com/d3?module';
+import * as d3 from './lib/d3'
 
 /** @param {NS} ns **/
 async function showChart(ns, element, nodes, links) {
@@ -37,8 +37,8 @@ async function showChart(ns, element, nodes, links) {
     .force("gravity", d3.forceManyBody().strength(100))
     .force("charge", d3.forceManyBody().strength(-450))
     .force("center", d3.forceCenter(width / 2, height / 2).strength(1))
-    .force("y", d3.forceY(0))
-    .force("x", d3.forceX(0));
+    .force("y", d3.forceY(height / 2))
+    .force("x", d3.forceX(width / 2));
 
   ns.atExit(() => {
     tooltip.remove();
@@ -74,16 +74,17 @@ async function showChart(ns, element, nodes, links) {
         requiredHackingSkill,
         nMoneyAvailable,
         nMoneyMax,
+        moneyMax,
       } = d;
       const color = isFullyAccessed ? theme.primary : theme.primary + 'AA';
       const scale = Math.min(element.clientWidth, element.clientHeight) / 1000;
       const info = isFullyAccessed ?
-        `${nMoneyAvailable}/${nMoneyMax}` :
-        `${maxRam}GB ports=${numOpenPortsRequired} hack=${requiredHackingSkill}`;
+        (moneyMax ? `${nMoneyAvailable}/${nMoneyMax}` : '$0') :
+        `ports=${numOpenPortsRequired} hack=${requiredHackingSkill}`;
       tooltip.style("display", 'block');
       tooltip.style("color", color);
       tooltip.style("border-color", color);
-      tooltip.html(`<strong>${d.name}</strong> <span style="font-size: .9em">${info}</span>`)	
+      tooltip.html(`<strong>${d.name}</strong> <span style="font-size: .9em">${maxRam}GB ${info}</span>`)	
         .style("left", (d.x * scale - 100) + "px")		
         .style("top", (d.y * scale - 20) + "px");	
     })					
@@ -204,4 +205,5 @@ export async function main(ns) {
     resizeable.style.height = '500px';
     resizeable.children[0].remove();
     await showChart(ns, resizeable, nodes, links);
+    // .remove();
 }

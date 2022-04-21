@@ -1,15 +1,17 @@
+import { nmap } from 'nmap';
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
     const script = ns.args[0];
-    const hostname = ns.args[1] || 'home';
     while (true) {
         const profitRate = ({ offlineMoneyMade, offlineRunningTime, onlineMoneyMade, onlineRunningTime }) =>
             (offlineMoneyMade + onlineMoneyMade) / (offlineRunningTime + onlineRunningTime);
-        const ps = ns.ps()
+        const ps = nmap(ns).map((hostname) => ns.ps(hostname)
             .filter(({filename}) => filename === script)
-            .map(({ filename, args }) => ns.getRunningScript(filename, hostname, ...args))
-            .sort((a, b) => profitRate(b) - profitRate(a));
+            .map(({ filename, args }) => ns.getRunningScript(filename, hostname, ...args)))
+            .flat()
+            .sort((a, b) => profitRate(b) - profitRate(a))
         ns.clearLog();
         const h1 = 'TARGET'.padEnd(20);
         const h2 = 'OFFLINE'.padEnd(10);
@@ -18,13 +20,13 @@ export async function main(ns) {
         const h5 = 'RATE';
         ns.print(`${h1} ${h2} ${h3} ${h4} ${h5}`);
         ps.forEach((process) => {
-            const { offlineMoneyMade, onlineMoneyMade } = process;
+            const { offlineMoneyMade, offlineRunningTime, onlineMoneyMade, onlineRunningTime } = process;
             const args = process.args.join(' ').padEnd(20);
-            const F = '$0.00a';
-            const offline = ns.nFormat(offlineMoneyMade, F).padEnd(10);
-            const online = ns.nFormat(onlineMoneyMade, F).padEnd(10);
-            const total = ns.nFormat(offlineMoneyMade + onlineMoneyMade, F).padEnd(10);
-            const rate = ns.nFormat(profitRate(process), F);
+            const M = '$0.000a'
+            const offline = ns.nFormat(offlineMoneyMade, M).padEnd(10);
+            const online = ns.nFormat(onlineMoneyMade, M).padEnd(10);
+            const total = ns.nFormat(offlineMoneyMade + onlineMoneyMade, M).padEnd(10);
+            const rate = ns.nFormat(profitRate(process), M);
             ns.print(`${args} ${offline} ${online} ${total} ${rate}`);
         });
         await ns.sleep(5000);

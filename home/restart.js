@@ -12,6 +12,7 @@ export async function main(ns) {
             ns.kill(pid);
         });
     })
+    await ns.sleep(200);
     ns.tprint('Dispatching init');
     ns.exec('init.js', ns.getHostname());
 }

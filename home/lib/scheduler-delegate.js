@@ -17,8 +17,7 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
     // const {reap} = options;
     const ticket = response ? crypto.randomUUID() : undefined;
     const sender = ns.getHostname();
-    const message = JSON.stringify({
-        script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() });
+    const message = { script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() };
     let start = Date.now();
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     if (!port.full()) {

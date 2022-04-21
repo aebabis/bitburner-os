@@ -6,22 +6,25 @@ import {
     writeServices, checkQueue, getTableString,
 } from './lib/planner-api.js';
 
+/** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
-
     const canHaveGang = () => ns.getPlayer().bitNodeN >= 2;
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
+    const canBuyTixAccess = () => !canTradeStocks()
     const tasks = [
+        AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/hacknet.js'),
         AnyHostService(ns)('/bin/thief.js'),
-        AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/server-purchaser.js'),
         AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
         AnyHostService(ns, ()=>true, 10000)
                         ('/lib/nmap.js'),
         AnyHostService(ns, canHaveGang)
                         ('/bin/gang/gang-controller.js', 1, 'service'),
+        AnyHostService(ns, canBuyTixAccess, 5000)
+                        ('/bin/purchase-market-access.js'),
         AnyHostService(ns, canTradeStocks, 5000)
                         ('/bin/broker.js'),
         AnyHostService(ns, canShare, 5000)

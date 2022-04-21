@@ -1,6 +1,6 @@
-const { resolve, relative } = require('path');
-const { readFile, writeFile, readdir } = require('fs').promises;
-const EventEmitter = require('events');
+import { resolve, relative } from 'path';
+import { writeFile, readdir } from 'fs/promises';
+import EventEmitter from 'events';
 
 async function* getFiles(dir) {
   const dirents = await readdir(dir, { withFileTypes: true });
@@ -27,12 +27,11 @@ async function go() {
   const instructions = [];
   for await (const f of getFiles('home')) {
     const bitburnerPath = toBitburnerPath(f);
-    const content = await readFile(f);
-    const src = content.toString().replace(/`/g, '\\`').replace(/\$\{/g, '\\\$\{');
-    const instruction = `await ns.write('${bitburnerPath}', \`${src}\`, 'w');`;
-    instructions.push(instruction);
+    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/${bitburnerPath}`;
+    const command = `  await ns.wget('${downloadPath}', '${bitburnerPath}')`;
+    instructions.push(command);
   }
-  const program = `export async function main(ns) {\n${instructions.join('\n')}\n}`;
+  const program = `/** @param {NS} ns **/\nexport async function main(ns) {\n${instructions.join('\n')}\n}`;
   await writeFile('download.js', program);
   
   eventEmitter.emit('done');

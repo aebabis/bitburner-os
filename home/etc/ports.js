@@ -12,3 +12,4 @@ export const PORT_SERVICES_LIST = port++;
 export const PORT_SERVICES_REPL = port++;
 
 export const PORT_HOSTNAMES = port++;
+export const PORT_STATIC_DATA = port++;
