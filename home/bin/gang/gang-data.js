@@ -1,5 +1,5 @@
 import { GANG_DATA } from './etc/filenames';
-import { logger } from 'logger';
+import { logger } from './lib/logger';
 
 /** @param {NS} ns **/
 export async function main(ns) {

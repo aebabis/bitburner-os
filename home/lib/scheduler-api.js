@@ -21,9 +21,9 @@ const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, .
 export const checkPort = async (ns, queue) => {
 	const delegated = (await getDelegatedTasks(ns))
 	for (const taskData of delegated) {
-		const { script, sender, ticket }  = taskData;
-		if (ns.getScriptRam(script, sender) === 0) {
-			logger(ns).error(`Scheduler received task for non-existant script: ${sender}~${script}`);
+		const { script, ticket }  = taskData;
+		if (ns.getScriptRam(script, 'home') === 0) {
+			logger(ns).error(`Scheduler received task for non-existant script: ${script}`);
 			await closeTicket(ns, ticket);
 		}
 		else
@@ -34,8 +34,8 @@ export const checkPort = async (ns, queue) => {
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
 	const { hostname, ramAvailable } = server;
-	const { script, numThreads, args, sender, ticket, requestTime } = process;
-	const scriptRam = ns.getScriptRam(script, sender);
+	const { script, numThreads, args, ticket, requestTime } = process;
+	const scriptRam = ns.getScriptRam(script, 'home');
 	const maxThreads = Math.floor(ramAvailable / scriptRam);
 	const threads = Math.min(numThreads, maxThreads);
 	let pid = 0;

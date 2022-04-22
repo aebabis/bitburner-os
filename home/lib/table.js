@@ -1,5 +1,5 @@
 const headData = (column) => {
-    const name = column.name || column;
+    const name = column.name != null ? column.name : column;
     const align = column.align || 'left';
     const process = column.process || (x => x);
     const empty = column.empty || '-';

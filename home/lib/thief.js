@@ -4,6 +4,15 @@ import { createBatch } from './lib/scheduler-delegate';
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
 
+const count = 64;
+const e = Math.E;
+const k = 20;
+const x_0 = .5;
+const PORTIONS = new Array(count + 1)
+  .fill(null)
+  .map((_,i) => i / count)
+  .map((x) => 1-1/(1+e**(-1*k*(x-x_0))))
+
 /** @param {NS} ns **/
 const getWThreads = (ns, targetDecrease, cores=1) => {
     let threads = 1;
@@ -315,22 +324,17 @@ export default class Thief {
         const { ns, server, currentBatch } = this;
         const endAfter = currentBatch ? currentBatch.endAfter : Date.now();
 
-
         if (!this.isGroomed()) {
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         } else {
-            let portion = 1;
-            const incr = 1/256;
             const maxThreads = maxRamPerJob / 1.75;
-            while (true) {
-                portion -= incr;
-                if (portion <= 0)
-                    return false;
+            const portion = PORTIONS.find((portion) => {
                 const growThreads = ns.growthAnalyze(server, 1 / (1-portion));
                 const hackThreads = portion/ns.hackAnalyze(server);
-                if (growThreads < maxThreads && hackThreads < maxThreads)
-                    break;
-            }
+                return growThreads < maxThreads && hackThreads < maxThreads;
+            });
+            if (portion <= 0)
+                return false;
             if (this.canHG())
                 this.currentBatch = new HGWBatch(ns, server, portion, ram, endAfter);
             else
@@ -352,7 +356,7 @@ export default class Thief {
         const sign = Math.sign(timeLeft) === -1 ? '-' : '';
         const minutes = Math.floor(Math.abs(timeLeft / 60));
         const seconds = Math.floor(Math.abs(timeLeft % 60)).toString().padStart(2, '0');
-        return { hostname: server, type, jobs: jobs.length, ended, portion, timeLeft: `${sign}${minutes}:${seconds}`, frame: frame.join(' ') };
+        return { hostname: server, type, jobs: jobs.getSize(), ended, portion, timeLeft: `${sign}${minutes}:${seconds}`, frame: frame.join(' ') };
     }
 
     getDesirability() {
