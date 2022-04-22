@@ -1,7 +1,5 @@
 import { WEAKEN, GROW, HACK } from './etc/filenames';
-import { delegateAny } from './lib/scheduler-delegate';
-import { by } from './lib/util';
-import getConfig from './lib/config';
+import { createBatch } from './lib/scheduler-delegate';
 
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
@@ -12,25 +10,6 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
     while (ns.weakenAnalyze(threads, cores) < targetDecrease)
         threads++;
     return threads;
-}
-
-class Job {
-    constructor(ns, target, script, threads, startTime, prev) {
-        this.ns = ns;
-        this.target = target;
-        this.script = script;
-        this.threads = threads;
-        this.startTime = startTime;
-        this.prev = prev;
-        if (prev)
-            prev.next = this;
-    }
-
-    async send() {
-        const { script, threads, target, startTime } = this;
-        const uuid = crypto.randomUUID();
-        await delegateAny(this.ns, false, { startTime })(script, threads, target, uuid);
-    }
 }
 
 // toString() {
@@ -86,12 +65,15 @@ class Batch {
     constructor(ns, target) {
         this.ns = ns;
         this.target = target;
-        this.jobs = [];
+        this.jobs = createBatch(ns);
         this.type = this.constructor.name.replace('Batch', '');
+        this.threads = 0;
     }
 
-    addJobs(...jobs) {
-        this.jobs.push(...jobs);
+    addJob(script, threads, target, startTime) {
+        const uuid = crypto.randomUUID();
+        this.jobs.delegateAny(startTime)(script, threads, target, uuid);
+        this.threads += threads;
     }
 
     async tick() {
@@ -101,15 +83,12 @@ class Batch {
     }
 
     async send() {
-        const { jobs } = this;
-        for (const job of jobs) {
-            await job.send();
-        }
+        await this.jobs.send();
     }
-    getReservedThreads = () => this.hasEnded() ? 0 : this.jobs.map(job=>job.threads).reduce((a,b)=>a+b,0);
+    getReservedThreads = () => this.hasEnded() ? 0 : this.threads;
     hasEnded = () => this.jobs.length === 0 || new Date() >= this.endAfter;
     toString() {
-        return this.target.padEnd(20) + ' ' + this.type + ' ' + this.jobs.length + ' ' + (this.endAfter - Date.now());
+        return this.target.padEnd(20) + ' ' + this.type + ' ' + this.jobs.getSize() + ' ' + (this.endAfter - Date.now());
     }
 }
 
@@ -140,8 +119,6 @@ class HGWBatch extends Batch {
         let endAfter = startAfter + weakenTime;
         let startBefore = endAfter;
 
-        const frames = this.frames = [];
-
         if (hackThreads < 1)
             return;
 
@@ -157,19 +134,15 @@ class HGWBatch extends Batch {
             if (hackStart >= startBefore)
                 break;
 
-            const weaken = new Job(ns, target, WEAKEN, weakenThreads, weakenStart, null);
-            const growJob = new Job(ns, target, GROW, growThreads, growStart, weaken);
-            const hackJob = new Job(ns, target, HACK, hackThreads, hackStart, growJob);
-
-            this.addJobs(weaken, growJob, hackJob);
-            frames.push(weaken);
+            this.addJob(WEAKEN, weakenThreads, target, weakenStart);
+            this.addJob(GROW, growThreads, target, growStart);
+            this.addJob(HACK, hackThreads, target, hackStart);
 
             ram -= ramPerFrame;
             endAfter = weakenEnd + FRAME_SPACING;
         }
-        this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
-        if (this.jobs.length === 0)
+        if (this.jobs.getSize() === 0)
             this.endAfter = Date.now();
     }
 }
@@ -203,8 +176,6 @@ class HWGWBatch extends Batch {
         let endAfter = startAfter + weakenTime;
         let startBefore = endAfter;
 
-        const frames = this.frames = [];
-
         if (hackThreads < 1)
             return;
 
@@ -222,20 +193,16 @@ class HWGWBatch extends Batch {
             if (hackStart >= startBefore)
                 break;
 
-            const weaken1 = new Job(ns, target, WEAKEN, weaken1Threads, weaken1Start, null);
-            const weaken2 = new Job(ns, target, WEAKEN, weaken2Threads, weaken2Start, weaken1);
-            const growJob = new Job(ns, target, GROW, growThreads, growStart, weaken2);
-            const hackJob = new Job(ns, target, HACK, hackThreads, hackStart, growJob);
-
-            this.addJobs(weaken1, weaken2, growJob, hackJob);
-            frames.push(weaken1);
+            this.addJob(WEAKEN, weaken1Threads, target, weaken1Start);
+            this.addJob(WEAKEN, weaken2Threads, target, weaken2Start);
+            this.addJob(GROW, growThreads, target, growStart);
+            this.addJob(HACK, hackThreads, target, hackStart);
 
             ram -= ramPerFrame;
             endAfter = weaken2End + FRAME_SPACING;
         }
-        this.jobs.sort(by('startTime'));
         this.endAfter = endAfter;
-        if (this.jobs.length === 0)
+        if (this.jobs.getSize() === 0)
             this.endAfter = Date.now();
     }
 }
@@ -271,27 +238,26 @@ class WGWBatch extends Batch {
 
         while (ram > 0 && weaken1Threads > 0) {
             const threads = Math.min(weaken1Threads, threadsPerJob);
-            this.addJobs(new Job(ns, target, WEAKEN, threads, weaken1Start, null));
+            this.addJob(WEAKEN, threads, target, weaken1Start);
             weaken1Threads -= threads;
             ram -= threads * 1.75;
         }
 
         while (ram > 0 && growThreads > 0) {
             const threads = Math.min(growThreads, threadsPerJob);
-            this.addJobs(new Job(ns, target, GROW, threads, growStart, null));
+            this.addJob(GROW, threads, target, growStart);
             growThreads -= threads;
             ram -= threads * 1.75;
         }
 
         while (ram > 0 && weaken2Threads > 0) {
             const threads = Math.min(weaken2Threads, threadsPerJob);
-            this.addJobs(new Job(ns, target, WEAKEN, threads, weaken2Start, null));
+            this.addJob(WEAKEN, threads, target, weaken2Start);
             weaken2Threads -= threads;
             ram -= threads * 1.7;
         }
-        this.jobs.sort(by('startTime'));
         this.endAfter = weaken2Start + ns.getWeakenTime(target) + FRAME_SPACING;
-        if (this.jobs.length === 0)
+        if (this.jobs.getSize() === 0)
             this.endAfter = Date.now();
     }
 }
@@ -396,8 +362,6 @@ export default class Thief {
 
         const weakenTime = ns.getWeakenTime(server);
         const maxMoney = ns.getServerMaxMoney(server);
-        // const money = ns.getServerMoneyAvailable(server);
-       // if (money / maxMoney > .99) {
 
         const portion = .01;
         const income = maxMoney * portion;
@@ -407,9 +371,6 @@ export default class Thief {
         const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
 
         return income / (growThreads + hackThreads) / weakenTime / weakenTime;
-        //} else {
-        //    return 1 / maxMoney / weakenTime;
-        //}
     }
 
     getReservedThreads = () => this.currentBatch == null ? 0 :

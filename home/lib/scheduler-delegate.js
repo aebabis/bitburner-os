@@ -4,41 +4,34 @@ import { logger } from './lib/logger';
 
 export const snippet = (statements) => `export async function main(ns) {\n${statements}\n}`;
 
+const desc = (script, host=null, numThreads=1, ...args) => host == null ?
+    `${script} ${numThreads} ${args.join(' ')}` : `${script} ${host} ${numThreads} ${args.join(' ')}`;
+
+const Job = (ns, response, startTime) => (script, host=null, numThreads=1, ...args) => {
+    if (!script.endsWith('.js') || isNaN(numThreads) || numThreads < 1) {
+        throw new Error(`Illegal process description: ${desc(script, host, numThreads, ...args)}`);
+    }
+    const ticket = response ? crypto.randomUUID() : undefined;
+    const sender = ns.getHostname();
+    return { script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() };
+}
+
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
     const { startTime = Date.now() } = options;
-    if (!script.endsWith('.js') || isNaN(numThreads) || numThreads < 1) {
-        if (host == null) {
-            throw new Error(`Illegal process description: ${script} ${numThreads} ${args.join(' ')}`);
-        } else {
-            throw new Error(`Illegal process description: ${script} ${host} ${numThreads} ${args.join(' ')}`);
-        }
-    }
-    // const {reap} = options;
-    const ticket = response ? crypto.randomUUID() : undefined;
-    const sender = ns.getHostname();
-    const message = { script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() };
-    let start = Date.now();
+    const job = Job(ns, response, startTime)(script, host, numThreads, ...args);
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
-    if (!port.full()) {
-        port.write(message);
-    } else {
-        const list = [];
-        let item;
-        while (item = port.read())
-            list.push(item);
-        list.push(message);
-        port.write(list);
-    }
+    await port.blockingWrite(job);
     if (response) {
+        const start = Date.now();
         await ns.sleep(50);
         const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
         while (true) {
-            const job = port.peek();
-            if (job != null) {
-                if (job.ticket === ticket) {
+            const process = port.peek();
+            if (process != null) {
+                if (process.ticket === job.ticket) {
                     return port.read();
-                } else if (Date.now() - job.timestamp > 200) {
+                } else if (Date.now() - process.timestamp > 200) {
                     port.read();
                 }
             }
@@ -53,6 +46,17 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
 /** @param {NS} ns **/
 export const delegateAny = (ns, response, options) => async (script, numThreads=1, ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
+
+export const createBatch = (ns) => {
+    let jobs = [];
+    const delegate = (startTime) => (script, host=null, numThreads=1, ...args) => jobs.push(Job(ns, false, startTime)(script, host, numThreads, ...args));
+    return {
+        delegate,
+        delegateAny: (startTime) => (script, numThreads=1, ...args) => delegate(startTime)(script, null, numThreads, ...args),
+        getSize: () => jobs.length,
+        send: async() => Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK).blockingWrite(jobs),
+    };
+}
 
 /** @param {NS} ns **/
 export const getDelegatedTasks = async (ns) => {

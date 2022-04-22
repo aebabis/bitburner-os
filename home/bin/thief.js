@@ -77,7 +77,6 @@ export async function main(ns) {
             const thief = viableThieves
                 .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
             if (thief != null) {
-                ns.print(thief.getHostname());
                 const threads = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
                 if (threads > 0)
                     log(`Started batch on ${thief.getHostname()}`);
