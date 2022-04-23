@@ -1,18 +1,15 @@
-import { GANG_DATA } from './etc/filenames';
+import { PORT_GANG_DATA } from './etc/ports';
 import { logger } from './lib/logger';
+import Ports from './lib/ports';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    // let taskNames;
+    const port =  Ports(ns).getPortHandle(PORT_GANG_DATA);
+    port.clear();
     if (!ns.gang.inGang())
         return;
-    // try {
-    const taskNames = ns.gang.getTaskNames();
-    // } catch (error) {
-    //     logger(ns).info('No access to gang API');
-    //     return;
-    // }
     try {
+        const taskNames = ns.gang.getTaskNames();
         const taskStats = taskNames.reduce((obj, name) => {
             obj[name] = ns.gang.getTaskStats(name);
             return obj;
@@ -29,8 +26,8 @@ export async function main(ns) {
             return obj;
         }, {})
         const equipment = Object.values(equipmentStats);
-    
-        const gangData = {
+
+        port.write({
             tasks,
             taskNames,
             taskStats,
@@ -38,9 +35,7 @@ export async function main(ns) {
             equipmentNames,
             equipmentStats,
             equipmentTypes,
-        };
-    
-        await ns.write(GANG_DATA, JSON.stringify(gangData, null, 2), 'w');
+        });
     } catch (error) {
         logger(ns).error(error);
     }

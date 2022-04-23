@@ -1,5 +1,7 @@
+import { PORT_GANG_DATA } from './etc/ports';
 import { AnyHostService } from './lib/service';
 import { logger } from './lib/logger';
+import Ports from './lib/ports';
 
 import {
     ENABLE, DISABLE,
@@ -9,10 +11,12 @@ import {
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
-    const canHaveGang = () => ns.getPlayer().bitNodeN >= 2;
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
-    const canBuyTixAccess = () => !canTradeStocks()
+    const canBuyTixAccess = () => !canTradeStocks();
+    const couldStartGang = () => ns.getPlayer().bitNodeN >= 2 && !isInGang();
+    const isInGang = () => Ports(ns).getPortHandle(PORT_GANG_DATA).peek() != null;
+
     const tasks = [
         AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/hacknet.js'),
@@ -21,14 +25,18 @@ const go = async(ns) => {
         AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
         AnyHostService(ns, ()=>true, 10000)
                         ('/lib/nmap.js'),
-        AnyHostService(ns, canHaveGang)
-                        ('/bin/gang/gang-controller.js', 1, 'service'),
         AnyHostService(ns, canBuyTixAccess, 5000)
                         ('/bin/market-access.js'),
         AnyHostService(ns, canTradeStocks, 5000)
                         ('/bin/broker.js'),
         AnyHostService(ns, canShare, 5000)
                         ('/bin/share.js'), // TODO: Deadman's switch for share?
+        AnyHostService(ns, couldStartGang, 5000)
+                        ('/bin/gang/gang-data.js'),
+        AnyHostService(ns, isInGang, 10000)
+                        ('/bin/gang/recruit.js'),
+        AnyHostService(ns, isInGang, 5000)
+                        ('/bin/gang/assign-members.js'),
         // await startAny('servers.js', 'service');
         // await startAny('money.js', 'thief.js');
     ]

@@ -1,20 +1,66 @@
+import { by } from './lib/util';
+import { delegateAny } from './lib/scheduler-delegate';
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
     try {
         const gangInfo = ns.gang.getGangInformation();
         const memberNames = ns.gang.getMemberNames();
+        const readyMembers = [];
+
+        const assignNext = (members, task) => {
+            if (members.length > 0) {
+                ns.gang.setMemberTask(members.shift(), task);
+                return true;
+            }
+            return false;
+        }
+        const assignAll = (members, task) => {
+            while(assignNext(members, task));
+        }
+        const totalLevels = (name) => {
+            const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
+            return str + def + dex + agi;
+        }
+
+        // Every member, regardless of operation is
+        // checked for ascension, then checked for
+        // training
+        for (const name of memberNames) {
+            const ascension = ns.gang.getAscensionResult(name);
+            const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'];
+            if (ascension != null && ascension.respect === 0 && skills.some(s=>ascension[s] >= 1.1)) {
+                // logger(ns).log('Ascending ' + name);
+                ns.gang.ascendMember(name);
+            }
+            const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
+            if ([str, def, dex, agi].some(x => x < 1000))
+                ns.gang.setMemberTask(name, 'Train Combat');
+            else
+                readyMembers.push(name);
+        }
+
         if (gangInfo.territoryClashChance > 0) {
-            memberNames.forEach(name => ns.gang.setMemberTask(name, 'Territory Warfare'));
+            assignAll(readyMembers, 'Territory Warfare');
+            return;
+        }
+        await delegateAny(ns, true)('/bin/gang/decide-war.js', 1, gangInfo.faction, gangInfo.territoryClashChance);
+        assignNext(readyMembers, 'Territory Warfare');
+        if (gangInfo.wantedPenalty > 1) {
+            assignAll(readyMembers, 'Vigilante Justice');
+        } else if (memberNames.length < 12) {
+            assignAll(readyMembers, 'Human Trafficking');
         } else {
-            memberNames.forEach(name => {
-                const ascension = ns.gang.getAscensionResult(name);
-                const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'];
-                if (ascension != null && ascension.respect === 0 && skills.some(s=>ascension[s] >= 1.1)) {
-                    // logger(ns).log('Ascending ' + name);
-                    ns.gang.ascendMember(name);
-                }
-            })
+            readyMembers.sort(by(totalLevels));
+            assignNext(readyMembers, 'Train Combat');
+            if (gangInfo.territory < 100) {
+                assignAll(readyMembers, 'Territory Warfare');
+            } else {
+                assignNext(readyMembers, 'Human Trafficking');
+                assignNext(readyMembers, 'Vigilante Justice');
+                assignAll(readyMembers, 'Human Trafficking');
+            }
         }
     } catch (error) {
         ns.tprint(error); // TODO: Use logger_inline
