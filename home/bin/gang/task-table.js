@@ -1,6 +1,5 @@
-import { PORT_GANG_DATA } from './etc/ports';
 import { by } from './lib/util';
-import Ports from './lib/ports';
+import { getGangData } from './lib/data-store';
 
 const HEADINGS = {
     name: 'Name',
@@ -18,15 +17,15 @@ const HEADINGS = {
 
 /** @param {NS} ns **/
 export const printTaskTable = async (ns, sortColumnIndex) => {
-    const content = Ports(ns).readPort(PORT_GANG_DATA);
-    if (content === '')
+    const gangData = getGangData(ns);
+    if (gangData == null)
         return ns.tprint('No data to show yet. Make sure gang.js has run');
 
     const propOrder = Object.keys(HEADINGS);
     const comparator = sortColumnIndex == null ? ()=>0 :  // Don't sort
         by(propOrder[sortColumnIndex]);              // Sort by column
 
-    const tasks = content.tasks.sort(comparator);
+    const tasks = gangData.tasks.sort(comparator);
     const rows = tasks.map((stats) => {
         const {
             baseMoney, baseRespect, baseWanted,

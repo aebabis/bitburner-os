@@ -1,7 +1,6 @@
-import { PORT_GANG_DATA } from './etc/ports';
 import { AnyHostService } from './lib/service';
+import { getGangData } from './lib/data-store';
 import { logger } from './lib/logger';
-import Ports from './lib/ports';
 
 import {
     ENABLE, DISABLE,
@@ -15,7 +14,7 @@ const go = async(ns) => {
     const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
     const canBuyTixAccess = () => !canTradeStocks();
     const couldStartGang = () => ns.getPlayer().bitNodeN >= 2 && !isInGang();
-    const isInGang = () => Ports(ns).getPortHandle(PORT_GANG_DATA).peek() != null;
+    const isInGang = () => getGangData(ns) != null;
 
     const tasks = [
         AnyHostService(ns)('/bin/access.js'),

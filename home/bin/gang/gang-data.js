@@ -1,11 +1,8 @@
-import { PORT_GANG_DATA } from './etc/ports';
 import { logger } from './lib/logger';
-import Ports from './lib/ports';
+import { putGangData } from './lib/data-store';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    const port =  Ports(ns).getPortHandle(PORT_GANG_DATA);
-    port.clear();
     if (!ns.gang.inGang())
         return;
     try {
@@ -27,7 +24,7 @@ export async function main(ns) {
         }, {})
         const equipment = Object.values(equipmentStats);
 
-        port.write({
+        putGangData(ns, {
             tasks,
             taskNames,
             taskStats,
