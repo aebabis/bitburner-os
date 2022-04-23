@@ -9,6 +9,11 @@ const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
 export async function main(ns) {
     ns.disableLog('ALL');
 
+    // Close all dialogs
+    [...eval('document').querySelectorAll('.MuiButton-root')]
+        .filter(e => e.innerText === 'Close')
+        .forEach(closeButton=>closeButton.click());
+
     // Clear all ports except configuration ports
     for (let i = 1; i <= 20; i++)
         if (!PERSISTENT_PORTS.includes(i))

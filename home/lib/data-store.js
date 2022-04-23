@@ -31,7 +31,22 @@ export const getGangData = (ns) => {
 export const putGangData = (ns, data) => {
     const oldData = getGangData(ns) || {};
     const newData = Object.assign(oldData, data);
-    const port = Ports(ns).getPortHandle(PORT_STATIC_DATA);
+    const port = Ports(ns).getPortHandle(PORT_GANG_DATA);
     port.clear();
     port.write(newData);
+}
+
+/** @param {NS} ns **/
+export async function main(ns) {
+    const ports = {
+        hostnames: PORT_HOSTNAMES,
+        static: PORT_STATIC_DATA,
+        gang: PORT_GANG_DATA,
+    }
+    const [command, portname] = ns.args;
+    if (command === 'peek') {
+        const portId = ports[portname];
+        const content = Ports(ns).getPortHandle(portId).peek();
+        ns.tprint(JSON.stringify(content, null, 2));
+    }
 }
