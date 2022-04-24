@@ -12,8 +12,7 @@ const Job = (ns, response, startTime) => (script, host=null, numThreads=1, ...ar
         throw new Error(`Illegal process description: ${desc(script, host, numThreads, ...args)}`);
     }
     const ticket = response ? crypto.randomUUID() : undefined;
-    const sender = ns.getHostname();
-    return { script, host, numThreads, args, sender, ticket, startTime, requestTime: Date.now() };
+    return { script, host, numThreads, args, ticket, startTime, requestTime: Date.now() };
 }
 
 /** @param {NS} ns **/

@@ -23,7 +23,7 @@ const VALIDATORS = {
 };
 
 const DEFAULT_VALUES = {
-    'share': 0,
+    'share': .1,
     'share-cap': 1<<20,
     'reserved-funds': 1e10,
     'theft-portion': .01,

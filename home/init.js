@@ -1,5 +1,5 @@
-import { WEAKEN, GROW, HACK } from './etc/filenames';
-import { saveHostnames  } from './lib/nmap';
+import { WEAKEN, GROW, HACK, INFECT } from './etc/filenames';
+import { saveHostnames, nmap  } from './lib/nmap';
 import { putStaticData } from './lib/data-store';
 
 import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
@@ -21,6 +21,13 @@ export async function main(ns) {
 
     // Generate list of hostnames
     saveHostnames(ns);
+
+    for (const hostname of nmap(ns)) {
+        if (hostname !== 'home') {
+            ns.ls(hostname).forEach(filename => ns.rm(filename, hostname));
+            await ns.scp([HACK, GROW, WEAKEN, INFECT], hostname);
+        }
+    }
     
     putStaticData(ns, {
         weakenScriptRam: ns.getScriptRam(WEAKEN),

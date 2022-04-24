@@ -65,7 +65,7 @@ export async function main(ns) {
 		const totalRamUsed = rootServers.map(s=>s.ramUsed).reduce((a,b)=>a+b,0) || 0;
 		const totalRamUnused = totalMaxRam - totalRamUsed;
 		const maxRamSlot = rootServers.map(s=>s.maxRam-s.ramUsed).reduce((a,b)=>a>b?a:b,0);
-		const demand = queue.map(({ script, sender, numThreads }) => numThreads * ns.getScriptRam(script, sender))
+		const demand = queue.map(({ script, numThreads }) => numThreads * ns.getScriptRam(script, 'home'))
 			.reduce((a,b)=>a+b, 0);
 		const data = {
 			rootServers,
@@ -107,7 +107,7 @@ export async function main(ns) {
 					await reject(ns, queue.splice(i--, 1)[0]);
 					continue;
 				}
-				const scriptRam = ns.getScriptRam(process.script, process.sender);
+				const scriptRam = ns.getScriptRam(process.script, 'home');
 				const ramRequired = scriptRam * process.numThreads;
 
 				const ramQueued = queue.map(({ script, numThreads }) => ns.getScriptRam(script) * numThreads)
@@ -122,7 +122,6 @@ export async function main(ns) {
 					// Specific server requested
 					const server = getRamInfo(process.host, true);
 					if (ramRequired <= server.ramAvailable) {
-						// await systemLog(ns, 'APPR', process.script, process.messageFilename);
 						await fulfill(ns, queue.splice(i, 1)[0], server);
 						continue;
 					}

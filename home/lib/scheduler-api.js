@@ -3,7 +3,7 @@ import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
 import { HACK, GROW, WEAKEN } from './etc/filenames';
 const HACKING = [HACK, GROW, WEAKEN];
 
-const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, ...rest }) => {
+const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
 	const time = Date.now();
 	const waitTime = () => Date.now() - time;
 	const wait = () => (waitTime()/1000).toFixed(3);
@@ -11,7 +11,6 @@ const TicketItem = ({ script, host, numThreads, args, sender, messageFilename, .
 	return {
 		...rest,
 		script, host, numThreads, args,
-		sender, messageFilename,
 		time, waitTime, isHacking,
 		toString: (hostname) => `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
 	};
@@ -57,7 +56,7 @@ export const fulfill = async (ns, process, server) => {
 	}
 	if (ticket != null) {
 		const waitTime = Date.now() - requestTime;
-		if (waitTime > 25)
+		if (waitTime > 40)
 			ns.tprint('WARN - process waited ' + waitTime + 'ms');
 		await closeTicket(ns)(ticket, pid, hostname, threads);
 	}

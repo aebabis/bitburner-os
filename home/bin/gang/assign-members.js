@@ -48,8 +48,6 @@ export async function main(ns) {
                 readyMembers.push(name);
         }
 
-        ns.tprint('power', needsPower());
-
         if (gangInfo.territoryClashChance > 0 && needsPower()) {
             assignAll(readyMembers, 'Territory Warfare');
             return;
