@@ -1,4 +1,4 @@
-import { WEAKEN, GROW, HACK, INFECT } from './etc/filenames';
+import { WEAKEN, GROW, HACK, INFECT, SHARE } from './etc/filenames';
 import { saveHostnames, nmap  } from './lib/nmap';
 import { putStaticData } from './lib/data-store';
 
@@ -25,7 +25,7 @@ export async function main(ns) {
     for (const hostname of nmap(ns)) {
         if (hostname !== 'home') {
             ns.ls(hostname).forEach(filename => ns.rm(filename, hostname));
-            await ns.scp([HACK, GROW, WEAKEN, INFECT], hostname);
+            await ns.scp([HACK, GROW, WEAKEN, INFECT, SHARE], hostname);
         }
     }
     

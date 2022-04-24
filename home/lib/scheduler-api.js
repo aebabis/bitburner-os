@@ -1,17 +1,17 @@
 import { logger } from './lib/logger';
 import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
-import { HACK, GROW, WEAKEN } from './etc/filenames';
-const HACKING = [HACK, GROW, WEAKEN];
+import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
+const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
 const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
 	const time = Date.now();
 	const waitTime = () => Date.now() - time;
 	const wait = () => (waitTime()/1000).toFixed(3);
-	const isHacking = HACKING.includes(script);
+	const isWorker = WORKERS.includes(script);
 	return {
 		...rest,
 		script, host, numThreads, args,
-		time, waitTime, isHacking,
+		time, waitTime, isWorker,
 		toString: (hostname) => `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
 	};
 }
@@ -39,7 +39,7 @@ export const fulfill = async (ns, process, server) => {
 	const threads = Math.min(numThreads, maxThreads);
 	let pid = 0;
 	if (threads > 0) {
-		if (!process.isHacking && hostname !== 'home') {
+		if (!process.isWorker && hostname !== 'home') {
 			const rootJS = ns.ls('home', '.js').filter(name=>!name.includes('/'));
 			await ns.scp(rootJS,                'home', hostname);
 			await ns.scp(ns.ls('home', 'etc/'), 'home', hostname);

@@ -243,7 +243,7 @@ class WGWBatch extends Batch {
         const weaken2Start = startAfter + 2 * SUBTASK_SPACING;
         const growStart = weaken1Start + ns.getWeakenTime(target) + SUBTASK_SPACING - ns.getGrowTime(target);
 
-        const threadsPerJob = Math.max(8, ram/24/1.75/2);
+        const threadsPerJob = Math.max(8, Math.ceil(ram/24/1.75/2));
 
         while (ram > 0 && weaken1Threads > 0) {
             const threads = Math.min(weaken1Threads, threadsPerJob);
