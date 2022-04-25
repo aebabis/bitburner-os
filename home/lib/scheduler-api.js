@@ -57,7 +57,7 @@ export const fulfill = async (ns, process, server) => {
 	if (ticket != null) {
 		const waitTime = Date.now() - requestTime;
 		if (waitTime > 40)
-			ns.tprint('WARN - process waited ' + waitTime + 'ms');
+			logger(ns).warn('process waited ' + waitTime + 'ms');
 		await closeTicket(ns)(ticket, pid, hostname, threads);
 	}
 }

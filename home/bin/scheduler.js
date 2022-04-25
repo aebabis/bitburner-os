@@ -6,7 +6,7 @@ import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
-import { getStaticData } from './lib/data-store';
+import { getStaticData, getHostnames } from './lib/data-store';
 
 const SCHEDULER_HOME = 'home';
 
@@ -126,9 +126,10 @@ export async function main(ns) {
 						continue;
 					}
 				} else {
+					const available = getHostnames(ns);
 					// No preference; choose
-					const { rootServers } = ramData;
-					const eligibleServers = process.isHacking ?
+					const rootServers = ramData.rootServers.filter(x => available.includes(x.hostname));
+					const eligibleServers = process.isWorker ?
 						rootServers.filter(server => ns.fileExists(HACK, server.hostname)) :
 						rootServers.filter(server => !server.hostname.startsWith(THREADPOOL_NAME));
 

@@ -1,9 +1,9 @@
-import { HACK, GROW, WEAKEN } from './etc/filenames';
+import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
 
 /** @param {NS} ns **/
 export const infect = async (ns, ...hostnames) => {
     for (const hostname of hostnames){
-        await ns.scp([HACK, GROW, WEAKEN], 'home', hostname);
+        await ns.scp([HACK, GROW, WEAKEN, SHARE], 'home', hostname);
     }
 }
 

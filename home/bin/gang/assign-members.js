@@ -1,6 +1,6 @@
 import { by } from './lib/util';
 import { delegateAny } from './lib/scheduler-delegate';
-import { getGangData } from './lib/data-store';
+import { getGangData, putGangData } from './lib/data-store';
 import { logger } from './lib/logger';
 
 /** @param {NS} ns **/
@@ -10,6 +10,8 @@ export async function main(ns) {
         const gangInfo = ns.gang.getGangInformation();
         const memberNames = ns.gang.getMemberNames();
         const readyMembers = [];
+
+        putGangData(ns, { gangInfo, memberNames });
 
         const assignNext = (members, task) => {
             if (members.length > 0) {
