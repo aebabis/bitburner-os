@@ -23,7 +23,7 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/thief.js'),
         AnyHostService(ns, canPurchaseServers, 1000)
                         ('/bin/server-purchaser.js'),
-        AnyHostService(ns)('assistant.js', 1, '--tail', 'service'),
+        AnyHostService(ns)('dashboard.js'),
         AnyHostService(ns, ()=>true, 10000)
                         ('/lib/nmap.js'),
         AnyHostService(ns, canBuyTixAccess, 5000)

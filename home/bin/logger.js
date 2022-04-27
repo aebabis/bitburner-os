@@ -11,7 +11,6 @@ export async function main(ns) {
 	if (ns.getHostname() !== LOGGER_HOME){
 		throw new Error('Logger only runs on the home server');
 	}
-	ns.tail();
 	while (true) {
 		try {
 			const port = ns.getPortHandle(PORT_LOGGER);

@@ -26,5 +26,5 @@ export async function main(ns) {
             ...stats, chance, expectedValue: chance * money / time,
         })
     });
-    putPlayerData({ crimeStats });
+    putPlayerData(ns, { crimeStats });
 }

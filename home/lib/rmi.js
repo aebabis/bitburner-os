@@ -9,7 +9,7 @@ export const rmi = (ns) => async(...args) => {
             await ns.sleep(50);
         return true;
     } catch (error) {
-        logger(ns).error(error);
+        await logger(ns).error(error);
         return false;
     }
 }
