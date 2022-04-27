@@ -5,28 +5,18 @@ import { disableService } from './lib/planner-api';
 
 /** @param {NS} ns **/
 export const access = (ns) => async (target) => {
-    if (ns.fileExists("BruteSSH.exe", "home")) {
-        ns.brutessh(target);
-    }
-    if (ns.fileExists("FTPCrack.exe", "home")) {
-        ns.ftpcrack(target);
-    }
-    if ( ns.fileExists("relaySMTP.exe", "home")) {
-        ns.relaysmtp(target);
-    }
-    if ( ns.fileExists("HTTPWorm.exe", "home")) {
-        ns.httpworm(target);
-    }
-    if (ns.fileExists("SQLInject.exe", "home")) {
-        ns.sqlinject(target);
-    }
+    if (ns.fileExists("BruteSSH.exe", "home"))  ns.brutessh(target);
+    if (ns.fileExists("FTPCrack.exe", "home"))  ns.ftpcrack(target);
+    if (ns.fileExists("relaySMTP.exe", "home")) ns.relaysmtp(target);
+    if (ns.fileExists("HTTPWorm.exe", "home"))  ns.httpworm(target);
+    if (ns.fileExists("SQLInject.exe", "home")) ns.sqlinject(target);
+
     try {
         ns.nuke(target);
         return true;
     } catch {
         return false;
     }
-    // await ns['installBackdoor'](target);
 }
 
 /** @param {NS} ns **/
@@ -36,7 +26,8 @@ export async function main(ns) {
         return access(ns.args[0]);
     }
 
-    let hostnames = getHostnames(ns);
+    let hostnames = getHostnames(ns)
+        .filter(hostname=>!ns.hasRootAccess(hostname));
 
     while (hostnames.length > 0) {
         const startingLength = hostnames.length;

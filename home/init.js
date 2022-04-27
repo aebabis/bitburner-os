@@ -1,43 +1,6 @@
-import { WEAKEN, GROW, HACK, INFECT, SHARE } from './etc/filenames';
-import { saveHostnames, nmap  } from './lib/nmap';
-import { putStaticData } from './lib/data-store';
-
-import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
-const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
-
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-
-    // Close all dialogs
-    [...eval('document').querySelectorAll('.MuiButton-root')]
-        .filter(e => e.innerText === 'Close')
-        .forEach(closeButton=>closeButton.click());
-
-    // Clear all ports except configuration ports
-    for (let i = 1; i <= 20; i++)
-        if (!PERSISTENT_PORTS.includes(i))
-            ns.clearPort(i);
-
-    // Generate list of hostnames
-    saveHostnames(ns);
-
-    for (const hostname of nmap(ns)) {
-        if (hostname !== 'home') {
-            ns.ls(hostname).forEach(filename => ns.rm(filename, hostname));
-            await ns.scp([HACK, GROW, WEAKEN, INFECT, SHARE], hostname);
-        }
-    }
-    
-    putStaticData(ns, {
-        weakenScriptRam: ns.getScriptRam(WEAKEN),
-        growScriptRam: ns.getScriptRam(GROW),
-        hackScriptRam: ns.getScriptRam(HACK),
-		purchasedServerMaxRam: ns.getPurchasedServerMaxRam(),
-		purchasedServerLimit: ns.getPurchasedServerLimit(),
-        // hacknetProductionMultiplier: ns.getHacknetMultipliers().production(),
-    });
-
-    ns.tprint('Starting scheduler');
-	ns.exec('/bin/scheduler.js', 'home', 1, 'bootstrap');
+    ns.tprint('Booting');
+	ns.run('/boot/boot.js', 1);
 }

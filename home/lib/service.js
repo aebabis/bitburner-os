@@ -59,13 +59,19 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
                 queued = true;
                 if (beforeRun)
                     beforeRun();
-                const handle = await delegate(ns, true)(script, target, numThreads, ...args);
-                queued = false;
-                pid = handle.pid;
-                if (pid != null)
-                    await console.info('Successfully started', desc, `(PID=${pid})`);
-                else
-                    await console.error('Failed to start', desc);
+                try {
+                    const handle = await delegate(ns, true)(script, target, numThreads, ...args);
+                    pid = handle.pid;
+                    if (pid != null)
+                        await console.info('Successfully started', desc, `(PID=${pid})`);
+                    else
+                        await console.error('Failed to start', desc);
+                } catch (error) {
+                    pid = null;
+                    throw error;
+                } finally {
+                    queued = false;
+                }
             }
         } else if (running && !shouldBe) {
             stop();

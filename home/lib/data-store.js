@@ -1,40 +1,36 @@
 import Ports from './lib/ports';
-import { PORT_HOSTNAMES, PORT_STATIC_DATA, PORT_GANG_DATA } from './etc/ports';
+import { PORT_HOSTNAMES, PORT_STATIC_DATA, PORT_GANG_DATA, PORT_DASHBOARD_DATA } from './etc/ports';
 
 /** @param {NS} ns **/
-export const getHostnames = (ns) => {
-    return Ports(ns).getPortHandle(PORT_HOSTNAMES).peek();
+const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();
+
+/** @param {NS} ns **/
+const replaceData = (ns, portId, data) => {
+    const port = Ports(ns).getPortHandle(portId);
+    port.clear();
+    port.write(data);
 };
 
 /** @param {NS} ns **/
-export const putHostnames = (ns, hostnames) => {
-    const port = Ports(ns).getPortHandle(PORT_HOSTNAMES);
-    port.clear();
-    port.write(hostnames);
-};
-
-export const getStaticData = (ns) => {
-    return Ports(ns).getPortHandle(PORT_STATIC_DATA).peek() || {};
-}
-
-export const putStaticData = (ns, data) => {
-    const newData = Object.assign(getStaticData(ns), data);
-    const port = Ports(ns).getPortHandle(PORT_STATIC_DATA);
-    port.clear();
-    port.write(newData);
-}
-
-export const getGangData = (ns) => {
-    return Ports(ns).getPortHandle(PORT_GANG_DATA).peek();
-}
-
-export const putGangData = (ns, data) => {
-    const oldData = getGangData(ns) || {};
+const putData = (ns, portId, data) => {
+    const oldData = readData(ns, portId) || {};
     const newData = Object.assign(oldData, data);
-    const port = Ports(ns).getPortHandle(PORT_GANG_DATA);
+    const port = Ports(ns).getPortHandle(portId);
     port.clear();
     port.write(newData);
-}
+};
+
+export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
+export const putHostnames = (ns, hostnames) => replaceData(ns, PORT_HOSTNAMES, hostnames);
+
+export const getStaticData = (ns) => readData(ns, PORT_STATIC_DATA) || {};
+export const putStaticData = (ns, data) => putData(ns, PORT_STATIC_DATA, data);
+
+export const getGangData = (ns) => readData(ns, PORT_GANG_DATA);
+export const putGangData = (ns, data) => putData(ns, PORT_GANG_DATA, data);
+
+export const getDataboardData = (ns) => readData(ns, PORT_DASHBOARD_DATA);
+export const putDashboardData = (ns, data) => putData(ns, PORT_DASHBOARD_DATA, data);
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -42,6 +38,7 @@ export async function main(ns) {
         hostnames: PORT_HOSTNAMES,
         static: PORT_STATIC_DATA,
         gang: PORT_GANG_DATA,
+        dashboard: PORT_DASHBOARD_DATA,
     }
     const [command, portname] = ns.args;
     if (command === 'peek') {

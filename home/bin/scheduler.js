@@ -1,12 +1,11 @@
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { THREADPOOL_NAME } from './etc/config';
-import { HACK } from './etc/filenames';
 import Ports from './lib/ports';
 import { by } from './lib/util';
 import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
-import { getStaticData, getHostnames } from './lib/data-store';
+import { getStaticData, } from './lib/data-store';
 
 const SCHEDULER_HOME = 'home';
 
@@ -126,12 +125,9 @@ export async function main(ns) {
 						continue;
 					}
 				} else {
-					const available = getHostnames(ns);
 					// No preference; choose
-					const rootServers = ramData.rootServers.filter(x => available.includes(x.hostname));
-					const eligibleServers = process.isWorker ?
-						rootServers.filter(server => ns.fileExists(HACK, server.hostname)) :
-						rootServers.filter(server => !server.hostname.startsWith(THREADPOOL_NAME));
+					const eligibleServers = ramData.rootServers
+						.filter(server => ns.getScriptRam(process.script, server.hostname)>0);
 
 					const server = eligibleServers.find(server => server.ramAvailable >= ramRequired);
 					const settleServer = eligibleServers[0];

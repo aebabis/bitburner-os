@@ -15,3 +15,6 @@ export const PORT_HOSTNAMES = port++;
 export const PORT_STATIC_DATA = port++;
 
 export const PORT_GANG_DATA = port++;
+export const PORT_DASHBOARD_DATA = port++;
+
+export const PORT_PLAYER_DATA = port++;

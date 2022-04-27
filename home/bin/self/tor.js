@@ -1,0 +1,16 @@
+import { disableService } from './lib/planner-api';
+
+/** @param {NS} ns */
+export async function main(ns) {
+    ns.disableLog('ALL');
+    if (ns.purchaseTor()) {
+        if (ns.purchaseProgram("brutessh.exe")  &&
+            ns.purchaseProgram("ftpcrack.exe")  &&
+            ns.purchaseProgram("relaysmtp.exe") &&
+            ns.purchaseProgram("httpwork.exe")  &&
+            ns.purchaseProgram("sqlinject.exe")
+        ) {
+            disableService(ns, 'tor');
+        }
+    }
+}
