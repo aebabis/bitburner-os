@@ -12,7 +12,6 @@ const go = async(ns) => {
     ns.disableLog('ALL');
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
-    const canShare = () => ns.getPlayer().currentWorkFactionDescription != null;
     const canBuyTixAccess = () => !canTradeStocks();
     const couldStartGang = () => ns.getPlayer().bitNodeN >= 2 && !isInGang();
     const isInGang = () => getGangData(ns) != null;
@@ -28,8 +27,7 @@ const go = async(ns) => {
                         ('/bin/market-access.js'),
         AnyHostService(ns, canTradeStocks, 5000)
                         ('/bin/broker.js'),
-        AnyHostService(ns, canShare, 5000)
-                        ('/bin/share.js'), // TODO: Deadman's switch for share?
+        AnyHostService(ns)('/bin/share.js'),
         AnyHostService(ns, couldStartGang, 5000)
                         ('/bin/gang/gang-data.js'),
         AnyHostService(ns, isInGang, 10000)
@@ -44,6 +42,7 @@ const go = async(ns) => {
                         ('/bin/self/focus.js'),
         AnyHostService(ns, () => true, 5000)
                         ('/bin/self/tor.js'),
+        AnyHostService(ns)('/bin/self/aug/augment.js'),
         // await startAny('servers.js', 'service');
         // await startAny('money.js', 'thief.js');
     ];

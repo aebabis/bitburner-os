@@ -1,4 +1,5 @@
-import { getStaticData, putStaticData  } from './lib/data-store';
+import { getStaticData, getPlayerData, putPlayerData  } from './lib/data-store';
+import { disableService } from './lib/planner-api';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
@@ -7,15 +8,28 @@ export async function main(ns) {
     ns.disableLog('ALL');
     const {
         targetFaction,
-        factionAugmentations,
+        neededAugmentations,
         augmentationPrices,
     } = getStaticData(ns);
+    const {
+        purchasedThisAug = []
+    } = getPlayerData(ns);
 
-    const targetAugmentations = factionAugmentations[targetFaction];
-    targetAugmentations.sort(by(aug => -augmentationPrices[aug]));
+    const remainingAugs = neededAugmentations[targetFaction]
+        .filter(aug => !purchasedThisAug.includes(aug));
+    remainingAugs.sort(by(aug => -augmentationPrices[aug]));
 
-    if (targetAugmentations.every(aug => ns.purchaseAugmentation(targetFaction, aug))) {
+    for (const augmentation of remainingAugs) {
+        if (ns.purchaseAugmentation(targetFaction, augmentation)) {
+            purchasedThisAug.push(augmentation);
+        }
+    }
+
+    if (remainingAugs.every(aug => purchasedThisAug.includes(aug))) {
         while (ns.purchaseAugmentation(targetFaction, 'NeuroFlux Governor'));
         ns.toast('TODO: Restart needed');
+        disableService(ns, 'augment');
     }
+
+    putPlayerData(ns, { purchasedThisAug, remainingAugs });
 }

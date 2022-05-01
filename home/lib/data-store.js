@@ -43,7 +43,7 @@ export const getRamData = (ns) => readData(ns, PORT_SCH_RAM_DATA);
 export const putRamData = (ns, data) => replaceData(ns, PORT_SCH_RAM_DATA, data);
 
 export const getPlayerData = (ns) => readData(ns, PORT_PLAYER_DATA) || {};
-export const putPlayerData = (ns, data) => replaceData(ns, PORT_PLAYER_DATA, data);
+export const putPlayerData = (ns, data) => putData(ns, PORT_PLAYER_DATA, data);
 
 /** @param {NS} ns **/
 export async function main(ns) {
