@@ -1,17 +1,18 @@
-import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { THREADPOOL_NAME } from './etc/config';
-import Ports from './lib/ports';
 import { by } from './lib/util';
-import { checkPort, /*clean,*/ fulfill, reject } from './lib/scheduler-api';
+import { checkPort, fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
-import { getStaticData, } from './lib/data-store';
+import { getStaticData, putRamData } from './lib/data-store';
+import { autoClosePopUps } from './lib/tracking';
 
 const SCHEDULER_HOME = 'home';
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
+	
+	autoClosePopUps(ns);
 
 	if (ns.getHostname() !== SCHEDULER_HOME){
 		throw new Error(`Scheduler only runs on ${SCHEDULER_HOME}`);
@@ -111,11 +112,9 @@ export async function main(ns) {
 
 				const ramQueued = queue.map(({ script, numThreads }) => ns.getScriptRam(script) * numThreads)
 					.reduce((a,b) => a+b, 0);
-				const ramData = getRamData(ns)
+				const ramData = getRamData(ns);
 				ramData.ramQueued = ramQueued;
-				const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
-				port.clear();
-				port.write(ramData);
+				putRamData(ns, ramData);
 
 				if (process.host != null) {
 					// Specific server requested

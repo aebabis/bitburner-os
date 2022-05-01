@@ -3,6 +3,7 @@ import { nmap } from './lib/nmap';
 
 /** @param {NS} ns **/
 const getServers = (ns) => nmap(ns)
+	.filter(name => name !== 'home' && !name.startsWith('THREADPOOL'))
 	.map(ns.getServer)
 	.sort(by('hostname'))
 	.sort(by('maxRam'))

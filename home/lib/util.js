@@ -23,10 +23,15 @@ export const by = (prop) => {
 	}
 }
 
-/** @param {NS} ns **/
-export const waitToRead = (ns) => async (filename) => {
-	let content = '';
-	while ((content = await ns.read(filename)) === '')
-		await ns.sleep(50);
-	return content;
-}
+export const small = number => number.toString().toLowerCase().split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]||'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ'[n.charCodeAt(0)-97]||' ').join('');
+export const bold = string => string.toString().split('')
+	.map(n=>'𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗'[n]||'𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳'[n.charCodeAt(0)-97]||'𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙'[n.charCodeAt(0)-65]||' ').join('');
+
+
+/*
+
+🄰🄱🄲🄳🄴🄵🄶🄷🄸🄹🄺🄻🄼🄽🄾🄿🅀🅁🅂🅃🅄🅅🅆🅇🅈🅉
+ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ
+🅰🅱🅲🅳🅴🅵🅶🅷🅸🅹🅺🅻🅼🅽🅾🅿🆀🆁🆂🆃🆄🆅🆆🆇🆈🆉
+🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩
+*/

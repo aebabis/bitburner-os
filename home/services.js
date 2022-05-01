@@ -13,7 +13,7 @@ export async function main(ns) {
     else if (command === 'restart') {
         // TODO
     } else if (command === 'stop') {
-        // TODO
+        disableService(ns, target);
     } else if (command === 'tail') {
         const services = getServices(ns);
         const service = services

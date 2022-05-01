@@ -1,5 +1,12 @@
 import Ports from './lib/ports';
-import { PORT_HOSTNAMES, PORT_STATIC_DATA, PORT_GANG_DATA, PORT_DASHBOARD_DATA } from './etc/ports';
+import {
+    PORT_HOSTNAMES,
+    PORT_STATIC_DATA,
+    PORT_GANG_DATA,
+    PORT_DASHBOARD_DATA,
+    PORT_SCH_RAM_DATA,
+    PORT_PLAYER_DATA
+} from './etc/ports';
 
 /** @param {NS} ns **/
 const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();
@@ -31,6 +38,12 @@ export const putGangData = (ns, data) => putData(ns, PORT_GANG_DATA, data);
 
 export const getDataboardData = (ns) => readData(ns, PORT_DASHBOARD_DATA);
 export const putDashboardData = (ns, data) => putData(ns, PORT_DASHBOARD_DATA, data);
+
+export const getRamData = (ns) => readData(ns, PORT_SCH_RAM_DATA);
+export const putRamData = (ns, data) => replaceData(ns, PORT_SCH_RAM_DATA, data);
+
+export const getPlayerData = (ns) => readData(ns, PORT_PLAYER_DATA) || {};
+export const putPlayerData = (ns, data) => replaceData(ns, PORT_PLAYER_DATA, data);
 
 /** @param {NS} ns **/
 export async function main(ns) {

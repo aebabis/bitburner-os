@@ -6,9 +6,12 @@ export async function main(ns) {
 	const command = ns.args[0];
 	if (command === 'purchase') {
 		const ram = +ns.args[1];
-		const hostname = ns.purchaseServer('THREADPOOL', ram);
-		if (hostname != null && hostname !== '') {
-			await infect(ns, hostname);
+		for (let n = 1; n <= 24; n++) {
+			const hostname = ns.purchaseServer('THREADPOOL-'+n, ram);
+			if (hostname != null && hostname !== '') {
+				await infect(ns, hostname);
+				return;
+			}
 		}
 	} else if (command === 'replace') {
 		const hostnameToKill = ns.args[1];
@@ -18,7 +21,7 @@ export async function main(ns) {
 		if (money >= cost) {
 			ns.killall(hostnameToKill);
 			ns.deleteServer(hostnameToKill);
-			const newHostname = ns.purchaseServer('THREADPOOL', ram);
+			const newHostname = ns.purchaseServer(hostnameToKill, ram);
 			logger(ns).log(`Purchased ${newHostname} with ${ram}GB ram for ${ns.nFormat(cost, '$0.000a')}`);
 			await infect(ns, newHostname);
 		}

@@ -1,7 +1,9 @@
+const doc = eval('document');
+const win = eval('window');
+
 /** @param {NS} ns */
 export const afkTracker = (ns, DELAY = 10000) => {
     let timer, isAfk;
-    const win = eval('window');
     const start = () => timer = setTimeout(() => isAfk = true, DELAY);
     const reset = () => {
         isAfk = false;
@@ -15,6 +17,7 @@ export const afkTracker = (ns, DELAY = 10000) => {
         win.removeEventListener('mousemove', reset);
         win.removeEventListener('keypress', reset);
         win.removeEventListener('click', reset);
+        clearTimeout(timer);
     })
     start();
     return () => isAfk;
@@ -22,7 +25,6 @@ export const afkTracker = (ns, DELAY = 10000) => {
 
 /** @param {NS} ns */
 export const terminalTracker = (ns) => {
-    const doc = eval('document');
     let inTerminal;
 
     const update = () => doc.activeElement != null &&
@@ -39,4 +41,27 @@ export const terminalTracker = (ns) => {
     update();
 
     return () => inTerminal;
+}
+
+const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main function.'
+
+/** @param {NS} ns */
+export const autoClosePopUps = (ns) => {
+    let timer;
+    const check = () => {
+        const popup = doc.querySelector('.MuiBackdrop-root');
+        if (popup != null && popup.innerText.includes(MAIN_FUNCTION_ERROR)) {
+            popup.click();
+            timer = setTimeout(check, 1);
+        } else {
+            timer = setTimeout(check, 1000);
+        }
+    };
+
+    const stop = () => clearTimeout(timer);
+    ns.atExit(stop);
+
+    check();
+
+    return stop;
 }
