@@ -10,13 +10,13 @@ export const afkTracker = (ns, DELAY = 10000) => {
         clearTimeout(timer);
         start();
     }
-    win.addEventListener('mousemove', reset);
-    win.addEventListener('keypress', reset);
-    win.addEventListener('click', reset);
+    win.addEventListener('mousemove', reset, true);
+    win.addEventListener('keypress', reset, true);
+    win.addEventListener('click', reset, true);
     ns.atExit(() => {
-        win.removeEventListener('mousemove', reset);
-        win.removeEventListener('keypress', reset);
-        win.removeEventListener('click', reset);
+        win.removeEventListener('mousemove', reset, true);
+        win.removeEventListener('keypress', reset, true);
+        win.removeEventListener('click', reset, true);
         clearTimeout(timer);
     })
     start();
@@ -25,22 +25,19 @@ export const afkTracker = (ns, DELAY = 10000) => {
 
 /** @param {NS} ns */
 export const terminalTracker = (ns) => {
-    let inTerminal;
+    let lastKeypress = Date.now();
 
-    const update = () => doc.activeElement != null &&
-        doc.activeElement === doc.querySelector('#terminal-input');
+    const update = () => lastKeypress = Date.now();
     
-    doc.body.addEventListener('focus', update);
-    doc.body.addEventListener('blur', update);
+    doc.body.addEventListener('keypress', update, true);
     
     ns.atExit(() => {
-        doc.body.removeEventListener('focus', update);
-        doc.body.removeEventListener('blur', update);
+        doc.body.removeEventListener('keypress', update, true);
     });
 
-    update();
-
-    return () => inTerminal;
+    return () => doc.activeElement != null &&
+        doc.activeElement === doc.querySelector('#terminal-input') &&
+        Date.now() - lastKeypress < 10000;
 }
 
 const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main function.'
@@ -50,11 +47,12 @@ export const autoClosePopUps = (ns) => {
     let timer;
     const check = () => {
         const popup = doc.querySelector('.MuiBackdrop-root');
-        if (popup != null && popup.innerText.includes(MAIN_FUNCTION_ERROR)) {
+        if (popup == null || popup.innerText.includes(MAIN_FUNCTION_ERROR)) {
+            timer = setTimeout(check, 1000);
+        } else {
+            console.log(popup.innerText);
             popup.click();
             timer = setTimeout(check, 1);
-        } else {
-            timer = setTimeout(check, 1000);
         }
     };
 

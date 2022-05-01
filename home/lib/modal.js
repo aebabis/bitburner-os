@@ -16,30 +16,35 @@ export function getCommandLine(ns) {
     return ns.getScriptName() + ' ' + ns.args.join(' ');
 }
 
-let modal;
 /** @param {NS} ns **/
-export async function getTailModal(ns) {
-    if (modal != null)
-        return modal;
-    ns.tail();
+export async function getTailModal(ns, retry=true) {
+    if (retry)
+        ns.tail();
     const commandLine = getCommandLine(ns);
     let titlebar;
     while (true) {
         titlebar = doc.querySelector(`.drag > h6[title="${commandLine}"]`);
         if (titlebar != null)
-            return modal = titlebar.parentElement.parentElement.nextSibling;
-        else
-            await ns.sleep(10);
+            break;
+        if (retry) await ns.sleep(50);
+        else return null;
     }
+    const modal = titlebar.parentElement.parentElement.nextSibling;
+    const close = titlebar.nextSibling.children[2];
+    if (!titlebar.getAttribute('flagged')) {
+        titlebar.setAttribute('flagged', true);
+        ns.atExit(() => close.click());
+    }
+    return modal;
 }
 
 let charWidth;
 /** @param {NS} ns **/
 export async function getModalColumnCount(ns) {
-    const elem = await getTailModal(ns);
+    const elem = await getTailModal(ns, true);
+    if (elem == null)
+        return null;
     const container = elem.querySelector('.MuiBox-root');
-    if (container.offsetParent == null)
-      ns.exit();
     container.classList.add('windower');
     if (charWidth == null) {
         const testString = '0'.repeat(48);

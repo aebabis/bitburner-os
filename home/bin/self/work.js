@@ -11,8 +11,9 @@ const getFactionToHelp = (ns) => {
     const { factionRep = {} } = getPlayerData(ns);
     const money = ns.getServerMoneyAvailable('home');
     const moneyNeeded = maxAugPrices[targetFaction];
-    const rep = factionRep[targetFaction];
+    const rep = factionRep[targetFaction] || 0;
     const repNeeded = maxRepReqs[targetFaction];
+    ns.tprint([money, moneyNeeded, rep, repNeeded, money >= moneyNeeded, rep < repNeeded]);
     if (money >= moneyNeeded && rep < repNeeded)
         return targetFaction;
     return null;
@@ -34,7 +35,7 @@ export async function main(ns) {
             if (!doneWithJoes) {
                 await rmi(ns)('/bin/self/job.js');
             } else if (faction != null) {
-                await rmi(ns)('/bin/self/faction-work.js', faction);
+                await rmi(ns)('/bin/self/faction-work.js', 1, faction);
             } else {
                 await rmi(ns)('/bin/self/crime-stats.js');
                 await rmi(ns)('/bin/self/crime.js');
