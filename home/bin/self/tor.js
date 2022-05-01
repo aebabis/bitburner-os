@@ -7,7 +7,7 @@ export async function main(ns) {
         if (ns.purchaseProgram("brutessh.exe")  &&
             ns.purchaseProgram("ftpcrack.exe")  &&
             ns.purchaseProgram("relaysmtp.exe") &&
-            ns.purchaseProgram("httpwork.exe")  &&
+            ns.purchaseProgram("httpworm.exe")  &&
             ns.purchaseProgram("sqlinject.exe")
         ) {
             disableService(ns, 'tor');
