@@ -1,6 +1,7 @@
 import { WEAKEN, GROW, HACK, INFECT, SHARE } from './etc/filenames';
 import getConfig from './lib/config';
 import { saveHostnames, nmap  } from './lib/nmap';
+import { by } from './lib/util';
 import { defer } from './boot/defer';
 
 import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
@@ -34,8 +35,6 @@ export async function main(ns) {
         }
     }
 
-    ns.tprint('Infecting zombies');
-
     // To reduce the size of the game save file,
     // only put the non-batch code on the first
     // N servers. This amount can be adjusted as needed.
@@ -44,7 +43,10 @@ export async function main(ns) {
     const zombies = hostnames
         .filter(hostname => hostname !== 'home')
         .filter(hostname => !hostname.startsWith(THREADPOOL))
+        .filter(hostname => ns.getServerMaxRam(hostname) >= 1.6)
+        .sort(by(ns.getServerRequiredHackingLevel))
         .slice(0, SERVERS_NEEDED);
+    ns.tprint('Infecting zombies: ' + zombies.join(', '));
     for (const hostname of zombies)
         await ns.scp(JS, 'home', hostname);
 

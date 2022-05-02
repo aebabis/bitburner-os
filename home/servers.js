@@ -1,5 +1,6 @@
-import { by } from './lib/util';
+import { by, small } from './lib/util';
 import { nmap } from './lib/nmap';
+import { table } from './lib/table';
 
 /** @param {NS} ns **/
 const getServers = (ns) => nmap(ns)
@@ -9,29 +10,44 @@ const getServers = (ns) => nmap(ns)
 	.sort(by('maxRam'))
 	.sort(by('requiredHackingSkill'));
 
-const serverString = (ns, server) => {
+/** @param {NS} ns **/
+const serverRow = (ns, server) => {
 	const {
 		backdoorInstalled, hasAdminRights, hostname, ip,
-		// organizationName,contracts,purchasedByPlayer,
-		cpuCores,ramUsed,maxRam,
-		// sshPortOpen,ftpPortOpen,smtpPortOpen,httpPortOpen,sqlPortOpen,
-		numOpenPortsRequired, serverGrowth, //openPortCount,
-		// messages, textFiles,programs,scripts,
-		// runningScripts, serversOnNetwork, isConnectedTo,
-		requiredHackingSkill,baseDifficulty,hackDifficulty,minDifficulty,
+		ramUsed,maxRam,
+		numOpenPortsRequired,
+		requiredHackingSkill,hackDifficulty,minDifficulty,
 		moneyAvailable, moneyMax,
 	} = server;
-	// const bit = (open) => open ? '1' : '0';
-	const GB = 1024 ** 3;
-	const status = backdoorInstalled ? 'BD' : hasAdminRights ? 'A' : '';
-	const ram = `RAM=${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
-	// const cores = `Cores=${cpuCores}`;
+
+	const GB = 1e9;
+
+	const status = backdoorInstalled ? '🚪 ' : hasAdminRights ? '💻 ' : '❌ ';
+	const name = `${status}${hostname}${small(numOpenPortsRequired)}`;
 	const money = `${ns.nFormat(moneyAvailable, '0.00a')}/${ns.nFormat(moneyMax, '0.00a')}`;
-	const ports = 'Ports=' + numOpenPortsRequired;
-	const hacking = `Hack=${~~requiredHackingSkill}(${~~minDifficulty}/${~~hackDifficulty}/${~~baseDifficulty})`;
-	const gr0w = `Grow=${serverGrowth}`;
-	const name = `${hostname} (${ip}) ${status}`;
-	return `${name.padEnd(32)} ${ram.padEnd(15)}  ${ports}  ${money.padEnd(15)}  ${hacking.padEnd(20)} ${gr0w}`;
+	const ram = `${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
+	const level = requiredHackingSkill;
+	const hacking = `${~~minDifficulty}/${~~hackDifficulty}`;
+	return {
+		name,
+		money,
+		ram,
+		level,
+		hacking,
+	};
+}
+
+/** @param {NS} ns **/
+const getTable = (ns) => {
+	const columns = ['\u2796 HOSTNAME'+small('ports'), 'MONEY', 'RAM', 'LEVEL', 'HACKING'];
+	const data = getServers(ns).map(server => serverRow(ns, server))
+		.map(({name, money, ram, level, hacking}) => [name, money, ram, level, hacking]);
+	const mid = Math.ceil(data.length / 2);
+	const left = data.slice(0, mid);
+	const right = data.slice(mid);
+	const doubled = left.map((row, i) => [...row, ...(right[i]||[])]);
+
+	return table(ns, [...columns, ...columns], doubled);
 }
 
 /** @param {NS} ns **/
@@ -41,12 +57,12 @@ export async function main(ns) {
 	const [command] = ns.args;
 
 	if (command == null) {
-			getServers(ns).forEach(server => ns.tprint(serverString(ns, server)));
+		ns.tprint('\n' + getTable(ns));
 	} else {
 		if (command === 'service') {
 			while (true) {
 				ns.clearLog();
-				getServers(ns).forEach(server => ns.print(serverString(ns, server)));
+				ns.print(getTable(ns));
 				await ns.sleep(5000);
 			}
 		} else {

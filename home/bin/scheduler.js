@@ -22,18 +22,14 @@ export async function main(ns) {
 	// by starting the planner and the logger.
 	// This is done since these 3 programs can't
 	// run on 8GB ram when init.js is still running.
-	if (ns.args[0] === 'bootstrap') {
-		await ns.sleep(50);
-		ns.exec('/bin/planner.js', 'home');
-		ns.exec('/bin/logger.js', 'home');
-	}
+	await ns.sleep(50);
+	ns.exec('/bin/planner.js', 'home');
+	ns.exec('/bin/logger.js', 'home');
 
 	const {
 		purchasedServerMaxRam,
 		purchasedServerLimit,
 	} = getStaticData(ns);
-
-	const console = logger(ns);
 
 	const getRamInfo = (hostname, isHighPriority) => {
 		const maxRam = ns.getServerMaxRam(hostname);

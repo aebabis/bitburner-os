@@ -5,7 +5,7 @@ import { table } from './lib/table';
 import { getServices } from './lib/planner-api';
 
 const getSchedulerTable = (ns) => {
-    const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home', 'bootstrap');
+    const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     const {
         onlineExpGained,
         onlineMoneyMade,

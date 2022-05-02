@@ -54,15 +54,14 @@ export const analyzeAugData = (ns) => {
         maxRepReqs[faction] = Math.max(0, ...factionExclusives.map(aug=>augmentationRepReqs[aug]));
     }
 
+    ns.tprint('REMAINING AUGS');
     for (const [k, v] of Object.entries(exclusives)) {
-        ns.tprint(k + ': ' + v.join(', '));
+        if (v.length > 0)
+            ns.tprint(k + ': ' + v.join(', '));
     }
 
     const targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b, 'Daedalus');
     const cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
-
-    ns.tprint('CITY FACTION:   ' + cityFaction + ': ' + exclusives[cityFaction].join(', '));
-    ns.tprint('TARGET FACTION: ' + targetFaction + ': ' + exclusives[targetFaction].join(', '));
 
     putStaticData(ns, {
         targetFaction,

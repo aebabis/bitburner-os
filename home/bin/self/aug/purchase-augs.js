@@ -1,5 +1,4 @@
 import { getStaticData, getPlayerData, putPlayerData  } from './lib/data-store';
-import { disableService } from './lib/planner-api';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
@@ -11,25 +10,23 @@ export async function main(ns) {
         neededAugmentations,
         augmentationPrices,
     } = getStaticData(ns);
-    const {
-        purchasedThisAug = []
-    } = getPlayerData(ns);
+    const { purchasedAugmentations } = getPlayerData(ns);
 
     const remainingAugs = neededAugmentations[targetFaction]
-        .filter(aug => !purchasedThisAug.includes(aug));
+        .filter(aug => !purchasedAugmentations.includes(aug));
     remainingAugs.sort(by(aug => -augmentationPrices[aug]));
 
     for (const augmentation of remainingAugs) {
         if (ns.purchaseAugmentation(targetFaction, augmentation)) {
-            purchasedThisAug.push(augmentation);
+            purchasedAugmentations.push(augmentation);
         }
     }
 
-    if (remainingAugs.every(aug => purchasedThisAug.includes(aug))) {
+    if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
+        await rmi(ns)('/bin/broker.js', 1, 'dump');
         while (ns.purchaseAugmentation(targetFaction, 'NeuroFlux Governor'));
-        ns.toast('TODO: Restart needed');
-        disableService(ns, 'augment');
+        await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 
-    putPlayerData(ns, { purchasedThisAug, remainingAugs });
+    putPlayerData(ns, { purchasedAugmentations, remainingAugs });
 }
