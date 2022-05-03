@@ -3,6 +3,7 @@ import { getModalColumnCount } from './lib/modal';
 import { renderWindows } from './lib/layout';
 import { table } from './lib/table';
 import { getServices } from './lib/planner-api';
+import { getStaticData } from './lib/data-store';
 
 const getSchedulerTable = (ns) => {
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
@@ -69,6 +70,17 @@ const threadpoolTable = (ns) => {
         left.map((list, i) => [...list, ...(right[i]||['',''])]));
 }
 
+const goalsTable = (ns) => {
+    const { targetFaction, neededAugmentations } = getStaticData(ns);
+    if (neededAugmentations == null)
+        return '';
+    const rows = [
+        ['Join ' + targetFaction],
+        ...neededAugmentations[targetFaction].map(aug=>[aug]),
+    ];
+    return table(ns, ['GOALS'], rows);
+}
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -82,6 +94,7 @@ export async function main(ns) {
                 backdoorPath(ns),
                 tailLogs(ns, width),
                 threadpoolTable(ns),
+                goalsTable(ns),
             ].map(process);
             const textField = renderWindows(text, width);
 

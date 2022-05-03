@@ -5,12 +5,11 @@ export async function main(ns) {
     ns.disableLog('ALL');
     const [faction, focus] = ns.args;
     if (
-        ns.workForFaction(faction, 'Hacking Contracts', focus==='true') ||
-        ns.workForFaction(faction, 'Field Work', focus==='true') ||
-        ns.workForFaction(faction, 'Security Work', focus==='true')
+        ns.workForFaction(faction, 'Hacking Contracts', focus) ||
+        ns.workForFaction(faction, 'Field Work', focus) ||
+        ns.workForFaction(faction, 'Security Work', focus)
     ) {
         await ns.sleep(10000);
-        ns.stopAction();
 
         const { factionRep = {} } = getPlayerData(ns);
         factionRep[faction] = ns.getFactionRep(faction);

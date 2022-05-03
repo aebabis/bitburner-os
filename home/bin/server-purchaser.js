@@ -43,8 +43,9 @@ export async function main(ns) {
                             await console.log(`Attempting to replace ${smallest.hostname}`);
                             pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'replace', smallest.hostname, ram)).pid;
                         } else {
+                            const hostname = 'THREADPOOL-' + (purchasedServers.length + 1);
                             await console.log(`Attempting to buy new server`);
-                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'purchase', ram)).pid;
+                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'purchase', hostname, ram)).pid;
                         }
                         while (ns.isRunning(pid))
                             await ns.sleep(50);
