@@ -23,7 +23,7 @@ const serverRow = (ns, server) => {
 
 	const GB = 1e9;
 
-	const status = backdoorInstalled ? '🚪 ' : hasAdminRights ? '💻 ' : '❌ ';
+	const status = backdoorInstalled ? '💻 ' : hasAdminRights ? '🔗 ' : '❌\u200b ';
 	const name = `${status}${hostname}${small(numOpenPortsRequired)}`;
 	const money = `${ns.nFormat(moneyAvailable, '0.00a')}/${ns.nFormat(moneyMax, '0.00a')}`;
 	const ram = `${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
@@ -40,7 +40,7 @@ const serverRow = (ns, server) => {
 
 /** @param {NS} ns **/
 const getTable = (ns) => {
-	const columns = ['\u2796 HOSTNAME'+small('ports'), 'MONEY', 'RAM', 'LEVEL', 'HACKING'];
+	const columns = ['\u2796\u200b HOSTNAME'+small('ports'), 'MONEY', 'RAM', 'LEVEL', 'HACKING'];
 	const data = getServers(ns).map(server => serverRow(ns, server))
 		.map(({name, money, ram, level, hacking}) => [name, money, ram, level, hacking]);
 	const mid = Math.ceil(data.length / 2);

@@ -28,7 +28,7 @@ export const table = (ns, columns, data, options={}) => {
     columns = columns.map(headData);
     data = data.map(row => row.map((cell, i) => columns[i].process(cell).toString()));
     const widths = columns.map((column, i) => data
-        .map(row => row[i].length).reduce((a,b)=>Math.max(a,b),column.name.length));
+        .map(row => row[i]?.length).reduce((a,b)=>Math.max(a,b),column.name.length));
     const lines = [
         columns.map((column, i) => column.pad(column.name, widths[i])).join(joiner),
         ...data.map(row => row.map((cell, i) => columns[i].pad(cell, widths[i])).join(joiner)),

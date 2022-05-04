@@ -11,6 +11,7 @@ export async function main(ns) {
         targetFaction,
         neededAugmentations,
         augmentationPrices,
+        factionAugmentations,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
 

@@ -15,7 +15,7 @@ const getNextServerName = (ns) => {
 	const limit = ns.getPurchasedServerLimit();
 	for (let n = 1; n <= limit; n++) {
 		const serverName = `${THREADPOOL}-${n}`;
-		if (serverExists(ns, serverName))
+		if (!serverExists(ns, serverName))
 			return serverName;
 	}
 }
