@@ -2,6 +2,8 @@ import { getStaticData, getPlayerData, putPlayerData  } from './lib/data-store';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
+const NEUROFLUX = 'NeuroFlux Governor';
+
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -24,7 +26,12 @@ export async function main(ns) {
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         await rmi(ns)('/bin/broker.js', 1, 'dump');
-        while (ns.purchaseAugmentation(targetFaction, 'NeuroFlux Governor'));
+        // TODO: Make all purchases use a reverse-lookup, not just
+        // these
+        const neuroFluxFaction = ns.getPlayer().factions
+            .filter(faction=>factionAugmentations[faction].includes(NEUROFLUX))
+            .reduce((a,b)=>ns.getFactionRep(a)>ns.getFactionRep(b)?a:b);
+        while (ns.purchaseAugmentation(neuroFluxFaction, NEUROFLUX));
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 

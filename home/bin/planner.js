@@ -5,7 +5,7 @@ import { logger } from './lib/logger';
 import {
     ENABLE, DISABLE,
     writeServices, checkQueue, getTableString,
-} from './lib/planner-api.js';
+} from './lib/service-api.js';
 
 /** @param {NS} ns **/
 const go = async(ns) => {

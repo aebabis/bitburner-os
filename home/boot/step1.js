@@ -1,5 +1,5 @@
 import { WEAKEN, GROW, HACK, INFECT, SHARE } from './etc/filenames';
-import getConfig from './lib/config';
+import { THREADPOOL } from './etc/config';
 import { saveHostnames, nmap  } from './lib/nmap';
 import { by } from './lib/util';
 import { defer } from './boot/defer';
@@ -10,8 +10,6 @@ const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-
-    const THREADPOOL = getConfig(ns).get('threadpool-name');
 
     ns.tprint('Clearing ports');
 

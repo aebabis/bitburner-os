@@ -2,8 +2,9 @@ import { getPath } from './lib/backdoor.js';
 import { getModalColumnCount } from './lib/modal';
 import { renderWindows } from './lib/layout';
 import { table } from './lib/table';
-import { getServices } from './lib/planner-api';
+import { getServices } from './lib/service-api';
 import { getStaticData } from './lib/data-store';
+import { THREADPOOL } from './etc/config';
 
 const getSchedulerTable = (ns) => {
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
@@ -54,10 +55,13 @@ const threadpoolRow = (ns, server) => {
 
 /** @param {NS} ns **/
 const threadpools = (ns) => {
-    const names = Array(23).fill(null).map((_,i)=>`THREADPOOL-${i}`);
-    names.unshift('THREADPOOL');
+    const names = Array(24).fill(null).map((_,i)=>`${THREADPOOL}-${i+1}`);
     return names
-        .map(hostname=>{try{return ns.getServer(hostname)}catch{return null}})
+        .map(hostname=>{try{return ({
+            hostname,
+            ramUsed: ns.getServerUsedRam(hostname),
+            maxRam: ns.getServerMaxRam(hostname),
+        })}catch{return null}})
         .filter(Boolean)
         .map(server=>threadpoolRow(ns, server));
 }

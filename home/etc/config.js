@@ -1,1 +1,1 @@
-export const THREADPOOL_NAME = 'THREADPOOL';
+export const THREADPOOL = 'THREADPOOL';

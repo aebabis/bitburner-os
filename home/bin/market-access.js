@@ -1,4 +1,4 @@
-import { disableService } from './lib/planner-api';
+import { disableService } from './lib/service-api';
 
 /** @param {NS} ns */
 export async function main(ns) {

@@ -1,10 +1,11 @@
 import { by, small } from './lib/util';
 import { nmap } from './lib/nmap';
 import { table } from './lib/table';
+import { THREADPOOL } from './etc/config';
 
 /** @param {NS} ns **/
 const getServers = (ns) => nmap(ns)
-	.filter(name => name !== 'home' && !name.startsWith('THREADPOOL'))
+	.filter(name => name !== 'home' && !name.startsWith(THREADPOOL))
 	.map(ns.getServer)
 	.sort(by('hostname'))
 	.sort(by('maxRam'))

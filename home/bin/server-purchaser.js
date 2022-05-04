@@ -1,7 +1,6 @@
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { PURCHASE_THREADPOOL } from './etc/filenames';
 import Ports from './lib/ports';
-import { by } from './lib/util';
 import { delegate } from './lib/scheduler-delegate';
 import { logger } from './lib/logger';
 
@@ -41,11 +40,10 @@ export async function main(ns) {
                         let pid;
                         if (atMaxServers) {
                             await console.log(`Attempting to replace ${smallest.hostname}`);
-                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'replace', smallest.hostname, ram)).pid;
+                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, ram, smallest.hostname)).pid;
                         } else {
-                            const hostname = 'THREADPOOL-' + (purchasedServers.length + 1);
                             await console.log(`Attempting to buy new server`);
-                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, 'purchase', hostname, ram)).pid;
+                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, ram)).pid;
                         }
                         while (ns.isRunning(pid))
                             await ns.sleep(50);

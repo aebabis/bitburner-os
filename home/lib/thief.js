@@ -246,6 +246,10 @@ class WGWBatch extends Batch {
         const threadsPerJob = Math.max(8, Math.ceil(ram/24/1.75/2));
 
         while (ram > 0 && weaken1Threads > 0) {
+            if (!Number.isInteger(weaken1Threads))
+                throw new Error('weaken1Threads not integer: ' + weaken1Threads);
+            if (!Number.isInteger(threadsPerJob))
+                throw new Error('threadsPerJob not integer: ' + threadsPerJob);
             const threads = Math.min(weaken1Threads, threadsPerJob);
             this.addJob(WEAKEN, threads, target, weaken1Start);
             weaken1Threads -= threads;

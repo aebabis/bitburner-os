@@ -1,4 +1,4 @@
-import { THREADPOOL_NAME } from './etc/config';
+import { THREADPOOL } from './etc/config';
 import { by } from './lib/util';
 import { checkPort, fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
@@ -53,7 +53,7 @@ export async function main(ns) {
 			.map(getRamInfo)//.filter(server=>server.hasAdminRights)
 			.sort(by(s=>-s.ramAvailable));
 		const purchasedServers = hostnames
-			.filter(hostname=>hostname.startsWith(THREADPOOL_NAME))
+			.filter(hostname=>hostname.startsWith(THREADPOOL))
 			.map(getRamInfo);
 		const purchasedServersMaxedOut = purchasedServers.length === purchasedServerLimit &&
 			purchasedServers.every(server=>server.maxRam===purchasedServerMaxRam);

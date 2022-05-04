@@ -4,13 +4,15 @@ import { logger } from './lib/logger';
 
 export const snippet = (statements) => `export async function main(ns) {\n${statements}\n}`;
 
-const desc = (script, host=null, numThreads=1, ...args) => host == null ?
-    `${script} ${numThreads} ${args.join(' ')}` : `${script} ${host} ${numThreads} ${args.join(' ')}`;
+const desc = (script, host=null, numThreads=1, ...args) =>
+    `${script} ${host||'*'} ${numThreads} ${args.join(' ')}`;
 
 const Job = (ns, response, startTime) => (script, host=null, numThreads=1, ...args) => {
-    if (!script.endsWith('.js') || isNaN(numThreads) || numThreads < 1) {
-        throw new Error(`Illegal process description: ${desc(script, host, numThreads, ...args)}`);
-    }
+    if (script.startsWith('.') || !script.endsWith('.js'))
+        throw new Error(`Illegal script name in ${desc(script, host, numThreads, ...args)}`);
+    if (!Number.isInteger(numThreads))
+        throw new Error(`Illegal thread count in ${desc(script, host, numThreads, ...args)}`)
+
     const ticket = response ? crypto.randomUUID() : undefined;
     return { script, host, numThreads, args, ticket, startTime, requestTime: Date.now() };
 }

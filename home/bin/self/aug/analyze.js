@@ -60,7 +60,9 @@ export const analyzeAugData = (ns) => {
             ns.tprint(k + ': ' + v.join(', '));
     }
 
-    const targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b, 'Daedalus');
+    let targetFaction = null;
+    if (possibleTargets.length)
+        targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);
     const cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
 
     putStaticData(ns, {

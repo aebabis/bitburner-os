@@ -1,5 +1,3 @@
-import { disableService } from './lib/planner-api';
-
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');

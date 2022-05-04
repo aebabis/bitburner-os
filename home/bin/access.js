@@ -1,7 +1,7 @@
 import { INFECT } from './etc/filenames';
 import { delegateAny } from './lib/scheduler-delegate';
 import { getHostnames } from './lib/data-store';
-import { disableService } from './lib/planner-api';
+import { disableService } from './lib/service-api';
 
 /** @param {NS} ns **/
 export const access = (ns) => async (target) => {

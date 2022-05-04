@@ -8,7 +8,6 @@ const PROPS = {
     'reserved-funds': 'Threshold for investment',
     'theft-portion': 'Default hack portion',
     'reserved-home-ram': 'On-demand RAM',
-    'threadpool-name': 'Name of purchased servers',
     'next-aug-time': 'Estimated time of next aug',
 };
 
@@ -18,7 +17,6 @@ const VALIDATORS = {
     'reserved-funds': (x) => x >= 0,
     'theft-portion': (x) => x > 0 && x < 1,
     'reserved-home-ram': (x) => x > 0 && x <= 1<<20,
-    'threadpool-name': (x) => typeof x === 'string' && x.length > 0,
     'next-aug-time': (x) => typeof x === 'number',
 };
 
@@ -28,7 +26,6 @@ const DEFAULT_VALUES = {
     'reserved-funds': 1e10,
     'theft-portion': .01,
     'reserved-home-ram': 8,
-    'threadpool-name': 'THREADPOOL',
     'next-aug-time': Date.now() + 1 * DAY,
 };
 

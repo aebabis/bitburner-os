@@ -1,7 +1,7 @@
 import { logger } from './lib/logger';
 import Thief from './lib/thief';
 
-import { THREADPOOL_NAME } from './etc/config';
+import { THREADPOOL } from './etc/config';
 import { PORT_SCH_RAM_DATA } from './etc/ports';
 import Ports from './lib/ports';
 import { by } from './lib/util';
@@ -23,7 +23,7 @@ export async function main(ns) {
     
     const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
-        !hostname.startsWith(THREADPOOL_NAME) && ns.getServerMaxMoney(hostname) > 0);
+        !hostname.startsWith(THREADPOOL) && ns.getServerMaxMoney(hostname) > 0);
 
     const thieves = possibleTargets.map(hostname => new Thief(ns, hostname));
 

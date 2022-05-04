@@ -1,4 +1,9 @@
-import { getServices, enableService, disableService, getTableString } from './lib/planner-api.js';
+import {
+    getServices,
+    enableService,
+    disableService,
+    getTableString
+} from './lib/service-api.js';
 
 /** @param {NS} ns */
 export async function main(ns) {
