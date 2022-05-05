@@ -7,10 +7,10 @@ export const defer = (ns) => (...args) => {
 export async function main(ns) {
     ns.tprint('Deferred execution resumed: ' + JSON.stringify(ns.args));
     await ns.sleep(50);
-    const [program, threads, ...args] = ns.args;
-    const pid = ns.run(program, threads, args);
+    const [nextProgram, ...remainder] = ns.args;
+    const pid = ns.run(nextProgram, 1, ...remainder);
     if (pid === 0) {
         ns.tprint('Skipping ' + program + ' because of RAM constraints');
-        defer(...args);
+        defer(...remainder);
     }
 };

@@ -38,12 +38,16 @@ const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main funct
 /** @param {NS} ns */
 export const autoClosePopUps = (ns) => {
     let timer;
+    let timeout = 1;
     const check = () => {
-        doc.querySelectorAll('.MuiModal-root').forEach((popup) => {
-            if (popup.innerText.includes(MAIN_FUNCTION_ERROR))
-                popup.children[0].click();
-        })
-        timer = setTimeout(check, 1000);
+        const popup = doc.querySelector('.MuiModal-root');
+        if (popup != null && popup.innerText.includes(MAIN_FUNCTION_ERROR)) {
+            popup.children[0].click();
+            timeout = 1;
+        } else {
+            timeout = Math.min(1000, timeout * 2);
+        }
+        timer = setTimeout(check, timeout);
     };
 
     const stop = () => clearTimeout(timer);

@@ -21,25 +21,6 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
     return threads;
 }
 
-// toString() {
-
-// const small = number => number.toString()
-// .split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]).join('');
-//     let str = '';
-//     let width = 50;
-//     let job = this;
-//     while (width > 0 && job != null) {
-//         const ahead = job.startTime - Date.now();
-//         if (ahead > 0) {
-//             const future = Math.min(width, Math.floor(ahead / SUBTASK_SPACING));
-//             str += ' '.repeat(future) + small(this.threads);
-//             width -= future;
-//         }
-//         job = job.next;
-//     }
-//     return str;
-// }
-
 const computeThreads = (ns, target, portion) => {
     const weakenTime = ns.getWeakenTime(target);
     const growTime = ns.getGrowTime(target);
@@ -337,7 +318,7 @@ export default class Thief {
                 const hackThreads = portion/ns.hackAnalyze(server);
                 return growThreads < maxThreads && hackThreads < maxThreads;
             });
-            if (portion <= 0)
+            if (portion == null)
                 return false;
             if (this.canHG())
                 this.currentBatch = new HGWBatch(ns, server, portion, ram, endAfter);

@@ -17,6 +17,7 @@ export async function main(ns) {
 
     putStaticData(ns, {
         bitNodeN: ns.getPlayer().bitNodeN,
+        ownedSourceFiles: [], // To be overwritten in next step, RAM permitting
         scriptRam,
 		purchasedServerLimit: ns.getPurchasedServerLimit(),
 		purchasedServerMaxRam,

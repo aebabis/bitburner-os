@@ -44,12 +44,12 @@ const tailLogs = (ns, width) => {
 
 const process = (table) => typeof table === 'string' ? table.split('\n') : table;
 
-const GB = 1024 ** 3;
+const GB = 1000 ** 3;
 
 const threadpoolRow = (ns, server) => {
 	const { hostname, ramUsed, maxRam } = server;
     const n = hostname.split('-')[1]||'?';
-	const ram = `${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b').padEnd(5)}`.padEnd(5);
+	const ram = `${ns.nFormat(ramUsed*GB, '0b').padStart(5)}/${ns.nFormat(maxRam*GB, '0b').padEnd(5)}`;
 	return [n, ram];
 }
 

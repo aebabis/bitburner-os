@@ -1,4 +1,4 @@
-import { infect } from './bin/infect';
+import { infect, fullInfect } from './bin/infect';
 import { logger } from './lib/logger';
 import { THREADPOOL } from './etc/config';
 
@@ -35,16 +35,23 @@ export async function main(ns) {
 		return;
 	}
 
-	if (serverToReplace == null) {
-		const hostname = getNextServerName(ns);
-		ns.purchaseServer(hostname, ram);
-		logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${priceStr}`);
-		await infect(ns, hostname);
-	} else {
-		ns.killall(serverToReplace);
-		ns.deleteServer(serverToReplace);
-		ns.purchaseServer(serverToReplace, ram);
-		logger(ns).log(`Upgraded ${serverToReplace} to ${ram}GB ram for ${priceStr}`);
-		await infect(ns, serverToReplace);
+	const isUpgrade = serverToReplace != null;
+	const hostname = serverToReplace || getNextServerName(ns);
+
+	if (isUpgrade) {
+		ns.killall(hostname);
+		ns.deleteServer(hostname);
 	}
+
+	ns.purchaseServer(hostname, ram);
+
+	if (isUpgrade)
+		logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${priceStr}`);
+	else
+		logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${priceStr}`);
+
+	if (hostname === `${THREADPOOL}-1`)
+		await fullInfect(ns, hostname); // We need at least one threadpool for large jobs
+	else
+		await infect(ns, hostname);
 }

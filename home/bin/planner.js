@@ -1,20 +1,24 @@
 import { AnyHostService } from './lib/service';
-import { getGangData } from './lib/data-store';
+import { getGangData, getStaticData } from './lib/data-store';
 import { logger } from './lib/logger';
 
 import {
     ENABLE, DISABLE,
     writeServices, checkQueue, getTableString,
-} from './lib/service-api.js';
+} from './lib/service-api';
 
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
+    const { bitNodeN } = ns.getPlayer();
+    const { ownedSourceFiles } = getStaticData(ns);
+    const hasSingularity = () => bitNodeN === 4 || ownedSourceFiles.find(file => file.n === 4);
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
     const canBuyTixAccess = () => !canTradeStocks();
-    const couldStartGang = () => ns.getPlayer().bitNodeN >= 2 && !isInGang();
+    const couldStartGang = () => bitNodeN >= 2 && !isInGang();
     const isInGang = () => getGangData(ns) != null;
+    const augsUp = () => getStaticData(ns).targetFaction != null;
 
     const tasks = [
         AnyHostService(ns)('/bin/access.js'),
@@ -34,15 +38,16 @@ const go = async(ns) => {
                         ('/bin/gang/recruit.js'),
         AnyHostService(ns, isInGang, 5000)
                         ('/bin/gang/assign-members.js'),
-        AnyHostService(ns, () => true, 5000)
+        AnyHostService(ns, hasSingularity)
+                        ('/bin/self/aug/augment.js'),
+        AnyHostService(ns, augsUp, 5000)
                         ('/bin/self/work.js'),
-        AnyHostService(ns, () => true, 5000)
+        AnyHostService(ns, augsUp, 5000)
                         ('/bin/self/control.js'),
-        AnyHostService(ns, () => true, 5000)
+        AnyHostService(ns, augsUp, 5000)
                         ('/bin/self/focus.js'),
-        AnyHostService(ns, () => true, 5000)
+        AnyHostService(ns, augsUp, 5000)
                         ('/bin/self/tor.js'),
-        AnyHostService(ns)('/bin/self/aug/augment.js'),
         // await startAny('servers.js', 'service');
         // await startAny('money.js', 'thief.js');
     ];
