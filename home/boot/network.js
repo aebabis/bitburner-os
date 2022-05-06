@@ -1,12 +1,8 @@
-import { WEAKEN, GROW, HACK, INFECT, SHARE } from './etc/filenames';
 import { THREADPOOL } from './etc/config';
-import { saveHostnames, nmap  } from './lib/nmap';
 import { by } from './lib/util';
 import { defer } from './boot/defer';
-import { fullInfect } from './bin/infect';
-
-import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
-const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
+import { infect, fullInfect } from './bin/infect';
+import { getHostnames } from './lib/data-store';
 
 const canRunCode = (ns) => (hostname) => ns.getServerMaxRam(hostname) >= 1.6;
 
@@ -14,24 +10,14 @@ const canRunCode = (ns) => (hostname) => ns.getServerMaxRam(hostname) >= 1.6;
 export async function main(ns) {
     ns.disableLog('ALL');
 
-    // Clear all ports except configuration ports
-    ns.tprint('Clearing ports');
-    for (let i = 1; i <= 20; i++)
-        if (!PERSISTENT_PORTS.includes(i))
-            ns.clearPort(i);
-
-    // Generate list of hostnames
-    ns.tprint('Mapping network'); 
-    saveHostnames(ns);
-    const hostnames = nmap(ns);
+    const hostnames = getHostnames(ns);
 
     // Erase old versions of files, then upload
     // the batchable files to every server
-    ns.tprint('Updating remote files');
+    ns.tprint('Uploading batch files');
     for (const hostname of hostnames) {
         if (hostname !== 'home' && canRunCode(ns)(hostname)) {
-            ns.ls(hostname, '.js').forEach(filename => ns.rm(filename, hostname));
-            await ns.scp([HACK, GROW, WEAKEN, INFECT, SHARE], hostname);
+            await infect(ns, hostname);
         }
     }
 
@@ -47,7 +33,7 @@ export async function main(ns) {
         .slice(0, SERVERS_NEEDED);
     ns.tprint('Infecting zombies: ' + zombies.join(', '));
     await fullInfect(ns, ...zombies);
-    try { await fullInfect(ns, 'THREADPOOL-1'); } catch {}
+    try { await fullInfect(ns, 'THREADPOOL-01', 'THREADPOOL-02'); } catch {}
 
     // Go to next step in the boot sequence
 	defer(ns)(...ns.args);

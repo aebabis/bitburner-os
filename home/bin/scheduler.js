@@ -54,6 +54,7 @@ export async function main(ns) {
 			.sort(by(s=>-s.ramAvailable));
 		const purchasedServers = hostnames
 			.filter(hostname=>hostname.startsWith(THREADPOOL))
+			.sort()
 			.map(getRamInfo);
 		const purchasedServersMaxedOut = purchasedServers.length === purchasedServerLimit &&
 			purchasedServers.every(server=>server.maxRam===purchasedServerMaxRam);

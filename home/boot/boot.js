@@ -4,18 +4,18 @@ import { defer } from './boot/defer';
 export async function main(ns) {
     ns.tprint('Starting boot sequence');
 
+
+    const DATA2 = (ns.getServerMaxRam('home') === 8) ?
+        ['/boot/spawn.js', '/boot/data2-lite.js'] :
+         '/boot/data2.js';
+
     const BOOT_SEQUENCE = [
-        '/boot/step1.js',
-        '/boot/step2.js',
-        '/boot/step3.js', // Will only work if there's enough RAM
+        '/boot/reset.js',
+        '/boot/network.js',
+        '/boot/data.js',
+         DATA2,
         '/bin/scheduler.js',
     ];
 
     defer(ns)(...BOOT_SEQUENCE);
 }
-
-
-// Network
-// Data-core
-// Data-sourcefiles (defaults to [])
-// Data2 / Data2-lite

@@ -50,8 +50,8 @@ export const analyzeAugData = (ns) => {
             possibleTargets.push(faction);
 
         // Record the maximum required reputation for this faction
-        maxAugPrices[faction] = Math.max(0, ...factionExclusives.map(aug=>augmentationPrices[aug]));
-        maxRepReqs[faction] = Math.max(0, ...factionExclusives.map(aug=>augmentationRepReqs[aug]));
+        maxAugPrices[faction] = Math.max(0, ...needed.map(aug=>augmentationPrices[aug]));
+        maxRepReqs[faction] = Math.max(0, ...needed.map(aug=>augmentationRepReqs[aug]));
     }
 
     ns.tprint('REMAINING AUGS');

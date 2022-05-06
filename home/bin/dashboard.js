@@ -26,10 +26,10 @@ const backdoorPath = (ns) => {
     const HEAD = ' BACKDOOR HELPER \n';
     const path = getPath(ns);
     if (path == null) {
-        return HEAD + ' (no available servers) ' + SPACES.repeat(10);
+        return HEAD + ' (no available servers) ' + SPACES.repeat(2);
     } else {
         const text = path.map(s => s === 'home' ? ' home' : ` connect ${s} `).join('\n') + '\n backdoor';
-        return HEAD + SPACES.repeat(10 - path.length) + text;
+        return HEAD + text;
     }
 }
 
@@ -55,7 +55,9 @@ const threadpoolRow = (ns, server) => {
 
 /** @param {NS} ns **/
 const threadpools = (ns) => {
-    const names = Array(24).fill(null).map((_,i)=>`${THREADPOOL}-${i+1}`);
+    const names = Array(24).fill(null)
+        .map((_,i)=>(i+1).toString().padStart(2, '0'))
+        .map(num =>`${THREADPOOL}-${num}`);
     return names
         .map(hostname=>{try{return ({
             hostname,

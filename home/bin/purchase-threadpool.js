@@ -14,7 +14,8 @@ const serverExists = (ns, hostname) => {
 const getNextServerName = (ns) => {
 	const limit = ns.getPurchasedServerLimit();
 	for (let n = 1; n <= limit; n++) {
-		const serverName = `${THREADPOOL}-${n}`;
+		const num = n.toString().padStart(2, '0');
+		const serverName = `${THREADPOOL}-${num}`;
 		if (!serverExists(ns, serverName))
 			return serverName;
 	}
@@ -50,7 +51,7 @@ export async function main(ns) {
 	else
 		logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${priceStr}`);
 
-	if (hostname === `${THREADPOOL}-1`)
+	if ([`${THREADPOOL}-01`, `${THREADPOOL}-02`].includes(hostname))
 		await fullInfect(ns, hostname); // We need at least one threadpool for large jobs
 	else
 		await infect(ns, hostname);

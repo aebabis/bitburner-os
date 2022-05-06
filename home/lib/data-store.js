@@ -5,7 +5,8 @@ import {
     PORT_GANG_DATA,
     PORT_DASHBOARD_DATA,
     PORT_SCH_RAM_DATA,
-    PORT_PLAYER_DATA
+    PORT_PLAYER_DATA,
+    PORT_MONEY_DATA,
 } from './etc/ports';
 
 /** @param {NS} ns **/
@@ -44,6 +45,9 @@ export const putRamData = (ns, data) => replaceData(ns, PORT_SCH_RAM_DATA, data)
 
 export const getPlayerData = (ns) => readData(ns, PORT_PLAYER_DATA) || {};
 export const putPlayerData = (ns, data) => putData(ns, PORT_PLAYER_DATA, data);
+
+export const getMoneyData = (ns) => readData(ns, PORT_MONEY_DATA) || {};
+export const putMoneyData = (ns, data) => putData(ns, PORT_MONEY_DATA, data);
 
 /** @param {NS} ns **/
 export async function main(ns) {

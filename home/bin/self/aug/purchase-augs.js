@@ -20,9 +20,10 @@ export async function main(ns) {
     remainingAugs.sort(by(aug => -augmentationPrices[aug]));
 
     for (const augmentation of remainingAugs) {
-        if (ns.purchaseAugmentation(targetFaction, augmentation)) {
+        if (ns.purchaseAugmentation(targetFaction, augmentation))
             purchasedAugmentations.push(augmentation);
-        }
+        else
+            break;
     }
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
