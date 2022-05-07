@@ -5,7 +5,7 @@ if (style == null) {
     const style = doc.createElement('style');
     style.id = 'custom-style';
     style.innerText = `.react-resizable .windower p {
-        line-height: 1;
+        line-height: 1.18;
         font-family: monospace;
     }`;
     doc.head.append(style);

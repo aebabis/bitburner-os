@@ -23,16 +23,16 @@ const getNextServerName = (ns) => {
 
 /** @param {NS} ns **/
 export async function main(ns) {
-	const [ram, serverToReplace] = ns.args;
+	const [minRam, serverToReplace] = ns.args;
 	if (isNaN(ram))
-		throw new Error(`Illegal RAM value: ${ram}`);
+		throw new Error(`Illegal RAM value: ${minRam}`);
 
 	const money = ns.getServerMoneyAvailable('home');
-	const cost = ns.getPurchasedServerCost(ram);
+	const cost = ns.getPurchasedServerCost(minRam);
 	const priceStr = ns.nFormat(cost, '$0.000a');
 
 	if (money < cost) {
-		logger(ns).log(`Could not afford ${priceStr} for ${ram}GB ram`);
+		logger(ns).log(`Could not afford ${priceStr} for ${minRam}GB ram`);
 		return;
 	}
 
@@ -44,7 +44,9 @@ export async function main(ns) {
 		ns.deleteServer(hostname);
 	}
 
-	ns.purchaseServer(hostname, ram);
+	let ram = minRam * 8;
+	while (!ns.purchaseServer(hostname, ram))
+		ram /= 2;
 
 	if (isUpgrade)
 		logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${priceStr}`);

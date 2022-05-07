@@ -3,7 +3,7 @@ import { getModalColumnCount } from './lib/modal';
 import { renderWindows } from './lib/layout';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { getStaticData } from './lib/data-store';
+import { getStaticData, getMoneyData } from './lib/data-store';
 import { THREADPOOL } from './etc/config';
 
 const getSchedulerTable = (ns) => {
@@ -17,8 +17,8 @@ const getSchedulerTable = (ns) => {
     const money = ns.nFormat(onlineMoneyMade, '$0.0a');
     const time = ns.nFormat(onlineRunningTime, '00:00:00');
     const moneyRate = ns.nFormat(onlineMoneyMade/onlineRunningTime, '$0.0a')+'/s';
-    return table(ns, ['SCHEDULER', { name: '', align: 'right'}],
-        [['UP', time], ['MONEY', money + '  '], ['', moneyRate], ['EXP', exp]]);
+    return table(ns, ['STATS', { name: '', align: 'right'}],
+        [['UPTIME', time], ['MONEY', money + '  '], ['', moneyRate], ['EXP', exp]]);
 }
 
 const backdoorPath = (ns) => {
@@ -34,12 +34,13 @@ const backdoorPath = (ns) => {
 }
 
 const tailLogs = (ns, width) => {
+    width = Math.min(width, 80);
     return ns.getRunningScript('/bin/logger.js', 'home').logs
         .slice(-10).map(x=>x.split('\n')[0])
         .map(line => line.slice(line.indexOf(' ')+1))
-        .map(line => line.length < width - 7 ? line : line.slice(0, width-7)+'...')
+        .map(line => line.length < width - 8 ? line : line.slice(0, width-8)+'...')
         .map(line => ` ${line} `)
-        .map(line => line.padEnd(width - 4));
+        .map(line => line.padEnd(width - 6));
 }
 
 const process = (table) => typeof table === 'string' ? table.split('\n') : table;
@@ -55,7 +56,7 @@ const threadpoolRow = (ns, server) => {
 
 /** @param {NS} ns **/
 const threadpools = (ns) => {
-    const names = Array(24).fill(null)
+    const names = Array(ns.getPurchasedServerLimit()).fill(null)
         .map((_,i)=>(i+1).toString().padStart(2, '0'))
         .map(num =>`${THREADPOOL}-${num}`);
     return names
@@ -87,6 +88,20 @@ const goalsTable = (ns) => {
     return table(ns, ['GOALS'], rows);
 }
 
+const moneyTable = (ns) => {
+    const moneyData = getMoneyData(ns);
+    if (moneyData == null) {
+        return ' INCOME\n(loading)';
+    }
+    const { income1s=0, income10s=0, income60s=0 } = moneyData;
+    const rows = [
+        [' 1s', ns.nFormat(income1s, '$0.0a').padStart(7)],
+        ['10s', ns.nFormat(income10s, '$0.0a').padStart(7)],
+        ['60s', ns.nFormat(income60s, '$0.0a').padStart(7)],
+    ];
+    return table(ns, ['', 'INCOME'], rows);
+}
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -98,9 +113,10 @@ export async function main(ns) {
                 getSchedulerTable(ns),
                 table(ns, ['SERVICES', ''], getServices(ns).map(({name, status})=>[name, status])),
                 backdoorPath(ns),
-                tailLogs(ns, width),
                 threadpoolTable(ns),
                 goalsTable(ns),
+                moneyTable(ns),
+                tailLogs(ns, width),
             ].map(process);
             const textField = renderWindows(text, width);
 

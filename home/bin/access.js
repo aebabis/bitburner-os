@@ -46,5 +46,4 @@ export async function main(ns) {
             ns.print(`Hacked ${startingLength - hostnames.length} servers. ${hostnames.length} remaining`);
         await ns.sleep(1000);
     }
-    disableService(ns, 'access');
 }

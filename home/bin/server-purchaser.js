@@ -1,58 +1,100 @@
-import { PORT_SCH_RAM_DATA } from './etc/ports';
 import { PURCHASE_THREADPOOL } from './etc/filenames';
-import Ports from './lib/ports';
-import { delegate } from './lib/scheduler-delegate';
 import { logger } from './lib/logger';
+import { getRamData, getMoneyData, getStaticData } from './lib/data-store';
+import { disableService } from './lib/service-api';
+import { rmi } from './lib/rmi';
+
+/** @param {NS} ns **/
+const getServerNames = (maxServers) => {
+    return new Array(maxServers).fill(null)
+        .map((_,i) => (i+1).toString().padStart(2, '0'))
+        .map(n => `THREADPOOL-${n}`);
+}
+
+/** @param {NS} ns **/
+const getPurchasedServerRams = (ns, maxServers) => {
+    return getServerNames(maxServers).map((hostname) => {
+        try {
+            return { 
+                hostname,
+                ram: ns.getServerMaxRam(hostname),
+            };
+        } catch {
+            return null
+        }
+    }).filter(Boolean);
+}
+
+/** @param {NS} ns **/
+const atCapacity = (ns) => {
+    const ramData = getRamData(ns);
+    if (ramData == null)
+        return false;
+
+    const { totalRamUsed, totalMaxRam, ramQueued } = ramData;
+
+    // Allow a 20% buffer
+    return totalRamUsed + ramQueued > totalMaxRam * .8;
+}
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
     const console = logger(ns);
-    while (true) {
-        const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
-        const ramData = port.peek();
-        if (ramData != null && !ramData.purchasedServersMaxedOut) {
-            const {
-                purchasedServers,
-                purchasedServerMaxRam,
-                purchasedServerLimit,
-                totalRamUsed,
-                totalMaxRam,
-                ramQueued,
-            } = ramData;
 
-            // Allow a 20% buffer
-            const atCapacity = totalRamUsed + ramQueued > totalMaxRam * .8;
-        
-            if (atCapacity) {
-		        const money = ns.getServerMoneyAvailable('home');
-                const atMaxServers = purchasedServers.length === purchasedServerLimit;
-                const smallest = purchasedServers.reduce((s1,s2)=>s1.maxRam<=s2.maxRam?s1:s2, purchasedServers[0]);
-                let lowerLimit = 2;
-                if (atMaxServers)
-                    lowerLimit = smallest.maxRam * 2;
-                let ram = purchasedServerMaxRam;
-                while (ram >= lowerLimit && ns.getPurchasedServerCost(ram) > money) {
-                    ram >>= 1;
-                }
-                if (ram >= lowerLimit) {
-                    try {
-                        let pid;
-                        if (atMaxServers) {
-                            await console.log(`Attempting to replace ${smallest.hostname}`);
-                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, ram, smallest.hostname)).pid;
-                        } else {
-                            await console.log(`Attempting to buy new server`);
-                            pid = (await delegate(ns, true)(PURCHASE_THREADPOOL, 'home', 1, ram)).pid;
-                        }
-                        while (ns.isRunning(pid))
-                            await ns.sleep(50);
-                    } catch (error) {
-                        await console.error(error);
-                    }
-                }
-            }
+    const buy = async (...args) => {
+        try {
+            await rmi(ns)(PURCHASE_THREADPOOL, 1, ...args);
+        } catch (error) {
+            await console.error(error);
         }
+    }
+
+    while (true) {
         await ns.sleep(50);
+
+        const {
+            purchasedServerLimit,
+            purchasedServerCosts,
+            purchasedServerMaxRam,
+        } = getStaticData(ns);
+
+        const purchasedServers = getPurchasedServerRams(ns, purchasedServerLimit);
+        if (purchasedServers.length === purchasedServerLimit &&
+            purchasedServers.every(server=>server.ram === purchasedServerMaxRam)) {
+            disableService(ns, 'server-purchaser');
+            return;
+        }
+
+        const money = ns.getServerMoneyAvailable('home');
+
+        const atMaxServers = purchasedServers.length === purchasedServerLimit;
+        const smallest = purchasedServers[purchasedServers.length - 1];
+
+        let lowerBound = 4;
+        if (atMaxServers)
+            lowerBound = smallest.ram * 2;
+
+        if (purchasedServerCosts[lowerBound] < money)
+            continue;
+
+        const [jobServer] = purchasedServers;
+        const jobServerRam = jobServer?.ram;
+        if (jobServerRam < 256 && ram > jobServerRam) {
+            await buy(ram, jobServer.hostname);
+            continue;
+        }
+
+        if (!atCapacity(ns))
+            continue;
+
+        // Don't buy a server we'll replace right away
+        if (ram < purchasedServerMaxRam && purchasedServerCosts[ram] < getMoneyData(ns).income5s)
+            continue;
+
+        if (atMaxServers)
+            await buy(ram, smallest.hostname);
+        else
+            await buy(ram);
     }
 }

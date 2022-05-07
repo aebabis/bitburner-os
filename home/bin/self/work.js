@@ -1,7 +1,12 @@
 import { afkTracker } from './lib/tracking';
 import { rmi } from './lib/rmi';
 import { getStaticData, getPlayerData } from './lib/data-store';
-import { COMBAT_REQUIREMENTS } from './bin/self/aug/factions';
+import getConfig from './lib/config';
+import {
+    COMBAT_REQUIREMENTS,
+    CITY_FACTIONS,
+    FACTION_LOCATIONS,
+} from './bin/self/aug/factions';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -24,7 +29,7 @@ export async function main(ns) {
         const doneWithJoes = stats.every(stat => stat >= 5);
         const isAfk = afkTime() > 30000;
         const shouldFocus = isAfk && ownedAugmentations &&
-            ownedAugmentations.includes('Neuroreceptor Management Implant');
+            !ownedAugmentations.includes('Neuroreceptor Management Implant');
 
         const doCrime = async () => {
             if (isAfk) {
@@ -47,12 +52,18 @@ export async function main(ns) {
             const combatStats = ['strength', 'defense', 'dexterity', 'agility'];
             const combatRequirement = COMBAT_REQUIREMENTS[targetFaction] || 0;
             const statToTrain = combatStats.find(stat => player[stat] < combatRequirement);
+            const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
             if (statToTrain != null)
                 await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, shouldFocus);
-            else if (inTargetFaction && rep < repNeeded)
+            else if (!inTargetFaction && !requiredLocations.includes(player.city))
+                await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
+            else if (inTargetFaction && rep < repNeeded) {
+                getConfig(ns).set('share', .1);
                 await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction, shouldFocus);
-            else
+            } else {
+                getConfig(ns).set('share', 0);
                 await doCrime();
+            }
         }
         await ns.sleep(100);
     }
