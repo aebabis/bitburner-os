@@ -24,14 +24,24 @@ const toBitburnerPath = (file) => {
 };
 
 async function go() {
-  const instructions = [];
+  const files = [];
   for await (const f of getFiles('home')) {
     const bitburnerPath = toBitburnerPath(f);
-    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/${bitburnerPath}`;
-    const command = `  await ns.wget('${downloadPath}', '${bitburnerPath}')`;
-    instructions.push(command);
+    const item = `  '${bitburnerPath}',`;
+    files.push(item);
   }
-  const program = `/** @param {NS} ns **/\nexport async function main(ns) {\n${instructions.join('\n')}\n}`;
+  const program =
+`const FILES = [
+${files.join('\n')}
+];
+
+/** @param {NS} ns **/\nexport async function main(ns) {
+  for (const file of FILES) {
+    const downloadPath = \`https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/\${file}\`;
+    await ns.wget(downloadPath, file);
+  }
+  ns.tprint('Download complete');
+}`;
   await writeFile('download.js', program);
   
   eventEmitter.emit('done');

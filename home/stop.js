@@ -8,7 +8,7 @@ export async function main(ns) {
         for (const { pid, filename, args } of ns.ps(hostname)) {
             // Don't kill restart task
             if (filename === script && args.length === 0)
-                return;
+                continue;
             ns.kill(pid);
         }
     }

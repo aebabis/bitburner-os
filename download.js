@@ -1,96 +1,104 @@
+const FILES = [
+  '/bin/access.js',
+  '/bin/accountant.js',
+  '/bin/broker.js',
+  '/bin/dashboard.js',
+  '/bin/gang/assign-members.js',
+  '/bin/gang/decide-war.js',
+  '/bin/gang/gang-data.js',
+  '/bin/gang/recruit.js',
+  '/bin/gang/task-table.js',
+  '/bin/hacknet.js',
+  '/bin/infect.js',
+  '/bin/logger.js',
+  '/bin/market-access.js',
+  '/bin/planner.js',
+  '/bin/purchase-threadpool.js',
+  '/bin/scheduler.js',
+  '/bin/self/apply.js',
+  '/bin/self/aug/analyze.js',
+  '/bin/self/aug/augment.js',
+  '/bin/self/aug/factions.js',
+  '/bin/self/aug/install.js',
+  '/bin/self/aug/join-factions.js',
+  '/bin/self/aug/load-aug-names.js',
+  '/bin/self/aug/load-aug-prereqs.js',
+  '/bin/self/aug/load-aug-prices.js',
+  '/bin/self/aug/load-aug-reps.js',
+  '/bin/self/aug/load-aug-stats.js',
+  '/bin/self/aug/load-owned-augs.js',
+  '/bin/self/aug/purchase-augs.js',
+  '/bin/self/backdoor.js',
+  '/bin/self/buy-ram.js',
+  '/bin/self/control.js',
+  '/bin/self/crime-stats.js',
+  '/bin/self/crime.js',
+  '/bin/self/faction-work.js',
+  '/bin/self/focus.js',
+  '/bin/self/hack.js',
+  '/bin/self/improvement.js',
+  '/bin/self/job.js',
+  '/bin/self/tor.js',
+  '/bin/self/travel.js',
+  '/bin/self/work.js',
+  '/bin/server-purchaser.js',
+  '/bin/share.js',
+  '/bin/thief.js',
+  '/bin/workers/grow.js',
+  '/bin/workers/hack.js',
+  '/bin/workers/share.js',
+  '/bin/workers/weaken.js',
+  '/boot/boot.js',
+  '/boot/data.js',
+  '/boot/data2-lite.js',
+  '/boot/data2.js',
+  '/boot/defer.js',
+  '/boot/network.js',
+  '/boot/reset.js',
+  '/boot/spawn.js',
+  'config.js',
+  'contracts.js',
+  '/etc/config.js',
+  '/etc/filenames.js',
+  '/etc/ports.js',
+  'gang.js',
+  'init.js',
+  '/lib/backdoor.js',
+  '/lib/config.js',
+  '/lib/d3.js',
+  '/lib/data-store.js',
+  '/lib/hacknet.js',
+  '/lib/layout.js',
+  '/lib/logger.js',
+  '/lib/modal.js',
+  '/lib/nmap.js',
+  '/lib/ports.js',
+  '/lib/rmi.js',
+  '/lib/scheduler-api.js',
+  '/lib/scheduler-delegate.js',
+  '/lib/service-api.js',
+  '/lib/service.js',
+  '/lib/table.js',
+  '/lib/thief.js',
+  '/lib/tracking.js',
+  '/lib/util.js',
+  'nmap-gui.js',
+  'ram.js',
+  'read.js',
+  'resizing.js',
+  'restart.js',
+  'servers.js',
+  'services.js',
+  'stop.js',
+  'suite.js',
+  'tail.js',
+];
+
 /** @param {NS} ns **/
 export async function main(ns) {
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/access.js', '/bin/access.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/accountant.js', '/bin/accountant.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/broker.js', '/bin/broker.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/dashboard.js', '/bin/dashboard.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/gang/assign-members.js', '/bin/gang/assign-members.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/gang/decide-war.js', '/bin/gang/decide-war.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/gang/gang-data.js', '/bin/gang/gang-data.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/gang/recruit.js', '/bin/gang/recruit.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/gang/task-table.js', '/bin/gang/task-table.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/hacknet.js', '/bin/hacknet.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/infect.js', '/bin/infect.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/logger.js', '/bin/logger.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/market-access.js', '/bin/market-access.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/planner.js', '/bin/planner.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/purchase-threadpool.js', '/bin/purchase-threadpool.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/scheduler.js', '/bin/scheduler.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/apply.js', '/bin/self/apply.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/analyze.js', '/bin/self/aug/analyze.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/augment.js', '/bin/self/aug/augment.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/factions.js', '/bin/self/aug/factions.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/install.js', '/bin/self/aug/install.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/join-factions.js', '/bin/self/aug/join-factions.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-aug-names.js', '/bin/self/aug/load-aug-names.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-aug-prereqs.js', '/bin/self/aug/load-aug-prereqs.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-aug-prices.js', '/bin/self/aug/load-aug-prices.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-aug-reps.js', '/bin/self/aug/load-aug-reps.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-aug-stats.js', '/bin/self/aug/load-aug-stats.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/load-owned-augs.js', '/bin/self/aug/load-owned-augs.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/aug/purchase-augs.js', '/bin/self/aug/purchase-augs.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/backdoor.js', '/bin/self/backdoor.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/buy-ram.js', '/bin/self/buy-ram.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/control.js', '/bin/self/control.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/crime-stats.js', '/bin/self/crime-stats.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/crime.js', '/bin/self/crime.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/faction-work.js', '/bin/self/faction-work.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/focus.js', '/bin/self/focus.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/hack.js', '/bin/self/hack.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/improvement.js', '/bin/self/improvement.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/job.js', '/bin/self/job.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/tor.js', '/bin/self/tor.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/travel.js', '/bin/self/travel.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/self/work.js', '/bin/self/work.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/server-purchaser.js', '/bin/server-purchaser.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/share.js', '/bin/share.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/thief.js', '/bin/thief.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/workers/grow.js', '/bin/workers/grow.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/workers/hack.js', '/bin/workers/hack.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/workers/share.js', '/bin/workers/share.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//bin/workers/weaken.js', '/bin/workers/weaken.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/boot.js', '/boot/boot.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/data.js', '/boot/data.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/data2-lite.js', '/boot/data2-lite.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/data2.js', '/boot/data2.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/defer.js', '/boot/defer.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/network.js', '/boot/network.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/reset.js', '/boot/reset.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//boot/spawn.js', '/boot/spawn.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/config.js', 'config.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/contracts.js', 'contracts.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//etc/config.js', '/etc/config.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//etc/filenames.js', '/etc/filenames.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//etc/ports.js', '/etc/ports.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/gang.js', 'gang.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/init.js', 'init.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/backdoor.js', '/lib/backdoor.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/config.js', '/lib/config.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/d3.js', '/lib/d3.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/data-store.js', '/lib/data-store.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/hacknet.js', '/lib/hacknet.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/layout.js', '/lib/layout.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/logger.js', '/lib/logger.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/modal.js', '/lib/modal.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/nmap.js', '/lib/nmap.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/ports.js', '/lib/ports.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/rmi.js', '/lib/rmi.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/scheduler-api.js', '/lib/scheduler-api.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/scheduler-delegate.js', '/lib/scheduler-delegate.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/service-api.js', '/lib/service-api.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/service.js', '/lib/service.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/table.js', '/lib/table.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/thief.js', '/lib/thief.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/tracking.js', '/lib/tracking.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home//lib/util.js', '/lib/util.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/nmap-gui.js', 'nmap-gui.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/ram.js', 'ram.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/read.js', 'read.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/resizing.js', 'resizing.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/restart.js', 'restart.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/servers.js', 'servers.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/services.js', 'services.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/stop.js', 'stop.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/suite.js', 'suite.js')
-  await ns.wget('https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/tail.js', 'tail.js')
+  for (const file of FILES) {
+    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/${file}`;
+    await ns.wget(downloadPath, file);
+  }
+  ns.tprint('Download complete');
 }
