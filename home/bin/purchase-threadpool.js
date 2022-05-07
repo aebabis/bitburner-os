@@ -19,7 +19,7 @@ const getNextServerName = (ns) => {
         if (!serverExists(ns, serverName))
             return serverName;
     }
-}
+};
 
 const mFormat = (ns, cost) => ns.nFormat(cost, '0.000a');
 
@@ -35,7 +35,7 @@ const purchaseServer = (ns, hostname, minRam, isUpgrade) => {
         logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${mFormat(ns, cost)}`);
     else
         logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${mFormat(ns, cost)}`);
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {

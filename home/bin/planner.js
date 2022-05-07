@@ -20,37 +20,36 @@ const go = async(ns) => {
     const isInGang = () => getGangData(ns) != null;
     const augsUp = () => getStaticData(ns).targetFaction != null;
 
+    /* eslint-disable no-unexpected-multiline */
     const tasks = [
         AnyHostService(ns)('/bin/access.js'),
         AnyHostService(ns)('/bin/hacknet.js'),
         AnyHostService(ns)('/bin/thief.js'),
         AnyHostService(ns, canPurchaseServers, 1000)
-                        ('/bin/server-purchaser.js'),
+                          ('/bin/server-purchaser.js'),
         AnyHostService(ns)('/bin/dashboard.js'),
         AnyHostService(ns)('/bin/accountant.js'),
         AnyHostService(ns, canBuyTixAccess, 5000)
-                        ('/bin/market-access.js'),
+                          ('/bin/market-access.js'),
         AnyHostService(ns, canTradeStocks, 5000)
-                        ('/bin/broker.js'),
+                          ('/bin/broker.js'),
         AnyHostService(ns)('/bin/share.js'),
         AnyHostService(ns, couldStartGang, 5000)
-                        ('/bin/gang/gang-data.js'),
+                          ('/bin/gang/gang-data.js'),
         AnyHostService(ns, isInGang, 10000)
-                        ('/bin/gang/recruit.js'),
+                          ('/bin/gang/recruit.js'),
         AnyHostService(ns, isInGang, 5000)
-                        ('/bin/gang/assign-members.js'),
+                          ('/bin/gang/assign-members.js'),
         AnyHostService(ns, hasSingularity)
-                        ('/bin/self/aug/augment.js'),
+                          ('/bin/self/aug/augment.js'),
         AnyHostService(ns, augsUp, 5000)
-                        ('/bin/self/work.js'),
+                          ('/bin/self/work.js'),
         AnyHostService(ns, augsUp, 5000)
-                        ('/bin/self/control.js'),
+                          ('/bin/self/control.js'),
         AnyHostService(ns, augsUp, 5000)
-                        ('/bin/self/focus.js'),
+                          ('/bin/self/focus.js'),
         AnyHostService(ns, augsUp, 5000)
-                        ('/bin/self/tor.js'),
-        // await startAny('servers.js', 'service');
-        // await startAny('money.js', 'thief.js');
+                          ('/bin/self/tor.js'),
     ];
 
     const showServices = () => {
@@ -58,7 +57,7 @@ const go = async(ns) => {
         const taskData = tasks.map(task => task.toData());
         writeServices(ns, taskData);
         ns.print(getTableString(ns, taskData));
-    }
+    };
 
     const updateTasks = () => {
         checkQueue(ns).forEach((order) => {
@@ -69,7 +68,7 @@ const go = async(ns) => {
             if (type === DISABLE)
                 task.disable();
         });
-    }
+    };
 
     while (true) {
         for (const task of tasks) {
@@ -86,7 +85,7 @@ const go = async(ns) => {
 
         await ns.sleep(1000);
     }
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {

@@ -22,7 +22,7 @@ const getPathTo = (ns, hostname) => {
 				return path(neighbor);
 		}
 	}
-}
+};
 
 /** @param {NS} ns **/
 export const getPath = (ns) => {
@@ -43,4 +43,4 @@ export const getPath = (ns) => {
 		return getPathTo(ns, questTarget.hostname);
 	else
 		return servers.map(server => getPathTo(ns, server.hostname)).sort(by('length'))[0];
-}
+};

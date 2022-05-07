@@ -15,4 +15,4 @@ export const rmi = (ns, retry) => async(...args) => {
                 return false;
         }
     }
-}
+};

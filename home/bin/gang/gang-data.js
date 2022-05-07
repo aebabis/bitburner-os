@@ -21,7 +21,7 @@ export async function main(ns) {
         const equipmentTypes = equipmentNames.reduce((obj, name) => {
             equipmentStats[name].type = obj[name] = ns.gang.getEquipmentType(name);
             return obj;
-        }, {})
+        }, {});
         const equipment = Object.values(equipmentStats);
 
         putGangData(ns, {

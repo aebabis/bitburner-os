@@ -4,7 +4,7 @@ const s = data => {
     if (data === null)
         throw new Error('Cannot write null. This interface uses null for "empty"');
     return JSON.stringify({data});
-}
+};
 const p = packet => JSON.parse(packet).data;
 
 
@@ -15,7 +15,7 @@ export default (ns) => {
         if (packet === NULL)
             return null;
         return p(packet);
-    }
+    };
     const writePort = (handle, data) => ns.getPortHandle(handle).write(s(data));
     const tryWritePort = (handle, data) => ns.getPortHandle(handle).tryWrite(s(data));
     const blockingWritePort = async (handle, data, timeout=60000) => {
@@ -36,7 +36,7 @@ export default (ns) => {
         if (packet === NULL)
             return null;
         return p(packet);
-    }
+    };
     const full = (handle) => ns.getPortHandle(handle).full();
     const empty = (handle) => ns.getPortHandle(handle).empty();
 
@@ -57,4 +57,4 @@ export default (ns) => {
             empty: () => empty(handle),
         }),
     };
-}
+};

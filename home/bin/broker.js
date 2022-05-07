@@ -29,7 +29,7 @@ const optimizeShares = async (ns, stock, maxPurchase, money) => {
         else
             min = shares + 1;
     }
-}
+};
 
 const getHoldings = (stocks) => stocks.map(stock => stock.position[0] * stock.position[1])
         .reduce((a,b)=>a+b,0);
@@ -46,7 +46,7 @@ const getSpendableFunds = async (ns, stocks) => {
         const allowedSpend = netWorth * (1 - reserveParam);
         return Math.max(0, allowedSpend - stockHoldings);
     }
-}
+};
 
 /** @param {NS} ns **/
 const broker = async(ns) => {
@@ -98,8 +98,7 @@ const broker = async(ns) => {
     
         await ns.sleep(5000);
     }
-
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -126,10 +125,9 @@ export async function main(ns) {
                 // If necessary, raise reserve param to prevent auto-reinvestment
                 return;
             case 'dump':
-                const stocks = getStocks(ns);
                 ns.tprint(`Selling all holdings and setting reserve proportion to 100%`);
                 getConfig(ns).set('reserved-funds', 1);
-                for (const stock of stocks)
+                for (const stock of getStocks(ns))
                     stock.sell(stock.position[0]);
                 return;
             case 'help':

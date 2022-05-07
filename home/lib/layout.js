@@ -23,7 +23,7 @@ export const renderWindows = (boxList, WIDTH) => {
   while (text.length > 0) {
     while (true) {
       const item = text.find(item => (x + item.width <= WIDTH-2 || item.width >= WIDTH-2) &&
-      	!placed.some(overlaps({x, y, ...item})));
+        !placed.some(overlaps({x, y, ...item})));
       if (item != null) {
         item.x = x;
         item.y = y;
@@ -79,7 +79,7 @@ export const renderWindows = (boxList, WIDTH) => {
   grid[lastRow][lastCol] = '┛';
 
   for (const box of placed) {
-    const { x, y, width, height, text } = box;
+    const { x, y, width, height } = box;
     for (let xx = 0; xx < width; xx++) {
       if (y !== 0)
         grid[y][x+xx+1] = '─';
@@ -95,7 +95,7 @@ export const renderWindows = (boxList, WIDTH) => {
   }
   for (let i = 0; i < 2; i++)
   for (const box of placed) {
-    const { x, y, width, height, text } = box;
+    const { x, y, width, height } = box;
     const drawCorner = (x, y) => {
       const top = y === 0;
       const left = x === 0;
@@ -121,7 +121,7 @@ export const renderWindows = (boxList, WIDTH) => {
         const lookup = [N,N,N,'└',N,N,'┌','├',N,'┘',N,'┴','┐','┤','┬','┼'];
         grid[y][x] = lookup[bitMask];
       }
-    }
+    };
     drawCorner(x, y);
     drawCorner(x+width+1, y);
     drawCorner(x, y+height+1);
@@ -137,4 +137,4 @@ export const renderWindows = (boxList, WIDTH) => {
     }
   }
   return grid.map(x=>x.join('')).join('\n');
-}
+};

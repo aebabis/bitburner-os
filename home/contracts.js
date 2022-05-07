@@ -6,10 +6,10 @@ export async function main(ns) {
         ns.ls(hostname)
             .filter(file=>file.endsWith('.lit'))
             .forEach(file=>ns.tprint(hostname + ' ' + file));
-    })
+    });
     nmap(ns).forEach((hostname) => {
         ns.ls(hostname)
             .filter(file=>file.endsWith('.cct'))
             .forEach(file=>ns.tprint(hostname + ' ' + file));
-    })
+    });
 }

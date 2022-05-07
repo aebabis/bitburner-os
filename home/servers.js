@@ -14,7 +14,7 @@ const getServers = (ns) => nmap(ns)
 /** @param {NS} ns **/
 const serverRow = (ns, server) => {
 	const {
-		backdoorInstalled, hasAdminRights, hostname, ip,
+		backdoorInstalled, hasAdminRights, hostname,
 		ramUsed,maxRam,
 		numOpenPortsRequired,
 		requiredHackingSkill,hackDifficulty,minDifficulty,
@@ -36,7 +36,7 @@ const serverRow = (ns, server) => {
 		level,
 		hacking,
 	};
-}
+};
 
 /** @param {NS} ns **/
 const getTable = (ns) => {
@@ -49,7 +49,7 @@ const getTable = (ns) => {
 	const doubled = left.map((row, i) => [...row, ...(right[i]||[])]);
 
 	return table(ns, [...columns, ...columns], doubled);
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {

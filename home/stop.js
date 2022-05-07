@@ -4,12 +4,12 @@ import { nmap } from './lib/nmap';
 export async function main(ns) {
     const script = ns.getScriptName();
     ns.tprint('Killing all processes');
-    nmap(ns).forEach((hostname) => {
-        ns.ps(hostname).forEach(({pid, filename, args}) => {
+    for (const hostname of nmap(ns)) {
+        for (const { pid, filename, args } of ns.ps(hostname)) {
             // Don't kill restart task
             if (filename === script && args.length === 0)
                 return;
             ns.kill(pid);
-        });
-    })
+        }
+    }
 }

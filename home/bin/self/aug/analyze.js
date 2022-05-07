@@ -72,4 +72,4 @@ export const analyzeAugData = (ns) => {
         maxAugPrices,
         maxRepReqs,
     });
-}
+};

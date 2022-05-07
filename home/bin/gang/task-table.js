@@ -51,7 +51,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
         ...rows.map(cells => cells.map((cell,i)=>pad(cell, i)).join('  ')),
     ].join('\n');
     ns.tprint(output);
-}
+};
 
 export async function main(ns) {
     await printTaskTable(ns, ns.args[0]);

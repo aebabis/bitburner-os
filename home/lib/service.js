@@ -10,7 +10,7 @@ const getExistingPid = (ns, desc) => {
     } catch (error) {
         ns.tprint(error);
     }
-}
+};
 
 let count = 1;
 
@@ -76,7 +76,7 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
         } else if (running && !shouldBe) {
             stop();
         }
-    }
+    };
 
     const matches = (identifier) => identifier == id || identifier === shortname;
     const toData = () => ({id, name: shortname, status: statusCode(), pid, desc});
@@ -92,8 +92,8 @@ export const Service = (ns, condition=()=>true, interval=0) => (script, target=n
         stop,
         matches,
         statusCode,
-    }
-}
+    };
+};
 
 export const AnyHostService = (ns, condition=()=>true, interval) => (script, numThreads, ...args) =>
     Service(ns, condition, interval)(script, null, numThreads, ...args);

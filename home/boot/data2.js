@@ -3,7 +3,7 @@ import { defer } from './boot/defer';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.tprint('Adding source files to static data cache')
+    ns.tprint('Adding source files to static data cache');
     const ownedSourceFiles = ns.getOwnedSourceFiles();
 
     const canUseHackNodes = ns.getPlayer().bitNodeN === 5 || ownedSourceFiles.some(node => node.n === 5);

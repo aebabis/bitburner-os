@@ -12,9 +12,9 @@ export const afkTracker = (ns) => {
         win.removeEventListener('mousemove', track, true);
         win.removeEventListener('keypress', track, true);
         win.removeEventListener('click', track, true);
-    })
+    });
     return () => Date.now() - time;
-}
+};
 
 /** @param {NS} ns */
 export const terminalTracker = (ns) => {
@@ -31,9 +31,9 @@ export const terminalTracker = (ns) => {
     return () => doc.activeElement != null &&
         doc.activeElement.matches('#terminal-input') &&
         Date.now() - lastKeypress < 10000;
-}
+};
 
-const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main function.'
+const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main function.';
 
 /** @param {NS} ns */
 export const autoClosePopUps = (ns) => {
@@ -56,4 +56,4 @@ export const autoClosePopUps = (ns) => {
     check();
 
     return stop;
-}
+};

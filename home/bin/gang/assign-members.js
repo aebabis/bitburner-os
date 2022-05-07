@@ -19,18 +19,18 @@ export async function main(ns) {
                 return true;
             }
             return false;
-        }
+        };
         const assignAll = (members, task) => {
             while(assignNext(members, task));
-        }
+        };
         const totalLevels = (name) => {
             const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
             return str + def + dex + agi;
-        }
+        };
         const needsPower = () => {
             const { enemyInfo } = getGangData(ns) || {};
             return enemyInfo && enemyInfo.some(enemy => enemy.territory > 0 && enemy.clashWinChance < .8);
-        }
+        };
         const respect = (name) => ns.gang.getMemberInformation(name).earnedRespect;
 
         // Every member, regardless of operation is

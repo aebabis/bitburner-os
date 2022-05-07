@@ -4,6 +4,7 @@
   "main": "download.js",
   "type": "module",
   "scripts": {
+    "start": "node make-download.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,5 +18,8 @@
     "url": "https://github.com/aebabis/bitburner-os/issues"
   },
   "homepage": "https://github.com/aebabis/bitburner-os#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "eslint": "^8.15.0"
+  }
 }

@@ -9,7 +9,7 @@ const getServerNames = (maxServers) => {
     return new Array(maxServers).fill(null)
         .map((_,i) => (i+1).toString().padStart(2, '0'))
         .map(n => `THREADPOOL-${n}`);
-}
+};
 
 /** @param {NS} ns **/
 const getPurchasedServerRams = (ns, maxServers) => {
@@ -20,10 +20,10 @@ const getPurchasedServerRams = (ns, maxServers) => {
                 ram: ns.getServerMaxRam(hostname),
             };
         } catch {
-            return null
+            return null;
         }
     }).filter(Boolean);
-}
+};
 
 /** @param {NS} ns **/
 const atCapacity = (ns) => {
@@ -35,7 +35,7 @@ const atCapacity = (ns) => {
 
     // Allow a 20% buffer
     return totalRamUsed + ramQueued > totalMaxRam * .8;
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -48,7 +48,7 @@ export async function main(ns) {
         } catch (error) {
             await console.error(error);
         }
-    }
+    };
 
     while (true) {
         await ns.sleep(50);

@@ -11,11 +11,11 @@ const Job = (ns, response, startTime) => (script, host=null, numThreads=1, ...ar
     if (script.startsWith('.') || !script.endsWith('.js'))
         throw new Error(`Illegal script name in ${desc(script, host, numThreads, ...args)}`);
     if (!Number.isInteger(numThreads))
-        throw new Error(`Illegal thread count in ${desc(script, host, numThreads, ...args)}`)
+        throw new Error(`Illegal thread count in ${desc(script, host, numThreads, ...args)}`);
 
     const ticket = response ? crypto.randomUUID() : undefined;
     return { script, host, numThreads, args, ticket, startTime, requestTime: Date.now() };
-}
+};
 
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
@@ -42,7 +42,7 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
             }
         }
     }
-}
+};
 
 /** @param {NS} ns **/
 export const delegateAny = (ns, response, options) => async (script, numThreads=1, ...args) =>
@@ -57,7 +57,7 @@ export const createBatch = (ns) => {
         getSize: () => jobs.length,
         send: async() => Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK).blockingWrite(jobs),
     };
-}
+};
 
 /** @param {NS} ns **/
 export const getDelegatedTasks = async (ns) => {
@@ -68,11 +68,11 @@ export const getDelegatedTasks = async (ns) => {
 		try {
             tasks.push(...messages);
 		} catch(error) {
-			await logger(ns).error(error) // TODO: Pretty
+			await logger(ns).error(error); // TODO: Pretty
 		}
 	}
     return tasks;
-}
+};
 
 /** @param {NS} ns **/
 export const closeTicket = (ns) => async (ticket, pid, hostname, threads) => {
@@ -83,4 +83,4 @@ export const closeTicket = (ns) => async (ticket, pid, hostname, threads) => {
 
     const timestamp = Date.now();
     port.write({ ticket, pid, hostname, threads, timestamp });
-}
+};

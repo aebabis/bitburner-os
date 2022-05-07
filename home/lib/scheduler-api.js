@@ -14,11 +14,11 @@ const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
 		time, waitTime, isWorker,
 		toString: (hostname) => `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
 	};
-}
+};
 
 /** @param {NS} ns **/
 export const checkPort = async (ns, queue) => {
-	const delegated = (await getDelegatedTasks(ns))
+	const delegated = (await getDelegatedTasks(ns));
 	for (const taskData of delegated) {
 		const { script, ticket }  = taskData;
 		if (ns.getScriptRam(script, 'home') === 0) {
@@ -28,7 +28,7 @@ export const checkPort = async (ns, queue) => {
 		else
 			queue.push(TicketItem(taskData));
 	}
-}
+};
 	
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
@@ -41,7 +41,7 @@ export const fulfill = async (ns, process, server) => {
 	if (threads > 0) {
 		pid = ns.exec(script, hostname, threads, ...args);
 		if (pid === 0) {
-			logger(ns).error('Unable to start process: ' + process.toString(hostname))
+			logger(ns).error('Unable to start process: ' + process.toString(hostname));
 		}
 	} else {
 		logger(ns).error('Scheduler tried to run: ' + process.toString());
@@ -53,10 +53,10 @@ export const fulfill = async (ns, process, server) => {
 			logger(ns).warn('process waited ' + waitTime + 'ms');
 		await closeTicket(ns)(ticket, pid, hostname, threads);
 	}
-}
+};
 
 /** @param {NS} ns **/
 export const reject = async (ns, process) => {
 	if (process.ticket != null)
 		await closeTicket(ns)(process.ticket, 0, null, 0);
-}
+};

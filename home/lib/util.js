@@ -9,7 +9,7 @@ export const by = (prop) => {
 				throw new Error(`invalid prop ${prop}`);
 			}
 			return ret;
-		}
+		};
 	}
 	return (a, b) => {
 		const va = val(a);
@@ -20,8 +20,8 @@ export const by = (prop) => {
 			return 1;
 		else
 			return 0;
-	}
-}
+	};
+};
 
 export const small = number => number.toString().toLowerCase().split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]||'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ'[n.charCodeAt(0)-97]||' ').join('');
 export const bold = string => string.toString().split('')

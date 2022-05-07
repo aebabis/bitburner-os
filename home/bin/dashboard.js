@@ -19,7 +19,7 @@ const getSchedulerTable = (ns) => {
     const { numPeopleKilled } = ns.getPlayer();
     return table(ns, ['STATS', { name: '', align: 'right'}],
         [['UPTIME', time], ['THEFT', moneyRate], ['KILLS', numPeopleKilled], ['EXP', exp]]);
-}
+};
 
 const backdoorPath = (ns) => {
     const SPACES = ' '.repeat(' connect powerhouse-fitness '.length) + '\n';
@@ -31,7 +31,7 @@ const backdoorPath = (ns) => {
         const text = path.map(s => s === 'home' ? ' home' : ` connect ${s} `).join('\n') + '\n backdoor';
         return HEAD + text;
     }
-}
+};
 
 const tailLogs = (ns, width) => {
     width = Math.min(width, 80);
@@ -41,7 +41,7 @@ const tailLogs = (ns, width) => {
         .map(line => line.length < width - 8 ? line : line.slice(0, width-8)+'...')
         .map(line => ` ${line} `)
         .map(line => line.padEnd(width - 6));
-}
+};
 
 const process = (table) => typeof table === 'string' ? table.split('\n') : table;
 
@@ -52,7 +52,7 @@ const threadpoolRow = (ns, server) => {
     const n = hostname.split('-')[1]||'?';
 	const ram = `${ns.nFormat(ramUsed*GB, '0b').padStart(5)}/${ns.nFormat(maxRam*GB, '0b').padEnd(5)}`;
 	return [n, ram];
-}
+};
 
 /** @param {NS} ns **/
 const threadpools = (ns) => {
@@ -64,10 +64,10 @@ const threadpools = (ns) => {
             hostname,
             ramUsed: ns.getServerUsedRam(hostname),
             maxRam: ns.getServerMaxRam(hostname),
-        })}catch{return null}})
+        });}catch{return null}})
         .filter(Boolean)
         .map(server=>threadpoolRow(ns, server));
-}
+};
 
 const threadpoolTable = (ns) => {
     const rows = threadpools(ns);
@@ -75,7 +75,7 @@ const threadpoolTable = (ns) => {
     const right = rows.slice(12);
     return table(ns, ['SERVERS', '', '', ''], 
         left.map((list, i) => [...list, ...(right[i]||['',''])]));
-}
+};
 
 const goalsTable = (ns) => {
     const { targetFaction, neededAugmentations } = getStaticData(ns);
@@ -86,7 +86,7 @@ const goalsTable = (ns) => {
         ...neededAugmentations[targetFaction].map(aug=>[aug]),
     ];
     return table(ns, ['GOALS'], rows);
-}
+};
 
 const moneyTable = (ns) => {
     const moneyData = getMoneyData(ns);
@@ -100,7 +100,7 @@ const moneyTable = (ns) => {
         ['60s', ns.nFormat(income60s, '$0.0a').padStart(7)],
     ];
     return table(ns, ['', ' INCOME'], rows);
-}
+};
 
 /** @param {NS} ns **/
 export async function main(ns) {

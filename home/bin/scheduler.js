@@ -78,7 +78,7 @@ export async function main(ns) {
 		};
 		// ns.tprint(JSON.stringify(purchasedServers, null, 2));
 		return data;
-	}
+	};
 
 	const queue = [];
 	while (true) {

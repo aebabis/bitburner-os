@@ -4,6 +4,7 @@ export function levelUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
 export function ramUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
     return (currentLevel*1.5) * (Math.pow(1.035,(2*currentRam)-1) - Math.pow(1.035,currentRam-1)) * ((currentLevelCore+5)/6);
 }
+/* eslint-disable no-unused-vars */
 export function coreUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
     return (currentLevel*1.5) * Math.pow(1.035,currentRam-1) * (1/6);
 }
@@ -38,13 +39,13 @@ export const getNodeData = (ns) => {
         };
         return { ...stats, upgrades };
     });
-}
+};
 
 /** @param {NS} ns **/
 export const getBestUpgrade = (ns) => {
     const upgrades = getNodeData(ns).map(stats => stats.upgrades.getBest());
     return upgrades.reduce((a, b) => a.profitPerCost > b.profitPerCost ? a : b, upgrades[0] || null);
-}
+};
 
 /** @param {NS} ns **/
 export const getBestPurchase = (ns) => {
@@ -55,8 +56,8 @@ export const getBestPurchase = (ns) => {
         const profitPerCost = profit / nodeCost;
         const breakEvenTime = profit === 0 ? 0 : nodeCost / profit;
         return { type: 'node', profit, cost: nodeCost, profitPerCost, breakEvenTime,
-            purchase: () => ns.hacknet.purchaseNode(), toString: () => `node $${nodeCost}`}
+            purchase: () => ns.hacknet.purchaseNode(), toString: () => `node $${nodeCost}`};
     } else {
         return bestUpgrade;
     }
-}
+};

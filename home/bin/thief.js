@@ -1,12 +1,10 @@
-import { logger } from './lib/logger';
-import Thief from './lib/thief';
-
 import { THREADPOOL } from './etc/config';
-import { PORT_SCH_RAM_DATA } from './etc/ports';
-import Ports from './lib/ports';
+import { logger } from './lib/logger';
 import { by } from './lib/util';
 import { table } from './lib/table';
-import { getHostnames } from './lib/data-store';
+import { getHostnames, getRamData } from './lib/data-store';
+
+import Thief from './lib/thief';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -19,7 +17,7 @@ export async function main(ns) {
         feed.push(message);
         while (feed.length > 10)
             feed.shift();
-    }
+    };
     
     const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
@@ -29,15 +27,14 @@ export async function main(ns) {
 
     const prioritze = () => thieves
         .filter(thief => thief.canHack())
-        .sort(by(thief => -thief.getDesirability()))
+        .sort(by(thief => -thief.getDesirability()));
 
     let viableThieves;
     let lastPriorization = 0;
 
     while(true) {
         try {
-            const port = Ports(ns).getPortHandle(PORT_SCH_RAM_DATA);
-            const ramData = port.peek();
+            const ramData = getRamData(ns);
             if (ramData == null)
                 continue;
 
@@ -56,7 +53,7 @@ export async function main(ns) {
             const rows = viableThieves
                 .filter(thief=>thief.currentBatch != null && !thief.currentBatch.hasEnded())
                 .map(thief => thief.getTableData())
-                .map(({ hostname, type, frame, portion, jobs, ended, timeLeft }) => {
+                .map(({ hostname, type, frame, portion, jobs, timeLeft }) => {
                     const money = ns.getServerMoneyAvailable(hostname);
                     const maxMoney = ns.getServerMaxMoney(hostname);
                     const curSecurity = ns.getServerSecurityLevel(hostname);

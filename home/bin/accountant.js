@@ -38,7 +38,7 @@ export async function main(ns) {
     const terpolate = (s1, s2, timestamp) => {
         const portion = (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
         return s1.estGain + portion * (s2.estGain - s1.estGain);
-    }
+    };
 
     const findValue = (timestamp) => {
         let s2 = samples[samples.length - 1];
@@ -52,7 +52,7 @@ export async function main(ns) {
             return terpolate(samples[0], samples[samples.length - 1], timestamp);
         }
         return 0;
-    }
+    };
 
     let estGain = 0; // Lower-bound for money gained from all sources
     let prevMoney;

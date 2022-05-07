@@ -24,7 +24,7 @@ export async function main(ns) {
         const chance = ns.getCrimeChance(name);
         return ({
             ...stats, chance, expectedValue: chance * money / time,
-        })
+        });
     });
     putPlayerData(ns, { crimeStats });
 }

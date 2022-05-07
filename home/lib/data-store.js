@@ -56,7 +56,7 @@ export async function main(ns) {
         static: PORT_STATIC_DATA,
         gang: PORT_GANG_DATA,
         dashboard: PORT_DASHBOARD_DATA,
-    }
+    };
     const [command, portname] = ns.args;
     if (command === 'peek') {
         const portId = ports[portname];

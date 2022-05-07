@@ -2,7 +2,7 @@ import { putStaticData } from './lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.tprint('Adding hacknet multipliers to static data cache')
+    ns.tprint('Adding hacknet multipliers to static data cache');
 
     putStaticData(ns, {
         hacknetMultipliers: ns.getHacknetMultipliers(),

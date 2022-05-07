@@ -13,13 +13,13 @@ async function showChart(ns, element, nodes, links) {
   const container = d3.select(element).append("div")
       .classed("svg-container", true)
       .style('position', 'relative')
-      .attr('style', 'max-width: 100%; max-height: 100%')
+      .attr('style', 'max-width: 100%; max-height: 100%');
 
   const chart = container.append('svg')
       .attr("preserveAspectRatio", "xMinYMin meet")
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr('style', 'max-width: 100%; max-height: 100%')
-      .classed("svg-content-responsive", true)
+      .classed("svg-content-responsive", true);
   
   var tooltip = container.append("div")	
     .attr("class", "tooltip")
@@ -45,9 +45,7 @@ async function showChart(ns, element, nodes, links) {
     chart.remove();
     container.remove();
     simulation.stop();
-  })
-
-  const { nFormat } = ns;
+  });
 
   simulation.force('link').links(links);
 
@@ -94,21 +92,21 @@ async function showChart(ns, element, nodes, links) {
       .on("drag", dragged)
       .on("end", dragended));
 
-  simulation.on('tick', function(e){ 
-    node.attr('transform', function(d, i){
-      return 'translate(' + d.x + ','+ d.y + ')'
+  simulation.on('tick', function(){ 
+    node.attr('transform', function(d){
+      return 'translate(' + d.x + ','+ d.y + ')';
     });
 
     link 
-      .attr('x1', function(d){ return d.source.x; }) 
-      .attr('y1', function(d){ return d.source.y; })
-      .attr('x2', function(d){ return d.target.x; })
-      .attr('y2', function(d){ return d.target.y; })
+      .attr('x1', function(d){ return d.source.x }) 
+      .attr('y1', function(d){ return d.source.y })
+      .attr('x2', function(d){ return d.target.x })
+      .attr('y2', function(d){ return d.target.y });
   });
 
 
   node.append('text')
-    .text(function(d){ return d.name; })
+    .text(function(d){ return d.name })
     .attr('font-family', font)
     .attr('text-anchor', 'middle')
     .attr('font-weight', (d, i) => (i===0) ? 'bold' : 'normal')
@@ -127,22 +125,22 @@ async function showChart(ns, element, nodes, links) {
       });
     }
 
-    d3.select(this).classed("selected", function(p) {
+    d3.select(this).classed("selected", function() {
       d.previouslySelected = d.selected; return d.selected = true;
     });
 
-    node.filter(function(d) { return d.selected; })
+    node.filter(function(d) { return d.selected })
       .each(function(d) {
         d.fx = d.x;
         d.fy = d.y;
-      })
+      });
   }
 
-  function dragged(event, d) {
+  function dragged(event) {
     node.filter(d => d.selected).each((d) => { 
       d.fx += event.dx;
       d.fy += event.dy;
-    })
+    });
   }
 
   function dragended(event, d) {
@@ -152,7 +150,7 @@ async function showChart(ns, element, nodes, links) {
     node.filter(d => d.selected).each(function(d) {
       d.fx = null;
       d.fy = null;
-    })
+    });
   }
   while(true) {
     if (element.offsetParent == null)
@@ -194,7 +192,7 @@ export async function main(ns) {
             target: neighbors,
             link: 1,
             ...ns.getServer(hostname)
-        }
+        };
     });
     const links = nodes.map((node, source)=>
         node.target.map(target=>({ source, target }))).flat();

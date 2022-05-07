@@ -19,11 +19,11 @@ const headData = (column) => {
                 str.padEnd(a) : str.padStart(a);
         },
     };
-}
+};
 
 /** @param {NS} ns */
 export const table = (ns, columns, data, options={}) => {
-    const { outline = true, borders = false } = options;
+    const { /*outline = true,*/ borders = false } = options;
     const joiner = borders ? ' | ' : '  ';
     columns = columns.map(headData);
     data = data.map(row => row.map((cell, i) => columns[i].process(cell).toString()));
@@ -34,4 +34,4 @@ export const table = (ns, columns, data, options={}) => {
         ...data.map(row => row.map((cell, i) => columns[i].pad(cell, widths[i])).join(joiner)),
     ].map(x=>` ${x} `);
     return lines.join('\n');
-}
+};

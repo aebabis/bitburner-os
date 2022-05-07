@@ -21,7 +21,7 @@ const toBitburnerPath = (file) => {
   if (fullpath.includes('/'))
     return '/' + fullpath;
   return fullpath;
-}
+};
 
 async function go() {
   const instructions = [];
@@ -37,7 +37,7 @@ async function go() {
   eventEmitter.emit('done');
 }
 
-eventEmitter.on('done', (files) => {
+eventEmitter.on('done', () => {
   console.log('done');
 });
 

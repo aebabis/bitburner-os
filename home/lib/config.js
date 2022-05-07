@@ -37,12 +37,12 @@ export default (ns) => {
         if (typeof obj === 'object')
             return obj;
         return {};
-    }
+    };
 
     const writeConfig = (obj) => {
         port.clear();
         port.write(obj);
-    }
+    };
 
     const get = (prop) => getAll()[prop];
 
@@ -63,7 +63,7 @@ export default (ns) => {
             const desc = PROPS[name];
             return { name, value, desc };
         });
-    }
+    };
 
     writeConfig(Object.assign({}, DEFAULT_VALUES, getAll()));
 
@@ -73,4 +73,4 @@ export default (ns) => {
         getAll,
         getRows,
     };
-}
+};

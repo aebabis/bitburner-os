@@ -11,7 +11,7 @@ const x_0 = .5;
 const PORTIONS = new Array(count + 1)
   .fill(null)
   .map((_,i) => i / count)
-  .map((x) => 1-1/(1+e**(-1*k*(x-x_0))))
+  .map((x) => 1-1/(1+e**(-1*k*(x-x_0))));
 
 /** @param {NS} ns **/
 const getWThreads = (ns, targetDecrease, cores=1) => {
@@ -19,7 +19,7 @@ const getWThreads = (ns, targetDecrease, cores=1) => {
     while (ns.weakenAnalyze(threads, cores) < targetDecrease)
         threads++;
     return threads;
-}
+};
 
 const computeThreads = (ns, target, portion) => {
     const weakenTime = ns.getWeakenTime(target);
@@ -49,7 +49,7 @@ const computeThreads = (ns, target, portion) => {
     const weakenThreads = getWThreads(ns, weaken1Threads + weaken2Threads);
 
     return { weakenTime, growTime, hackTime, weaken1Threads, weaken2Threads, growThreads, hackThreads, weakenThreads };
-}
+};
 
 class Batch {
     constructor(ns, target) {
@@ -104,7 +104,7 @@ class HGWBatch extends Batch {
         this.portion = portion;
 
         const totalThreads = weakenThreads + growThreads + hackThreads;
-	    const ramPerFrame = totalThreads * 1.75;
+        const ramPerFrame = totalThreads * 1.75;
 
         let endAfter = startAfter + weakenTime;
         let startBefore = endAfter;
@@ -161,7 +161,7 @@ class HWGWBatch extends Batch {
         this.portion = portion;
 
         const totalThreads = weaken1Threads + weaken2Threads + growThreads + hackThreads;
-	    const ramPerFrame = totalThreads * 1.75;
+        const ramPerFrame = totalThreads * 1.75;
 
         let endAfter = startAfter + weakenTime;
         let startBefore = endAfter;
@@ -268,7 +268,7 @@ export default class Thief {
         const maxServerLevel = Math.ceil(this.ns.getHackingLevel() / 2);
         const serverLevel = this.ns.getServerMinSecurityLevel(this.server);
         return hasRoot && serverLevel <= maxServerLevel;
-    }
+    };
 
     isGroomed = () => {
         const maxMoney = this.ns.getServerMaxMoney(this.server);
@@ -276,34 +276,34 @@ export default class Thief {
         const minSecurity = this.ns.getServerMinSecurityLevel(this.server);
         const curSecurity = this.ns.getServerSecurityLevel(this.server);
         return money / maxMoney > .99 && curSecurity < minSecurity + 1;
-    }
+    };
 
     isGrooming = () => {
         const { currentBatch } = this;
         if (currentBatch == null || currentBatch.hasEnded())
             return false;
         return currentBatch.type === 'WGW';
-    }
+    };
 
     isStealing = () => {
         const { currentBatch } = this;
         if (currentBatch == null || currentBatch.hasEnded())
             return false;
         return currentBatch.type !== 'WGW';
-    }
+    };
 
     canHG = () => {
         const minSecurity = this.ns.getServerMinSecurityLevel(this.server);
         const baseSecurity = this.ns.getServerBaseSecurityLevel(this.server);
         return minSecurity === baseSecurity;
-    }
+    };
 
     canStartNextBatch = () => {
         if (this.currentBatch == null)
             return true;
         return this.currentBatch.hasEnded();
         // return this.currentBatch == null || this.currentBatch.hasEnded();
-    }
+    };
 
     async startNextBatch(ram, maxRamPerJob) {
         const { ns, server, currentBatch } = this;

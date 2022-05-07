@@ -38,7 +38,7 @@ export async function main(ns) {
             } else {
                 await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
             }
-        }
+        };
 
         if (!doneWithJoes) {
             await rmi(ns)('/bin/self/job.js', 1, shouldFocus);

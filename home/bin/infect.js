@@ -5,7 +5,7 @@ export const infect = async (ns, ...hostnames) => {
     for (const hostname of hostnames){
         await ns.scp([HACK, GROW, WEAKEN, SHARE], 'home', hostname);
     }
-}
+};
 
 /** @param {NS} ns **/
 export const fullInfect = async (ns, ...hostnames) => {
@@ -13,7 +13,7 @@ export const fullInfect = async (ns, ...hostnames) => {
     for (const hostname of hostnames){
         await ns.scp(JS, 'home', hostname);
     }
-}
+};
 
 /** @param {NS} ns **/
 export async function main (ns) {
