@@ -14,11 +14,11 @@ const getSchedulerTable = (ns) => {
         onlineRunningTime
     } = scheduler;
     const exp = ns.nFormat(onlineExpGained, '0.0a');
-    const money = ns.nFormat(onlineMoneyMade, '$0.0a');
     const time = ns.nFormat(onlineRunningTime, '00:00:00');
     const moneyRate = ns.nFormat(onlineMoneyMade/onlineRunningTime, '$0.0a')+'/s';
+    const { numPeopleKilled } = ns.getPlayer();
     return table(ns, ['STATS', { name: '', align: 'right'}],
-        [['UPTIME', time], ['MONEY', money + '  '], ['', moneyRate], ['EXP', exp]]);
+        [['UPTIME', time], ['THEFT', moneyRate], ['KILLS', numPeopleKilled], ['EXP', exp]]);
 }
 
 const backdoorPath = (ns) => {
@@ -99,7 +99,7 @@ const moneyTable = (ns) => {
         ['10s', ns.nFormat(income10s, '$0.0a').padStart(7)],
         ['60s', ns.nFormat(income60s, '$0.0a').padStart(7)],
     ];
-    return table(ns, ['', 'INCOME'], rows);
+    return table(ns, ['', ' INCOME'], rows);
 }
 
 /** @param {NS} ns **/
