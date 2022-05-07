@@ -34,6 +34,7 @@ export async function main(ns) {
             .filter(faction=>factionAugmentations[faction].includes(NEUROFLUX))
             .reduce((a,b)=>ns.getFactionRep(a)>ns.getFactionRep(b)?a:b);
         while (ns.purchaseAugmentation(neuroFluxFaction, NEUROFLUX));
+        await rmi(ns)('/bin/self/buy-ram.js', 1);
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 

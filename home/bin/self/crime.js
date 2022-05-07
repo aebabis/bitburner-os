@@ -4,8 +4,9 @@ import { getPlayerData  } from './lib/data-store';
 export async function main(ns) {
     ns.disableLog('ALL');
     const { crimeStats } = getPlayerData(ns);
+    const PATIENCE = 90 * 1000;
     const allowedCrimes = crimeStats
-        .filter(c=>c.chance>=.5);
+        .filter(c=>c.chance===1 || c.chance>=c.time/PATIENCE);
     if (allowedCrimes.some(c => c.name === 'Homicide') && ns.getPlayer().numPeopleKilled < 30) {
         ns.commitCrime('Homicide');
     } else {

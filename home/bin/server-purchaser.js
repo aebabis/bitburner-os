@@ -42,7 +42,7 @@ export async function main(ns) {
     ns.disableLog('ALL');
     const console = logger(ns);
 
-    const buy = async (...args) => {
+    const buyServer = async (...args) => {
         try {
             await rmi(ns)(PURCHASE_THREADPOOL, 1, ...args);
         } catch (error) {
@@ -71,17 +71,21 @@ export async function main(ns) {
         const atMaxServers = purchasedServers.length === purchasedServerLimit;
         const smallest = purchasedServers[purchasedServers.length - 1];
 
-        let lowerBound = 4;
+        let ram = 4;
         if (atMaxServers)
-            lowerBound = smallest.ram * 2;
+            ram = smallest.ram * 2;
 
-        if (purchasedServerCosts[lowerBound] < money)
+        if (money < purchasedServerCosts[ram])
             continue;
 
+        if (purchasedServers.length === 0) {
+            await buyServer(ram);
+            continue;
+        }
+
         const [jobServer] = purchasedServers;
-        const jobServerRam = jobServer?.ram;
-        if (jobServerRam < 256 && ram > jobServerRam) {
-            await buy(ram, jobServer.hostname);
+        if (jobServer.ram < 256 && ram > jobServer.ram) {
+            await buyServer(ram, jobServer.hostname);
             continue;
         }
 
@@ -93,8 +97,8 @@ export async function main(ns) {
             continue;
 
         if (atMaxServers)
-            await buy(ram, smallest.hostname);
+            await buyServer(ram, smallest.hostname);
         else
-            await buy(ram);
+            await buyServer(ram);
     }
 }
