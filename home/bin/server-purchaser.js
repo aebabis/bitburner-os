@@ -59,6 +59,12 @@ export async function main(ns) {
             purchasedServerMaxRam,
         } = getStaticData(ns);
 
+        const {
+            income,
+            theftRatePerGB,
+            timeToAug,
+        } = getMoneyData(ns);
+
         const purchasedServers = getPurchasedServerRams(ns, purchasedServerLimit);
         if (purchasedServers.length === purchasedServerLimit &&
             purchasedServers.every(server=>server.ram === purchasedServerMaxRam)) {
@@ -74,6 +80,14 @@ export async function main(ns) {
         let ram = 4;
         if (atMaxServers)
             ram = smallest.ram * 2;
+
+        const newRam = ram - (smallest?.ram||0);
+        const ramProfit = timeToAug * theftRatePerGB * newRam;
+        if (ramProfit < purchasedServerCosts[ram]) {
+            ns.print(`Not purchasing server as it would only make $${Math.round(ramProfit/ram)}/GB`);
+            await ns.sleep(10000);
+            continue;
+        }
 
         if (money < purchasedServerCosts[ram])
             continue;
@@ -93,7 +107,7 @@ export async function main(ns) {
             continue;
 
         // Don't buy a server we'll replace right away
-        if (ram < purchasedServerMaxRam && purchasedServerCosts[ram] < getMoneyData(ns).income5s)
+        if (ram < purchasedServerMaxRam && purchasedServerCosts[ram] < income * 5)
             continue;
 
         if (atMaxServers)

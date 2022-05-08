@@ -21,7 +21,7 @@ export async function main(ns) {
         augmentationPrereqs,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
-    const { income } = getMoneyData(ns);
+    const { money, income } = getMoneyData(ns);
 
     const remainingAugs = neededAugmentations[targetFaction]
         .filter(aug => !purchasedAugmentations.includes(aug));
@@ -47,7 +47,7 @@ export async function main(ns) {
         costToAug += multiplier * augmentationPrices[augmentation];
         multiplier *= 1.9;
     }
-    const timeToAug = costToAug / income;
+    const timeToAug = (costToAug-money) / income;
     putMoneyData(ns, { costToAug, timeToAug, costOfNextAugmentation });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
@@ -62,5 +62,5 @@ export async function main(ns) {
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 
-    putPlayerData(ns, { purchasedAugmentations, remainingAugs });
+    putPlayerData(ns, { purchasedAugmentations, remainingAugs, timeToAug });
 }
