@@ -1,3 +1,4 @@
+import { getRamData } from './lib/data-store';
 import { putMoneyData } from './lib/data-store';
 
 class Timer {
@@ -27,58 +28,84 @@ class Timer {
     }
 }
 
-/** @param {NS} ns **/
-export async function main(ns) {
-    ns.disableLog('ALL');
+class Timeline {
+    constructor(history = 60100) {
+        this.samples = [];
+        this.history = history;
+    }
 
-    const samples = [];
+    addPoint(timestamp, value) {
+        const { samples, history } = this;
+        const prev = samples[samples.length - 1]?.value || 0;
+        const delta = value - prev;
+        samples.push({ timestamp, value, delta });
+        while (samples[1] != null && samples[1].timestamp < timestamp - history)
+            samples.shift();
+    }
 
-    const timer = new Timer(ns);
+    findValue(timestamp) {
+        const terpolate = (s1, s2, timestamp) => {
+            const portion = (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
+            return s1.value + portion * (s2.value - s1.value);
+        };
 
-    const terpolate = (s1, s2, timestamp) => {
-        const portion = (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
-        return s1.estGain + portion * (s2.estGain - s1.estGain);
-    };
-
-    const findValue = (timestamp) => {
+        const { samples } = this;
         let s2 = samples[samples.length - 1];
         for (let i = samples.length - 2; i >= 0; i--) {
             const s1 = samples[i];
             if (s1.timestamp < timestamp) {
                 return terpolate(s1, s2, timestamp);
             }
+            s2 = s1;
         }
         if (samples.length >= 2) {
             return terpolate(samples[0], samples[samples.length - 1], timestamp);
         }
         return 0;
-    };
+    }
+}
 
-    let estGain = 0; // Lower-bound for money gained from all sources
-    let prevMoney;
+/** @param {NS} ns **/
+export async function main(ns) {
+    ns.disableLog('ALL');
+
+    const moneyTimeline = new Timeline();
+    const theftTimeline = new Timeline();
+    const timer = new Timer(ns);
+
+    let estTotalGain = 0;
+    let prevMoney = 0;
+
     while (true) {
         const timestamp = Date.now();
         const { money } = ns.getPlayer();
-        //ns.getRunningScript('/bin/scheduler.js', 'home').onlineMoneyMade;
+        const { onlineMoneyMade } = ns.getRunningScript('/bin/scheduler.js', 'home');
 
-        const diff = money - prevMoney;
-        if (diff > 0)
-            estGain += diff;
-        prevMoney = money;
+        if (money > prevMoney) {// Skip ticks where a purchase is made
+            estTotalGain += (money - prevMoney);
+            prevMoney = money;
+        }
 
-        samples.push({ timestamp, money, estGain });
+        moneyTimeline.addPoint(timestamp, estTotalGain);
+        theftTimeline.addPoint(timestamp, onlineMoneyMade);
 
-        while (samples[1] != null && samples[1].timestamp < timestamp - 60100)
-            samples.shift();
+        const theftIncome60s = onlineMoneyMade - theftTimeline.findValue(timestamp - 60000);
+        const theftIncome = theftIncome60s / 60;
+        const { totalMaxRam } = getRamData(ns);
+        const theftRatePerGB = theftIncome / totalMaxRam;
         
-        const income1s  = estGain - findValue(timestamp - 1000);
-        const income5s  = estGain - findValue(timestamp - 5000);
-        const income10s = estGain - findValue(timestamp - 10000);
-        const income30s = estGain - findValue(timestamp - 30000);
-        const income60s = estGain - findValue(timestamp - 60000);
+        const income1s  = estTotalGain - moneyTimeline.findValue(timestamp - 1000);
+        const income5s  = estTotalGain - moneyTimeline.findValue(timestamp - 5000);
+        const income10s = estTotalGain - moneyTimeline.findValue(timestamp - 10000);
+        const income30s = estTotalGain - moneyTimeline.findValue(timestamp - 30000);
+        const income60s = estTotalGain - moneyTimeline.findValue(timestamp - 60000);
         const income = income60s/60 || income30s/30 || income10s/10 || income5s/5 || income1s;
 
-        putMoneyData(ns, { money, income, income1s, income5s, income10s, income30s, income60s });
+        putMoneyData(ns, {
+            money,
+            income, income1s, income5s, income10s, income30s, income60s,
+            theftIncome, theftIncome60s, theftRatePerGB
+        });
 
         ns.clearLog();
         ns.print('MONEY: ' + ns.nFormat(money,     '0.00a'));
@@ -87,6 +114,7 @@ export async function main(ns) {
         ns.print('  10s: ' + ns.nFormat(income10s||0, '0.00a'));
         ns.print('  30s: ' + ns.nFormat(income30s||0, '0.00a'));
         ns.print('  60s: ' + ns.nFormat(income60s||0, '0.00a'));
+        ns.print('/GB-s: ' + ns.nFormat(theftRatePerGB||0, '0.00a'));
 
         await timer.next();
     }

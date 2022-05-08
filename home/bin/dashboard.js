@@ -8,18 +8,17 @@ import { THREADPOOL } from './etc/config';
 
 const getSchedulerTable = (ns) => {
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
-    const {
-        onlineExpGained,
-        onlineMoneyMade,
-        onlineRunningTime
-    } = scheduler;
-    const exp = ns.nFormat(onlineExpGained, '0.0a');
+    const { theftIncome=0, theftRatePerGB=0 } = getMoneyData(ns);
+    const { onlineExpGained, onlineRunningTime } = scheduler;
     const time = ns.nFormat(onlineRunningTime, '00:00:00');
-    const moneyRate = ns.nFormat(onlineMoneyMade/onlineRunningTime, '$0.0a')+'/s';
+    const theft = ns.nFormat(theftIncome, '$0.0a').padStart(6)+'/s  ';
+    const theftRate = ns.nFormat(theftRatePerGB, '$0.0a').padStart(6)+'/GBs';
+    const exp = ns.nFormat(onlineExpGained, '0.0a');
     const { numPeopleKilled } = ns.getPlayer();
-    return table(ns, ['STATS', { name: '', align: 'right'}],
+    return table(ns, null,
         [['UPTIME', time],
-        ['THEFT', moneyRate],
+        ['THEFT', theft],
+        ['', theftRate],
         ['KILLS', numPeopleKilled],
         ['EXP', exp]]);
 };

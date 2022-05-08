@@ -25,7 +25,13 @@ const headData = (column) => {
 export const table = (ns, columns, data, options={}) => {
     const { /*outline = true,*/ borders = false } = options;
     const joiner = borders ? ' | ' : '  ';
-    columns = columns.map(headData);
+    if (columns == null) {
+        if (data.length === 0)
+            return '';
+        columns = data.shift().map(headData);
+    } else {
+        columns = columns.map(headData);
+    }
     data = data.map(row => row.map((cell, i) => columns[i].process(cell).toString()));
     const widths = columns.map((column, i) => data
         .map(row => row[i]?.length).reduce((a,b)=>Math.max(a,b),column.name.length));
