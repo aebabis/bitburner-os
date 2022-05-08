@@ -76,8 +76,9 @@ export async function main(ns) {
         const income10s = estGain - findValue(timestamp - 10000);
         const income30s = estGain - findValue(timestamp - 30000);
         const income60s = estGain - findValue(timestamp - 60000);
+        const income = income60s/60 || income30s/30 || income10s/10 || income5s/5 || income1s;
 
-        putMoneyData(ns, { money, income1s, income5s, income10s, income30s, income60s });
+        putMoneyData(ns, { money, income, income1s, income5s, income10s, income30s, income60s });
 
         ns.clearLog();
         ns.print('MONEY: ' + ns.nFormat(money,     '0.00a'));

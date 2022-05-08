@@ -18,7 +18,10 @@ const getSchedulerTable = (ns) => {
     const moneyRate = ns.nFormat(onlineMoneyMade/onlineRunningTime, '$0.0a')+'/s';
     const { numPeopleKilled } = ns.getPlayer();
     return table(ns, ['STATS', { name: '', align: 'right'}],
-        [['UPTIME', time], ['THEFT', moneyRate], ['KILLS', numPeopleKilled], ['EXP', exp]]);
+        [['UPTIME', time],
+        ['THEFT', moneyRate],
+        ['KILLS', numPeopleKilled],
+        ['EXP', exp]]);
 };
 
 const backdoorPath = (ns) => {
@@ -93,11 +96,14 @@ const moneyTable = (ns) => {
     if (moneyData == null) {
         return ' INCOME\n(loading)';
     }
-    const { income1s=0, income10s=0, income60s=0 } = moneyData;
+    const { income1s=0, income10s=0, income60s=0, costToAug=0 } = moneyData;
+    const timeToAug = income60s > 0 ? costToAug * 60 / income60s : 100*60*60;
     const rows = [
-        [' 1s', ns.nFormat(income1s, '$0.0a').padStart(7)],
-        ['10s', ns.nFormat(income10s, '$0.0a').padStart(7)],
-        ['60s', ns.nFormat(income60s, '$0.0a').padStart(7)],
+        [' 1s', ns.nFormat(income1s, '$0.0a').padStart(8)],
+        ['10s', ns.nFormat(income10s, '$0.0a').padStart(8)],
+        ['60s', ns.nFormat(income60s, '$0.0a').padStart(8)],
+        ['Aug', ns.nFormat(costToAug||0, '$0.0a').padStart(8)],
+        ['   ', ns.nFormat(timeToAug, '00:00:00').padStart(8)],
     ];
     return table(ns, ['', ' INCOME'], rows);
 };

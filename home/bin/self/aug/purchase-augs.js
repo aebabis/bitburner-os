@@ -1,4 +1,4 @@
-import { getStaticData, getPlayerData, putPlayerData  } from './lib/data-store';
+import { getStaticData, getPlayerData, putPlayerData, putMoneyData  } from './lib/data-store';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
@@ -19,12 +19,23 @@ export async function main(ns) {
         .filter(aug => !purchasedAugmentations.includes(aug));
     remainingAugs.sort(by(aug => -augmentationPrices[aug]));
 
-    for (const augmentation of remainingAugs) {
-        if (ns.purchaseAugmentation(targetFaction, augmentation))
+    while (remainingAugs.length > 0) {
+        const augmentation = remainingAugs[0];
+        if (ns.purchaseAugmentation(targetFaction, augmentation)) {
             purchasedAugmentations.push(augmentation);
-        else
+            remainingAugs.shift();
+        } else {
             break;
+        }
     }
+
+    let multiplier = 1.9**purchasedAugmentations.length;
+    let costToAug = 0;
+    for (const augmentation of remainingAugs) {
+        costToAug += multiplier * augmentationPrices[augmentation];
+        multiplier *= 1.9;
+    }
+    putMoneyData(ns, { costToAug });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         await rmi(ns)('/bin/broker.js', 1, 'dump');
