@@ -1,6 +1,6 @@
 import { nmap } from './lib/nmap';
 import { defer } from './boot/defer';
-import { putHostnames, putStaticData } from './lib/data-store';
+import { putHostnames, putStaticData, putMoneyData } from './lib/data-store';
 
 import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
 const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
@@ -35,6 +35,12 @@ export async function main(ns) {
     ns.tprint('Cataloging all local scripts');
     const scripts = ns.ls('home').filter(s=>s.endsWith('.js'));
     putStaticData(ns, { scripts });
+
+    ns.tprint('Initializing money data');
+    putMoneyData(ns, {
+        income:0, income1s:0, income5s:0,
+        income10s:10, income30s:0, income60s:0,
+    });
 
     // Go to next step in the boot sequence
 	defer(ns)(...ns.args);

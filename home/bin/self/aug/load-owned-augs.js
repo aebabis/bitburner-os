@@ -6,8 +6,7 @@ export async function main(ns) {
     ns.tprint('Loading Owned Augmentations');
 
     const ownedAugmentations = ns.getOwnedAugmentations();
-    const purchasedAugmentations = ns.getOwnedAugmentations(true)
-        .filter(aug=>!ownedAugmentations.includes(aug));
+    const purchasedAugmentations = ns.getOwnedAugmentations(true);
 
     putStaticData(ns, { ownedAugmentations });
     putPlayerData(ns, { purchasedAugmentations });

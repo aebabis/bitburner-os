@@ -1,4 +1,10 @@
-import { getStaticData, getPlayerData, putPlayerData, putMoneyData  } from './lib/data-store';
+import {
+    getStaticData,
+    getPlayerData,
+    putPlayerData,
+    getMoneyData,
+    putMoneyData
+} from './lib/data-store';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
@@ -12,17 +18,22 @@ export async function main(ns) {
         neededAugmentations,
         augmentationPrices,
         factionAugmentations,
+        augmentationPrereqs,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
+    const { income } = getMoneyData(ns);
 
     const remainingAugs = neededAugmentations[targetFaction]
         .filter(aug => !purchasedAugmentations.includes(aug));
     remainingAugs.sort(by(aug => -augmentationPrices[aug]));
 
-    while (remainingAugs.length > 0) {
-        const augmentation = remainingAugs[0];
-        if (ns.purchaseAugmentation(targetFaction, augmentation)) {
-            purchasedAugmentations.push(augmentation);
+    const purchasable = aug => (augmentationPrereqs[aug] || [])
+        .every(prereq => purchasedAugmentations.includes(prereq));
+
+    let nextPurchase;
+    while (nextPurchase = remainingAugs.find(purchasable)) {
+        if (ns.purchaseAugmentation(targetFaction, nextPurchase)) {
+            purchasedAugmentations.push(nextPurchase);
             remainingAugs.shift();
         } else {
             break;
@@ -31,11 +42,13 @@ export async function main(ns) {
 
     let multiplier = 1.9**purchasedAugmentations.length;
     let costToAug = 0;
+    const costOfNextAugmentation = augmentationPrices[nextPurchase] * multiplier || null;
     for (const augmentation of remainingAugs) {
         costToAug += multiplier * augmentationPrices[augmentation];
         multiplier *= 1.9;
     }
-    putMoneyData(ns, { costToAug });
+    const timeToAug = costToAug / income;
+    putMoneyData(ns, { costToAug, timeToAug, costOfNextAugmentation });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         await rmi(ns)('/bin/broker.js', 1, 'dump');
