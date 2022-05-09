@@ -1,6 +1,6 @@
 import { afkTracker } from './lib/tracking';
 import { rmi } from './lib/rmi';
-import { getStaticData, getPlayerData } from './lib/data-store';
+import { getStaticData, getPlayerData, getMoneyData } from './lib/data-store';
 import getConfig from './lib/config';
 import {
     COMBAT_REQUIREMENTS,
@@ -17,11 +17,11 @@ export async function main(ns) {
 
     while (true) {
         const player = ns.getPlayer();
-        const { ownedAugmentations, targetFaction, maxAugPrices, maxRepReqs } = getStaticData(ns);
+        const { ownedAugmentations, targetFaction, maxRepReqs } = getStaticData(ns);
         const { factionRep = {} } = getPlayerData(ns);
+        const { costOfNextAugmentation } = getMoneyData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
-        const moneyNeeded = maxAugPrices[targetFaction];
         const rep = factionRep[targetFaction] || 0;
         const repNeeded = maxRepReqs[targetFaction];
 
@@ -42,7 +42,7 @@ export async function main(ns) {
 
         if (!doneWithJoes) {
             await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
-        } else if (player.money < moneyNeeded) {
+        } else if (player.money < costOfNextAugmentation) {
             await doCrime();
         } else {
             // Only work for a faction if we can afford the

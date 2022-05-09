@@ -36,9 +36,7 @@ class Timeline {
 
     addPoint(timestamp, value) {
         const { samples, history } = this;
-        const prev = samples[samples.length - 1]?.value || 0;
-        const delta = value - prev;
-        samples.push({ timestamp, value, delta });
+        samples.push({ timestamp, value });
         while (samples[1] != null && samples[1].timestamp < timestamp - history)
             samples.shift();
     }
@@ -81,10 +79,9 @@ export async function main(ns) {
         const { money } = ns.getPlayer();
         const { onlineMoneyMade } = ns.getRunningScript('/bin/scheduler.js', 'home');
 
-        if (money > prevMoney) {// Skip ticks where a purchase is made
+        if (money > prevMoney) // Skip ticks where a purchase is made
             estTotalGain += (money - prevMoney);
-            prevMoney = money;
-        }
+        prevMoney = money;
 
         moneyTimeline.addPoint(timestamp, estTotalGain);
         theftTimeline.addPoint(timestamp, onlineMoneyMade);
@@ -109,6 +106,7 @@ export async function main(ns) {
 
         ns.clearLog();
         ns.print('MONEY: ' + ns.nFormat(money,     '0.00a'));
+        ns.print('Total gain: ' + ns.nFormat(estTotalGain,     '0.00a'));
         ns.print('   1s: ' + ns.nFormat(income1s||0,  '0.00a'));
         ns.print('   5s: ' + ns.nFormat(income5s||0,  '0.00a'));
         ns.print('  10s: ' + ns.nFormat(income10s||0, '0.00a'));
