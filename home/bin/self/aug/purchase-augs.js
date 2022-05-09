@@ -18,6 +18,7 @@ export async function main(ns) {
         neededAugmentations,
         augmentationPrices,
         factionAugmentations,
+        ownedAugmentations,
         augmentationPrereqs,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
@@ -40,7 +41,8 @@ export async function main(ns) {
         }
     }
 
-    let multiplier = 1.9**purchasedAugmentations.length;
+    const queuedAugmentations = purchasedAugmentations.filter(aug => !ownedAugmentations.includes(aug));
+    let multiplier = 1.9**queuedAugmentations.length;
     let costToAug = 0;
     const costOfNextAugmentation = augmentationPrices[nextPurchase] * multiplier || null;
     for (const augmentation of remainingAugs) {
