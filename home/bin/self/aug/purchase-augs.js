@@ -34,7 +34,7 @@ export async function main(ns) {
     while (nextPurchase = remainingAugs.find(purchasable)) {
         if (ns.purchaseAugmentation(targetFaction, nextPurchase)) {
             purchasedAugmentations.push(nextPurchase);
-            remainingAugs.shift();
+            remainingAugs.splice(remainingAugs.indexOf(nextPurchase), 1);
         } else {
             break;
         }

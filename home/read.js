@@ -1,5 +1,8 @@
 /** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLogs('ALL');
+    ns.tail();
+
     const [filename] = ns.args;
     if (filename == null)
         throw new Error(`Must specify file as argument`);

@@ -1,19 +1,31 @@
 import { getPlayerData  } from './lib/data-store';
 
-/** @param {NS} ns */
-export async function main(ns) {
-    ns.disableLog('ALL');
+const selectCrime = (ns) => {
     const { crimeStats } = getPlayerData(ns);
+    if (crimeStats == null)
+        return 'Shoplift';
+
+    const homicide = crimeStats.find(c=>c.name==='Homicide');
+    if (homicide.chance > .5 && ns.getPlayer().numPeopleKilled < 30)
+        return 'Homicide';
+
     const PATIENCE = 90 * 1000;
     const allowedCrimes = crimeStats
         .filter(c=>c.chance===1 || c.chance>=c.time/PATIENCE);
-    if (allowedCrimes.some(c => c.name === 'Homicide') && ns.getPlayer().numPeopleKilled < 30) {
-        ns.commitCrime('Homicide');
-    } else {
-        const bestCrime = allowedCrimes
-            .reduce((a, b) => a.expectedValue>b.expectedValue?a:b);
-        ns.commitCrime(bestCrime.name);
-    }
+    
+    const bestCrime = allowedCrimes
+        .reduce((a, b) => a.expectedValue>b.expectedValue?a:b);
+    
+    return bestCrime.name;
+};
+
+/** @param {NS} ns */
+export async function main(ns) {
+    ns.disableLog('ALL');
+
+    const crime = selectCrime(ns);
+    ns.commitCrime(crime);
+
     while (ns.isBusy())
         await ns.sleep(100);
 }

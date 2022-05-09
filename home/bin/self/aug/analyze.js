@@ -1,13 +1,16 @@
 import { STORY_FACTIONS, CITY_FACTIONS } from './bin/self/aug/factions';
-import { getStaticData, putStaticData  } from './lib/data-store';
+import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
+import { table } from './lib/table';
 
-export const analyzeAugData = (ns) => {
+export const analyzeAugData = async (ns) => {
     const {
-        ownedAugmentations,
         factionAugmentations,
         augmentationPrices,
         augmentationRepReqs,
     } = getStaticData(ns);
+    const {
+        purchasedAugmentations
+    } = getPlayerData(ns);
 
     // Currently only allowing story and city
     // factions for automatic work and aug purchases
@@ -26,7 +29,7 @@ export const analyzeAugData = (ns) => {
         // not including NeuroFlux Governor
         const needed = augmentations
             .filter(aug => aug !== 'NeuroFlux Governor')
-            .filter(aug => !ownedAugmentations.includes(aug));
+            .filter(aug => !purchasedAugmentations.includes(aug));
         neededAugmentations[faction] = needed;
 
         for (const augmentation of needed) {
@@ -46,13 +49,22 @@ export const analyzeAugData = (ns) => {
         const factionExclusives = needed.filter(aug => reverse[aug].length === 1);
         exclusives[faction] = factionExclusives;
 
-        if (factionExclusives.length > 0)
+        if (needed.length > 0)
             possibleTargets.push(faction);
 
         // Record the maximum required reputation for this faction
         maxAugPrices[faction] = Math.max(0, ...needed.map(aug=>augmentationPrices[aug]));
         maxRepReqs[faction] = Math.max(0, ...needed.map(aug=>augmentationRepReqs[aug]));
     }
+
+    let rows = [];
+    for (const faction of factions) {
+        rows.push([faction, '', '']);
+        for (const aug of neededAugmentations[faction])
+            rows.push([aug, augmentationPrices[aug], augmentationRepReqs[aug]]);
+        rows.push(['', '', '']);
+    }
+    await ns.write('augs.txt', table(ns, null, rows), 'w');
 
     ns.tprint('REMAINING AUGS');
     for (const [k, v] of Object.entries(exclusives)) {
@@ -73,3 +85,8 @@ export const analyzeAugData = (ns) => {
         maxRepReqs,
     });
 };
+
+/** @param {NS} ns */
+export async function main(ns) {
+    await analyzeAugData(ns);
+}

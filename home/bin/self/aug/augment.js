@@ -14,7 +14,7 @@ export async function main(ns) {
     await rmi(ns, retry)('/bin/self/aug/load-aug-prereqs.js');
     await rmi(ns, retry)('/bin/self/aug/load-aug-stats.js');
 
-    analyzeAugData(ns);
+    await analyzeAugData(ns);
 
     while (true) {
         await rmi(ns, retry)('/bin/self/aug/join-factions.js');
