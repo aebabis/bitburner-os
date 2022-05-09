@@ -12,11 +12,13 @@ const go = async(ns) => {
     ns.disableLog('ALL');
     const { bitNodeN } = ns.getPlayer();
     const { ownedSourceFiles } = getStaticData(ns);
-    const hasSingularity = () => bitNodeN === 4 || ownedSourceFiles.find(file => file.n === 4);
+    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
+    const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
+    const hasSingularity = () => bitNodeN === 4 || beatBN4;
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
-    const canTradeStocks = () => ns.getPlayer().has4SDataTixApi;
-    const canBuyTixAccess = () => !canTradeStocks();
-    const couldStartGang = () => bitNodeN >= 2 && !isInGang();
+    const has4SApi = () => ns.getPlayer().has4SDataTixApi;
+    const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;
+    const couldStartGang = () => (bitNodeN === 2 || beatBN2) && !isInGang();
     const isInGang = () => getGangData(ns) != null;
     const augsUp = () => getStaticData(ns).targetFaction != null;
 
@@ -31,7 +33,7 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/accountant.js'),
         AnyHostService(ns, canBuyTixAccess, 5000)
                           ('/bin/market-access.js'),
-        AnyHostService(ns, canTradeStocks, 5000)
+        AnyHostService(ns, has4SApi, 5000)
                           ('/bin/broker.js'),
         AnyHostService(ns)('/bin/share.js'),
         AnyHostService(ns, couldStartGang, 5000)

@@ -56,6 +56,9 @@ export async function main(ns) {
         static: PORT_STATIC_DATA,
         gang: PORT_GANG_DATA,
         dashboard: PORT_DASHBOARD_DATA,
+        scheduler: PORT_SCH_RAM_DATA,
+        player: PORT_PLAYER_DATA,
+        money: PORT_MONEY_DATA,
     };
     const [command, portname] = ns.args;
     if (command === 'peek') {
