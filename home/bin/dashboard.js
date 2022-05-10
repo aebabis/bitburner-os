@@ -1,12 +1,13 @@
+import { THREADPOOL } from './etc/config';
 import { getPath } from './lib/backdoor.js';
-import { getModalColumnCount } from './lib/modal';
+import { getStaticData, getMoneyData, getPlayerData } from './lib/data-store';
 import { renderWindows } from './lib/layout';
+import { getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { getStaticData, getMoneyData } from './lib/data-store';
-import { THREADPOOL } from './etc/config';
 
 const getSchedulerTable = (ns) => {
+    const { city } = ns.getPlayer();
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     const { theftIncome=0, theftRatePerGB=0 } = getMoneyData(ns);
     const { onlineExpGained, onlineRunningTime } = scheduler;
@@ -17,6 +18,7 @@ const getSchedulerTable = (ns) => {
     const { numPeopleKilled } = ns.getPlayer();
     return table(ns, null,
         [['UPTIME', time],
+        ['CITY', city],
         ['THEFT', theft],
         ['', theftRate],
         ['KILLS', numPeopleKilled],
@@ -28,9 +30,11 @@ const backdoorPath = (ns) => {
     const HEAD = ' BACKDOOR HELPER \n';
     const path = getPath(ns);
     if (path == null) {
-        return HEAD + ' (no available servers) ' + SPACES.repeat(2);
+        return HEAD + ' (no available servers) ' + SPACES.repeat(2) + '\n\n\n\n';
     } else {
-        const text = path.map(s => s === 'home' ? ' home' : ` connect ${s} `).join('\n') + '\n backdoor';
+        const extraRowCount = Math.max(0, 5 - path.length);
+        const text = path.slice(0, 5).map(s => s === 'home' ? ' home' : ` connect ${s} `).join('\n') + '\n backdoor'
+            + '\n'.repeat(extraRowCount);
         return HEAD + text;
     }
 };
@@ -72,20 +76,22 @@ const threadpools = (ns) => {
 };
 
 const threadpoolTable = (ns) => {
+    const { purchasedServerLimit } = getStaticData(ns);
+    const half = Math.ceil(purchasedServerLimit / 2);
     const rows = threadpools(ns);
-    const left = rows.slice(0, 12);
-    const right = rows.slice(12);
+    const left = rows.slice(0, half);
+    const right = rows.slice(half);
     return table(ns, ['SERVERS', '', '', ''], 
         left.map((list, i) => [...list, ...(right[i]||['',''])]));
 };
 
 const goalsTable = (ns) => {
-    const { targetFaction, neededAugmentations } = getStaticData(ns);
-    if (neededAugmentations == null)
+    const { targetFaction, targetAugmentations } = getStaticData(ns);
+    if (targetAugmentations == null)
         return '';
     const rows = [
         ['Join ' + targetFaction],
-        ...neededAugmentations[targetFaction].map(aug=>[aug]),
+        ...targetAugmentations.map(aug=>[aug]),
     ];
     return table(ns, ['GOALS'], rows);
 };
