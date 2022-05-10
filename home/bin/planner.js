@@ -1,5 +1,5 @@
 import { AnyHostService } from './lib/service';
-import { getGangData, getStaticData } from './lib/data-store';
+import { getStaticData } from './lib/data-store';
 import { logger } from './lib/logger';
 
 import {
@@ -18,8 +18,7 @@ const go = async(ns) => {
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const has4SApi = () => ns.getPlayer().has4SDataTixApi;
     const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;
-    const couldStartGang = () => (bitNodeN === 2 || beatBN2) && !isInGang();
-    const isInGang = () => getGangData(ns) != null;
+    const couldHaveGang = () => bitNodeN === 2 || beatBN2;
     const augsUp = () => getStaticData(ns).targetFaction != null;
 
     /* eslint-disable no-unexpected-multiline */
@@ -31,26 +30,22 @@ const go = async(ns) => {
                           ('/bin/server-purchaser.js'),
         AnyHostService(ns)('/bin/dashboard.js'),
         AnyHostService(ns)('/bin/accountant.js'),
-        AnyHostService(ns, canBuyTixAccess, 5000)
+        AnyHostService(ns, canBuyTixAccess)
                           ('/bin/market-access.js'),
-        AnyHostService(ns, has4SApi, 5000)
+        AnyHostService(ns, has4SApi)
                           ('/bin/broker.js'),
         AnyHostService(ns)('/bin/share.js'),
-        AnyHostService(ns, couldStartGang, 5000)
-                          ('/bin/gang/gang-data.js'),
-        AnyHostService(ns, isInGang, 10000)
-                          ('/bin/gang/recruit.js'),
-        AnyHostService(ns, isInGang, 5000)
-                          ('/bin/gang/assign-members.js'),
+        AnyHostService(ns, couldHaveGang)
+                          ('/bin/gang/mob-boss.js'),
         AnyHostService(ns, hasSingularity)
                           ('/bin/self/aug/augment.js'),
-        AnyHostService(ns, augsUp, 5000)
+        AnyHostService(ns, augsUp)
                           ('/bin/self/work.js'),
-        AnyHostService(ns, augsUp, 5000)
+        AnyHostService(ns, augsUp)
                           ('/bin/self/control.js'),
-        AnyHostService(ns, augsUp, 5000)
+        AnyHostService(ns, augsUp)
                           ('/bin/self/focus.js'),
-        AnyHostService(ns, augsUp, 5000)
+        AnyHostService(ns, augsUp)
                           ('/bin/self/tor.js'),
     ];
 

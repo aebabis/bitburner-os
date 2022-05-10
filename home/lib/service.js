@@ -14,7 +14,7 @@ const getExistingPid = (ns, desc) => {
 
 let count = 1;
 
-export const Service = (ns, condition=()=>true, interval=0) => (script, target=null, numThreads=1, ...args) => {
+export const Service = (ns, condition=()=>true, interval=5000) => (script, target=null, numThreads=1, ...args) => {
     const console = logger(ns, { echo: false });
     const id = count++;
     const desc = (target == null) ?
