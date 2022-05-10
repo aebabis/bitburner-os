@@ -7,6 +7,7 @@ export async function main(ns) {
     ns.disableLog('ALL');
     const retry = true;
 
+    await rmi(ns, retry)('/bin/self/aug/load-faction-favor.js');
     await rmi(ns, retry)('/bin/self/aug/load-owned-augs.js');
     await rmi(ns, retry)('/bin/self/aug/load-aug-names.js');
     await rmi(ns, retry)('/bin/self/aug/load-aug-prices.js');
