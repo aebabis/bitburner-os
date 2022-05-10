@@ -1,6 +1,7 @@
 import { STORY_FACTIONS, CITY_FACTIONS } from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
 import { table } from './lib/table';
+import { report } from './lib/logger';
 
 export const analyzeAugData = async (ns) => {
     const {
@@ -21,6 +22,11 @@ export const analyzeAugData = async (ns) => {
     const maxAugPrices = {};
     const maxRepReqs = {};
     const reverse = {};
+
+    const mostSpent = Math.max(0, ...purchasedAugmentations.map(aug =>
+        augmentationPrices[aug]));
+
+    ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
 
     // Go through all 
     for (const faction of factions) {
@@ -64,7 +70,7 @@ export const analyzeAugData = async (ns) => {
             rows.push([aug, augmentationPrices[aug], augmentationRepReqs[aug]]);
         rows.push(['', '', '']);
     }
-    await ns.write('augs.txt', table(ns, null, rows), 'w');
+    report(ns, 'augs.txt', table(ns, null, rows), 'w');
 
     ns.tprint('REMAINING AUGS');
     for (const [k, v] of Object.entries(exclusives)) {

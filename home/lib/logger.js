@@ -1,4 +1,5 @@
-import { PORT_LOGGER } from './etc/ports.js';
+import { PORT_LOGGER, PORT_REPORTER } from './etc/ports.js';
+import Ports from './lib/ports';
 
 const process = (arg) => {
 	if (arg instanceof Error) {
@@ -11,6 +12,7 @@ const process = (arg) => {
 /** @param {NS} ns **/
 export const logger = (ns, options = {}) => {
 	const { echo = true } = options;
+	const port = Ports(ns).getPortHandle(PORT_LOGGER);
 	const send = async (type, ...args) => {
 		const script = ns.getScriptName();
 		const lead = `${type} ${script}`;
@@ -20,7 +22,7 @@ export const logger = (ns, options = {}) => {
 			ns.print(output);
 		}
 		let time = Date.now();
-		while (!ns.getPortHandle(PORT_LOGGER).tryWrite(output)) {
+		while (!port.tryWrite(output)) {
 			if (Date.now() - time > 1000) {
 				ns.tprint('ERROR - Log stream blocked. Do you need to start the logger?');
 				return;
@@ -36,4 +38,8 @@ export const logger = (ns, options = {}) => {
 	};
 };
 
-export const logger_inline = logger.toString().replace('PORT_LOGGER', PORT_LOGGER);
+/** @param {NS} ns **/
+export const report = (ns, filename, content, mode) => {
+	const port = Ports(ns).getPortHandle(PORT_REPORTER);
+    port.blockingWrite({ filename, content, mode });
+};

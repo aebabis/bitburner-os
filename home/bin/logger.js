@@ -1,4 +1,5 @@
-import { PORT_LOGGER } from './etc/ports.js';
+import { PORT_LOGGER, PORT_REPORTER } from './etc/ports.js';
+import Ports from './lib/ports';
 
 const MAX_HISTORY = 100;
 const LOGGER_HOME = 'home';
@@ -13,17 +14,23 @@ export async function main(ns) {
 	}
 	while (true) {
 		try {
-			const port = ns.getPortHandle(PORT_LOGGER);
+			const logPort = Ports(ns).getPortHandle(PORT_LOGGER);
+			const rePort = Ports(ns).getPortHandle(PORT_REPORTER);
 			let changed = false;
-			while (!port.empty()) {
+			while (!logPort.empty()) {
 				changed = true;
-				history.push(port.read());
+				history.push(logPort.read());
 				while (history.length > MAX_HISTORY)
 					history.shift();
 			}
 			if (changed) {
 				ns.clearLog();
 				history.forEach(m=>ns.print(m));
+			}
+
+			while (!rePort.empty()) {
+				const { filename, content, mode } = rePort.read();
+				await ns.write(filename, content, mode);
 			}
 		} catch(error) {
 			ns.print('ERROR ' + error.name + ' ' + error.message + ' ' + error.lineNumber + ':' + error.columnNumber); // TODO: Pretty
