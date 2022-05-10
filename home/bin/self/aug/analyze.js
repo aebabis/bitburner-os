@@ -8,6 +8,7 @@ export const analyzeAugData = async (ns) => {
         factionAugmentations,
         augmentationPrices,
         augmentationRepReqs,
+        ownedAugmentations,
     } = getStaticData(ns);
     const {
         purchasedAugmentations
@@ -19,48 +20,53 @@ export const analyzeAugData = async (ns) => {
 
     const possibleTargets = [];
     const neededAugmentations = {};
-    const maxAugPrices = {};
+    const viableAugmentations = {};
     const maxRepReqs = {};
     const reverse = {};
 
-    const mostSpent = Math.max(0, ...purchasedAugmentations.map(aug =>
+    const mostSpent = Math.max(0, ...ownedAugmentations.map(aug =>
         augmentationPrices[aug]));
+    const baseAugPriceThreshold = mostSpent * 2 || 10e6;
+    const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
+
+    let cityFaction = ns.getPlayer().factions
+        .filter(faction=>CITY_FACTIONS.includes(faction));
 
     ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
 
     // Go through all 
     for (const faction of factions) {
         const augmentations = factionAugmentations[faction];
-        // Get a list of unowned augmentations for this faction,
-        // not including NeuroFlux Governor
+
         const needed = augmentations
             .filter(aug => aug !== 'NeuroFlux Governor')
             .filter(aug => !purchasedAugmentations.includes(aug));
         neededAugmentations[faction] = needed;
 
-        for (const augmentation of needed) {
+        const viable = needed.filter(isViable);
+        viableAugmentations[faction] = viable;
+        const isCityFaction = CITY_FACTIONS.includes(faction);
+        const isExcluded = isCityFaction && cityFaction != null && cityFaction !== faction;
+        if (viable.length > 0 && !isExcluded)
+            possibleTargets.push(faction);
+
+        for (const augmentation of augmentations) {
             if (reverse[augmentation] == null)
-                reverse[augmentation] = [faction];
-            else
-                reverse[augmentation].push(faction);
+                reverse[augmentation] = [];
+            reverse[augmentation].push(faction);
         }
     }
 
-    const exclusives = {};
+    const exclusives = {}; // Unique augs by faction
 
-    // Determine "exclusives", augmentations that can only be
-    // purchased through a single faction.
     for (const faction of factions) {
         const needed = neededAugmentations[faction];
         const factionExclusives = needed.filter(aug => reverse[aug].length === 1);
         exclusives[faction] = factionExclusives;
 
-        if (needed.length > 0)
-            possibleTargets.push(faction);
-
         // Record the maximum required reputation for this faction
-        maxAugPrices[faction] = Math.max(0, ...needed.map(aug=>augmentationPrices[aug]));
-        maxRepReqs[faction] = Math.max(0, ...needed.map(aug=>augmentationRepReqs[aug]));
+        const repCosts = factionExclusives.map(aug=>augmentationRepReqs[aug]);
+        maxRepReqs[faction] = Math.max(0, ...repCosts);
     }
 
     let rows = [];
@@ -81,14 +87,17 @@ export const analyzeAugData = async (ns) => {
     let targetFaction = null;
     if (possibleTargets.length)
         targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);
-    const cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
+    const repNeeded = maxRepReqs[targetFaction];
+    const targetAugmentations = viableAugmentations[targetFaction];
+    if (cityFaction == null)
+        cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
 
     putStaticData(ns, {
         targetFaction,
         cityFaction,
         neededAugmentations,
-        maxAugPrices,
-        maxRepReqs,
+        repNeeded,
+        targetAugmentations,
     });
 };
 

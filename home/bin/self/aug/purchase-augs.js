@@ -14,19 +14,22 @@ const NEUROFLUX = 'NeuroFlux Governor';
 export async function main(ns) {
     ns.disableLog('ALL');
     const {
+        augmentations,
         targetFaction,
-        neededAugmentations,
         augmentationPrices,
+        augmentationRepReqs,
         factionAugmentations,
         ownedAugmentations,
         augmentationPrereqs,
+        targetAugmentations,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
     const { money, income } = getMoneyData(ns);
 
-    const remainingAugs = neededAugmentations[targetFaction]
-        .filter(aug => !purchasedAugmentations.includes(aug));
-    remainingAugs.sort(by(aug => -augmentationPrices[aug]));
+    const remainingAugs = targetAugmentations
+        .filter(aug => !purchasedAugmentations.includes(aug))
+        .sort(by(aug => -augmentationRepReqs[aug]))
+        .sort(by(aug => -augmentationPrices[aug]));
 
     const purchasable = aug => (augmentationPrereqs[aug] || [])
         .every(prereq => purchasedAugmentations.includes(prereq));
@@ -54,12 +57,23 @@ export async function main(ns) {
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         await rmi(ns)('/bin/broker.js', 1, 'dump');
-        // TODO: Make all purchases use a reverse-lookup, not just
-        // these
-        const neuroFluxFaction = ns.getPlayer().factions
+
+        const { factions } = ns.getPlayer();
+
+        // Attempt to buy as many faction augmentations
+        // as possible, starting with the most expensive
+        const byPrice = augmentations.slice().sort(by(aug=>-augmentationPrices[aug]));
+        for (const augmentation of byPrice)
+            for (const faction of factions)
+                ns.purchaseAugmentation(faction, augmentation);
+
+        // Spend what's left on Neuroflux
+        const neuroFluxFaction = factions
             .filter(faction=>factionAugmentations[faction].includes(NEUROFLUX))
             .reduce((a,b)=>ns.getFactionRep(a)>ns.getFactionRep(b)?a:b);
         while (ns.purchaseAugmentation(neuroFluxFaction, NEUROFLUX));
+
+        // Buy RAM if we can
         await rmi(ns)('/bin/self/buy-ram.js', 1);
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }

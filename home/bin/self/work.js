@@ -17,13 +17,12 @@ export async function main(ns) {
 
     while (true) {
         const player = ns.getPlayer();
-        const { ownedAugmentations, targetFaction, maxRepReqs } = getStaticData(ns);
+        const { ownedAugmentations, targetFaction, repNeeded } = getStaticData(ns);
         const { factionRep = {} } = getPlayerData(ns);
         const { costOfNextAugmentation } = getMoneyData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
         const rep = factionRep[targetFaction] || 0;
-        const repNeeded = maxRepReqs[targetFaction];
 
         const stats = ['strength', 'defense', 'dexterity', 'agility', 'charisma'].map(s=>player[s]);
         const doneWithJoes = stats.every(stat => stat >= 5);
