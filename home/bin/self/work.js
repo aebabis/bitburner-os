@@ -8,6 +8,8 @@ import {
     FACTION_LOCATIONS,
 } from './bin/self/aug/factions';
 
+const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'];
+
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -22,15 +24,14 @@ export async function main(ns) {
         const { costOfNextAugmentation } = getMoneyData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
+        const isFactionGang = ns.gang.inGang() && ns.gang.getGangInformation().faction === targetFaction;
         const rep = factionRep[targetFaction] || 0;
 
-        const stats = ['strength', 'defense', 'dexterity', 'agility', 'charisma'].map(s=>player[s]);
-        const doneWithJoes = stats.every(stat => stat >= 5);
-        const isAfk = afkTime() > 30000;
+        const isAfk = afkTime() > 20000;
         const shouldFocus = isAfk && ownedAugmentations &&
             !ownedAugmentations.includes('Neuroreceptor Management Implant');
 
-        const doCrime = async () => {
+        const makeMoney = async () => {
             if (isAfk) {
                 await rmi(ns)('/bin/self/crime-stats.js');
                 await rmi(ns)('/bin/self/crime.js');
@@ -39,29 +40,38 @@ export async function main(ns) {
             }
         };
 
-        if (!doneWithJoes) {
-            await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
-        } else if (player.money < costOfNextAugmentation) {
-            await doCrime();
-        } else {
-            // Only work for a faction if we can afford the
-            // base price of their most expensive augmentation.
-            // This is meant as a heuristic for the player
-            // having enough levels to do faction work effectively.
-            const combatStats = ['strength', 'defense', 'dexterity', 'agility'];
+        const getStatToTrain = lvlReq => COMBAT_STATS.find(stat => player[stat] < lvlReq);
+
+        const getFactionStat = (targetFaction) => {
+            if (isFactionGang)
+                return null;
             const combatRequirement = COMBAT_REQUIREMENTS[targetFaction] || 0;
-            const statToTrain = combatStats.find(stat => player[stat] < combatRequirement);
+            return getStatToTrain(combatRequirement);
+        };
+
+        const statForCrimeTraining = getStatToTrain(5);
+        if (statForCrimeTraining != null) {
+            if (player.money > 25000)
+                await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, shouldFocus);
+            else
+                await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
+        } else if (player.money < costOfNextAugmentation) {
+            // Doing crime until money would cover first aug
+            // is a heuristic for having enough levels to rep-up.
+            await makeMoney();
+        } else {
+            const statToTrain = getFactionStat(targetFaction);
             const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
             if (statToTrain != null)
                 await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, shouldFocus);
             else if (!inTargetFaction && !requiredLocations.includes(player.city))
                 await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
-            else if (inTargetFaction && rep < repNeeded) {
+            else if (inTargetFaction && !isFactionGang && rep < repNeeded) {
                 getConfig(ns).set('share', .1);
                 await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction, shouldFocus);
             } else {
                 getConfig(ns).set('share', 0);
-                await doCrime();
+                await makeMoney();
             }
         }
         await ns.sleep(100);

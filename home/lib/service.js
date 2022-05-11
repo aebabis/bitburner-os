@@ -38,13 +38,13 @@ export const Service = (ns, condition=()=>true, interval=5000) => (script, targe
 
     const statusCode = () => {
         if (!enabled)
-            return '🔴';
+            return '⊗';
         else if (queued)
-            return '🟡';
+            return '△';
         else if (isRunning())
-            return '🟢';
+            return '●';
         else
-            return '💤';
+            return '◯';
     };
 
     const check = async (beforeRun) => {

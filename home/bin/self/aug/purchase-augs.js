@@ -13,9 +13,9 @@ const NEUROFLUX = 'NeuroFlux Governor';
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
+    const { factions } = ns.getPlayer();
     const {
         augmentations,
-        targetFaction,
         augmentationPrices,
         augmentationRepReqs,
         factionAugmentations,
@@ -34,20 +34,25 @@ export async function main(ns) {
     const purchasable = aug => (augmentationPrereqs[aug] || [])
         .every(prereq => purchasedAugmentations.includes(prereq));
 
-    let nextPurchase;
-    while (nextPurchase = remainingAugs.find(purchasable)) {
-        if (ns.purchaseAugmentation(targetFaction, nextPurchase)) {
-            purchasedAugmentations.push(nextPurchase);
-            remainingAugs.splice(remainingAugs.indexOf(nextPurchase), 1);
-        } else {
-            break;
+    for (const augmentation of remainingAugs) {
+        const soldTheAug = faction => ns.purchaseAugmentation(faction, augmentation);
+        if (purchasable(augmentation)) {
+            // Attempt to buy the next augmentation from any faction.
+            // Only count the ones for which the prereqs are met.
+            if (factions.some(soldTheAug)) {
+                purchasedAugmentations.push(augmentation);
+                remainingAugs.splice(remainingAugs.indexOf(augmentation), 1);
+            } else {
+                // If we can't buy the next augmentation, stop.
+                break;
+            }
         }
     }
 
     const queuedAugmentations = purchasedAugmentations.filter(aug => !ownedAugmentations.includes(aug));
     let multiplier = 1.9**queuedAugmentations.length;
     let costToAug = 0;
-    const costOfNextAugmentation = augmentationPrices[nextPurchase] * multiplier || null;
+    const costOfNextAugmentation = remainingAugs.find(purchasable) * multiplier || null;
     for (const augmentation of remainingAugs) {
         costToAug += multiplier * augmentationPrices[augmentation];
         multiplier *= 1.9;
@@ -56,9 +61,8 @@ export async function main(ns) {
     putMoneyData(ns, { costToAug, timeToAug, costOfNextAugmentation });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
+        // Sell stocks
         await rmi(ns)('/bin/broker.js', 1, 'dump');
-
-        const { factions } = ns.getPlayer();
 
         // Attempt to buy as many faction augmentations
         // as possible, starting with the most expensive
@@ -75,6 +79,8 @@ export async function main(ns) {
 
         // Buy RAM if we can
         await rmi(ns)('/bin/self/buy-ram.js', 1);
+
+        // Start all over
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 

@@ -112,6 +112,41 @@ const moneyTable = (ns) => {
     return table(ns, ['', ' INCOME'], rows);
 };
 
+const workTable = (ns) => {
+    const { factionRep = {} } = getPlayerData(ns);
+    const {
+        workType,
+        crimeType,
+        currentWorkFactionName,
+        workMoneyGained,
+        workRepGained,
+        workHackExpGained,
+        workStrExpGained,
+        workDefExpGained,
+        workDexExpGained,
+        workAgiExpGained,
+        workChaExpGained,
+    } = ns.getPlayer();
+    const gains = [
+        workMoneyGained   &&  ['$', workMoneyGained.toFixed(3)],
+        workRepGained     &&  ['Rep', workRepGained.toFixed(3)],
+        workHackExpGained &&  ['Hack', workHackExpGained.toFixed(3)],
+        workStrExpGained  &&  ['Str', workStrExpGained.toFixed(3)],
+        workDefExpGained  &&  ['Def', workDefExpGained.toFixed(3)],
+        workDexExpGained  &&  ['Dex', workDexExpGained.toFixed(3)],
+        workAgiExpGained  &&  ['Agi', workAgiExpGained.toFixed(3)],
+        workChaExpGained  &&  ['Cha', workChaExpGained.toFixed(3)],
+    ].filter(Boolean);
+    const rows = table(ns, null, gains);
+    if (workType === 'Working for Faction') {
+        const rep = factionRep[currentWorkFactionName].toFixed(3);
+        return ` WORK\n ${currentWorkFactionName} (${rep}rep)\n${rows}`;
+    } else if (crimeType != null) {
+        return ` WORK\n ${crimeType} \n${rows}`;
+    }
+    return ` WORK\n ${currentWorkFactionName}\n${rows}`;
+};
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -127,6 +162,7 @@ export async function main(ns) {
                 goalsTable(ns),
                 moneyTable(ns),
                 tailLogs(ns, width),
+                workTable(ns),
             ].map(process);
             const textField = renderWindows(text, width);
 

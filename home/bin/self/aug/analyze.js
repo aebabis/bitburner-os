@@ -5,6 +5,7 @@ import { report } from './lib/logger';
 
 export const analyzeAugData = async (ns) => {
     const {
+        augmentations,
         factionAugmentations,
         augmentationPrices,
         augmentationRepReqs,
@@ -59,14 +60,13 @@ export const analyzeAugData = async (ns) => {
 
     const exclusives = {}; // Unique augs by faction
 
+    const mapRep = augs => Math.max(0, ...augs.filter(isViable).map(aug=>augmentationRepReqs[aug]));
+
     for (const faction of factions) {
         const needed = neededAugmentations[faction];
         const factionExclusives = needed.filter(aug => reverse[aug].length === 1);
         exclusives[faction] = factionExclusives;
-
-        // Record the maximum required reputation for this faction
-        const repCosts = factionExclusives.map(aug=>augmentationRepReqs[aug]);
-        maxRepReqs[faction] = Math.max(0, ...repCosts);
+        maxRepReqs[faction] = mapRep(needed);
     }
 
     let rows = [];
@@ -85,10 +85,23 @@ export const analyzeAugData = async (ns) => {
     }
 
     let targetFaction = null;
-    if (possibleTargets.length)
-        targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);
-    const repNeeded = maxRepReqs[targetFaction];
-    const targetAugmentations = viableAugmentations[targetFaction];
+    let repNeeded;
+    let targetAugmentations;
+    if (possibleTargets.length) {
+        if (ns.gang.inGang()) {
+            targetFaction = ns.gang.getGangInformation().faction;
+            targetAugmentations = augmentations
+                .filter(aug => aug !== 'NeuroFlux Governor')
+                .filter(aug => !purchasedAugmentations.includes(aug))
+                .filter(isViable)
+                .slice(0, 10);
+            repNeeded = mapRep(targetAugmentations);
+        } else {
+            targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);
+            repNeeded = maxRepReqs[targetFaction];
+            targetAugmentations = viableAugmentations[targetFaction];
+        }
+    }
     if (cityFaction == null)
         cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
 
