@@ -2,19 +2,20 @@ import { THREADPOOL } from './etc/config';
 import { getPath } from './lib/backdoor.js';
 import { getStaticData, getMoneyData, getPlayerData } from './lib/data-store';
 import { renderWindows } from './lib/layout';
-import { getModalColumnCount } from './lib/modal';
+import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
 
 const getSchedulerTable = (ns) => {
     const { city } = ns.getPlayer();
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
-    const { theftIncome=0, theftRatePerGB=0 } = getMoneyData(ns);
+    const { theftIncome=0, theftRatePerGB=0, estimatedStockValue=0 } = getMoneyData(ns);
     const { onlineExpGained, onlineRunningTime } = scheduler;
     const time = ns.nFormat(onlineRunningTime, '00:00:00');
     const theft = ns.nFormat(theftIncome, '$0.0a').padStart(6)+'/s  ';
     const theftRate = ns.nFormat(theftRatePerGB, '$0.0a').padStart(6)+'/GBs';
     const exp = ns.nFormat(onlineExpGained, '0.0a');
+    const stock = ns.nFormat(estimatedStockValue, '$0.0a');
     const { numPeopleKilled } = ns.getPlayer();
     return table(ns, null,
         [['UPTIME', time],
@@ -22,6 +23,7 @@ const getSchedulerTable = (ns) => {
         ['THEFT', theft],
         ['', theftRate],
         ['KILLS', numPeopleKilled],
+        ['STOCK', stock],
         ['EXP', exp]]);
 };
 
@@ -99,7 +101,7 @@ const goalsTable = (ns) => {
 const moneyTable = (ns) => {
     const moneyData = getMoneyData(ns);
     if (moneyData == null) {
-        return ' INCOME\n(loading)';
+        return ' INCOME \n (loading) ';
     }
     const { income1s=0, income10s=0, income60s=0, costToAug=0, timeToAug } = moneyData;
     const rows = [
@@ -109,7 +111,7 @@ const moneyTable = (ns) => {
         ['Aug', ns.nFormat(costToAug||0, '$0.0a').padStart(8)],
         ['   ', ns.nFormat(timeToAug||100*60*60, '00:00:00').padStart(8)],
     ];
-    return table(ns, ['', ' INCOME'], rows);
+    return ' INCOME \n' + table(ns, null, rows);
 };
 
 const workTable = (ns) => {
@@ -118,6 +120,7 @@ const workTable = (ns) => {
         workType,
         crimeType,
         currentWorkFactionName,
+        companyName,
         workMoneyGained,
         workRepGained,
         workHackExpGained,
@@ -128,23 +131,77 @@ const workTable = (ns) => {
         workChaExpGained,
     } = ns.getPlayer();
     const gains = [
-        workMoneyGained   &&  ['$', workMoneyGained.toFixed(3)],
-        workRepGained     &&  ['Rep', workRepGained.toFixed(3)],
-        workHackExpGained &&  ['Hack', workHackExpGained.toFixed(3)],
-        workStrExpGained  &&  ['Str', workStrExpGained.toFixed(3)],
-        workDefExpGained  &&  ['Def', workDefExpGained.toFixed(3)],
-        workDexExpGained  &&  ['Dex', workDexExpGained.toFixed(3)],
-        workAgiExpGained  &&  ['Agi', workAgiExpGained.toFixed(3)],
-        workChaExpGained  &&  ['Cha', workChaExpGained.toFixed(3)],
-    ].filter(Boolean);
-    const rows = table(ns, null, gains);
+        ['$', workMoneyGained],
+        ['Rep', workRepGained],
+        ['Hack', workHackExpGained],
+        ['Str', workStrExpGained],
+        ['Def', workDefExpGained],
+        ['Dex', workDexExpGained],
+        ['Agi', workAgiExpGained],
+        ['Cha', workChaExpGained],
+    ].filter(([,x])=>!!x).map(([h,v]) => [h, ns.nFormat(v, '0.000a').padStart(8)]);
+    const PAD = Math.max(0, 7-gains.length);
+    const rows = table(ns, null, gains) + '\n'.repeat(PAD);
     if (workType === 'Working for Faction') {
-        const rep = factionRep[currentWorkFactionName].toFixed(3);
-        return ` WORK\n ${currentWorkFactionName} (${rep}rep)\n${rows}`;
+        const rep = factionRep[currentWorkFactionName]?.toFixed(3);
+        return ` WORK \n ${currentWorkFactionName} (${rep}rep) \n${rows}`;
+    } else if (workType === 'Working for Company') {
+        return ` WORK \n Working at ${companyName} \n${rows}`;
     } else if (crimeType != null) {
-        return ` WORK\n ${crimeType} \n${rows}`;
+        return ` WORK \n ${crimeType.slice(7)} \n${rows}`;
     }
-    return ` WORK\n ${currentWorkFactionName}\n${rows}`;
+    return ` WORK \n ${location} \n${rows}`;
+};
+
+const colorize = (modal) => {
+    const REGEX = /([^─-◿⊗ ]*)( *)([─-◿⊗]*)(.*)/;
+    const container = modal.querySelector('.react-resizable');
+    let dupe = container.querySelector('.MuiBox-root:last-child');
+    if (!dupe) {
+        dupe = document.createElement('div');
+        dupe.classList.add('MuiBox-root');
+        dupe.classList.add('css-0');
+        dupe.classList.add('windower');
+        // dupe.style.position = 'absolute';
+        // dupe.style.background = 'black';
+        // dupe.style.maxHeight = 'calc(100% - 40px)';
+        // dupe.style.overflow = 'hidden';
+        container.append(dupe);
+    }
+    const root = modal.querySelector('.MuiBox-root');
+    root.style.display = 'none';
+    dupe.innerText = '';
+    root.querySelectorAll('p').forEach((p) => {
+        let text = p.innerText;
+        const newP = document.createElement('p');
+        newP.className = p.className;
+        dupe.append(newP);
+        do {
+            const [, non, w, color, rest] = text.match(REGEX);
+            if (non) {
+            if (non.match(/^[A-Z]+$/)) {
+                const strong = document.createElement('strong');
+                strong.innerText = non;
+                newP.append(strong);
+            } else
+                newP.append(document.createTextNode(non));
+            }
+            if (w)
+                newP.append(document.createTextNode(w));
+            if (color) {
+                const span = document.createElement('span');
+                span.innerText = color;
+                if (color === '●')
+                    span.style.color = 'hsl(140, 35%, 45%)';
+                else if (color === '⊗')
+                    span.style.color = 'hsl(340, 65%, 55%)';
+                else
+                    span.style.color = 'hsl(280, 75%, 21%)';
+                newP.append(span);
+            }
+            text = rest;
+        } while (text);
+    });
 };
 
 /** @param {NS} ns **/
@@ -152,6 +209,7 @@ export async function main(ns) {
     ns.disableLog('ALL');
     ns.tail();
     while (true) {
+        const modal = await getTailModal(ns);
         const width = await getModalColumnCount(ns);
         if (width != null) {
             const text = [
@@ -168,6 +226,9 @@ export async function main(ns) {
 
             ns.clearLog();
             textField.split('\n').forEach(line=>ns.print(line));
+            await ns.sleep(1);
+
+            colorize(modal);
         }
         await ns.sleep(1000);
     }

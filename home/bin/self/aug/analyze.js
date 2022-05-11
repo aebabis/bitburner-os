@@ -2,10 +2,10 @@ import { STORY_FACTIONS, CITY_FACTIONS } from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
 import { table } from './lib/table';
 import { report } from './lib/logger';
+import { by } from './lib/util';
 
 export const analyzeAugData = async (ns) => {
     const {
-        augmentations,
         factionAugmentations,
         augmentationPrices,
         augmentationRepReqs,
@@ -88,13 +88,15 @@ export const analyzeAugData = async (ns) => {
     let repNeeded;
     let targetAugmentations;
     if (possibleTargets.length) {
-        if (ns.gang.inGang()) {
-            targetFaction = ns.gang.getGangInformation().faction;
-            targetAugmentations = augmentations
+        const gang = ns.gang.inGang() && ns.gang.getGangInformation().faction;
+        if (gang && possibleTargets.includes(gang)) {
+            targetFaction = gang;
+            targetAugmentations = factionAugmentations[targetFaction]
+                .sort(by(aug => augmentationPrices[aug]))
                 .filter(aug => aug !== 'NeuroFlux Governor')
                 .filter(aug => !purchasedAugmentations.includes(aug))
                 .filter(isViable)
-                .slice(0, 10);
+                .slice(0, 6);
             repNeeded = mapRep(targetAugmentations);
         } else {
             targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);

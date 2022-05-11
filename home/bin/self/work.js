@@ -52,7 +52,7 @@ export async function main(ns) {
         const statForCrimeTraining = getStatToTrain(5);
         if (statForCrimeTraining != null) {
             if (player.money > 25000)
-                await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, shouldFocus);
+                await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5, shouldFocus);
             else
                 await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
         } else if (player.money < costOfNextAugmentation) {
@@ -63,7 +63,7 @@ export async function main(ns) {
             const statToTrain = getFactionStat(targetFaction);
             const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
             if (statToTrain != null)
-                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, shouldFocus);
+                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, COMBAT_REQUIREMENTS[targetFaction], shouldFocus);
             else if (!inTargetFaction && !requiredLocations.includes(player.city))
                 await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
             else if (inTargetFaction && !isFactionGang && rep < repNeeded) {

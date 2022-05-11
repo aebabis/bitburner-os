@@ -59,5 +59,5 @@ export async function getModalColumnCount(ns) {
         charWidth = width / testString.length;
     }
     ns.clearLog();
-    return Math.floor((container.clientWidth-2) / charWidth);
+    return Math.floor((container.parentElement.clientWidth-2) / charWidth);
 }

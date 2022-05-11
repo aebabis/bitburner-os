@@ -1,4 +1,5 @@
 import { by } from './lib/util';
+import { putMoneyData } from './lib/data-store';
 import getConfig from './lib/config';
 
 /** @param {NS} ns **/
@@ -10,7 +11,7 @@ const getStocks = (ns) => ns.stock.getSymbols().map(sym => ({
     price: ns.stock.getPrice(sym),
     volatility: ns.stock.getVolatility(sym),
     getPurchaseCost: (shares) => ns.stock.getPurchaseCost(sym, shares, 'Long'),
-    getSaleGain: (shares) => ns.stock.getSaleGain(sym, shares, 'Long'),
+    getSaleGain: (shares=ns.stock.getPosition(sym)[0]) => ns.stock.getSaleGain(sym, shares, 'Long'),
     buy: (shares) => ns.stock.buy(sym, shares),
     sell: (shares) => ns.stock.sell(sym, shares),
 }));
@@ -70,7 +71,6 @@ const broker = async(ns) => {
             .sort(by(stock=>-stock.forecast));
     
         let moneyToSpend = await getSpendableFunds(ns, stocks);
-        ns.print('EARMARKED FUNDS: ' + ns.nFormat(moneyToSpend, '0.000a'));
         while (moneyToSpend > 1e9 && eligiblePurchases.length > 0) {
             const stock = eligiblePurchases.shift();
             const maxPurchase = stock.maxShares - stock.position[0];
@@ -78,6 +78,14 @@ const broker = async(ns) => {
             const price = stock.buy(shares);
             moneyToSpend -= shares * price;
         }
+
+        const estimatedStockValue = getStocks(ns)
+            .map(stock => stock.getSaleGain())
+            .reduce((a,b)=>a+b, 0);
+        putMoneyData(ns, { estimatedStockValue });
+
+        ns.print('EARMARKED FUNDS: $' + ns.nFormat(moneyToSpend, '0.000a'));
+        ns.print('ESTIMATED VALUE: $' + ns.nFormat(estimatedStockValue, '0.000a'));
 
         const h1 = 'SYM'.padEnd(5);
         const h2 = 'Shares'.padEnd(10);
@@ -95,7 +103,7 @@ const broker = async(ns) => {
         ns.print('-'.repeat(maxLength));
         ns.print(`${h1} ${h2} ${h3} ${h4}`);
         ns.print(lines.join('\n'));
-    
+
         await ns.sleep(5000);
     }
 };
