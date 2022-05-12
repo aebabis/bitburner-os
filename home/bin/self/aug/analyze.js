@@ -31,7 +31,7 @@ export const analyzeAugData = async (ns) => {
     const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
 
     let cityFaction = ns.getPlayer().factions
-        .filter(faction=>CITY_FACTIONS.includes(faction));
+        .find(faction=>CITY_FACTIONS.includes(faction));
 
     ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
 
