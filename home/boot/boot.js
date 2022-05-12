@@ -14,6 +14,7 @@ export async function main(ns) {
         '/boot/network.js',
         '/boot/data.js',
          DATA2,
+        '/boot/data3.js',
         '/bin/scheduler.js',
     ];
 

@@ -30,6 +30,10 @@ export const analyzeAugData = async (ns) => {
     const baseAugPriceThreshold = mostSpent * 2 || 10e6;
     const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
 
+    // If script is restarting/rebooting, there is
+    // a possibility that the player has already
+    // joined a city faction. Most of the time,
+    // this will be null.
     let cityFaction = ns.getPlayer().factions
         .find(faction=>CITY_FACTIONS.includes(faction));
 

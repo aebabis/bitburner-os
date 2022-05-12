@@ -1,24 +1,34 @@
 import { AnyHostService } from './lib/service';
-import { getStaticData } from './lib/data-store';
+import { getStaticData, getRamData } from './lib/data-store';
 import { logger } from './lib/logger';
+import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
 
 import {
     ENABLE, DISABLE,
     writeServices, checkQueue, getTableString,
 } from './lib/service-api';
 
+const mostRootRam = (ns) => {
+    const { rootServers=[] } = getRamData(ns);
+    return Math.max(0, ...rootServers.map(server => server.maxRam));
+};
+
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
     const { bitNodeN } = ns.getPlayer();
-    const { ownedSourceFiles } = getStaticData(ns);
+    const { ownedSourceFiles, requiredJobRam } = getStaticData(ns);
+
     const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
+
     const hasSingularity = () => bitNodeN === 4 || beatBN4;
+    const canAutopilot = () => hasSingularity() && requiredJobRam < mostRootRam(ns);
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const has4SApi = () => ns.getPlayer().has4SDataTixApi;
     const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;
-    const couldHaveGang = () => bitNodeN === 2 || beatBN2;
+    const inCriminalFaction = () => ns.getPlayer().factions.some(faction => CRIMINAL_ORGANIZATIONS.includes(faction));
+    const couldHaveGang = () => inCriminalFaction() && (bitNodeN === 2 || beatBN2);
     const augsUp = () => getStaticData(ns).targetFaction != null;
 
     /* eslint-disable no-unexpected-multiline */
@@ -37,7 +47,7 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/share.js'),
         AnyHostService(ns, couldHaveGang)
                           ('/bin/gang/mob-boss.js'),
-        AnyHostService(ns, hasSingularity)
+        AnyHostService(ns, canAutopilot)
                           ('/bin/self/aug/augment.js'),
         AnyHostService(ns, augsUp)
                           ('/bin/self/work.js'),
