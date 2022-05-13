@@ -5,6 +5,7 @@ import { renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
+import { estimateTimeToAug } from './lib/query-service';
 
 const getSchedulerTable = (ns) => {
     const { city } = ns.getPlayer();
@@ -88,11 +89,12 @@ const threadpoolTable = (ns) => {
 };
 
 const goalsTable = (ns) => {
-    const { targetFaction, targetAugmentations } = getStaticData(ns);
+    const { targetFaction, targetAugmentations, repNeeded } = getStaticData(ns);
     if (targetAugmentations == null)
         return '';
     const rows = [
         ['Join ' + targetFaction],
+        ['Gain ' + repNeeded + ' rep'],
         ...targetAugmentations.map(aug=>[aug]),
     ];
     return table(ns, ['GOALS'], rows);
@@ -103,7 +105,8 @@ const moneyTable = (ns) => {
     if (moneyData == null) {
         return ' INCOME \n (loading) ';
     }
-    const { income1s=0, income10s=0, income60s=0, costToAug=0, timeToAug } = moneyData;
+    const timeToAug = estimateTimeToAug(ns) || 0;
+    const { income1s=0, income10s=0, income60s=0, costToAug=0 } = moneyData;
     const rows = [
         [' 1s', ns.nFormat(income1s, '$0.0a').padStart(8)],
         ['10s', ns.nFormat(income10s, '$0.0a').padStart(8)],
@@ -148,7 +151,7 @@ const workTable = (ns) => {
     } else if (workType === 'Working for Company') {
         return ` WORK \n Working at ${companyName} \n${rows}`;
     } else if (crimeType != null) {
-        return ` WORK \n ${crimeType.slice(7)} \n${rows}`;
+        return ` WORK \n ${crimeType} \n${rows}`;
     }
     return ` WORK \n ${location} \n${rows}`;
 };

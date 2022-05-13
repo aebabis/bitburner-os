@@ -3,6 +3,7 @@ import { logger } from './lib/logger';
 import { getRamData, getMoneyData, getStaticData } from './lib/data-store';
 import { disableService } from './lib/service-api';
 import { rmi } from './lib/rmi';
+import { estimateTimeToAug } from './lib/query-service';
 
 /** @param {NS} ns **/
 const getServerNames = (maxServers) => {
@@ -54,6 +55,7 @@ export async function main(ns) {
         await ns.sleep(50);
 
         const {
+            requiredJobRam,
             purchasedServerLimit,
             purchasedServerCosts,
             purchasedServerMaxRam,
@@ -62,7 +64,6 @@ export async function main(ns) {
         const {
             income,
             theftRatePerGB,
-            timeToAug,
         } = getMoneyData(ns);
 
         const purchasedServers = getPurchasedServerRams(ns, purchasedServerLimit);
@@ -72,34 +73,46 @@ export async function main(ns) {
             return;
         }
 
+        const timeToAug = estimateTimeToAug(ns);
         const money = ns.getServerMoneyAvailable('home');
 
         const atMaxServers = purchasedServers.length === purchasedServerLimit;
         const smallest = purchasedServers[purchasedServers.length - 1];
 
-        let ram = 4;
+        let minRam = 4;
         if (atMaxServers)
-            ram = smallest.ram * 2;
+            minRam = smallest.ram * 2;
 
-        const newRam = ram - (smallest?.ram||0);
-        const ramProfit = timeToAug * theftRatePerGB * newRam;
-        if (ramProfit < purchasedServerCosts[ram]) {
-            ns.print(`Not purchasing server as it would only make $${Math.round(ramProfit/ram)}/GB`);
+        if (money < purchasedServerCosts[minRam])
+            continue;
+
+        const profit = (ram) => {
+            const newRam = ram - (smallest?.ram || 0);
+            const ramProfit = timeToAug * theftRatePerGB * newRam;
+            return ramProfit - purchasedServerCosts[ram];
+        };
+
+        const [jobServer] = purchasedServers;
+        if (jobServer != null && jobServer.ram < requiredJobRam && minRam > jobServer.ram) {
+            ns.print(`Attempting to upgrade job server ${jobServer.hostname} [${minRam}-${requiredJobRam}]GB`);
+            await buyServer(minRam, requiredJobRam, jobServer.hostname);
+            continue;
+        }
+
+        let maxRam = purchasedServerMaxRam;
+        while (profit(maxRam) < 0 && maxRam >= minRam)
+            maxRam /= 2;
+
+        if (maxRam < minRam) {
+            // ns.print(`Not purchasing server as it would only make $${Math.round(ramProfit/minRam)}/GB`);
+            ns.print('Not purchasing server because estimated time of goal too soon');
             await ns.sleep(10000);
             continue;
         }
 
-        if (money < purchasedServerCosts[ram])
-            continue;
-
         if (purchasedServers.length === 0) {
-            await buyServer(ram);
-            continue;
-        }
-
-        const [jobServer] = purchasedServers;
-        if (jobServer.ram < 256 && ram > jobServer.ram) {
-            await buyServer(ram, jobServer.hostname);
+            ns.print(`Attempting to purchase first server [${minRam}-${maxRam}]GB`);
+            await buyServer(minRam, maxRam);
             continue;
         }
 
@@ -107,12 +120,15 @@ export async function main(ns) {
             continue;
 
         // Don't buy a server we'll replace right away
-        if (ram < purchasedServerMaxRam && purchasedServerCosts[ram] < income * 5)
+        while (minRam < purchasedServerMaxRam && purchasedServerCosts[minRam] < income * 5)
+            minRam *= 2;
+
+        if (minRam > maxRam)
             continue;
 
         if (atMaxServers)
-            await buyServer(ram, smallest.hostname);
+            await buyServer(minRam, maxRam, smallest.hostname);
         else
-            await buyServer(ram);
+            await buyServer(minRam, maxRam);
     }
 }

@@ -1,6 +1,6 @@
 import { getBestPurchase } from './lib/hacknet';
 import { logger } from './lib/logger';
-import { getMoneyData } from './lib/data-store';
+import { estimateTimeToAug } from './lib/query-service';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,7 +12,7 @@ export async function main(ns) {
 	let lastMessageTime = 0;
 	while (true) {
 		const purchase = await getBestPurchase(ns);
-		const { timeToAug } = getMoneyData(ns);
+		const timeToAug = estimateTimeToAug(ns);
 		if (timeToAug != null && purchase.breakEvenTime > timeToAug) {
 			const hours = (purchase.breakEvenTime/60/60).toFixed(2);
 			ns.print(`Not purchasing hacknet upgrade. Break even time: ${hours}h`);

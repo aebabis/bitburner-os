@@ -1,4 +1,4 @@
-import { STORY_FACTIONS, CITY_FACTIONS } from './bin/self/aug/factions';
+import { STORY_FACTIONS, CITY_FACTIONS, AUGMENTATION_REQUIREMENTS } from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
 import { table } from './lib/table';
 import { report } from './lib/logger';
@@ -50,8 +50,13 @@ export const analyzeAugData = async (ns) => {
 
         const viable = needed.filter(isViable);
         viableAugmentations[faction] = viable;
+
         const isCityFaction = CITY_FACTIONS.includes(faction);
-        const isExcluded = isCityFaction && cityFaction != null && cityFaction !== faction;
+        const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
+        const tooFewAugs = ownedAugmentations.length < (requiredAugCount && requiredAugCount + 10);
+        const inRival = isCityFaction && cityFaction != null && cityFaction !== faction;
+        const isExcluded = tooFewAugs + inRival;
+
         if (viable.length > 0 && !isExcluded)
             possibleTargets.push(faction);
 
@@ -103,7 +108,8 @@ export const analyzeAugData = async (ns) => {
                 .slice(0, 6);
             repNeeded = mapRep(targetAugmentations);
         } else {
-            targetFaction = possibleTargets.reduce((a, b) => maxRepReqs[a] < maxRepReqs[b] ? a : b);
+            targetFaction = possibleTargets.reduce(
+                (a, b) => viableAugmentations[a].length >= viableAugmentations[b].length ? a : b);
             repNeeded = maxRepReqs[targetFaction];
             targetAugmentations = viableAugmentations[targetFaction];
         }

@@ -9,10 +9,12 @@ export async function main(ns) {
         ns.workForFaction(faction, 'Field Work', focus) ||
         ns.workForFaction(faction, 'Security Work', focus)
     ) {
-        await ns.sleep(10000);
+        const DELAY = 10;
+        await ns.sleep(DELAY * 1000);
 
-        const { factionRep = {} } = getPlayerData(ns);
+        const { factionRep = {}, factionRepRate = {} } = getPlayerData(ns);
         factionRep[faction] = ns.getFactionRep(faction);
-        putPlayerData(ns, { factionRep });
+        factionRepRate[faction] = ns.getPlayer().workRepGained / DELAY;
+        putPlayerData(ns, { factionRep, factionRepRate });
     }
 }

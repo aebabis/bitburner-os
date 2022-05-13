@@ -1,6 +1,7 @@
 import { afkTracker } from './lib/tracking';
 import { rmi } from './lib/rmi';
-import { getStaticData, getPlayerData, getMoneyData } from './lib/data-store';
+import { getStaticData, getPlayerData } from './lib/data-store';
+import { isMoneyBound } from './lib/query-service';
 import getConfig from './lib/config';
 import {
     COMBAT_REQUIREMENTS,
@@ -21,7 +22,6 @@ export async function main(ns) {
         const player = ns.getPlayer();
         const { ownedAugmentations, targetFaction, repNeeded } = getStaticData(ns);
         const { factionRep = {} } = getPlayerData(ns);
-        const { costOfNextAugmentation } = getMoneyData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
         const isFactionGang = ns.gang.inGang() && ns.gang.getGangInformation().faction === targetFaction;
@@ -42,12 +42,7 @@ export async function main(ns) {
 
         const getStatToTrain = lvlReq => COMBAT_STATS.find(stat => player[stat] < lvlReq);
 
-        const getFactionStat = (targetFaction) => {
-            if (isFactionGang)
-                return null;
-            const combatRequirement = COMBAT_REQUIREMENTS[targetFaction] || 0;
-            return getStatToTrain(combatRequirement);
-        };
+        const getFactionStat = (targetFaction) => getStatToTrain(COMBAT_REQUIREMENTS[targetFaction] || 0);
 
         const statForCrimeTraining = getStatToTrain(5);
         if (statForCrimeTraining != null) {
@@ -55,24 +50,25 @@ export async function main(ns) {
                 await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5, shouldFocus);
             else
                 await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
-        } else if (player.money < costOfNextAugmentation) {
-            // Doing crime until money would cover first aug
-            // is a heuristic for having enough levels to rep-up.
+        } else if (isMoneyBound(ns) || isFactionGang) {
             await makeMoney();
-        } else {
-            const statToTrain = getFactionStat(targetFaction);
-            const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
-            if (statToTrain != null)
-                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, COMBAT_REQUIREMENTS[targetFaction], shouldFocus);
-            else if (!inTargetFaction && !requiredLocations.includes(player.city))
-                await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
-            else if (inTargetFaction && !isFactionGang && rep < repNeeded) {
+        } else if (inTargetFaction) {
+            if (rep < repNeeded) {
                 getConfig(ns).set('share', .1);
                 await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction, shouldFocus);
             } else {
                 getConfig(ns).set('share', 0);
                 await makeMoney();
             }
+        } else {
+            const statToTrain = getFactionStat(targetFaction);
+            const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
+            if (statToTrain != null)
+                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, COMBAT_REQUIREMENTS[targetFaction], shouldFocus);
+            else if (!requiredLocations.includes(player.city))
+                await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
+            else
+                await makeMoney();
         }
         await ns.sleep(100);
     }

@@ -81,4 +81,10 @@ export const KARMA_REQUIREMENTS = {
     'The Syndicate': 90,
 };
 
+export const AUGMENTATION_REQUIREMENTS = {
+    'The Covenant': 20,
+    'Daedalus': 30,
+    'Illuminati': 30,
+};
+
 export default FACTIONS;

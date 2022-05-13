@@ -24,8 +24,8 @@ const getNextServerName = (ns) => {
 const mFormat = (ns, cost) => ns.nFormat(cost, '0.000a');
 
 /** @param {NS} ns **/
-const purchaseServer = (ns, hostname, minRam, isUpgrade) => {
-    let ram = minRam * 8;
+const purchaseServer = (ns, hostname, maxRam, isUpgrade) => {
+    let ram = maxRam;
     while (!ns.purchaseServer(hostname, ram))
         ram /= 2;
 
@@ -39,7 +39,7 @@ const purchaseServer = (ns, hostname, minRam, isUpgrade) => {
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    const [minRam, serverToReplace] = ns.args;
+    const [minRam, maxRam, serverToReplace] = ns.args;
     if (isNaN(minRam))
         throw new Error(`Illegal RAM value: ${minRam}`);
 
@@ -60,7 +60,7 @@ export async function main(ns) {
         ns.deleteServer(hostname);
     }
 
-    purchaseServer(ns, hostname, minRam, isUpgrade);
+    purchaseServer(ns, hostname, maxRam, isUpgrade);
 
     if (isJobServer)
         await fullInfect(ns, hostname);

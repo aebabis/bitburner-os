@@ -2,9 +2,9 @@ import {
     getStaticData,
     getPlayerData,
     putPlayerData,
-    getMoneyData,
     putMoneyData
 } from './lib/data-store';
+import { disableService } from './lib/service-api';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
 
@@ -24,7 +24,6 @@ export async function main(ns) {
         targetAugmentations,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
-    const { money, income } = getMoneyData(ns);
 
     const remainingAugs = targetAugmentations
         .filter(aug => !purchasedAugmentations.includes(aug))
@@ -57,12 +56,21 @@ export async function main(ns) {
         costToAug += multiplier * augmentationPrices[augmentation];
         multiplier *= 1.9;
     }
-    const timeToAug = (costToAug-money) / income;
-    putMoneyData(ns, { costToAug, timeToAug, costOfNextAugmentation });
+    putMoneyData(ns, { costToAug, costOfNextAugmentation });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
+        // Prevent money from being spent
+        disableService('hacknet');
+        disableService('market-access');
+        disableService('server-purchaser');
+        disableService('tor');
+
         // Sell stocks
-        await rmi(ns)('/bin/broker.js', 1, 'dump');
+        if (ns.getPlayer().hasTixApiAccess)
+            await rmi(ns)('/bin/broker.js', 1, 'dump');
+        
+        // Wait for a little more money to come in
+        await ns.sleep(30000);
 
         // Attempt to buy as many faction augmentations
         // as possible, starting with the most expensive
@@ -84,5 +92,5 @@ export async function main(ns) {
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 
-    putPlayerData(ns, { purchasedAugmentations, remainingAugs, timeToAug });
+    putPlayerData(ns, { purchasedAugmentations, remainingAugs });
 }

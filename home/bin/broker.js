@@ -133,10 +133,14 @@ export async function main(ns) {
                 // If necessary, raise reserve param to prevent auto-reinvestment
                 return;
             case 'dump':
-                ns.tprint(`Selling all holdings and setting reserve proportion to 100%`);
-                getConfig(ns).set('reserved-funds', 1);
-                for (const stock of getStocks(ns))
-                    stock.sell(stock.position[0]);
+                try {
+                    ns.tprint(`Selling all holdings and setting reserve proportion to 100%`);
+                    getConfig(ns).set('reserved-funds', 1);
+                    for (const stock of getStocks(ns))
+                        stock.sell(stock.position[0]);
+                } catch(error) {
+                    console.error(error);
+                }
                 return;
             case 'help':
                 // TODO: Maybe
