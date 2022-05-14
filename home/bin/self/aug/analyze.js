@@ -1,4 +1,9 @@
-import { STORY_FACTIONS, CITY_FACTIONS, AUGMENTATION_REQUIREMENTS } from './bin/self/aug/factions';
+import {
+    STORY_FACTIONS,
+    CITY_FACTIONS,
+    AUGMENTATION_REQUIREMENTS,
+    COMBAT_REQUIREMENTS,
+} from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
 import { table } from './lib/table';
 import { report } from './lib/logger';
@@ -28,6 +33,10 @@ export const analyzeAugData = async (ns) => {
     const mostSpent = Math.max(0, ...ownedAugmentations.map(aug =>
         augmentationPrices[aug]));
     const baseAugPriceThreshold = mostSpent * 2 || 10e6;
+
+    const dont = func => b => !func(b);
+    const haveIt = aug => purchasedAugmentations.includes(aug);
+    const notNeuroFlux = aug => aug !== 'NeuroFlux Governor';
     const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
 
     // If script is restarting/rebooting, there is
@@ -39,13 +48,22 @@ export const analyzeAugData = async (ns) => {
 
     ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
 
+    const preEndMap = {};
+    const preEndFactions = factions.filter(faction=>!COMBAT_REQUIREMENTS[faction]);
+    for (const preEndFaction of preEndFactions)
+        for (const augmentation of factionAugmentations[preEndFaction])
+            preEndMap[augmentation] = true;
+        
+    const preEndAugs = Object.keys(preEndMap);
+    const hasAllPreEnd = preEndAugs.every(haveIt);
+
     // Go through all 
     for (const faction of factions) {
         const augmentations = factionAugmentations[faction];
 
         const needed = augmentations
-            .filter(aug => aug !== 'NeuroFlux Governor')
-            .filter(aug => !purchasedAugmentations.includes(aug));
+            .filter(dont(haveIt))
+            .filter(notNeuroFlux);
         neededAugmentations[faction] = needed;
 
         const viable = needed.filter(isViable);
@@ -55,7 +73,8 @@ export const analyzeAugData = async (ns) => {
         const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
         const tooFewAugs = ownedAugmentations.length < (requiredAugCount && requiredAugCount + 10);
         const inRival = isCityFaction && cityFaction != null && cityFaction !== faction;
-        const isExcluded = tooFewAugs + inRival;
+        const notCombatReady = COMBAT_REQUIREMENTS[faction] != null && !hasAllPreEnd;
+        const isExcluded = tooFewAugs || inRival || notCombatReady;
 
         if (viable.length > 0 && !isExcluded)
             possibleTargets.push(faction);
@@ -88,10 +107,9 @@ export const analyzeAugData = async (ns) => {
     report(ns, 'augs.txt', table(ns, null, rows), 'w');
 
     ns.tprint('REMAINING AUGS');
-    for (const [k, v] of Object.entries(exclusives)) {
+    for (const [k, v] of Object.entries(exclusives))
         if (v.length > 0)
             ns.tprint(k + ': ' + v.join(', '));
-    }
 
     let targetFaction = null;
     let repNeeded;

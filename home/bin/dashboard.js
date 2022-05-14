@@ -1,11 +1,13 @@
 import { THREADPOOL } from './etc/config';
 import { getPath } from './lib/backdoor.js';
 import { getStaticData, getMoneyData, getPlayerData } from './lib/data-store';
-import { renderWindows } from './lib/layout';
+import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
 import { estimateTimeToAug } from './lib/query-service';
+
+const doc = eval('document');
 
 const getSchedulerTable = (ns) => {
     const { city } = ns.getPlayer();
@@ -42,17 +44,15 @@ const backdoorPath = (ns) => {
     }
 };
 
-const tailLogs = (ns, width) => {
+const tailLogs = (ns, width, height) => {
     width = Math.min(width, 80);
     return ns.getRunningScript('/bin/logger.js', 'home').logs
-        .slice(-10).map(x=>x.split('\n')[0])
+        .slice(-height).map(x=>x.split('\n')[0])
         .map(line => line.slice(line.indexOf(' ')+1))
         .map(line => line.length < width - 8 ? line : line.slice(0, width-8)+'...')
         .map(line => ` ${line} `)
         .map(line => line.padEnd(width - 6));
 };
-
-const process = (table) => typeof table === 'string' ? table.split('\n') : table;
 
 const GB = 1000 ** 3;
 
@@ -161,7 +161,7 @@ const colorize = (modal) => {
     const container = modal.querySelector('.react-resizable');
     let dupe = container.querySelector('.MuiBox-root:last-child');
     if (!dupe) {
-        dupe = document.createElement('div');
+        dupe = doc.createElement('div');
         dupe.classList.add('MuiBox-root');
         dupe.classList.add('css-0');
         dupe.classList.add('windower');
@@ -176,23 +176,23 @@ const colorize = (modal) => {
     dupe.innerText = '';
     root.querySelectorAll('p').forEach((p) => {
         let text = p.innerText;
-        const newP = document.createElement('p');
+        const newP = doc.createElement('p');
         newP.className = p.className;
         dupe.append(newP);
         do {
             const [, non, w, color, rest] = text.match(REGEX);
             if (non) {
             if (non.match(/^[A-Z]+$/)) {
-                const strong = document.createElement('strong');
+                const strong = doc.createElement('strong');
                 strong.innerText = non;
                 newP.append(strong);
             } else
-                newP.append(document.createTextNode(non));
+                newP.append(doc.createTextNode(non));
             }
             if (w)
-                newP.append(document.createTextNode(w));
+                newP.append(doc.createTextNode(w));
             if (color) {
-                const span = document.createElement('span');
+                const span = doc.createElement('span');
                 span.innerText = color;
                 if (color === '●')
                     span.style.color = 'hsl(140, 35%, 45%)';
@@ -211,21 +211,21 @@ const colorize = (modal) => {
 export async function main(ns) {
     ns.disableLog('ALL');
     ns.tail();
+    const windows = [
+        new GrowingWindow(() => getSchedulerTable(ns)),
+        new GrowingWindow(() => table(ns, ['SERVICES', ''], getServices(ns).map(({name, status})=>[name, status]))),
+        new GrowingWindow(() => backdoorPath(ns)),
+        new GrowingWindow(() => threadpoolTable(ns)),
+        new GrowingWindow(() => goalsTable(ns)),
+        new GrowingWindow(() => moneyTable(ns)),
+        new GrowingWindow(() => workTable(ns)),
+        new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
+    ];
     while (true) {
         const modal = await getTailModal(ns);
         const width = await getModalColumnCount(ns);
         if (width != null) {
-            const text = [
-                getSchedulerTable(ns),
-                table(ns, ['SERVICES', ''], getServices(ns).map(({name, status})=>[name, status])),
-                backdoorPath(ns),
-                threadpoolTable(ns),
-                goalsTable(ns),
-                moneyTable(ns),
-                tailLogs(ns, width),
-                workTable(ns),
-            ].map(process);
-            const textField = renderWindows(text, width);
+            const textField = renderWindows(windows, width);
 
             ns.clearLog();
             textField.split('\n').forEach(line=>ns.print(line));

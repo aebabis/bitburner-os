@@ -60,10 +60,18 @@ export async function main(ns) {
         player: PORT_PLAYER_DATA,
         money: PORT_MONEY_DATA,
     };
-    const [command, portname] = ns.args;
+    const [command, data] = ns.args;
     if (command === 'peek') {
+        const [portname, ...props] = data.split('.');
         const portId = ports[portname];
-        const content = Ports(ns).getPortHandle(portId).peek();
+        let content = Ports(ns).getPortHandle(portId).peek();
+        for (const prop of props)
+            content = content[prop];
         ns.tprint(JSON.stringify(content, null, 2));
+    }
+    if (command === 'keys') {
+        const portId = ports[data];
+        let content = Ports(ns).getPortHandle(portId).peek();
+        ns.tprint('\n' + Object.keys(content).join('\n'));
     }
 }

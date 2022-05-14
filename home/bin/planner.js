@@ -29,7 +29,7 @@ const go = async(ns) => {
     const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;
     const inCriminalFaction = () => ns.getPlayer().factions.some(faction => CRIMINAL_ORGANIZATIONS.includes(faction));
     const couldHaveGang = () => inCriminalFaction() && (bitNodeN === 2 || beatBN2);
-    const augsUp = () => getStaticData(ns).targetFaction != null;
+    // const augsUp = () => getStaticData(ns).targetFaction != null;
 
     /* eslint-disable no-unexpected-multiline */
     const tasks = [
@@ -49,13 +49,13 @@ const go = async(ns) => {
                           ('/bin/gang/mob-boss.js'),
         AnyHostService(ns, canAutopilot)
                           ('/bin/self/aug/augment.js'),
-        AnyHostService(ns, augsUp)
+        AnyHostService(ns, canAutopilot)
                           ('/bin/self/work.js'),
-        AnyHostService(ns, augsUp)
+        AnyHostService(ns, canAutopilot)
                           ('/bin/self/control.js'),
-        AnyHostService(ns, augsUp)
+        AnyHostService(ns, canAutopilot)
                           ('/bin/self/focus.js'),
-        AnyHostService(ns, augsUp)
+        AnyHostService(ns, canAutopilot)
                           ('/bin/self/tor.js'),
     ];
 

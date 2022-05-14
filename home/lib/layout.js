@@ -1,4 +1,39 @@
-export const renderWindows = (boxList, WIDTH) => {
+export class DynamicWindow {
+  constructor(getContent, minWidth, minHeight) {
+    this.minWidth = minWidth;
+    this.minHeight = minHeight;
+    this.getContent = getContent;
+  }
+
+  getData(WIDTH) {
+    const text = this.getContent();
+    const width = Math.min(WIDTH, this.minWidth);
+    const height = this.minHeight;
+    return { text, width, height, getText: this.getContent };
+  }
+}
+
+export class GrowingWindow {
+  constructor(getContent) {
+    this.minWidth = 1;
+    this.minHeight = 1;
+    this.getContent = () => {
+      const rows = getContent().split('\n');
+      this.minWidth =  Math.max(this.minWidth, ...rows.map(s=>s.length));
+      this.minHeight = Math.max(this.minHeight, rows.length);
+      return rows;
+    };
+  }
+
+  render(WIDTH) {
+    const text = this.getContent();
+    const width = Math.min(WIDTH, this.minWidth);
+    const height = this.minHeight;
+    return { text, width, height };
+  }
+}
+
+export const renderWindows = (windows, WIDTH) => {
   const overlaps = ({x: r1x1, y: r1y1, width: r1w, height: r1h}) => {
     const r1x2 = r1x1 + r1w;
     const r1y2 = r1y1 + r1h;
@@ -11,11 +46,7 @@ export const renderWindows = (boxList, WIDTH) => {
     };
   };
 
-  const text = boxList.sort((a,b)=>a.length-b.length).map(text => ({
-    text,
-    width: Math.max(...text.map(r=>r.length)),
-    height: text.length,
-  }));
+  const text = windows.map(win => win.render(WIDTH)).sort((a,b)=>a.text.length-b.text.length);
 
   const placed = [];
   let x = 0;
@@ -128,9 +159,10 @@ export const renderWindows = (boxList, WIDTH) => {
     drawCorner(x+width+1, y+height+1);
   }
   for (const box of placed) {
-    const { x, y, width, height, text } = box;
+    const { x, y, width, height, text, getText } = box;
+    const drawn = getText ? getText(width, height) : text;
     for (let yy = 0; yy < height; yy++) {
-      const row = text[yy] || ' '.repeat(text[0].length);
+      const row = drawn[yy] || ' '.repeat(drawn[0].length);
       for (let xx = 0; xx < width; xx++) {
         grid[y+yy+1][x+xx+1] = row[xx] || ' ';
       }

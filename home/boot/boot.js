@@ -11,6 +11,7 @@ export async function main(ns) {
 
     const BOOT_SEQUENCE = [
         '/boot/reset.js',
+        '/boot/ui.js',
         '/boot/network.js',
         '/boot/data.js',
          DATA2,
