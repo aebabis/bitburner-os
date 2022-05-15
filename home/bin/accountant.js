@@ -29,7 +29,7 @@ class Timer {
 }
 
 class Timeline {
-    constructor(history = 60100) {
+    constructor(history = 60000 * 5 + 100) {
         this.samples = [];
         this.history = history;
     }
@@ -96,7 +96,8 @@ export async function main(ns) {
         const income10s = estTotalGain - moneyTimeline.findValue(timestamp - 10000);
         const income30s = estTotalGain - moneyTimeline.findValue(timestamp - 30000);
         const income60s = estTotalGain - moneyTimeline.findValue(timestamp - 60000);
-        const income = income60s/60 || income30s/30 || income10s/10 || income5s/5 || income1s;
+        const income5m  = estTotalGain - moneyTimeline.findValue(timestamp - 5 * 60000);
+        const income = income5m/5/60 || income60s/60 || income30s/30 || income10s/10 || income5s/5 || income1s;
 
         putMoneyData(ns, {
             money,
@@ -112,6 +113,7 @@ export async function main(ns) {
         ns.print('  10s: ' + ns.nFormat(income10s||0, '0.00a'));
         ns.print('  30s: ' + ns.nFormat(income30s||0, '0.00a'));
         ns.print('  60s: ' + ns.nFormat(income60s||0, '0.00a'));
+        ns.print('   5m: ' + ns.nFormat(income5m||0, '0.00a'));
         ns.print('/GB-s: ' + ns.nFormat(theftRatePerGB||0, '0.00a'));
 
         await timer.next();

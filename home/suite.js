@@ -1,9 +1,15 @@
+import { table, transpose } from './lib/table';
+
 /** @param {NS} ns **/
 export async function main(ns) {
+    const COLS = 4;
+
     const lines = ns.ls('home')
         .filter(file=>file.endsWith('.js'))
-        .map(script => `${script.padEnd(20)} ${ns.getScriptRam(script)}GB`);
-    ns.tprint('\n'+lines.join('\n'));
+        .map(script => [script, ns.getScriptRam(script) + 'GB']);
+
+    ns.tprint('\n'+table(ns, null, transpose(lines, COLS)));
+
     const schedulerRam = ns.getScriptRam('/bin/scheduler.js');
     const plannerRam = ns.getScriptRam('/bin/planner.js');
     const loggerRam = ns.getScriptRam('/bin/logger.js');

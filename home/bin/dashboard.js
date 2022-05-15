@@ -5,7 +5,7 @@ import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { estimateTimeToAug } from './lib/query-service';
+import { estimateTimeToGoal, getRepNeeded, getGoalCost } from './lib/query-service';
 
 const doc = eval('document');
 
@@ -81,23 +81,32 @@ const threadpools = (ns) => {
 const threadpoolTable = (ns) => {
     const { purchasedServerLimit } = getStaticData(ns);
     const half = Math.ceil(purchasedServerLimit / 2);
-    const rows = threadpools(ns);
-    const left = rows.slice(0, half);
-    const right = rows.slice(half);
-    return table(ns, ['SERVERS', '', '', ''], 
-        left.map((list, i) => [...list, ...(right[i]||['',''])]));
+    const data = threadpools(ns);
+    const left = data.slice(0, half);
+    const right = data.slice(half);
+    const rows = left.map((list, i) => [...list, ...(right[i]||['',''])]);
+    return ' SERVERS \n' + table(ns, null, rows);
 };
 
 const goalsTable = (ns) => {
-    const { targetFaction, targetAugmentations, repNeeded } = getStaticData(ns);
-    if (targetAugmentations == null)
-        return '';
-    const rows = [
-        ['Join ' + targetFaction],
-        ['Gain ' + repNeeded + ' rep'],
-        ...targetAugmentations.map(aug=>[aug]),
-    ];
-    return table(ns, ['GOALS'], rows);
+    const {
+        requiredJobRam,
+        targetFaction,
+        targetAugmentations,
+    } = getStaticData(ns);
+    if (targetAugmentations == null) {
+        return table(ns, ['GOALS'], [
+            [`${requiredJobRam}GB on ${THREADPOOL}-01`],
+            ['Run augmentation suite'],
+        ]);
+    } else {
+        const rows = [
+            ['Join ' + targetFaction],
+            ['Gain ' + getRepNeeded(ns) + ' rep'],
+            ...targetAugmentations.map(aug=>[aug]),
+        ];
+        return table(ns, ['GOALS'], rows);
+    }
 };
 
 const moneyTable = (ns) => {
@@ -105,14 +114,15 @@ const moneyTable = (ns) => {
     if (moneyData == null) {
         return ' INCOME \n (loading) ';
     }
-    const timeToAug = estimateTimeToAug(ns) || 0;
-    const { income1s=0, income10s=0, income60s=0, costToAug=0 } = moneyData;
+    const timeToGoal = estimateTimeToGoal(ns) || 0;
+    const goalCost = getGoalCost(ns);
+    const { income1s=0, income10s=0, income60s=0 } = moneyData;
     const rows = [
         [' 1s', ns.nFormat(income1s, '$0.0a').padStart(8)],
         ['10s', ns.nFormat(income10s, '$0.0a').padStart(8)],
         ['60s', ns.nFormat(income60s, '$0.0a').padStart(8)],
-        ['Aug', ns.nFormat(costToAug||0, '$0.0a').padStart(8)],
-        ['   ', ns.nFormat(timeToAug||100*60*60, '00:00:00').padStart(8)],
+        ['Goal',ns.nFormat(goalCost||0, '$0.0a').padStart(8)],
+        ['   ', ns.nFormat(timeToGoal||100*60*60, '00:00:00').padStart(8)],
     ];
     return ' INCOME \n' + table(ns, null, rows);
 };

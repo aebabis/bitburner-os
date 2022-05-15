@@ -1,7 +1,7 @@
 import { afkTracker } from './lib/tracking';
 import { rmi } from './lib/rmi';
 import { getStaticData, getPlayerData } from './lib/data-store';
-import { isMoneyBound } from './lib/query-service';
+import { isMoneyBound, getRepNeeded } from './lib/query-service';
 import getConfig from './lib/config';
 import {
     COMBAT_REQUIREMENTS,
@@ -20,7 +20,7 @@ export async function main(ns) {
 
     while (true) {
         const player = ns.getPlayer();
-        const { ownedAugmentations, targetFaction, repNeeded } = getStaticData(ns);
+        const { ownedAugmentations, targetFaction } = getStaticData(ns);
         const { factionRep = {} } = getPlayerData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
@@ -34,6 +34,7 @@ export async function main(ns) {
         const makeMoney = async () => {
             if (isAfk) {
                 await rmi(ns)('/bin/self/crime-stats.js');
+                await rmi(ns)('/bin/self/crime-chance.js');
                 await rmi(ns)('/bin/self/crime.js');
             } else {
                 await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
@@ -53,7 +54,7 @@ export async function main(ns) {
         } else if (isMoneyBound(ns) || isFactionGang) {
             await makeMoney();
         } else if (inTargetFaction) {
-            if (rep < repNeeded) {
+            if (rep < getRepNeeded(ns)) {
                 getConfig(ns).set('share', .1);
                 await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction, shouldFocus);
             } else {

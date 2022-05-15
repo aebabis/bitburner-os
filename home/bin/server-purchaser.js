@@ -1,15 +1,16 @@
+import { THREADPOOL } from './etc/config';
 import { PURCHASE_THREADPOOL } from './etc/filenames';
 import { logger } from './lib/logger';
 import { getRamData, getMoneyData, getStaticData } from './lib/data-store';
 import { disableService } from './lib/service-api';
 import { rmi } from './lib/rmi';
-import { estimateTimeToAug } from './lib/query-service';
+import { estimateTimeToGoal, needsJobRam, getJobRamCost } from './lib/query-service';
 
 /** @param {NS} ns **/
 const getServerNames = (maxServers) => {
     return new Array(maxServers).fill(null)
         .map((_,i) => (i+1).toString().padStart(2, '0'))
-        .map(n => `THREADPOOL-${n}`);
+        .map(n => `${THREADPOOL}-${n}`);
 };
 
 /** @param {NS} ns **/
@@ -73,7 +74,7 @@ export async function main(ns) {
             return;
         }
 
-        const timeToAug = estimateTimeToAug(ns);
+        const timeToGoal = estimateTimeToGoal(ns);
         const money = ns.getServerMoneyAvailable('home');
 
         const atMaxServers = purchasedServers.length === purchasedServerLimit;
@@ -86,18 +87,18 @@ export async function main(ns) {
         if (money < purchasedServerCosts[minRam])
             continue;
 
-        const profit = (ram) => {
-            const newRam = ram - (smallest?.ram || 0);
-            const ramProfit = timeToAug * theftRatePerGB * newRam;
-            return ramProfit - purchasedServerCosts[ram];
-        };
-
-        const [jobServer] = purchasedServers;
-        if (jobServer != null && jobServer.ram < requiredJobRam && minRam > jobServer.ram) {
-            ns.print(`Attempting to upgrade job server ${jobServer.hostname} [${minRam}-${requiredJobRam}]GB`);
-            await buyServer(minRam, requiredJobRam, jobServer.hostname);
+        if (needsJobRam(ns) && getJobRamCost(ns) < money) {
+            const hostname = `${THREADPOOL}-01`;
+            ns.print(`Attempting to upgrade job server ${hostname} [${requiredJobRam}-${requiredJobRam}]GB`);
+            await buyServer(requiredJobRam, requiredJobRam, hostname);
             continue;
         }
+
+        const profit = (ram) => {
+            const newRam = ram - (smallest?.ram || 0);
+            const ramProfit = timeToGoal * theftRatePerGB * newRam;
+            return ramProfit - purchasedServerCosts[ram];
+        };
 
         let maxRam = purchasedServerMaxRam;
         while (profit(maxRam) < 0 && maxRam >= minRam)

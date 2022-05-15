@@ -5,15 +5,76 @@ import {
     COMBAT_REQUIREMENTS,
 } from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
-import { table } from './lib/table';
-import { report } from './lib/logger';
+// import { table } from './lib/table';
+// import { report } from './lib/logger';
 import { by } from './lib/util';
+
+const dont = func => b => !func(b);
+const notNeuroFlux = aug => aug !== 'NeuroFlux Governor';
+
+const process = (factions, factionAugmentations, purchasedAugmentations) => {
+    const haveIt = aug => purchasedAugmentations.includes(aug);
+    const neededAugmentations = {};
+    const reverse = {};
+    for (const faction of factions) {
+        const augmentations = factionAugmentations[faction];
+
+        neededAugmentations[faction] = augmentations
+            .filter(dont(haveIt))
+            .filter(notNeuroFlux);
+
+        for (const augmentation of augmentations) {
+            if (reverse[augmentation] == null)
+                reverse[augmentation] = [];
+            reverse[augmentation].push(faction);
+        }
+    }
+
+    const factionExclusives = {}; // Unique augs by faction
+
+    for (const faction of factions) {
+        const needed = neededAugmentations[faction];
+        factionExclusives[faction] = needed.filter(aug => reverse[aug].length === 1);
+    }
+    return { neededAugmentations, factionExclusives };
+};
+
+function isCombatReady(factions, factionAugmentations, purchasedAugmentations) {
+    const haveIt = aug => purchasedAugmentations.includes(aug);
+    const preEndMap = {};
+    const preEndFactions = factions.filter(faction => !COMBAT_REQUIREMENTS[faction]);
+    for (const preEndFaction of preEndFactions)
+        for (const augmentation of factionAugmentations[preEndFaction])
+            preEndMap[augmentation] = true;
+
+    const preEndAugs = Object.keys(preEndMap);
+    const hasAllPreEnd = preEndAugs.every(haveIt);
+    return hasAllPreEnd;
+}
+
+const selectTargetFaction = (ns, factions, neededAugmentations, factionAllowed, augViable) => {
+    if (ns.gang.inGang())
+        return ns.gang.getGangInformation().faction;
+    
+    if (neededAugmentations['Netburners'].length > 0)
+        return 'Netburners';
+    
+    if (neededAugmentations['CyberSec'].length > 0)
+        return 'CyberSec';
+
+    const possibleFactions = factions.filter(factionAllowed);
+
+    return possibleFactions.map(faction => ({
+        faction,
+        viableAugs: neededAugmentations[faction].filter(augViable),
+    })).reduce((a, b) => a.viableAugs.length >= b.viableAugs.length ? a : b).faction;
+};
 
 export const analyzeAugData = async (ns) => {
     const {
         factionAugmentations,
         augmentationPrices,
-        augmentationRepReqs,
+        // augmentationRepReqs,
         ownedAugmentations,
     } = getStaticData(ns);
     const {
@@ -24,19 +85,12 @@ export const analyzeAugData = async (ns) => {
     // factions for automatic work and aug purchases
     const factions = [...STORY_FACTIONS, ...CITY_FACTIONS];
 
-    const possibleTargets = [];
-    const neededAugmentations = {};
-    const viableAugmentations = {};
-    const maxRepReqs = {};
-    const reverse = {};
+    const { neededAugmentations, factionExclusives } = process(factions, factionAugmentations, purchasedAugmentations);
 
     const mostSpent = Math.max(0, ...ownedAugmentations.map(aug =>
         augmentationPrices[aug]));
     const baseAugPriceThreshold = mostSpent * 2 || 10e6;
 
-    const dont = func => b => !func(b);
-    const haveIt = aug => purchasedAugmentations.includes(aug);
-    const notNeuroFlux = aug => aug !== 'NeuroFlux Governor';
     const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
 
     // If script is restarting/rebooting, there is
@@ -48,98 +102,29 @@ export const analyzeAugData = async (ns) => {
 
     ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
 
-    const preEndMap = {};
-    const preEndFactions = factions.filter(faction=>!COMBAT_REQUIREMENTS[faction]);
-    for (const preEndFaction of preEndFactions)
-        for (const augmentation of factionAugmentations[preEndFaction])
-            preEndMap[augmentation] = true;
-        
-    const preEndAugs = Object.keys(preEndMap);
-    const hasAllPreEnd = preEndAugs.every(haveIt);
+    const hasAllPreEnd = isCombatReady(factions, factionAugmentations, purchasedAugmentations);
 
-    // Go through all 
-    for (const faction of factions) {
-        const augmentations = factionAugmentations[faction];
-
-        const needed = augmentations
-            .filter(dont(haveIt))
-            .filter(notNeuroFlux);
-        neededAugmentations[faction] = needed;
-
-        const viable = needed.filter(isViable);
-        viableAugmentations[faction] = viable;
-
-        const isCityFaction = CITY_FACTIONS.includes(faction);
+    const targetFaction = selectTargetFaction(ns, factions, neededAugmentations, (faction) => {
         const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
-        const tooFewAugs = ownedAugmentations.length < (requiredAugCount && requiredAugCount + 10);
-        const inRival = isCityFaction && cityFaction != null && cityFaction !== faction;
-        const notCombatReady = COMBAT_REQUIREMENTS[faction] != null && !hasAllPreEnd;
-        const isExcluded = tooFewAugs || inRival || notCombatReady;
+        if(ownedAugmentations.length < requiredAugCount)
+            return false;
+        const isCityFaction = CITY_FACTIONS.includes(faction);
+        if (isCityFaction && cityFaction != null && cityFaction !== faction)
+            return false;
+        return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
+    }, isViable);
 
-        if (viable.length > 0 && !isExcluded)
-            possibleTargets.push(faction);
-
-        for (const augmentation of augmentations) {
-            if (reverse[augmentation] == null)
-                reverse[augmentation] = [];
-            reverse[augmentation].push(faction);
-        }
-    }
-
-    const exclusives = {}; // Unique augs by faction
-
-    const mapRep = augs => Math.max(0, ...augs.filter(isViable).map(aug=>augmentationRepReqs[aug]));
-
-    for (const faction of factions) {
-        const needed = neededAugmentations[faction];
-        const factionExclusives = needed.filter(aug => reverse[aug].length === 1);
-        exclusives[faction] = factionExclusives;
-        maxRepReqs[faction] = mapRep(needed);
-    }
-
-    let rows = [];
-    for (const faction of factions) {
-        rows.push([faction, '', '']);
-        for (const aug of neededAugmentations[faction])
-            rows.push([aug, augmentationPrices[aug], augmentationRepReqs[aug]]);
-        rows.push(['', '', '']);
-    }
-    report(ns, 'augs.txt', table(ns, null, rows), 'w');
-
-    ns.tprint('REMAINING AUGS');
-    for (const [k, v] of Object.entries(exclusives))
-        if (v.length > 0)
-            ns.tprint(k + ': ' + v.join(', '));
-
-    let targetFaction = null;
-    let repNeeded;
-    let targetAugmentations;
-    if (possibleTargets.length) {
-        const gang = ns.gang.inGang() && ns.gang.getGangInformation().faction;
-        if (gang && possibleTargets.includes(gang)) {
-            targetFaction = gang;
-            targetAugmentations = factionAugmentations[targetFaction]
-                .sort(by(aug => augmentationPrices[aug]))
-                .filter(aug => aug !== 'NeuroFlux Governor')
-                .filter(aug => !purchasedAugmentations.includes(aug))
-                .filter(isViable)
-                .slice(0, 6);
-            repNeeded = mapRep(targetAugmentations);
-        } else {
-            targetFaction = possibleTargets.reduce(
-                (a, b) => viableAugmentations[a].length >= viableAugmentations[b].length ? a : b);
-            repNeeded = maxRepReqs[targetFaction];
-            targetAugmentations = viableAugmentations[targetFaction];
-        }
-    }
+    ns.tprint(targetFaction);
+    const targetAugmentations = neededAugmentations[targetFaction]
+        .sort(by(aug => augmentationPrices[aug]))
+        // .filter(isViable)
+        .slice(0, 6);
     if (cityFaction == null)
-        cityFaction = CITY_FACTIONS.find(faction => exclusives[faction].length > 0);
+        cityFaction = CITY_FACTIONS.find(faction => factionExclusives[faction].length > 0);
 
     putStaticData(ns, {
         targetFaction,
         cityFaction,
-        neededAugmentations,
-        repNeeded,
         targetAugmentations,
     });
 };

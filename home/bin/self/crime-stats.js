@@ -18,13 +18,6 @@ const CRIMES = [
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const crimeStats = CRIMES.map((name) => {
-        const stats = ns.getCrimeStats(name);
-        const { money, time } = stats;
-        const chance = ns.getCrimeChance(name);
-        return ({
-            ...stats, chance, expectedValue: chance * money / time,
-        });
-    });
+    const crimeStats = CRIMES.map(ns.getCrimeStats);
     putPlayerData(ns, { crimeStats });
 }

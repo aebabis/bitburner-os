@@ -33,7 +33,7 @@ export async function main(ns) {
         .slice(0, SERVERS_NEEDED);
     ns.tprint('Infecting zombies: ' + zombies.join(', '));
     await fullInfect(ns, ...zombies);
-    try { await fullInfect(ns, 'THREADPOOL-01', 'THREADPOOL-02') }
+    try { await fullInfect(ns, `${THREADPOOL}-01`, `${THREADPOOL}-02`) }
     catch {/*Do nothing*/}
 
     // Go to next step in the boot sequence

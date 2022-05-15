@@ -22,6 +22,26 @@ const headData = (column) => {
 };
 
 /** @param {NS} ns */
+export const transpose = (lines, numCols) => {
+    const numRows = Math.ceil(lines.length / numCols);
+    const cols = [];
+    for (let i = 0; i < numCols; i++)
+        cols.push(lines.splice(0, numRows));
+
+    const rows = [];
+    while (cols[0].length > 0) {
+        const row = cols.map((col, i)=>{
+            const section = col?.shift();
+            if (section && i < numCols-1)
+                section.push(' ');
+            return section;
+        }).flat();
+        rows.push(row);
+    }
+    return rows;
+};
+
+/** @param {NS} ns */
 export const table = (ns, columns, data, options={}) => {
     const { /*outline = true,*/ borders = false } = options;
     const joiner = borders ? ' | ' : '  ';

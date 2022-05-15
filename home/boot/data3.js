@@ -12,7 +12,12 @@ export async function main(ns) {
     // Compute RAM required on job server
     let requiredJobRam = null;
     if (bitNodeN === 4 || hasSourceFile4) {
-        const maxScriptSize = Math.max(...Object.values(scriptRam));
+        const maxScriptSize =
+            scriptRam['/bin/self/aug/purchase-augs.js'] +
+            scriptRam['/bin/self/job.js'] +
+            scriptRam['/bin/self/work.js'] +
+            scriptRam['/bin/self/tor.js'] +
+            scriptRam['/bin/self/faction-work.js'];
         requiredJobRam = 1;
         while (requiredJobRam < maxScriptSize)
             requiredJobRam *= 2;
