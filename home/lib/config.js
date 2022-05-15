@@ -16,7 +16,7 @@ const VALIDATORS = {
 };
 
 const DEFAULT_VALUES = {
-    'share': .1,
+    'share': 0,
     'share-cap': 1<<20,
     'reserved-funds': 1e10,
     'reserved-home-ram': 8,

@@ -1,3 +1,5 @@
+import { getStaticData } from './lib/data-store';
+
 export function levelUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
     return (1*1.5) * Math.pow(1.035,currentRam-1) * ((currentLevelCore+5)/6);
 }
@@ -11,14 +13,15 @@ export function coreUpgradeProfit(currentLevel, currentRam, currentLevelCore) {
 
 /** @param {NS} ns **/
 export const getNodeData = (ns) => {
+    const { hacknetMultipliers, bitNodeMultipliers } = getStaticData(ns);
     const numNodes = ns.hacknet.numNodes();
     const nodes = new Array(numNodes).fill(null).map((_, i) => ns.hacknet.getNodeStats(i));
-    const prodFactor = 1; // ns.getHacknetMultipliers().production;
+    const prodMult = hacknetMultipliers.production * bitNodeMultipliers.hacknetNodeMoney;
     const m = n => ns.nFormat(n, '$0.a');
     return nodes.map((stats, i) => {
-        const lp = prodFactor * levelUpgradeProfit(stats.level, stats.ram, stats.cores);
-        const rp = prodFactor * ramUpgradeProfit(stats.level, stats.ram, stats.cores);
-        const cp = prodFactor * coreUpgradeProfit(stats.level, stats.ram, stats.cores);
+        const lp = prodMult * levelUpgradeProfit(stats.level, stats.ram, stats.cores);
+        const rp = prodMult * ramUpgradeProfit(stats.level, stats.ram, stats.cores);
+        const cp = prodMult * coreUpgradeProfit(stats.level, stats.ram, stats.cores);
         const lc = ns.hacknet.getLevelUpgradeCost(i, 1);
         const rc = ns.hacknet.getRamUpgradeCost(i, 1);
         const cc = ns.hacknet.getCoreUpgradeCost(i, 1);
