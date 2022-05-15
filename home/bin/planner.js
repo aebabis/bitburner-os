@@ -23,7 +23,7 @@ const go = async(ns) => {
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
 
     const hasSingularity = () => bitNodeN === 4 || beatBN4;
-    const canAutopilot = () => hasSingularity() && requiredJobRam < mostRootRam(ns);
+    const canAutopilot = () => hasSingularity() && requiredJobRam <= mostRootRam(ns);
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const has4SApi = () => ns.getPlayer().has4SDataTixApi;
     const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;

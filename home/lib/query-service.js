@@ -58,7 +58,7 @@ export const needsJobRam = (ns) => {
     const { rootServers, purchasedServers } = getRamData(ns);
 
     const homeRam = rootServers.find(s=>s.hostname==='home').maxRam;
-    const jobRam = purchasedServers[0]?.ram || 0;
+    const jobRam = purchasedServers[0]?.maxRam || 0;
 
     return homeRam < requiredJobRam * 2 && jobRam < requiredJobRam;
 };

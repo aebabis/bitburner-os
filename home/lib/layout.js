@@ -5,7 +5,7 @@ export class DynamicWindow {
     this.getContent = getContent;
   }
 
-  getData(WIDTH) {
+  render(WIDTH) {
     const text = this.getContent();
     const width = Math.min(WIDTH, this.minWidth);
     const height = this.minHeight;
