@@ -23,7 +23,7 @@ export async function main(ns) {
     // Erase old versions of files, then upload
     // the batchable files to every server
     ns.tprint('Wiping old scripts');
-    for (const hostname of nmap(ns)) {
+    for (const hostname of hostnames) {
         if (hostname !== 'home') {
             const scripts = ns.ls(hostname, '.js');
             for (const script of scripts) {
@@ -34,7 +34,14 @@ export async function main(ns) {
 
     ns.tprint('Cataloging all local scripts');
     const scripts = ns.ls('home').filter(s=>s.endsWith('.js'));
-    putStaticData(ns, { scripts });
+
+    ns.tprint('Cataloging coding contracts');
+    const contracts = hostnames.map((hostname) => {
+        const ccts = ns.ls(hostname).filter(f=>f.endsWith('.cct'));
+        return ccts.map((filename) => ({ filename, hostname }));
+    }).flat();
+
+    putStaticData(ns, { scripts, contracts });
 
     ns.tprint('Initializing money data');
     putMoneyData(ns, {
