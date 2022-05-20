@@ -60,10 +60,10 @@ export async function main(ns) {
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         // Prevent money from being spent
-        disableService('hacknet');
-        disableService('market-access');
-        disableService('server-purchaser');
-        disableService('tor');
+        disableService(ns, 'hacknet');
+        disableService(ns, 'market-access');
+        disableService(ns, 'server-purchaser');
+        disableService(ns, 'tor');
 
         // Sell stocks
         if (ns.getPlayer().hasTixApiAccess)

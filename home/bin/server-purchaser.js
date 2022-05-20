@@ -88,9 +88,13 @@ export async function main(ns) {
             continue;
 
         if (needsJobRam(ns) && getJobRamCost(ns) < money) {
-            const hostname = `${THREADPOOL}-01`;
-            ns.print(`Attempting to upgrade job server ${hostname} [${requiredJobRam}-${requiredJobRam}]GB`);
-            await buyServer(requiredJobRam, requiredJobRam, hostname);
+            if (purchasedServers.length === 0) {
+                await buyServer(requiredJobRam, requiredJobRam);
+            } else {
+                const hostname = `${THREADPOOL}-01`;
+                ns.print(`Attempting to upgrade job server ${hostname} [${requiredJobRam}-${requiredJobRam}]GB`);
+                await buyServer(requiredJobRam, requiredJobRam, hostname);
+            }
             continue;
         }
 

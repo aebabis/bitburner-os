@@ -3,6 +3,7 @@ import {
     CITY_FACTIONS,
     AUGMENTATION_REQUIREMENTS,
     COMBAT_REQUIREMENTS,
+    FACTIONS,
 } from './bin/self/aug/factions';
 import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
 // import { table } from './lib/table';
@@ -16,7 +17,7 @@ const process = (factions, factionAugmentations, purchasedAugmentations) => {
     const haveIt = aug => purchasedAugmentations.includes(aug);
     const neededAugmentations = {};
     const reverse = {};
-    for (const faction of factions) {
+    for (const faction of FACTIONS) {
         const augmentations = factionAugmentations[faction];
 
         neededAugmentations[faction] = augmentations
