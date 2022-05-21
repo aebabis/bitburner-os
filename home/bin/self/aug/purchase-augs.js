@@ -88,7 +88,7 @@ export async function main(ns) {
         await rmi(ns)('/bin/self/buy-ram.js', 1);
 
         // Start all over
-        await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
+        await rmi(ns)('/bin/self/aug/install.js', 1, 'start.js');
     }
 
     putPlayerData(ns, { purchasedAugmentations, remainingAugs });

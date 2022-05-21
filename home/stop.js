@@ -1,7 +1,6 @@
 import { nmap } from './lib/nmap';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export const stop = async(ns) => {
     const script = ns.getScriptName();
     ns.tprint('Killing all processes');
     for (const hostname of nmap(ns)) {
@@ -12,4 +11,9 @@ export async function main(ns) {
             ns.kill(pid);
         }
     }
+};
+
+/** @param {NS} ns **/
+export async function main(ns) {
+    await stop(ns);
 }

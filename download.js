@@ -75,7 +75,6 @@ const FILES = [
   '/etc/filenames.js',
   '/etc/ports.js',
   'gang.js',
-  'init.js',
   '/lib/backdoor.js',
   '/lib/config.js',
   '/lib/d3.js',
@@ -103,9 +102,11 @@ const FILES = [
   'restart.js',
   'servers.js',
   'services.js',
+  'start.js',
   'stop.js',
   'suite.js',
   'tail.js',
+  'update.js',
 ];
 
 /** @param {NS} ns **/
