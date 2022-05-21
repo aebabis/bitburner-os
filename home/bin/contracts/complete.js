@@ -11,6 +11,9 @@ const attemptContract = (ns, { filename, hostname, type, data, tries }) => {
     const answer = algorithm(data);
     try {
         const outcome = ns.codingcontract.attempt(answer, filename, hostname, { returnReward: true });
+        if (outcome === '')
+            ns.tprint('ERROR ' + algorithm.name + `(${data}) => ${answer}`);
+        else
         ns.tprint(outcome);
         return !!outcome;
     } catch (error) {

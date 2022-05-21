@@ -79,6 +79,7 @@ export const maximumSubarraySum = (arr) => {
 };
 
 export const fewestHops = (track) => {
+  track[track.length-1] = 0;
   for (let i = track.length - 2; i >= 0; i--)
     track[i] = 1 + Math.min(Infinity, ...track.slice(i+1, i+1+track[i]));
   return ~~track[0];
@@ -201,4 +202,23 @@ export const hammingCorrect = (str) => {
   else if (bits.reduce((a,b)=>a+b,0)%2)
     bits[0]^=1;
   return hammingExtract(bits);
+};
+
+export const stockProfit = (prices, n=1) => {
+  let split = 0;
+  if (n > 1) {
+    for (let i = 2; i < prices.length; i++) {
+      const left = prices.slice(0, i);
+      const right = prices.slice(i);
+      const value = stockProfit(left)+stockProfit(right, n-1);
+      split = Math.max(split, value);
+    }
+  }
+  let min = Infinity;
+  let pro = 0;
+  for (const price of prices) {
+    min = Math.min(min, price);
+    pro = Math.max(pro, price - min);
+  }
+  return Math.max(pro, split);
 };
