@@ -47,7 +47,7 @@ export async function main(ns) {
 
         const statForCrimeTraining = getStatToTrain(5);
         if (statForCrimeTraining != null) {
-            if (player.money > 25000)
+            if (player.money > 5000)
                 await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5, shouldFocus);
             else
                 await rmi(ns)('/bin/self/job.js', 1, shouldFocus);

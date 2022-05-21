@@ -33,9 +33,9 @@ export const getTimeEstimates = (ns) => {
     const { factionRep, factionRepRate } = getPlayerData(ns);
     const { targetFaction } = getStaticData(ns);
 
-    const moneyTime = costToAug ? (costToAug-money) / income : DAY;
-    const repRate = factionRepRate ? factionRepRate[targetFaction] : 1;
-    const repAcquired = factionRep ? factionRep[targetFaction] : 0;
+    const moneyTime = costToAug != null ? (costToAug-money) / income : DAY;
+    const repRate = factionRepRate != null ? factionRepRate[targetFaction] : 1;
+    const repAcquired = factionRep != null ? factionRep[targetFaction] : 0;
 
     const repRemaining = getRepNeeded(ns) - repAcquired;
     const repTime = repRemaining / repRate;
