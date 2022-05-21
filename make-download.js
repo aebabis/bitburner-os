@@ -39,6 +39,7 @@ ${files.join('\n')}
   for (const file of FILES) {
     const downloadPath = \`https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/\${file}\`;
     await ns.wget(downloadPath, file);
+    ns.tprint(\`Downloaded \${file}\`);
   }
   ns.tprint('Download complete');
 }`;

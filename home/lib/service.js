@@ -44,7 +44,7 @@ export const Service = (ns, condition=()=>true, interval=5000) => (script, targe
         else if (isRunning())
             return '●';
         else
-            return '◯';
+            return '○';
     };
 
     const check = async (beforeRun) => {
