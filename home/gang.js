@@ -1,5 +1,4 @@
 import { printTaskTable } from './bin/gang/task-table';
-import { delegate } from './lib/scheduler-delegate';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -7,7 +6,5 @@ export async function main(ns) {
 
     if (command === 'tasks') {
         await printTaskTable(ns, args[0]);
-    } else if (command === 'service') {
-        await delegate(ns)('/bin/gang/gang-controller.js', 'home');
     }
 }

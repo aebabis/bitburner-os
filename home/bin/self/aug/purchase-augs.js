@@ -1,19 +1,20 @@
 import {
-    getStaticData,
+    getMoneyData,
+    putMoneyData,
     getPlayerData,
     putPlayerData,
-    putMoneyData
+    getStaticData,
 } from './lib/data-store';
-import { disableService } from './lib/service-api';
 import { rmi } from './lib/rmi';
 import { by } from './lib/util';
+import { liquidate } from './bin/liquidate';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const { factions } = ns.getPlayer();
+    const { factions, money } = ns.getPlayer();
     const {
         augmentations,
         augmentationPrices,
@@ -24,6 +25,7 @@ export async function main(ns) {
         targetAugmentations,
     } = getStaticData(ns);
     const { purchasedAugmentations } = getPlayerData(ns);
+    const { estimatedStockValue=0, costToAug: augCost=Infinity } = getMoneyData(ns);
 
     const remainingAugs = targetAugmentations
         .filter(aug => !purchasedAugmentations.includes(aug))
@@ -32,6 +34,10 @@ export async function main(ns) {
 
     const purchasable = aug => (augmentationPrereqs[aug] || [])
         .every(prereq => purchasedAugmentations.includes(prereq));
+
+    // If our networth is enough to finish the run, do it.
+    if (.9 * estimatedStockValue + money > augCost)
+        await liquidate(ns);
 
     for (const augmentation of remainingAugs) {
         const soldTheAug = faction => ns.purchaseAugmentation(faction, augmentation);
@@ -59,15 +65,8 @@ export async function main(ns) {
     putMoneyData(ns, { costToAug, costOfNextAugmentation });
 
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
-        // Prevent money from being spent
-        disableService(ns, 'hacknet');
-        disableService(ns, 'market-access');
-        disableService(ns, 'server-purchaser');
-        disableService(ns, 'tor');
-
-        // Sell stocks
-        if (ns.getPlayer().hasTixApiAccess)
-            await rmi(ns)('/bin/broker.js', 1, 'dump');
+        // Sell stocks and prevent spending
+        await liquidate(ns);
         
         // Wait for a little more money to come in
         await ns.sleep(30000);

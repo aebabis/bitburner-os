@@ -54,8 +54,11 @@ function isCombatReady(factions, factionAugmentations, purchasedAugmentations) {
 }
 
 const selectTargetFaction = (ns, factions, neededAugmentations, factionAllowed, augViable) => {
-    if (ns.gang.inGang())
-        return ns.gang.getGangInformation().faction;
+    if (ns.gang.inGang()) {
+        const { faction } = ns.gang.getGangInformation();
+        if (neededAugmentations[faction].length > 0)
+            return faction;
+    }
     
     if (neededAugmentations['Netburners'].length > 0)
         return 'Netburners';
@@ -81,6 +84,9 @@ export const analyzeAugData = async (ns) => {
     const {
         purchasedAugmentations
     } = getPlayerData(ns);
+
+    console.log(getStaticData(ns));
+    console.log(getPlayerData(ns));
 
     // Currently only allowing story and city
     // factions for automatic work and aug purchases
