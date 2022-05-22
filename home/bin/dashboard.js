@@ -166,38 +166,31 @@ const workTable = (ns) => {
     return ` WORK \n ${location} \n${rows}`;
 };
 
-const colorize = (modal) => {
+const colorize = (root) => {
     const REGEX = /([^─-◿⊗ ]*)( *)([─-◿⊗]*)(.*)/;
-    const container = modal.querySelector('.react-resizable');
-    let dupe = container.querySelector('.MuiBox-root:last-child');
+    const container = root.parentElement;
+    let dupe = container.querySelector('.MuiPaper-root:last-child');
     if (!dupe) {
-        dupe = doc.createElement('div');
-        dupe.classList.add('MuiBox-root');
-        dupe.classList.add('css-0');
-        dupe.classList.add('windower');
-        // dupe.style.position = 'absolute';
-        // dupe.style.background = 'black';
-        // dupe.style.maxHeight = 'calc(100% - 40px)';
-        // dupe.style.overflow = 'hidden';
+        dupe = root.cloneNode();
         container.append(dupe);
     }
-    const root = modal.querySelector('.MuiBox-root');
     root.style.display = 'none';
+
     dupe.innerText = '';
     root.querySelectorAll('p').forEach((p) => {
         let text = p.innerText;
         const newP = doc.createElement('p');
         newP.className = p.className;
-        dupe.append(newP);
+        dupe.prepend(newP);
         do {
             const [, non, w, color, rest] = text.match(REGEX);
             if (non) {
-            if (non.match(/^[A-Z]+$/)) {
-                const strong = doc.createElement('strong');
-                strong.innerText = non;
-                newP.append(strong);
-            } else
-                newP.append(doc.createTextNode(non));
+                if (non.match(/^[A-Z]+$/)) {
+                    const strong = doc.createElement('strong');
+                    strong.innerText = non;
+                    newP.append(strong);
+                } else
+                    newP.append(doc.createTextNode(non));
             }
             if (w)
                 newP.append(doc.createTextNode(w));
@@ -234,6 +227,7 @@ export async function main(ns) {
     while (true) {
         const modal = await getTailModal(ns);
         const width = await getModalColumnCount(ns);
+
         if (width != null) {
             const textField = renderWindows(windows, width);
 
@@ -241,7 +235,7 @@ export async function main(ns) {
             textField.split('\n').forEach(line=>ns.print(line));
             await ns.sleep(1);
 
-            colorize(modal);
+            colorize(modal.bottom);
         }
         await ns.sleep(1000);
     }

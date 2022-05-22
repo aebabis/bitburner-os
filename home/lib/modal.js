@@ -4,10 +4,12 @@ let style = doc.querySelector('#custom-style');
 if (style == null) {
     const style = doc.createElement('style');
     style.id = 'custom-style';
-    style.innerText = `.react-resizable .windower p {
+    style.innerText = `.windower p {
         line-height: 1.18;
         font-family: monospace;
-    }`;
+    }
+    
+    [style~="none;"] + .windower { display: none; }`;
     doc.head.append(style);
 }
 
@@ -29,35 +31,30 @@ export async function getTailModal(ns, retry=true) {
         if (retry) await ns.sleep(50);
         else return null;
     }
-    const modal = titlebar.parentElement.parentElement.nextSibling;
-    const close = titlebar.nextSibling.children[2];
+    const top = titlebar.parentElement;
+    const buttons = titlebar.nextSibling;
+    const bottom = top.nextSibling;
+    const closeButton = buttons.children[2];
+    const close = () => closeButton.click();
     if (!titlebar.getAttribute('flagged')) {
         titlebar.setAttribute('flagged', true);
-        ns.atExit(() => close.click());
+        ns.atExit(close);
     }
-    return modal;
+    return {
+        top,
+        bottom,
+        buttons,
+        close,
+    };
 }
 
-let charWidth;
+const charWidth = 9.65;
 /** @param {NS} ns **/
 export async function getModalColumnCount(ns) {
-    const elem = await getTailModal(ns, true);
-    if (elem == null)
+    const tailPane = await getTailModal(ns, true);
+    if (tailPane == null)
         return null;
-    const container = elem.querySelector('.MuiBox-root');
-    container.classList.add('windower');
-    if (charWidth == null) {
-        const testString = '0'.repeat(48);
-        ns.print(testString);
-        let testP;
-        while (testP == null) {
-            testP = container.querySelector('p');
-            await ns.sleep(10);
-        }
-        testP.style.display = 'inline';
-        const { width } = testP.getBoundingClientRect();
-        charWidth = width / testString.length;
-    }
+    tailPane.bottom.classList.add('windower');
     ns.clearLog();
-    return Math.floor((container.parentElement.clientWidth-2) / charWidth);
+    return Math.floor((tailPane.bottom.parentElement.clientWidth-2) / charWidth);
 }
