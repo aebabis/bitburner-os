@@ -36,6 +36,7 @@ const FILES = [
   '/bin/self/aug/load-faction-favor.js',
   '/bin/self/aug/load-owned-augs.js',
   '/bin/self/aug/purchase-augs.js',
+  '/bin/self/aug/record-rep.js',
   '/bin/self/backdoor.js',
   '/bin/self/buy-ram.js',
   '/bin/self/control.js',

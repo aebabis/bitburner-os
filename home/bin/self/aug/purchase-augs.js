@@ -19,13 +19,15 @@ export async function main(ns) {
         augmentations,
         augmentationPrices,
         augmentationRepReqs,
-        factionAugmentations,
         ownedAugmentations,
         augmentationPrereqs,
+        targetFaction,
         targetAugmentations,
     } = getStaticData(ns);
-    const { purchasedAugmentations } = getPlayerData(ns);
+    const { purchasedAugmentations, factionRep={} } = getPlayerData(ns);
     const { estimatedStockValue=0, costToAug: augCost=Infinity } = getMoneyData(ns);
+
+    const rep = factionRep[targetFaction] || 0;
 
     const remainingAugs = targetAugmentations
         .filter(aug => !purchasedAugmentations.includes(aug))
@@ -35,8 +37,10 @@ export async function main(ns) {
     const purchasable = aug => (augmentationPrereqs[aug] || [])
         .every(prereq => purchasedAugmentations.includes(prereq));
 
+    const hasEnoughRep = remainingAugs.every(aug => rep >= augmentationRepReqs[aug]);
+    const hasEnoughMoney = .9 * estimatedStockValue + money > augCost;
     // If our networth is enough to finish the run, do it.
-    if (.9 * estimatedStockValue + money > augCost)
+    if (hasEnoughRep && hasEnoughMoney)
         await liquidate(ns);
 
     for (const augmentation of remainingAugs) {
@@ -69,7 +73,7 @@ export async function main(ns) {
         await liquidate(ns);
         
         // Wait for a little more money to come in
-        await ns.sleep(30000);
+        await ns.sleep(10000);
 
         // Attempt to buy as many faction augmentations
         // as possible, starting with the most expensive
@@ -79,16 +83,13 @@ export async function main(ns) {
                 ns.purchaseAugmentation(faction, augmentation);
 
         // Spend what's left on Neuroflux
-        const neuroFluxFaction = factions
-            .filter(faction=>factionAugmentations[faction].includes(NEUROFLUX))
-            .reduce((a,b)=>ns.getFactionRep(a)>ns.getFactionRep(b)?a:b);
-        while (ns.purchaseAugmentation(neuroFluxFaction, NEUROFLUX));
+        while (factions.some(faction => ns.purchaseAugmentation(faction, NEUROFLUX)));
 
         // Buy RAM if we can
         await rmi(ns)('/bin/self/buy-ram.js', 1);
 
         // Start all over
-        await rmi(ns)('/bin/self/aug/install.js', 1, 'start.js');
+        await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
     }
 
     putPlayerData(ns, { purchasedAugmentations, remainingAugs });

@@ -52,6 +52,14 @@ export async function main(ns) {
         }
     };
 
+    const getSmallestServer = (servers) => {
+        if (servers.length === 0)
+            return null;
+        if (servers.length === 1)
+            return servers[0];
+        return servers.reduce((s1,s2)=>s1.ram<=s2.ram?s1:s2);
+    };
+
     while (true) {
         await ns.sleep(50);
 
@@ -67,9 +75,9 @@ export async function main(ns) {
             theftRatePerGB,
         } = getMoneyData(ns);
 
-        const purchasedServers = getPurchasedServerRams(ns, purchasedServerLimit);
-        if (purchasedServers.length === purchasedServerLimit &&
-            purchasedServers.every(server=>server.ram === purchasedServerMaxRam)) {
+        const servers = getPurchasedServerRams(ns, purchasedServerLimit);
+        if (servers.length === purchasedServerLimit &&
+            servers.every(server=>server.ram === purchasedServerMaxRam)) {
             disableService(ns, 'server-purchaser');
             return;
         }
@@ -77,8 +85,8 @@ export async function main(ns) {
         const timeToGoal = estimateTimeToGoal(ns);
         const money = ns.getServerMoneyAvailable('home');
 
-        const atMaxServers = purchasedServers.length === purchasedServerLimit;
-        const smallest = purchasedServers[purchasedServers.length - 1];
+        const atMaxServers = servers.length === purchasedServerLimit;
+        const smallest = getSmallestServer(servers);
 
         let minRam = 4;
         if (atMaxServers)
@@ -88,7 +96,7 @@ export async function main(ns) {
             continue;
 
         if (needsJobRam(ns) && getJobRamCost(ns) < money) {
-            if (purchasedServers.length === 0) {
+            if (servers.length === 0) {
                 await buyServer(requiredJobRam, requiredJobRam);
             } else {
                 const hostname = `${THREADPOOL}-01`;
@@ -115,7 +123,7 @@ export async function main(ns) {
             continue;
         }
 
-        if (purchasedServers.length === 0) {
+        if (servers.length === 0) {
             ns.print(`Attempting to purchase first server [${minRam}-${maxRam}]GB`);
             await buyServer(minRam, maxRam);
             continue;

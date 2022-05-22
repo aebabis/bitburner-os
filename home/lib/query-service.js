@@ -53,6 +53,11 @@ export const isMoneyBound = (ns) => {
     return moneyTime > repTime;
 };
 
+export const isRepBound = (ns) => {
+    const { moneyTime, repTime } = getTimeEstimates(ns);
+    return repTime > moneyTime;
+};
+
 export const needsJobRam = (ns) => {
     const { requiredJobRam } = getRamInfo(ns);
     const { rootServers, purchasedServers } = getRamData(ns);

@@ -2,6 +2,7 @@ import { by } from './lib/util';
 import { delegateAny } from './lib/scheduler-delegate';
 import { getGangData, putGangData } from './lib/data-store';
 import { logger } from './lib/logger';
+import { isRepBound } from './lib/query-service';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -32,19 +33,22 @@ export async function main(ns) {
             return enemyInfo && enemyInfo.some(enemy => enemy.territory > 0 && enemy.clashWinChance < .8);
         };
         const respect = (name) => ns.gang.getMemberInformation(name).earnedRespect;
-
-        // Every member, regardless of operation is
-        // checked for ascension, then checked for
-        // training
-        for (const name of memberNames) {
-            const ascension = ns.gang.getAscensionResult(name);
-            const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'];
-            if (ascension != null && ascension.respect === 0 && skills.some(s=>ascension[s] >= 1.1)) {
-                // logger(ns).log('Ascending ' + name);
-                ns.gang.ascendMember(name);
-            }
+        const needsTraining = (name) => {
             const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
-            if ([str, def, dex, agi].some(x => x < 1000))
+            return [str, def, dex, agi].some(x => x < 1000);
+        };
+        const readyForAscension = (name) => {
+            const ascension = ns.gang.getAscensionResult(name);
+            if (ascension == null || ascension.respect > 0)
+                return false;
+            const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'];
+            return skills.some(s=>ascension[s] >= 1.1);
+        };
+
+        for (const name of memberNames) {
+            if (readyForAscension(name))
+                ns.gang.ascendMember(name);
+            if (needsTraining(name))
                 ns.gang.setMemberTask(name, 'Train Combat');
             else
                 readyMembers.push(name);
@@ -69,7 +73,10 @@ export async function main(ns) {
             } else {
                 assignNext(readyMembers, 'Human Trafficking');
                 assignNext(readyMembers, 'Vigilante Justice');
-                assignAll(readyMembers, 'Human Trafficking');
+                if (isRepBound(ns))
+                    assignAll(readyMembers, 'Terrorism');
+                else
+                    assignAll(readyMembers, 'Human Trafficking');
             }
         }
     } catch (error) {

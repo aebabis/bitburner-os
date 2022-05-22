@@ -2,65 +2,68 @@ import { THREADPOOL } from './etc/config';
 import { infect, fullInfect } from './bin/infect';
 import { logger } from './lib/logger';
 
-const serverExists = (ns, hostname) => {
-    try {
-        ns.fileExists('DNE.js', hostname);
-        return true;
-    } catch {
-        return false;
-    }
-};
-
 const getNextServerName = (ns) => {
-    const limit = ns.getPurchasedServerLimit();
-    for (let n = 1; n <= limit; n++) {
-        const num = n.toString().padStart(2, '0');
-        const serverName = `${THREADPOOL}-${num}`;
-        if (!serverExists(ns, serverName))
-            return serverName;
+    for (let id = 1; ; id++) {
+        const num = `${id}`.padStart(2, '0');
+        const hostname = `${THREADPOOL}-${num}`;
+        if (!ns.serverExists(hostname))
+            return hostname;
     }
 };
-
-const mFormat = (ns, cost) => ns.nFormat(cost, '0.000a');
 
 /** @param {NS} ns **/
-const purchaseServer = (ns, hostname, maxRam, isUpgrade) => {
+const purchaseServer = (ns, hostname, minRam, maxRam) => {
     let ram = maxRam;
-    while (!ns.purchaseServer(hostname, ram))
+    while (!ns.purchaseServer(hostname, ram)) {
         ram /= 2;
-
-    const cost = ns.getPurchasedServerCost(ram);
-
-    if (isUpgrade)
-        logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${mFormat(ns, cost)}`);
-    else
-        logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${mFormat(ns, cost)}`);
+        if (ram < minRam)
+            return false;
+    }
+    return ram;
 };
+
+/** @param {NS} ns **/
+const deleteServer = (ns, hostname) => {
+    ns.killall(hostname);
+    ns.deleteServer(hostname);
+};
+
+const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 
 /** @param {NS} ns **/
 export async function main(ns) {
     const [minRam, maxRam, serverToReplace] = ns.args;
-    if (isNaN(minRam))
-        throw new Error(`Illegal RAM value: ${minRam}`);
+    if (isNaN(minRam) || isNaN(maxRam))
+        throw new Error(`Illegal RAM range: ${minRam}-${maxRam}`);
 
     const money = ns.getServerMoneyAvailable('home');
     const minCost = ns.getPurchasedServerCost(minRam);
+    const isUpgrade = serverToReplace != null;
+    const hostname = serverToReplace || getNextServerName(ns);
+    const isJobServer = JOB_SERVERS.includes(hostname);
 
     if (money < minCost) {
-        logger(ns).log(`Could not afford ${mFormat(ns, minCost)} for ${minRam}GB ram`);
+        await logger(ns).log(`Could not afford ${ns.nFormat(minCost, '0.000a')} for ${minRam}GB ram`);
         return;
     }
 
-    const isUpgrade = serverToReplace != null;
-    const hostname = serverToReplace || getNextServerName(ns);
-    const isJobServer = [`${THREADPOOL}-01`, `${THREADPOOL}-02`].includes(hostname);
+    if (isUpgrade)
+        deleteServer(ns, hostname);
+    
+    const ram = purchaseServer(ns, hostname, minRam, maxRam);
+    const cost = ns.nFormat(ns.getPurchasedServerCost(ram), '0.000a');
 
-    if (isUpgrade) {
-        ns.killall(hostname);
-        ns.deleteServer(hostname);
+    if (!ram) {
+        // Rare. Seems to happen if a duplicate purchase is made,
+        // messing up the server names.
+        await logger(ns).error(`Failed to purchase ${minRam}GB ram on ${hostname}`);
+        return;
     }
 
-    purchaseServer(ns, hostname, maxRam, isUpgrade);
+    if (isUpgrade)
+        await logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);
+    else
+        await logger(ns).log(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);
 
     if (isJobServer)
         await fullInfect(ns, hostname);

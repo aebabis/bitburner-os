@@ -3,10 +3,10 @@ import { rmi } from './lib/rmi';
 
 export const liquidate = async (ns) => {
     // Prevent money from being spent
-    disableService(ns, 'hacknet');
-    disableService(ns, 'market-access');
-    disableService(ns, 'server-purchaser');
-    disableService(ns, 'tor');
+    await disableService(ns, 'hacknet');
+    await disableService(ns, 'market-access');
+    await disableService(ns, 'server-purchaser');
+    await disableService(ns, 'tor');
 
     // Wait one cycle for services to stop.
     // Probably unnecessary.
