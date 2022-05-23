@@ -8,9 +8,8 @@ export const liquidate = async (ns) => {
     await disableService(ns, 'server-purchaser');
     await disableService(ns, 'tor');
 
-    // Wait one cycle for services to stop.
-    // Probably unnecessary.
-    await ns.sleep(50);
+    // Wait for services to stop.
+    await ns.sleep(1000);
 
     // Sell stocks
     if (ns.getPlayer().hasTixApiAccess)
