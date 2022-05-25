@@ -5,7 +5,7 @@ import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { estimateTimeToGoal, getRepNeeded, getGoalCost } from './lib/query-service';
+import { getTimeEstimates, getRepNeeded, getGoalCost } from './lib/query-service';
 
 const doc = eval('document');
 
@@ -114,7 +114,7 @@ const moneyTable = (ns) => {
     if (moneyData == null) {
         return ' INCOME \n (loading) ';
     }
-    const timeToGoal = estimateTimeToGoal(ns) || 0;
+    const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
     const goalCost = getGoalCost(ns);
     const { income1s=0, income10s=0, income60s=0 } = moneyData;
     const rows = [
@@ -122,7 +122,8 @@ const moneyTable = (ns) => {
         ['10s', ns.nFormat(income10s, '$0.0a').padStart(8)],
         ['60s', ns.nFormat(income60s, '$0.0a').padStart(8)],
         ['Goal',ns.nFormat(goalCost||0, '$0.0a').padStart(8)],
-        ['   ', ns.nFormat(timeToGoal||100*60*60, '00:00:00').padStart(8)],
+        ['   $', ns.nFormat(moneyTime||100*60*60, '00:00:00').padStart(8)],
+        ['   r', ns.nFormat(repTime||100*60*60, '00:00:00').padStart(8)],
     ];
     return ' INCOME \n' + table(ns, null, rows);
 };
@@ -225,17 +226,21 @@ export async function main(ns) {
         new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
     ];
     while (true) {
-        const modal = await getTailModal(ns);
-        const width = await getModalColumnCount(ns);
+        try {
+            const modal = await getTailModal(ns);
+            const width = await getModalColumnCount(ns);
 
-        if (width != null) {
-            const textField = renderWindows(windows, width);
+            if (width != null) {
+                const textField = renderWindows(windows, width);
 
-            ns.clearLog();
-            textField.split('\n').forEach(line=>ns.print(line));
-            await ns.sleep(1);
+                ns.clearLog();
+                textField.split('\n').forEach(line=>ns.print(line));
+                await ns.sleep(1);
 
-            colorize(modal.bottom);
+                colorize(modal.bottom);
+            }
+        } catch (error) {
+            console.error(error);
         }
         await ns.sleep(1000);
     }

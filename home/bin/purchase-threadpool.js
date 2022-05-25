@@ -51,7 +51,6 @@ export async function main(ns) {
         deleteServer(ns, hostname);
     
     const ram = purchaseServer(ns, hostname, minRam, maxRam);
-    const cost = ns.nFormat(ns.getPurchasedServerCost(ram), '0.000a');
 
     if (!ram) {
         // Rare. Seems to happen if a duplicate purchase is made,
@@ -59,6 +58,8 @@ export async function main(ns) {
         await logger(ns).error(`Failed to purchase ${minRam}GB ram on ${hostname}`);
         return;
     }
+
+    const cost = ns.nFormat(ns.getPurchasedServerCost(ram), '0.000a');
 
     if (isUpgrade)
         await logger(ns).log(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);

@@ -53,14 +53,10 @@ export async function main(ns) {
             else
                 readyMembers.push(name);
         }
-
-        if (gangInfo.territoryClashChance > 0 && needsPower()) {
-            assignAll(readyMembers, 'Territory Warfare');
-            return;
-        }
         await delegateAny(ns, true)('/bin/gang/decide-war.js', 1, gangInfo.faction, gangInfo.territoryClashChance);
         readyMembers.sort(by(name=>-respect(name)));
-        assignNext(readyMembers, 'Territory Warfare');
+        if (gangInfo.territory < 100)
+            assignNext(readyMembers, 'Territory Warfare');
         if (gangInfo.wantedPenalty > 1) {
             assignAll(readyMembers, 'Vigilante Justice');
         } else if (memberNames.length < 12) {
@@ -81,7 +77,7 @@ export async function main(ns) {
         }
     } catch (error) {
         console.error(error);
-        logger(ns).error(error);
+        await logger(ns).error(error);
     }
 
     // TODO: 

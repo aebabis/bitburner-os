@@ -136,7 +136,7 @@ export async function main(ns) {
         while (minRam < purchasedServerMaxRam && purchasedServerCosts[minRam] < income * 5)
             minRam *= 2;
 
-        if (minRam > maxRam)
+        if (minRam > maxRam || money < purchasedServerCosts[minRam])
             continue;
 
         if (atMaxServers)
