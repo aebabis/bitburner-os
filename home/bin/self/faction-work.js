@@ -12,9 +12,9 @@ export async function main(ns) {
         const DELAY = 10;
         await ns.sleep(DELAY * 1000);
 
-        const { factionRep = {}, factionRepRate = {} } = getPlayerData(ns);
+        const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);
         factionRep[faction] = ns.getFactionRep(faction);
-        factionRepRate[faction] = ns.getPlayer().workRepGained / DELAY;
-        putPlayerData(ns, { factionRep, factionRepRate });
+        activeRepRate[faction] = ns.getPlayer().workRepGained / DELAY;
+        putPlayerData(ns, { factionRep, activeRepRate });
     }
 }

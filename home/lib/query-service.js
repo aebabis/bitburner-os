@@ -30,11 +30,11 @@ export const getJobRamCost = cache((ns) => {
 const DAY = 60 * 60 * 24;
 export const getTimeEstimates = (ns) => {
     const { money, income, costToAug, estimatedStockValue: stock=0 } = getMoneyData(ns);
-    const { factionRep, factionRepRate } = getPlayerData(ns);
+    const { factionRep, activeRepRate={}, passiveRepRate={} } = getPlayerData(ns);
     const { targetFaction } = getStaticData(ns);
 
     const moneyTime = costToAug != null ? (costToAug-money-stock) / income : DAY;
-    const repRate = factionRepRate != null ? factionRepRate[targetFaction] : 1;
+    const repRate = ((activeRepRate[targetFaction]||0) + (passiveRepRate[targetFaction]||0)) || 1; // Sorry
     const repAcquired = factionRep != null ? factionRep[targetFaction] : 0;
 
     const repRemaining = getRepNeeded(ns) - repAcquired;
