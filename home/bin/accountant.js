@@ -1,5 +1,6 @@
 import { getRamData } from './lib/data-store';
 import { putMoneyData } from './lib/data-store';
+import { Timeline } from './lib/timeline';
 
 class Timer {
     constructor(ns, interval=50, maxInterval=null) {
@@ -28,41 +29,6 @@ class Timer {
     }
 }
 
-class Timeline {
-    constructor(history = 60000 * 5 + 100) {
-        this.samples = [];
-        this.history = history;
-    }
-
-    addPoint(timestamp, value) {
-        const { samples, history } = this;
-        samples.push({ timestamp, value });
-        while (samples[1] != null && samples[1].timestamp < timestamp - history)
-            samples.shift();
-    }
-
-    findValue(timestamp) {
-        const terpolate = (s1, s2, timestamp) => {
-            const portion = (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
-            return s1.value + portion * (s2.value - s1.value);
-        };
-
-        const { samples } = this;
-        let s2 = samples[samples.length - 1];
-        for (let i = samples.length - 2; i >= 0; i--) {
-            const s1 = samples[i];
-            if (s1.timestamp < timestamp) {
-                return terpolate(s1, s2, timestamp);
-            }
-            s2 = s1;
-        }
-        if (samples.length >= 2) {
-            return terpolate(samples[0], samples[samples.length - 1], timestamp);
-        }
-        return 0;
-    }
-}
-
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
@@ -77,16 +43,17 @@ export async function main(ns) {
     while (true) {
         const timestamp = Date.now();
         const { money } = ns.getPlayer();
-        const { onlineMoneyMade } = ns.getRunningScript('/bin/scheduler.js', 'home');
+        const { onlineMoneyMade, offlineMoneyMade } = ns.getRunningScript('/bin/scheduler.js', 'home');
+        const moneyMade = onlineMoneyMade + offlineMoneyMade;
 
         if (money > prevMoney) // Skip ticks where a purchase is made
             estTotalGain += (money - prevMoney);
         prevMoney = money;
 
         moneyTimeline.addPoint(timestamp, estTotalGain);
-        theftTimeline.addPoint(timestamp, onlineMoneyMade);
+        theftTimeline.addPoint(timestamp, moneyMade);
 
-        const theftIncome60s = onlineMoneyMade - theftTimeline.findValue(timestamp - 60000);
+        const theftIncome60s = moneyMade - theftTimeline.findValue(timestamp - 60000);
         const theftIncome = theftIncome60s / 60;
         const { totalMaxRam } = getRamData(ns);
         const theftRatePerGB = theftIncome / totalMaxRam;

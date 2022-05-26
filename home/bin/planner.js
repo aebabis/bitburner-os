@@ -57,6 +57,8 @@ const go = async(ns) => {
                           ('/bin/self/focus.js'),
         AnyHostService(ns, canAutopilot)
                           ('/bin/self/tor.js'),
+        AnyHostService(ns, canAutopilot)
+                        ('/bin/self/rep-recorder.js'),
     ];
 
     const showServices = () => {
