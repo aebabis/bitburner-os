@@ -30,6 +30,7 @@ const getAugmentGoals = (ownedAugmentations, {
     const isCityFaction = CITY_FACTIONS.includes(faction);
     if (isCityFaction && cityFaction != null && cityFaction !== faction)
         return false;
+    return true;
     // return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
   });
   const getNeededAugs = faction => factionAugmentations[faction]

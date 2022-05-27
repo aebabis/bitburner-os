@@ -34,7 +34,9 @@ export const getTimeEstimates = (ns) => {
     const { targetFaction } = getStaticData(ns);
 
     const moneyTime = costToAug != null ? (costToAug-money-stock) / income : DAY;
-    const repRate = ((activeRepRate[targetFaction]||0) + (passiveRepRate[targetFaction]||0)) || 1; // Sorry
+    // Because activeRepRate includes passiveRepRate implicitly with no
+    // known way to separate the two, we only use active when possible
+    const repRate = activeRepRate[targetFaction] || passiveRepRate[targetFaction] || .1;
     const repAcquired = factionRep != null ? factionRep[targetFaction] : 0;
 
     const repRemaining = getRepNeeded(ns) - repAcquired;
