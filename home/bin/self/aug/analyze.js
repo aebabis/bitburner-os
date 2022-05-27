@@ -2,137 +2,95 @@ import {
     STORY_FACTIONS,
     CITY_FACTIONS,
     AUGMENTATION_REQUIREMENTS,
-    COMBAT_REQUIREMENTS,
-    FACTIONS,
 } from './bin/self/aug/factions';
-import { getStaticData, putStaticData, getPlayerData  } from './lib/data-store';
-// import { table } from './lib/table';
-// import { report } from './lib/logger';
+import { getStaticData, putStaticData  } from './lib/data-store';
 import { by } from './lib/util';
 
-const dont = func => b => !func(b);
-const notNeuroFlux = aug => aug !== 'NeuroFlux Governor';
+// If doing multiple factions, consider sum of max repreqs
+const getAugmentGoals = (ownedAugmentations, {
+  augmentations,
+  augmentationPrices,
+  augmentationRepReqs,
+  augmentationPrereqs,
+  factionAugmentations,
+}, cityFaction) => {
+  const MAX_AUGS = 6;
+  const NEUROFLUX = 'NeuroFlux Governor';
+  const MONEY_PER_REP = 4000; // This will vary at some point
+  
+  const notNeuroFlux = aug => aug !== NEUROFLUX;
+  const stillNeeds = aug => !ownedAugmentations.includes(aug);
+  const weightedCost = aug=>Math.max(augmentationPrices[aug]/MONEY_PER_REP,
+                             augmentationRepReqs[aug]);
 
-const process = (factions, factionAugmentations, purchasedAugmentations) => {
-    const haveIt = aug => purchasedAugmentations.includes(aug);
-    const neededAugmentations = {};
-    const reverse = {};
-    for (const faction of FACTIONS) {
-        const augmentations = factionAugmentations[faction];
-
-        neededAugmentations[faction] = augmentations
-            .filter(dont(haveIt))
-            .filter(notNeuroFlux);
-
-        for (const augmentation of augmentations) {
-            if (reverse[augmentation] == null)
-                reverse[augmentation] = [];
-            reverse[augmentation].push(faction);
-        }
+  const factions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
+    const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
+    if(ownedAugmentations.length < requiredAugCount)
+        return false;
+    const isCityFaction = CITY_FACTIONS.includes(faction);
+    if (isCityFaction && cityFaction != null && cityFaction !== faction)
+        return false;
+    // return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
+  });
+  const getNeededAugs = faction => factionAugmentations[faction]
+      .filter(stillNeeds).filter(notNeuroFlux);
+  const getPurchaseOrder = (augs) => {
+    const order = new Set([]);
+    augs.sort(by(aug=>-augmentationPrices[aug]));
+    for (const aug of augs) {
+      const prereqs = augmentationPrereqs[aug]
+        .filter(stillNeeds)
+        .reverse();
+      for (const prereq of prereqs)
+        order.add(prereq);
+      order.add(aug);
     }
-
-    const factionExclusives = {}; // Unique augs by faction
-
-    for (const faction of factions) {
-        const needed = neededAugmentations[faction];
-        factionExclusives[faction] = needed.filter(aug => reverse[aug].length === 1);
-    }
-    return { neededAugmentations, factionExclusives };
-};
-
-function isCombatReady(factions, factionAugmentations, purchasedAugmentations) {
-    const haveIt = aug => purchasedAugmentations.includes(aug);
-    const preEndMap = {};
-    const preEndFactions = factions.filter(faction => !COMBAT_REQUIREMENTS[faction]);
-    for (const preEndFaction of preEndFactions)
-        for (const augmentation of factionAugmentations[preEndFaction])
-            preEndMap[augmentation] = true;
-
-    const preEndAugs = Object.keys(preEndMap);
-    const hasAllPreEnd = preEndAugs.every(haveIt);
-    return hasAllPreEnd;
-}
-
-const selectTargetFaction = (ns, factions, neededAugmentations, factionAllowed, augViable) => {
-    if (ns.gang.inGang()) {
-        const { faction } = ns.gang.getGangInformation();
-        if (neededAugmentations[faction].length > 0)
-            return faction;
-    }
-    
-    if (neededAugmentations['Netburners'].length > 0)
-        return 'Netburners';
-    
-    if (neededAugmentations['CyberSec'].length > 0)
-        return 'CyberSec';
-
-    const possibleFactions = factions.filter(factionAllowed);
-
-    return possibleFactions.map(faction => ({
+    return [...order].splice(0, MAX_AUGS);
+  };
+  
+  for (const faction of ['Netburners', 'CyberSec']) {
+    const needed = getNeededAugs(faction);
+    if (needed.length)
+      return {
         faction,
-        viableAugs: neededAugmentations[faction].filter(augViable),
-    })).reduce((a, b) => a.viableAugs.length >= b.viableAugs.length ? a : b).faction;
+        augmentations: getPurchaseOrder(needed)
+      };
+  }
+    
+  const unownedAugmentations = augmentations
+    .filter(aug => !ownedAugmentations.includes(aug) && notNeuroFlux(aug))
+    .sort(by(weightedCost));
+  
+  const top = unownedAugmentations.slice(0, 4);
+  const faction = factions.reduce((a,b)=> {
+    const numA = getNeededAugs(a).filter(aug=>top.includes(aug)).length;
+    const numB = getNeededAugs(b).filter(aug=>top.includes(aug)).length;
+    if (numA >= numB)
+      return a;
+    return b;
+  });
+  const augs = factionAugmentations[faction]
+    .filter(stillNeeds)
+    .filter(notNeuroFlux)
+    .slice(0, MAX_AUGS)
+    .sort(by(aug=>-weightedCost(aug)));
+  while (augs.length > 1 && weightedCost(augs[0]) > weightedCost(augs[1])*10)
+    augs.shift();
+  if (augs.length)
+    return { faction, augmentations: getPurchaseOrder(augs) };
+  return { faction: null,
+          augmentations: getPurchaseOrder(unownedAugmentations.slice(0, MAX_AUGS)) };
 };
 
 export const analyzeAugData = async (ns) => {
-    const {
-        factionAugmentations,
-        augmentationPrices,
-        // augmentationRepReqs,
-        ownedAugmentations,
-    } = getStaticData(ns);
-    const {
-        purchasedAugmentations
-    } = getPlayerData(ns);
-
-    console.log(getStaticData(ns));
-    console.log(getPlayerData(ns));
-
-    // Currently only allowing story and city
-    // factions for automatic work and aug purchases
-    const factions = [...STORY_FACTIONS, ...CITY_FACTIONS];
-
-    const { neededAugmentations, factionExclusives } = process(factions, factionAugmentations, purchasedAugmentations);
-
-    const mostSpent = Math.max(0, ...ownedAugmentations.map(aug =>
-        augmentationPrices[aug]));
-    const baseAugPriceThreshold = mostSpent * 2 || 10e6;
-
-    const isViable = aug => augmentationPrices[aug] <= baseAugPriceThreshold;
-
-    // If script is restarting/rebooting, there is
-    // a possibility that the player has already
-    // joined a city faction. Most of the time,
-    // this will be null.
-    let cityFaction = ns.getPlayer().factions
-        .find(faction=>CITY_FACTIONS.includes(faction));
-
-    ns.tprint('Cost of most expensive aug purchased: $' + mostSpent);
-
-    const hasAllPreEnd = isCombatReady(factions, factionAugmentations, purchasedAugmentations);
-
-    const targetFaction = selectTargetFaction(ns, factions, neededAugmentations, (faction) => {
-        const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
-        if(ownedAugmentations.length < requiredAugCount)
-            return false;
-        const isCityFaction = CITY_FACTIONS.includes(faction);
-        if (isCityFaction && cityFaction != null && cityFaction !== faction)
-            return false;
-        return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
-    }, isViable);
-
-    ns.tprint(targetFaction);
-    const targetAugmentations = neededAugmentations[targetFaction]
-        .sort(by(aug => augmentationPrices[aug]))
-        // .filter(isViable)
-        .slice(0, 6);
-    if (cityFaction == null)
-        cityFaction = CITY_FACTIONS.find(faction => factionExclusives[faction].length > 0);
+    const augData = getStaticData(ns);
+    const cityFaction = ns.getPlayer().factions.find(faction=>CITY_FACTIONS.includes(faction));
+    const augGoals = getAugmentGoals(augData.ownedAugmentations, augData, cityFaction);
 
     putStaticData(ns, {
-        targetFaction,
-        cityFaction,
-        targetAugmentations,
+        targetFaction: augGoals.faction,
+        // cityFaction,
+        targetAugmentations: augGoals.augmentations,
     });
 };
 

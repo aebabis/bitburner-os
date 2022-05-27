@@ -1,4 +1,4 @@
-import { getHostnames, putStaticData } from './lib/data-store';
+import { getHostnames, putPlayerData } from './lib/data-store';
 
 const isContract = file=>file.endsWith('.cct');
 
@@ -17,5 +17,5 @@ const findContracts = (ns) => {
 /** @param {NS} ns */
 export async function main(ns) {
     const contracts = findContracts(ns);
-    putStaticData(ns, { contracts });
+    putPlayerData(ns, { contracts });
 }

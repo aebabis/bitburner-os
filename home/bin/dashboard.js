@@ -157,7 +157,7 @@ const workTable = (ns) => {
     const PAD = Math.max(0, 7-gains.length);
     const rows = table(ns, null, gains) + '\n'.repeat(PAD);
     if (workType === 'Working for Faction') {
-        const rep = factionRep[currentWorkFactionName]?.toFixed(3);
+        const rep = Math.floor(factionRep[currentWorkFactionName]);
         return ` WORK \n ${currentWorkFactionName} (${rep}rep) \n${rows}`;
     } else if (workType === 'Working for Company') {
         return ` WORK \n Working at ${companyName} \n${rows}`;

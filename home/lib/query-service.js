@@ -78,13 +78,7 @@ export const estimateTimeToGoal = (ns) => {
     }
 };
 
-export const getGoalCost = (ns) => {
-    if (needsJobRam(ns)) {
-        return getJobRamCost(ns);
-    } else {
-        return getMoneyData(ns).costToAug;
-    }
-};
+export const getGoalCost = (ns) => getMoneyData(ns).costToAug || getJobRamCost(ns);
 
 export const getRepNeeded = (ns) => {
     const { targetAugmentations, augmentationRepReqs } = getStaticData(ns);

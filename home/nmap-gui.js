@@ -199,7 +199,7 @@ export async function main(ns) {
         node.target.map(target=>({ source, target }))).flat();
     const elem = await getTailModal(ns);
 
-    const resizeable = elem.children[0];
+    const resizeable = elem.bottom;
     resizeable.style.width = '500px';
     resizeable.style.height = '500px';
     resizeable.children[0].remove();
