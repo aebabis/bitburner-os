@@ -23,7 +23,7 @@ const go = async(ns) => {
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
 
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
-    const canAffordTixApi = () => ns.getPlayer().money >= 1e9;
+    const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 1e9;
     const hasSingularity = () => bitNodeN === 4 || beatBN4;
     const canAutopilot = () => hasSingularity() && requiredJobRam <= mostRootRam(ns);
     const inCriminalFaction = () => ns.getPlayer().factions.some(faction => CRIMINAL_ORGANIZATIONS.includes(faction));
@@ -41,8 +41,8 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/accountant.js'),
         AnyHostService(ns)('/bin/contracts/freelancer.js'),
         AnyHostService(ns)('/bin/share.js'),
-        AnyHostService(ns, canAffordTixApi)
-                          ('/bin/broker.js'),
+        AnyHostService(ns, couldTrade)
+                          ('/bin/broker/broker.js'),
         AnyHostService(ns, couldHaveGang)
                           ('/bin/gang/mob-boss.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),

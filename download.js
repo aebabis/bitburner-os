@@ -27,10 +27,10 @@ const FILES = [
   '/bin/infect.js',
   '/bin/liquidate.js',
   '/bin/logger.js',
-  '/bin/market-access.js',
   '/bin/planner.js',
   '/bin/purchase-threadpool.js',
   '/bin/scheduler.js',
+  '/bin/self/actualize.js',
   '/bin/self/apply.js',
   '/bin/self/aug/analyze.js',
   '/bin/self/aug/augment.js',
@@ -57,6 +57,7 @@ const FILES = [
   '/bin/self/improvement.js',
   '/bin/self/job.js',
   '/bin/self/rep-recorder.js',
+  '/bin/self/respect.js',
   '/bin/self/tor.js',
   '/bin/self/travel.js',
   '/bin/self/work.js',
@@ -85,6 +86,7 @@ const FILES = [
   '/etc/filenames.js',
   '/etc/ports.js',
   'gang.js',
+  '/lib/augmentations.js',
   '/lib/backdoor.js',
   '/lib/config.js',
   '/lib/d3.js',
@@ -123,8 +125,9 @@ const FILES = [
 
 /** @param {NS} ns **/
 export async function main(ns) {
+  const { branch } = ns.flags([['branch', 'main']]);
   for (const file of FILES) {
-    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/${file}`;
+    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/${branch}/home/${file}`;
     await ns.wget(downloadPath, file);
     ns.tprint(`Downloaded ${file}`);
   }

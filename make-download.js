@@ -36,8 +36,9 @@ ${files.join('\n')}
 ];
 
 /** @param {NS} ns **/\nexport async function main(ns) {
+  const { branch } = ns.flags([['branch', 'main']]);
   for (const file of FILES) {
-    const downloadPath = \`https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/\${file}\`;
+    const downloadPath = \`https://raw.githubusercontent.com/aebabis/bitburner-os/\${branch}/home/\${file}\`;
     await ns.wget(downloadPath, file);
     ns.tprint(\`Downloaded \${file}\`);
   }

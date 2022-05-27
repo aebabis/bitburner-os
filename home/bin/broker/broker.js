@@ -45,8 +45,8 @@ export async function main(ns) {
     const isTrendTrader = (player=ns.getPlayer()) => player.hasTixApiAccess && !player.has4SDataTixApi;
     const isFourSTrader = (player=ns.getPlayer()) => player.hasTixApiAccess && player.has4SDataTixApi;
 
-    const trendTraderSubservice = AnyHostService(ns, isTrendTrader)('/bin/broker/trend-trader.js');
-    const fourSTraderSubservice = AnyHostService(ns, isFourSTrader)('/bin/broker/four-s-trader.js');
+    const trendTraderSubservice = AnyHostService(ns, isTrendTrader)('/bin/broker/trader-trend.js');
+    const fourSTraderSubservice = AnyHostService(ns, isFourSTrader)('/bin/broker/trader-4s.js');
 
     await getTixApiAccess();
     await loadStaticStockData();
