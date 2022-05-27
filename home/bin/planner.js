@@ -40,6 +40,7 @@ const go = async(ns) => {
                           ('/bin/server-purchaser.js'),
         AnyHostService(ns)('/bin/dashboard.js'),
         AnyHostService(ns)('/bin/accountant.js'),
+        AnyHostService(ns)('/bin/contracts/freelancer.js'),
         AnyHostService(ns, canBuyTixAccess)
                           ('/bin/market-access.js'),
         AnyHostService(ns, has4SApi)
