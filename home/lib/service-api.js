@@ -5,6 +5,8 @@ import { table } from './lib/table';
 export const DISABLE = 'DISABLE';
 export const ENABLE = 'ENABLE';
 
+const getServiceName = (script) => script.split('/').pop().split('.').shift();
+
 export const getTableString = (ns, taskData) => {
     return table(ns, ['ID', 'NAME', '', 'PID', 'DESC'], taskData.map(
         ({ id, name, status, pid, desc }) => [id, name, status, pid, desc]));
@@ -14,7 +16,7 @@ export const getServices = (ns) => {
     return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 
-export const disableService = async(ns, idOrName) => {
+export const disableService = async(ns, idOrName=getServiceName(ns.getScriptName())) => {
     await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
         identifier: idOrName, type: DISABLE,
     });

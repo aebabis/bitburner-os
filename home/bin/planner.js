@@ -22,11 +22,10 @@ const go = async(ns) => {
     const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
 
+    const canPurchaseServers = () => ns.getPlayer().money >= 220000;
+    const canAffordTixApi = () => ns.getPlayer().money >= 1e9;
     const hasSingularity = () => bitNodeN === 4 || beatBN4;
     const canAutopilot = () => hasSingularity() && requiredJobRam <= mostRootRam(ns);
-    const canPurchaseServers = () => ns.getPlayer().money >= 220000;
-    const has4SApi = () => ns.getPlayer().has4SDataTixApi;
-    const canBuyTixAccess = () => !has4SApi() && ns.getPlayer().money >= 200e6;
     const inCriminalFaction = () => ns.getPlayer().factions.some(faction => CRIMINAL_ORGANIZATIONS.includes(faction));
     const couldHaveGang = () => inCriminalFaction() && (bitNodeN === 2 || beatBN2);
     // const augsUp = () => getStaticData(ns).targetFaction != null;
@@ -41,25 +40,17 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/dashboard.js'),
         AnyHostService(ns)('/bin/accountant.js'),
         AnyHostService(ns)('/bin/contracts/freelancer.js'),
-        AnyHostService(ns, canBuyTixAccess)
-                          ('/bin/market-access.js'),
-        AnyHostService(ns, has4SApi)
-                          ('/bin/broker.js'),
         AnyHostService(ns)('/bin/share.js'),
+        AnyHostService(ns, canAffordTixApi)
+                          ('/bin/broker.js'),
         AnyHostService(ns, couldHaveGang)
                           ('/bin/gang/mob-boss.js'),
-        AnyHostService(ns, canAutopilot)
-                          ('/bin/self/aug/augment.js'),
-        AnyHostService(ns, canAutopilot)
-                          ('/bin/self/work.js'),
-        AnyHostService(ns, canAutopilot)
-                          ('/bin/self/control.js'),
-        AnyHostService(ns, canAutopilot)
-                          ('/bin/self/focus.js'),
-        AnyHostService(ns, canAutopilot)
-                          ('/bin/self/tor.js'),
-        AnyHostService(ns, canAutopilot)
-                        ('/bin/self/rep-recorder.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/work.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/control.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/focus.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/tor.js'),
+        AnyHostService(ns, canAutopilot)('/bin/self/rep-recorder.js'),
     ];
 
     const showServices = () => {

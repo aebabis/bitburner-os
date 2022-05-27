@@ -71,7 +71,7 @@ export async function main(ns) {
     if (remainingAugs.every(aug => purchasedAugmentations.includes(aug))) {
         // Sell stocks and prevent spending
         await liquidate(ns);
-        
+
         // Wait for a little more money to come in
         await ns.sleep(10000);
 
@@ -87,6 +87,12 @@ export async function main(ns) {
 
         // Buy RAM if we can
         await rmi(ns)('/bin/self/buy-ram.js', 1);
+
+        // Try to start next aug with market access
+        await rmi(ns)('/broker/purchase.js', 'purchaseWseAccount');
+        await rmi(ns)('/broker/purchase.js', 'purchaseTixApi');
+        await rmi(ns)('/broker/purchase.js', 'purchase4SMarketDataTixApi');
+        await rmi(ns)('/broker/purchase.js', 'purchase4SMarketData');
 
         // Start all over
         await rmi(ns)('/bin/self/aug/install.js', 1, 'init.js');
