@@ -3,7 +3,7 @@ import algorithms from './bin/contracts/mapper';
 
 /** @param {NS} ns */
 const attemptContract = (ns, { filename, hostname, type, data, tries }) => {
-    if (tries < 10)
+    if (tries < 3)
         return false;
     const algorithm = algorithms(type);
     if (algorithm == null)

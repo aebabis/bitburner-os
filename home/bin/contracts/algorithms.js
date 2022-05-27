@@ -204,13 +204,16 @@ export const hammingCorrect = (str) => {
   return hammingExtract(bits);
 };
 
-export const stockProfit = (prices, n=1) => {
+export const stockProfit = (prices, n=1, s=0, c={}) => {
   let split = 0;
+  const key = `${s},${prices.length},${n}`;
+  if (c[key])
+    return c[key];
   if (n > 1) {
     for (let i = 2; i < prices.length; i++) {
       const left = prices.slice(0, i);
       const right = prices.slice(i);
-      const value = stockProfit(left)+stockProfit(right, n-1);
+      const value = stockProfit(left, 1, s, c)+stockProfit(right, n-1, s+i, c);
       split = Math.max(split, value);
     }
   }
@@ -220,5 +223,5 @@ export const stockProfit = (prices, n=1) => {
     min = Math.min(min, price);
     pro = Math.max(pro, price - min);
   }
-  return Math.max(pro, split);
+  return c[key] = Math.max(pro, split);
 };
