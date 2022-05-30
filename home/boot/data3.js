@@ -1,9 +1,10 @@
 import { getStaticData, putStaticData } from './lib/data-store';
 import { defer } from './boot/defer';
+import { C_MAIN, C_SUB, tprint } from './boot/util';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.tprint('Determining required job RAM');
+    tprint(ns)(C_MAIN + 'Determining required job RAM');
 
     const { bitNodeN, ownedSourceFiles, scriptRam } = getStaticData(ns);
 
@@ -21,11 +22,11 @@ export async function main(ns) {
         requiredJobRam = 1;
         while (requiredJobRam < maxScriptSize)
             requiredJobRam *= 2;
-        ns.tprint(`Job RAM Required: ${requiredJobRam}GB`);
+        tprint(ns)(C_SUB + `Job RAM Required: ${requiredJobRam}GB`);
     }
 
     putStaticData(ns, { requiredJobRam });
 
     // Go to next step in the boot sequence
-	defer(ns)(...ns.args);
+	await defer(ns)(...ns.args);
 }

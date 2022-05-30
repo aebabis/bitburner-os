@@ -1,15 +1,16 @@
 import { putStaticData } from './lib/data-store';
-import { getBitNodeMultipliers } from './boot/cheaty-data';
+import * as cheaty from './boot/cheaty-data';
+import { C_MAIN, tprint } from './boot/util';
 
 /** 
  * @precondition Running on BN1.1
  * @param {NS} ns */
 export async function main(ns) {
-    ns.tprint('Adding hacknet multipliers to static data cache');
+    tprint(ns)(C_MAIN + 'ADDING MULTIPLIERS TO CACHE');
 
     putStaticData(ns, {
         hacknetMultipliers: ns.getHacknetMultipliers(),
-        getBitNodeMultipliers: getBitNodeMultipliers(1),
+        bitNodeMultipliers: cheaty['getBitNodeMultipliers'](1),
     });
 
     // Go to next step in the boot sequence

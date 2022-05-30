@@ -7,7 +7,7 @@ export async function main(ns) {
     nmap(ns).forEach((hostname) => {
         ns.ps(hostname).forEach(({pid, filename, args}) => {
             // Don't kill restart task
-            if (filename === script && args.length === 0)
+            if (filename === script && JSON.stringify(args) === JSON.stringify(ns.args))
                 return;
             ns.kill(pid);
         });
