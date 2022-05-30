@@ -20,24 +20,22 @@ export async function main(ns) {
 
     while (true) {
         const player = ns.getPlayer();
-        const { ownedAugmentations, targetFaction } = getStaticData(ns);
-        const { factionRep = {} } = getPlayerData(ns);
+        const { targetFaction } = getStaticData(ns);
+        const { isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
         const inTargetFaction = player.factions.includes(targetFaction);
         const isFactionGang = ns.gang.inGang() && ns.gang.getGangInformation().faction === targetFaction;
         const rep = factionRep[targetFaction] || 0;
 
         const isAfk = afkTime() > 20000;
-        const shouldFocus = isAfk && ownedAugmentations &&
-            !ownedAugmentations.includes('Neuroreceptor Management Implant');
 
         const makeMoney = async () => {
-            if (isAfk) {
+            if (isPlayerActive) {
+                await rmi(ns)('/bin/self/job.js', 1);
+            } else {
                 await rmi(ns)('/bin/self/crime-stats.js');
                 await rmi(ns)('/bin/self/crime-chance.js');
                 await rmi(ns)('/bin/self/crime.js');
-            } else {
-                await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
             }
         };
 
@@ -48,15 +46,15 @@ export async function main(ns) {
         const statForCrimeTraining = getStatToTrain(5);
         if (statForCrimeTraining != null) {
             if (player.money > 5000)
-                await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5, shouldFocus);
+                await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5);
             else
-                await rmi(ns)('/bin/self/job.js', 1, shouldFocus);
+                await rmi(ns)('/bin/self/job.js', 1);
         } else if (isMoneyBound(ns) || isFactionGang) {
             await makeMoney();
         } else if (inTargetFaction) {
             if (rep < getRepNeeded(ns)) {
                 getConfig(ns).set('share', .1);
-                await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction, shouldFocus);
+                await rmi(ns)('/bin/self/faction-work.js', 1, targetFaction);
             } else {
                 getConfig(ns).set('share', 0);
                 await makeMoney();
@@ -65,7 +63,7 @@ export async function main(ns) {
             const statToTrain = getFactionStat(targetFaction);
             const requiredLocations = FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
             if (statToTrain != null)
-                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, COMBAT_REQUIREMENTS[targetFaction], shouldFocus);
+                await rmi(ns)('/bin/self/improvement.js', 1, statToTrain, COMBAT_REQUIREMENTS[targetFaction]);
             else if (!requiredLocations.includes(player.city))
                 await rmi(ns)('/bin/self/travel.js', 1, requiredLocations[0]);
             else

@@ -41,6 +41,7 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/accountant.js'),
         AnyHostService(ns)('/bin/contracts/freelancer.js'),
         AnyHostService(ns)('/bin/share.js'),
+        AnyHostService(ns)('/bin/stalker.js'),
         AnyHostService(ns, couldTrade)
                           ('/bin/broker/broker.js'),
         AnyHostService(ns, couldHaveGang)
@@ -48,7 +49,6 @@ const go = async(ns) => {
         AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/work.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/control.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/focus.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/tor.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/rep-recorder.js'),
     ];

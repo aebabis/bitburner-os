@@ -1,8 +1,9 @@
+import { shouldWorkHaveFocus } from './lib/query-service';
+
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const [focus] = ns.args;
+    const focus = shouldWorkHaveFocus(ns);
     ns.workForCompany('Joe\'s Guns', focus);
     await ns.sleep(10000);
-    ns.stopAction();
 }

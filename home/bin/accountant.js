@@ -41,9 +41,12 @@ export async function main(ns) {
     let prevMoney = 0;
 
     while (true) {
+        const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
+        if (scheduler == null)
+            return;
         const timestamp = Date.now();
         const { money } = ns.getPlayer();
-        const { onlineMoneyMade, offlineMoneyMade } = ns.getRunningScript('/bin/scheduler.js', 'home');
+        const { onlineMoneyMade, offlineMoneyMade } = scheduler;
         const moneyMade = onlineMoneyMade + offlineMoneyMade;
 
         if (money > prevMoney) // Skip ticks where a purchase is made

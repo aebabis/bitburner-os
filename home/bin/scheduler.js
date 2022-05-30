@@ -4,15 +4,12 @@ import { checkPort, fulfill, reject } from './lib/scheduler-api';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
 import { getStaticData, putRamData } from './lib/data-store';
-import { autoClosePopUps } from './lib/tracking';
 
 const SCHEDULER_HOME = 'home';
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
-	
-	autoClosePopUps(ns);
 
 	if (ns.getHostname() !== SCHEDULER_HOME){
 		throw new Error(`Scheduler only runs on ${SCHEDULER_HOME}`);

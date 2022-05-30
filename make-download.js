@@ -37,6 +37,10 @@ ${files.join('\n')}
 
 /** @param {NS} ns **/\nexport async function main(ns) {
   const { branch } = ns.flags([['branch', 'main']]);
+  if (_.length > 0) {
+    ns.tprint('\\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
+    return;
+  }
   for (const file of FILES) {
     const downloadPath = \`https://raw.githubusercontent.com/aebabis/bitburner-os/\${branch}/home/\${file}\`;
     await ns.wget(downloadPath, file);

@@ -7,6 +7,7 @@ import {
     getPlayerData,
     getMoneyData,
 } from './lib/data-store';
+import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
 
 const cache = func => {
     let data;
@@ -89,6 +90,31 @@ export const getRepNeeded = (ns) => {
     const repCosts = targetAugmentations.map(aug=>augmentationRepReqs[aug]);
     return Math.max(...repCosts, 0);
 };
+
+export const shouldWorkHaveFocus = (ns) => {
+    const { isPlayerActive } = getPlayerData(ns);
+    const { ownedAugmentations } = getStaticData(ns);
+    if (ownedAugmentations == null)
+        return !isPlayerActive;
+    if (ownedAugmentations.includes('Neuroreceptor Management Implant'))
+        return false;
+    return !isPlayerActive;
+}
+
+export const hasSingularityApi = (ns) => {
+    const { bitNodeN } = ns.getPlayer();
+    const { ownedSourceFiles } = getStaticData(ns);
+    const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
+    return bitNodeN === 4 || beatBN4;
+}
+
+export const couldHaveGang = (ns) => {
+    const { factions, bitNodeN } = ns.getPlayer();
+    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
+    const inCriminalFaction = factions.some(
+        faction => CRIMINAL_ORGANIZATIONS.includes(faction));
+    return inCriminalFaction && (bitNodeN === 2 || beatBN2);
+}
 
 /** @param {NS} ns **/
 const queryService = (ns) => {

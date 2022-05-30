@@ -1,9 +1,11 @@
+import { shouldWorkHaveFocus } from './lib/query-service';
 import { getPlayerData, putPlayerData } from './lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const [faction, focus] = ns.args;
+    const [faction] = ns.args;
+    const focus = shouldWorkHaveFocus(ns);
     if (
         ns.workForFaction(faction, 'Hacking Contracts', focus) ||
         ns.workForFaction(faction, 'Field Work', focus) ||
