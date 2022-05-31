@@ -9,6 +9,7 @@ export async function main(ns) {
     tprint(ns)(C_MAIN + 'ADDING MULTIPLIERS TO CACHE');
 
     putStaticData(ns, {
+        ownedSourceFiles: [],
         hacknetMultipliers: ns.getHacknetMultipliers(),
         bitNodeMultipliers: cheaty['getBitNodeMultipliers'](1),
     });

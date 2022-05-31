@@ -1,6 +1,7 @@
 import { THREADPOOL } from './etc/config';
 import { by } from './lib/util';
 import { checkPort, fulfill, reject } from './lib/scheduler-api';
+import { delegateAny } from './lib/scheduler-delegate';
 import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
 import { getStaticData, putRamData } from './lib/data-store';
@@ -18,10 +19,11 @@ export async function main(ns) {
 	// Scheduler completes the bootstrap process
 	// by starting the planner and the logger.
 	// This is done since these 3 programs can't
-	// run on 8GB ram when start.js is still running.
+	// run on 8GB ram while the boot sequence is
+	// finishing
 	await ns.sleep(50);
 	ns.exec('/bin/planner.js', 'home');
-	ns.exec('/bin/logger.js', 'home');
+	delegateAny(ns)('/bin/logger.js');
 
 	const {
 		purchasedServerMaxRam,

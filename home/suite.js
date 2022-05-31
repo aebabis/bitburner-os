@@ -12,9 +12,10 @@ export async function main(ns) {
 
     const schedulerRam = ns.getScriptRam('/bin/scheduler.js');
     const plannerRam = ns.getScriptRam('/bin/planner.js');
-    const loggerRam = ns.getScriptRam('/bin/logger.js');
-    const sum = schedulerRam + plannerRam + loggerRam;
-    if (sum > 8) {
-        ns.tprint(`ERROR - scheduler, planner, and logger exceed 8GB in RAM (${sum}GB)`);
+
+    const MAX_OS_RAM = 8 - 1.6;
+
+    if (schedulerRam + plannerRam > MAX_OS_RAM) {
+        ns.tprint(`ERROR - scheduler and planner exceed ${MAX_OS_RAM} GB in RAM (${sum}GB)`);
     }
 }

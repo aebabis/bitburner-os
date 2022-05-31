@@ -49,7 +49,7 @@ export const Service = (ns, condition=()=>true, interval=5000) => (script, targe
 
     const check = async (beforeRun) => {
         const running = isRunning();
-        const shouldBe = enabled && condition();
+        const shouldBe = enabled && condition(ns);
         if (!running && shouldBe) {
             const now = Date.now();
             const isReady = now - lastRun >= interval;

@@ -110,6 +110,7 @@ export const hasSingularityApi = (ns) => {
 
 export const couldHaveGang = (ns) => {
     const { factions, bitNodeN } = ns.getPlayer();
+    const { ownedSourceFiles } = getStaticData(ns);
     const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
     const inCriminalFaction = factions.some(
         faction => CRIMINAL_ORGANIZATIONS.includes(faction));

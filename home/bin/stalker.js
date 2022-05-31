@@ -76,6 +76,7 @@ const createIndicator = (ns) => {
     indicator.style.padding = '.5em';
     doc.body.append(indicator);
     ns.atExit(() => indicator.remove());
+    return indicator;
 }
 
 /** @param {NS} ns **/

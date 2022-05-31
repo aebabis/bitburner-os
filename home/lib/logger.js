@@ -18,7 +18,9 @@ export const logger = (ns, options = {}) => {
 		const lead = `${type} ${script}`;
 		const message = args.map(process).join(' ');
 		const output =  `${lead.padEnd(20)} ${message}`;
-		if (echo) {
+		if (type === 'ERROR')
+			ns.tprint(output);
+		else if (echo) {
 			ns.print(output);
 		}
 		let time = Date.now();

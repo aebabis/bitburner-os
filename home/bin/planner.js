@@ -1,7 +1,7 @@
 import { AnyHostService } from './lib/service';
 import { getStaticData, getRamData } from './lib/data-store';
+import { hasSingularityApi, couldHaveGang } from './lib/query-service';
 import { logger } from './lib/logger';
-import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
 
 import {
     ENABLE, DISABLE,
@@ -16,19 +16,13 @@ const mostRootRam = (ns) => {
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
-    const { bitNodeN } = ns.getPlayer();
-    const { ownedSourceFiles, requiredJobRam } = getStaticData(ns);
+    const { requiredJobRam } = getStaticData(ns);
 
-    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
-    const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
+    const hasSingularity = hasSingularityApi(ns);
 
     const canPurchaseServers = () => ns.getPlayer().money >= 220000;
     const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 1e9;
-    const hasSingularity = () => bitNodeN === 4 || beatBN4;
-    const canAutopilot = () => hasSingularity() && requiredJobRam <= mostRootRam(ns);
-    const inCriminalFaction = () => ns.getPlayer().factions.some(faction => CRIMINAL_ORGANIZATIONS.includes(faction));
-    const couldHaveGang = () => inCriminalFaction() && (bitNodeN === 2 || beatBN2);
-    // const augsUp = () => getStaticData(ns).targetFaction != null;
+    const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
 
     /* eslint-disable no-unexpected-multiline */
     const tasks = [
