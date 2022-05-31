@@ -52,7 +52,6 @@ const FILES = [
   '/bin/self/crime-stats.js',
   '/bin/self/crime.js',
   '/bin/self/faction-work.js',
-  '/bin/self/focus.js',
   '/bin/self/hack.js',
   '/bin/self/improvement.js',
   '/bin/self/job.js',
@@ -63,6 +62,7 @@ const FILES = [
   '/bin/self/work.js',
   '/bin/server-purchaser.js',
   '/bin/share.js',
+  '/bin/stalker.js',
   '/bin/thief.js',
   '/bin/workers/grow.js',
   '/bin/workers/hack.js',
@@ -80,6 +80,7 @@ const FILES = [
   '/boot/reset.js',
   '/boot/spawn.js',
   '/boot/ui.js',
+  '/boot/util.js',
   'config.js',
   'contracts.js',
   '/etc/config.js',
@@ -107,7 +108,6 @@ const FILES = [
   '/lib/table.js',
   '/lib/thief.js',
   '/lib/timeline.js',
-  '/lib/tracking.js',
   '/lib/util.js',
   'manual.js',
   'nmap-gui.js',
@@ -126,6 +126,10 @@ const FILES = [
 /** @param {NS} ns **/
 export async function main(ns) {
   const { branch } = ns.flags([['branch', 'main']]);
+  if (_.length > 0) {
+    ns.tprint('\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
+    return;
+  }
   for (const file of FILES) {
     const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/${branch}/home/${file}`;
     await ns.wget(downloadPath, file);

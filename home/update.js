@@ -2,8 +2,13 @@ import { stop } from './stop';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    const { branch } = ns.flags([['branch', 'main']]);
+    const { branch, wipe } = ns.flags([
+        ['branch', 'main'],
+        ['wipe', false],
+    ]);
     await stop(ns);
+    if (wipe)
+        ns.ls('home', '.js').forEach(file => ns.rm(file));
     await ns.wget(`https://raw.githubusercontent.com/aebabis/bitburner-os/${branch}/download.js`, 'download.js', 'home');
     const pid = ns.exec('download.js', 'home', '--branch', branch);
     while (ns.isRunning(pid))
