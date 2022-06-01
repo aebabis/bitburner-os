@@ -1,5 +1,6 @@
 import { defer } from './boot/defer';
-import { C_TITLE, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR } from './lib/colors';
 
 const getBootSequence = (ns) => {
     if (ns.getServerMaxRam('home') === 8) {
@@ -26,7 +27,7 @@ const getBootSequence = (ns) => {
 
 /** @param {NS} ns */
 export async function main(ns) {
-    tprint(ns)(C_TITLE + 'STARTING BOOT SEQUENCE');
+    tprint(ns)(STR.BOLD + 'STARTING BOOT SEQUENCE');
 
     const BOOT_SEQUENCE = getBootSequence(ns);
 

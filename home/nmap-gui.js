@@ -200,8 +200,6 @@ export async function main(ns) {
     const elem = await getTailModal(ns);
 
     const resizeable = elem.bottom;
-    resizeable.style.width = '500px';
-    resizeable.style.height = '500px';
     resizeable.children[0].remove();
     await showChart(ns, resizeable, nodes, links);
     // .remove();

@@ -6,19 +6,19 @@ import { rmi } from './lib/rmi';
 const isTixViable = (ns) => {
     const { costToAug } = getMoneyData(ns);
     const { money } = ns.getPlayer();
-    if (costToAug > 5e9)
-        return money > 1e9;
+    if (costToAug == null || costToAug > 5e9)
+        return money > 5e9;
     else
-        return money - costToAug > 1e9;
+        return money - costToAug > 5e9;
 };
 
 const is4SViable = (ns) => {
     const { costToAug } = getMoneyData(ns);
     const { money } = ns.getPlayer();
-    if (costToAug > 5e9)
-        return money > 1e9;
+    if (costToAug > 25e9)
+        return money > 25e9;
     else
-        return money - costToAug > 1e9;
+        return money - costToAug > 25e9;
 };
 
 const getTixApiAccess = async (ns) => {
@@ -26,41 +26,42 @@ const getTixApiAccess = async (ns) => {
         while (!isTixViable(ns))
             await ns.sleep(1000);
         if (!ns.getPlayer().hasWseAccess)
-            await rmi(ns)('/broker/purchase.js', 'purchaseWseAccount');
-        await rmi(ns)('/broker/purchase.js', 'purchaseTixApi');
+            await rmi(ns)('/bin/broker/purchase.js', 1, 'purchaseWseAccount');
+        await rmi(ns)('/bin/broker/purchase.js', 1, 'purchaseTixApi');
     }
 };
 
-const loadStaticStockData = (ns) => rmi(ns, true)('/bin/load-stocks.js');
+const loadStaticStockData = (ns) => rmi(ns, true)('/bin/broker/load-stocks.js');
 
 const attempt4SApiAccess = async (ns) => {
     if (is4SViable(ns))
-        await rmi(ns)('/broker/purchase.js', 'purchase4SMarketDataTixApi');
+        await rmi(ns)('/bin/broker/purchase.js', 1, 'purchase4SMarketDataTixApi');
 };
 
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
 
-    const isTrendTrader = (player=ns.getPlayer()) => player.hasTixApiAccess && !player.has4SDataTixApi;
-    const isFourSTrader = (player=ns.getPlayer()) => player.hasTixApiAccess && player.has4SDataTixApi;
+    const isTrendTrader = (ns, player=ns.getPlayer()) => player.hasTixApiAccess && !player.has4SDataTixApi;
+    const isFourSTrader = (ns, player=ns.getPlayer()) => player.hasTixApiAccess && player.has4SDataTixApi;
 
     const trendTraderSubservice = AnyHostService(ns, isTrendTrader)('/bin/broker/trader-trend.js');
     const fourSTraderSubservice = AnyHostService(ns, isFourSTrader)('/bin/broker/trader-4s.js');
+    const services = [trendTraderSubservice, fourSTraderSubservice];
 
     await getTixApiAccess(ns);
     await loadStaticStockData(ns);
 
     while (true) {
         if (!ns.getPlayer().has4SDataTixApi)
-            await attempt4SApiAccess();
-        await trendTraderSubservice.check();
-        await fourSTraderSubservice.check();
-        const subserviceData = [
-            trendTraderSubservice.getData(),
-            fourSTraderSubservice.getData(),
-        ];
+            await attempt4SApiAccess(ns);
+        
+        for (const service of services)
+            await service.check();
+
         ns.clearLog();
-        ns.print(getTableString(ns, subserviceData));
+        ns.print(getTableString(ns, services.map(s=>s.toData())));
+
+        await ns.sleep(1000);
     }
 }

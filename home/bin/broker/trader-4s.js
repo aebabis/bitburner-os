@@ -1,4 +1,4 @@
-import { trade } from './bin/broker/trader';
+import { trade } from './bin/broker/trade';
 import { forecaster } from './bin/broker/forecaster-4s';
 
 /** @param {NS} ns **/

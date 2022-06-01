@@ -2,9 +2,9 @@ import { THREADPOOL } from './etc/config';
 import { by } from './lib/util';
 import { checkPort, fulfill, reject } from './lib/scheduler-api';
 import { delegateAny } from './lib/scheduler-delegate';
-import { logger } from './lib/logger';
 import { nmap } from './lib/nmap';
 import { getStaticData, putRamData } from './lib/data-store';
+import { ERROR } from './lib/colors';
 
 const SCHEDULER_HOME = 'home';
 
@@ -138,7 +138,7 @@ export async function main(ns) {
 				queue.slice(0, 10).forEach(item => ns.print(item.toString()));
 			}
 		} catch(error) {
-			await logger(ns).error(error);
+			ns.tprint(ERROR+error);
 		} finally {
 			await ns.sleep(10);
 		}

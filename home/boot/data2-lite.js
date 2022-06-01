@@ -1,12 +1,13 @@
 import { putStaticData } from './lib/data-store';
 import * as cheaty from './boot/cheaty-data';
-import { C_MAIN, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR } from './lib/colors';
 
 /** 
  * @precondition Running on BN1.1
  * @param {NS} ns */
 export async function main(ns) {
-    tprint(ns)(C_MAIN + 'ADDING MULTIPLIERS TO CACHE');
+    tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 
     putStaticData(ns, {
         ownedSourceFiles: [],

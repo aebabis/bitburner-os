@@ -4,24 +4,25 @@ import { defer } from './boot/defer';
 import { access } from './bin/access';
 import { infect, fullInfect } from './bin/infect';
 import { getHostnames } from './lib/data-store';
-import { C_MAIN, C_SUB, C_LIGHT, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR, GRAY } from './lib/colors';
 
 const canRunCode = (ns) => (hostname) => ns.getServerMaxRam(hostname) >= 1.6;
 
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    tprint(ns)(C_MAIN + 'CONFIGURING NETWORK');
+    tprint(ns)(STR.BOLD + 'CONFIGURING NETWORK');
 
     const hostnames = getHostnames(ns);
 
     // Try to get more starting RAM
-    tprint(ns)(C_SUB + '  Hacking low-level servers');
+    tprint(ns)(STR + '  Hacking low-level servers');
     hostnames.forEach(access(ns));
 
     // Erase old versions of files, then upload
     // the batchable files to every server
-    tprint(ns)(C_SUB + '  Uploading batch files');
+    tprint(ns)(STR + '  Uploading batch files');
     for (const hostname of hostnames) {
         if (hostname !== 'home' && canRunCode(ns)(hostname)) {
             await infect(ns, hostname);
@@ -38,7 +39,7 @@ export async function main(ns) {
         .filter(canRunCode(ns))
         .sort(by(ns.getServerRequiredHackingLevel))
         .slice(0, SERVERS_NEEDED);
-    tprint(ns)(C_SUB + '  Infecting zombies: ' + C_LIGHT + zombies.join(', '));
+    tprint(ns)(STR + '  Infecting zombies: ' + GRAY + zombies.join(', '));
     await fullInfect(ns, ...zombies);
     try { await fullInfect(ns, `${THREADPOOL}-01`, `${THREADPOOL}-02`) }
     catch {/*Do nothing*/}

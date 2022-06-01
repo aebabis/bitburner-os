@@ -32,12 +32,16 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
             if (process != null) {
                 if (process.ticket === job.ticket) {
                     return port.read();
-                } else if (Date.now() - process.timestamp > 200) {
-                    port.read();
+                } else {
+                    await ns.sleep(1);
+                    // If same process is still in port
+                    // after event-loop pass, parent must have died
+                    if (port.peek()?.pid === process.pid)
+                        port.read();
                 }
             }
             await ns.sleep(10);
-            if (Date.now() - start >= 60000) {
+            if (Date.now() - start >= 70000) { // TODO: This might not be necessary anymore
                 throw new Error(`Timed-out: ${script} ${host||'*'} ${numThreads} ${args.join(' ')}`);
             }
         }

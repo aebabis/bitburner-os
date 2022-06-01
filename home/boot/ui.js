@@ -1,5 +1,6 @@
 import { defer } from './boot/defer';
-import { C_MAIN, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR } from './lib/colors';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -13,7 +14,7 @@ export async function main(ns) {
     //     doc.head.append(div.firstChild);
     // }
 
-    tprint(ns)(C_MAIN + 'SETTING STYLES');
+    tprint(ns)(STR.BOLD + 'SETTING STYLES');
     const styles = ns.ui.getStyles();
     styles.lineHeight = 1.18;
     styles.fontFamily = `monospace`;

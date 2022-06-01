@@ -1,18 +1,19 @@
 import { putStaticData } from './lib/data-store';
 import { defer } from './boot/defer';
-import { C_MAIN, C_SUB, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR } from './lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    tprint(ns)(C_MAIN + 'GENERATING STATIC DATA');
+    tprint(ns)(STR.BOLD + 'GENERATING STATIC DATA');
 
-    tprint(ns)(C_SUB + '  Precalculating static server costs');
+    tprint(ns)(STR + '  Precalculating static server costs');
     const purchasedServerMaxRam = ns.getPurchasedServerMaxRam();
     const purchasedServerCosts = {};
     for (let ram = purchasedServerMaxRam; ram >= 2; ram /= 2)
         purchasedServerCosts[ram] = ns.getPurchasedServerCost(ram);
 
-    tprint(ns)(C_SUB + '  Storing script RAM costs');
+    tprint(ns)(STR + '  Storing script RAM costs');
     const scriptRam = {};
     const scripts = ns.ls('home').filter(file=>file.endsWith('.js'));
     for (const script of scripts)

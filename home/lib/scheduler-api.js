@@ -4,7 +4,7 @@ import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
 const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
-	const time = Date.now();
+	const time = rest.startTime || Date.now();
 	const waitTime = () => Date.now() - time;
 	const wait = () => (waitTime()/1000).toFixed(3);
 	const isWorker = WORKERS.includes(script);

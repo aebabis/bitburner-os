@@ -1,10 +1,11 @@
 import { getStaticData, putStaticData } from './lib/data-store';
 import { defer } from './boot/defer';
-import { C_MAIN, C_SUB, tprint } from './boot/util';
+import { tprint } from './boot/util';
+import { STR } from './lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {
-    tprint(ns)(C_MAIN + 'Determining required job RAM');
+    tprint(ns)(STR.BOLD + 'Determining required job RAM');
 
     const { bitNodeN, ownedSourceFiles, scriptRam } = getStaticData(ns);
 
@@ -22,7 +23,7 @@ export async function main(ns) {
         requiredJobRam = 1;
         while (requiredJobRam < maxScriptSize)
             requiredJobRam *= 2;
-        tprint(ns)(C_SUB + `Job RAM Required: ${requiredJobRam}GB`);
+        tprint(ns)(STR + `Job RAM Required: ${requiredJobRam}GB`);
     }
 
     putStaticData(ns, { requiredJobRam });

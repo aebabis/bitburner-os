@@ -1,6 +1,6 @@
 import { delegate } from './lib/scheduler-delegate.js';
 import { getServices } from './lib/service-api.js';
-import { logger } from './lib/logger';
+import { ERROR } from './lib/colors';
 
 const getExistingPid = (ns, desc) => {
     try {
@@ -15,7 +15,6 @@ const getExistingPid = (ns, desc) => {
 let count = 1;
 
 export const Service = (ns, condition=()=>true, interval=5000) => (script, target=null, numThreads=1, ...args) => {
-    const console = logger(ns, { echo: false });
     const id = count++;
     const desc = (target == null) ?
         [script, numThreads, ...args].join(' ') :
@@ -55,17 +54,14 @@ export const Service = (ns, condition=()=>true, interval=5000) => (script, targe
             const isReady = now - lastRun >= interval;
             if (isReady) {
                 lastRun = now;
-                await console.info(pid ? 'Attempting to restart' : 'Attempting to start', desc);
                 queued = true;
                 if (beforeRun)
                     beforeRun();
                 try {
                     const handle = await delegate(ns, true)(script, target, numThreads, ...args);
                     pid = handle.pid;
-                    if (pid != null)
-                        await console.info('Successfully started', desc, `(PID=${pid})`);
-                    else
-                        await console.error('Failed to start', desc);
+                    if (pid == null)
+                        ns.tprint(ERROR + 'Failed to start ' + desc);
                 } catch (error) {
                     pid = null;
                     throw error;
