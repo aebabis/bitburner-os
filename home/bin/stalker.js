@@ -71,8 +71,9 @@ const createIndicator = (ns) => {
     const indicator = doc.createElement('div');
     indicator.innerText = '●';
     indicator.style.position = 'fixed';
-    indicator.style.left = 0;
+    indicator.style.right = 0;
     indicator.style.bottom = 0;
+    indicator.style.fontSize = '10px';
     indicator.style.padding = '.5em';
     doc.body.append(indicator);
     ns.atExit(() => indicator.remove());

@@ -126,7 +126,7 @@ const FILES = [
 /** @param {NS} ns **/
 export async function main(ns) {
   const { branch } = ns.flags([['branch', 'main']]);
-  if (_.length > 0) {
+  if (_[0] != null) {
     ns.tprint('\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
     return;
   }

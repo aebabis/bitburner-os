@@ -1,10 +1,8 @@
 import { THREADPOOL } from './etc/config';
-import { PURCHASE_THREADPOOL } from './etc/filenames';
-import { logger } from './lib/logger';
 import { getRamData, getMoneyData, getStaticData } from './lib/data-store';
 import { disableService } from './lib/service-api';
-import { rmi } from './lib/rmi';
 import { estimateTimeToGoal, needsJobRam, getJobRamCost } from './lib/query-service';
+import { infect, fullInfect } from './bin/infect';
 
 /** @param {NS} ns **/
 const getServerNames = (maxServers) => {
@@ -15,17 +13,17 @@ const getServerNames = (maxServers) => {
 
 /** @param {NS} ns **/
 const getPurchasedServerRams = (ns, maxServers) => {
-    return getServerNames(maxServers).map((hostname) => {
-        try {
-            return { 
-                hostname,
-                ram: ns.getServerMaxRam(hostname),
-            };
-        } catch {
-            return null;
-        }
-    }).filter(Boolean);
+    return getServerNames(maxServers)
+        .filter(ns.serverExists)
+        .map((hostname) => ({
+            hostname,
+            ram: ns.getServerMaxRam(hostname),
+        }));
 };
+
+/** @param {NS} ns **/
+const getNextServerName = (ns, maxServers) => getServerNames(maxServers)
+    .find(hostname => !ns.serverExists(hostname));
 
 /** @param {NS} ns **/
 const atCapacity = (ns) => {
@@ -40,16 +38,62 @@ const atCapacity = (ns) => {
 };
 
 /** @param {NS} ns **/
+const deleteServer = (ns, hostname) => {
+    ns.killall(hostname);
+    ns.deleteServer(hostname);
+};
+
+/** @param {NS} ns **/
+const purchaseServer = (ns, hostname, minRam, maxRam) => {
+    let ram = maxRam;
+    while (!ns.purchaseServer(hostname, ram)) {
+        ram /= 2;
+        if (ram < minRam)
+            return false;
+    }
+    return ram;
+};
+
+/** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    const console = logger(ns);
 
-    const buyServer = async (...args) => {
-        try {
-            await rmi(ns)(PURCHASE_THREADPOOL, 1, ...args);
-        } catch (error) {
-            await console.error(error);
+    const {
+        requiredJobRam,
+        purchasedServerLimit,
+        purchasedServerCosts,
+        purchasedServerMaxRam,
+    } = getStaticData(ns);
+
+    const buyServer = async (minRam, maxRam, hostname=getNextServerName(ns, purchasedServerLimit)) => {
+        const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
+
+        const isUpgrade = ns.serverExists(hostname);
+        const isJobServer = JOB_SERVERS.includes(hostname);
+
+        if (isUpgrade)
+            deleteServer(ns, hostname);
+        
+        const ram = purchaseServer(ns, hostname, minRam, maxRam);
+
+        if (!ram) {
+            // Rare. Seems to happen if a duplicate purchase is made,
+            // messing up the server names.
+            ns.print(`ERROR - Failed to purchase ${minRam}GB ram on ${hostname}`);
+            return;
         }
+
+        const cost = ns.nFormat(ns.getPurchasedServerCost(ram), '0.000a');
+
+        if (isUpgrade)
+            ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);
+        else
+            ns.print(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);
+
+        if (isJobServer)
+            await fullInfect(ns, hostname);
+        else
+            await infect(ns, hostname);
     };
 
     const getSmallestServer = (servers) => {
@@ -60,51 +104,14 @@ export async function main(ns) {
         return servers.reduce((s1,s2)=>s1.ram<=s2.ram?s1:s2);
     };
 
-    while (true) {
-        await ns.sleep(50);
-
-        const {
-            requiredJobRam,
-            purchasedServerLimit,
-            purchasedServerCosts,
-            purchasedServerMaxRam,
-        } = getStaticData(ns);
-
-        const {
-            income,
-            theftRatePerGB,
-        } = getMoneyData(ns);
-
-        const servers = getPurchasedServerRams(ns, purchasedServerLimit);
-        if (servers.length === purchasedServerLimit &&
-            servers.every(server=>server.ram === purchasedServerMaxRam)) {
-            disableService(ns, 'server-purchaser');
-            return;
-        }
-
+    const attemptPurchase = async(ns) => {
+        const { income, theftRatePerGB } = getMoneyData(ns);
         const timeToGoal = estimateTimeToGoal(ns);
         const money = ns.getServerMoneyAvailable('home');
 
+        const servers = getPurchasedServerRams(ns, purchasedServerLimit);
         const atMaxServers = servers.length === purchasedServerLimit;
         const smallest = getSmallestServer(servers);
-
-        let minRam = 4;
-        if (atMaxServers)
-            minRam = smallest.ram * 2;
-
-        if (money < purchasedServerCosts[minRam])
-            continue;
-
-        if (needsJobRam(ns) && getJobRamCost(ns) < money) {
-            if (servers.length === 0) {
-                await buyServer(requiredJobRam, requiredJobRam);
-            } else {
-                const hostname = `${THREADPOOL}-01`;
-                ns.print(`Attempting to upgrade job server ${hostname} [${requiredJobRam}-${requiredJobRam}]GB`);
-                await buyServer(requiredJobRam, requiredJobRam, hostname);
-            }
-            continue;
-        }
 
         const profit = (ram) => {
             const newRam = ram - (smallest?.ram || 0);
@@ -112,36 +119,52 @@ export async function main(ns) {
             return ramProfit - purchasedServerCosts[ram];
         };
 
-        let maxRam = purchasedServerMaxRam;
-        while (profit(maxRam) < 0 && maxRam >= minRam)
-            maxRam /= 2;
+        const getMinRam = () => {
+            let minRam = !atMaxServers ? 4 : smallest.ram * 2;
+            while (profit(minRam) < 0) {
+                minRam *= 2;
+                if (minRam > purchasedServerMaxRam)
+                    return null;
+            }
+            while (minRam < purchasedServerMaxRam && purchasedServerCosts[minRam] < income * 5)
+                minRam *= 2;
+            return minRam;
+        }
 
-        if (maxRam < minRam) {
-            // ns.print(`Not purchasing server as it would only make $${Math.round(ramProfit/minRam)}/GB`);
+        if (atMaxServers && servers.every(server=>server.ram === purchasedServerMaxRam)) {
+            disableService(ns, 'server-purchaser');
+            return;
+        }
+
+        if (needsJobRam(ns)) {
+            if (getJobRamCost(ns) <= money)
+                await buyServer(requiredJobRam, requiredJobRam, `${THREADPOOL}-01`);
+            return;
+        }
+
+        const minRam = getMinRam();
+        const maxRam = Math.min(purchasedServerMaxRam, minRam * 4);
+
+        if (minRam == null) {
             ns.print('Not purchasing server because estimated time of goal too soon');
             await ns.sleep(10000);
-            continue;
+            return;
         }
 
-        if (servers.length === 0) {
-            ns.print(`Attempting to purchase first server [${minRam}-${maxRam}]GB`);
+        if (money < purchasedServerCosts[minRam])
+            return;
+
+        if (servers.length > 0 && !atCapacity(ns))
+            return;
+
+        if (!atMaxServers)
             await buyServer(minRam, maxRam);
-            continue;
-        }
-
-        if (!atCapacity(ns))
-            continue;
-
-        // Don't buy a server we'll replace right away
-        while (minRam < purchasedServerMaxRam && purchasedServerCosts[minRam] < income * 5)
-            minRam *= 2;
-
-        if (minRam > maxRam || money < purchasedServerCosts[minRam])
-            continue;
-
-        if (atMaxServers)
-            await buyServer(minRam, maxRam, smallest.hostname);
         else
-            await buyServer(minRam, maxRam);
+            await buyServer(minRam, maxRam, smallest.hostname);
+    };
+
+    while (true) {
+        await attemptPurchase(ns);
+        await ns.sleep(50);
     }
 }

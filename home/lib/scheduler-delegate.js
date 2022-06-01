@@ -84,3 +84,9 @@ export const closeTicket = (ns) => async (ticket, pid, hostname, threads) => {
     const timestamp = Date.now();
     port.write({ ticket, pid, hostname, threads, timestamp });
 };
+
+/** @param {NS} ns **/
+export async function main(ns) {
+    const [script, ...args] = ns.args;
+    delegateAny(ns)(script, 1, ...args);
+}

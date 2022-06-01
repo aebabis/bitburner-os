@@ -102,15 +102,14 @@ export const shouldWorkHaveFocus = (ns) => {
 }
 
 export const hasSingularityApi = (ns) => {
-    const { bitNodeN } = ns.getPlayer();
-    const { ownedSourceFiles } = getStaticData(ns);
+    const { bitNodeN, ownedSourceFiles } = getStaticData(ns);
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
     return bitNodeN === 4 || beatBN4;
 }
 
-export const couldHaveGang = (ns) => {
-    const { factions, bitNodeN } = ns.getPlayer();
-    const { ownedSourceFiles } = getStaticData(ns);
+export const couldHaveGang = (ns, player) => {
+    const { factions } = player;
+    const { bitNodeN, ownedSourceFiles } = getStaticData(ns);
     const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
     const inCriminalFaction = factions.some(
         faction => CRIMINAL_ORGANIZATIONS.includes(faction));

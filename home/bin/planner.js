@@ -16,13 +16,14 @@ const mostRootRam = (ns) => {
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
-    const { requiredJobRam } = getStaticData(ns);
+    const { requiredJobRam, purchasedServerCosts } = getStaticData(ns);
 
     const hasSingularity = hasSingularityApi(ns);
 
-    const canPurchaseServers = () => ns.getPlayer().money >= 220000;
-    const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 1e9;
+    const canPurchaseServers = () => ns.getPlayer().money >= purchasedServerCosts[4];
+    const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 5.2e9;
     const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
+    const canRunGang = () => couldHaveGang(ns, ns.getPlayer());
 
     /* eslint-disable no-unexpected-multiline */
     const tasks = [
@@ -38,7 +39,7 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/stalker.js'),
         AnyHostService(ns, couldTrade)
                           ('/bin/broker/broker.js'),
-        AnyHostService(ns, couldHaveGang)
+        AnyHostService(ns, canRunGang)
                           ('/bin/gang/mob-boss.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),
         AnyHostService(ns, canAutopilot)('/bin/self/work.js'),

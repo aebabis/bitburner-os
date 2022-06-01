@@ -2,16 +2,12 @@ import { PORT_LOGGER, PORT_REPORTER } from './etc/ports.js';
 import Ports from './lib/ports';
 
 const MAX_HISTORY = 100;
-const LOGGER_HOME = 'home';
 
 const history = [];
 
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL');
-	if (ns.getHostname() !== LOGGER_HOME){
-		throw new Error('Logger only runs on the home server');
-	}
 	while (true) {
 		try {
 			const logPort = Ports(ns).getPortHandle(PORT_LOGGER);
