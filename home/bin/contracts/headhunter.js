@@ -1,15 +1,18 @@
-import { getHostnames, putPlayerData } from './lib/data-store';
+import { getHostnames, putPlayerData, getPlayerData } from './lib/data-store';
 
 const isContract = file=>file.endsWith('.cct');
 
 /** @param {NS} ns */
 const findContracts = (ns) => {
+    const { contracts=[] } = getPlayerData(ns);
     return getHostnames(ns).map((hostname) => {
         return ns.ls(hostname).filter(isContract).map((filename) => {
+            const prevEntry = contracts.find(c=>c.filename === filename);
             const type = ns.codingcontract.getContractType(filename, hostname);
             const data = ns.codingcontract.getData(filename, hostname);
             const tries = ns.codingcontract.getNumTriesRemaining(filename, hostname);
-            return { filename, hostname, type, data, tries };
+            const maxTries = prevEntry?.maxTries || tries;
+            return { filename, hostname, type, data, tries, maxTries };
         });
     }).flat();
 };

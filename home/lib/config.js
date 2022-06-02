@@ -22,7 +22,8 @@ const DEFAULT_VALUES = {
     'reserved-home-ram': 8,
 };
 
-export default (ns) => {
+/** @param {NS} ns **/
+export const getConfig = (ns) => {
     const port = Ports(ns).getPortHandle(PORT_RUN_CONFIG);
 
     const getAll = () => {
@@ -67,3 +68,5 @@ export default (ns) => {
         getRows,
     };
 };
+
+export default getConfig;

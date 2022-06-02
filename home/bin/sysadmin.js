@@ -132,7 +132,7 @@ export async function main(ns) {
         }
 
         if (atMaxServers && servers.every(server=>server.ram === purchasedServerMaxRam)) {
-            disableService(ns, 'server-purchaser');
+            disableService(ns, 'sysadmin');
             return;
         }
 

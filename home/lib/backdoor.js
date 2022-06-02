@@ -1,7 +1,7 @@
 import { nmap } from './lib/nmap';
 import { by } from './lib/util';
 
-const PRIORITIES = ['CSEC', 'I.I.I.I', 'run4theh111z', 'The-Cave', 'w0r1d_d43m0n'];
+const PRIORITIES = ['CSEC', 'I.I.I.I', 'avmnite-02h', 'run4theh111z', 'The-Cave', 'w0r1d_d43m0n'];
 
 /** @param {NS} ns **/
 const getPathTo = (ns, hostname) => {
@@ -27,20 +27,21 @@ const getPathTo = (ns, hostname) => {
 /** @param {NS} ns **/
 export const getPath = (ns) => {
 	const skill = ns.getHackingLevel();
-	const servers = nmap(ns)
+	const backdoorableServers = nmap(ns)
 		.map(ns.getServer)
 		.filter(server => server.hasAdminRights)
 		.filter(server => !server.purchasedByPlayer)
 		.filter(server => !server.backdoorInstalled)
 		.filter(server => server.requiredHackingSkill <= skill);
 
-	if (servers.length === 0)
+	if (backdoorableServers.length === 0)
 		return null;
 
-	const questTarget = servers.find(server => PRIORITIES.includes(server.hostname));
+	const questTarget = backdoorableServers.find(server => PRIORITIES.includes(server.hostname));
 	
 	if (questTarget != null)
 		return getPathTo(ns, questTarget.hostname);
-	else
-		return servers.map(server => getPathTo(ns, server.hostname)).sort(by('length'))[0];
+
+	const routes = backdoorableServers.map(server => getPathTo(ns, server.hostname))
+	return routes.sort(by('length'))[0];
 };

@@ -16,7 +16,7 @@ import {
 const arr2d = (rows, cols) => Array(rows).fill(0).map(()=> Array(cols).fill(0));
 
 const map = {
-    'Algorithmic Stock Trader I':              stockProfit,
+    'Algorithmic Stock Trader I':  (prices) => stockProfit(prices, 1),
     'Algorithmic Stock Trader II': (prices) => stockProfit(prices, Infinity),
     'Algorithmic Stock Trader III':(prices) => stockProfit(prices, 2),
     'Algorithmic Stock Trader IV': ([n,p])  => stockProfit(p, n),

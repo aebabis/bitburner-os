@@ -4,8 +4,7 @@ import { rmi } from './lib/rmi';
 export const liquidate = async (ns) => {
     // Prevent money from being spent
     await disableService(ns, 'hacknet');
-    await disableService(ns, 'market-access');
-    await disableService(ns, 'server-purchaser');
+    await disableService(ns, 'sysadmin');
     await disableService(ns, 'tor');
 
     // Wait for services to stop.
@@ -13,7 +12,7 @@ export const liquidate = async (ns) => {
 
     // Sell stocks
     if (ns.getPlayer().hasTixApiAccess)
-        await rmi(ns)('/bin/broker.js', 1, 'dump');
+        await rmi(ns)('/bin/broker/dump.js');
 };
 
 /** @param {NS} ns */

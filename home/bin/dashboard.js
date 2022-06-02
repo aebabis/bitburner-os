@@ -38,8 +38,12 @@ const backdoorPath = (ns) => {
         return HEAD + ' (no available servers) ' + SPACES.repeat(2) + '\n\n\n\n';
     } else {
         const extraRowCount = Math.max(0, 5 - path.length);
-        const text = path.slice(0, 5).map(s => s === 'home' ? ' home' : ` connect ${s} `).join('\n') + '\n backdoor'
-            + '\n'.repeat(extraRowCount);
+        const rows = [...path.map(s => s === 'home' ? ' home' : ` connect ${s} `), ' backdoor'];
+        if (rows.length > 6) {
+            rows.length = 6;
+            rows.push(' ...');
+        }
+        const text = rows.join('\n') + '\n'.repeat(extraRowCount);
         return HEAD + text;
     }
 };
