@@ -5,6 +5,7 @@ export const liquidate = async (ns) => {
     // Prevent money from being spent
     await disableService(ns, 'hacknet');
     await disableService(ns, 'sysadmin');
+    await disableService(ns, 'broker');
     await disableService(ns, 'tor');
 
     // Wait for services to stop.

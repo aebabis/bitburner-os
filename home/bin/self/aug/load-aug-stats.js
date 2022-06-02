@@ -8,9 +8,8 @@ export async function main(ns) {
     const { augmentations } = getStaticData(ns);
     const augmentationStats = {};
 
-    for (const augmentation of augmentations) {
-        augmentationStats[augmentation] = ns.getAugmentationStats(augmentation);
-    }
+    for (const aug of augmentations)
+        augmentationStats[aug] = ns.getAugmentationStats(aug);
 
     putStaticData(ns, { augmentationStats });
 }

@@ -1,7 +1,7 @@
 import { AnyHostService } from './lib/service';
 import { getStaticData, getRamData } from './lib/data-store';
-import { hasSingularityApi, couldHaveGang } from './lib/query-service';
 import { logger } from './lib/logger';
+import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
 
 import {
     ENABLE, DISABLE,
@@ -16,14 +16,24 @@ const mostRootRam = (ns) => {
 /** @param {NS} ns **/
 const go = async(ns) => {
     ns.disableLog('ALL');
-    const { requiredJobRam, purchasedServerCosts } = getStaticData(ns);
+    const {
+        requiredJobRam,
+        purchasedServerCosts,
+        bitNodeN,
+        ownedSourceFiles,
+    } = getStaticData(ns);
 
-    const hasSingularity = hasSingularityApi(ns);
+    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
+    const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
+
+    const gangsAvailable = bitNodeN === 2 || beatBN2;
+    const hasSingularity = bitNodeN === 4 || beatBN4;
 
     const canPurchaseServers = () => ns.getPlayer().money >= purchasedServerCosts[4];
     const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 5.2e9;
     const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
-    const canRunGang = () => couldHaveGang(ns, ns.getPlayer());
+    const isCriminal = (faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
+    const inCriminalFaction = ns.getPlayer().factions.some(isCriminal);
 
     /* eslint-disable no-unexpected-multiline */
     const tasks = [
@@ -39,14 +49,20 @@ const go = async(ns) => {
         AnyHostService(ns)('/bin/stalker.js'),
         AnyHostService(ns, couldTrade)
                           ('/bin/broker/broker.js'),
-        AnyHostService(ns, canRunGang)
-                          ('/bin/gang/mob-boss.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/work.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/control.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/tor.js'),
-        AnyHostService(ns, canAutopilot)('/bin/self/rep-recorder.js'),
     ];
+
+    if (gangsAvailable)
+        tasks.push(
+            AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.js'));
+    
+    if (hasSingularity)
+        tasks.push(
+            AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.js'),
+            AnyHostService(ns, canAutopilot)('/bin/self/work.js'),
+            AnyHostService(ns, canAutopilot)('/bin/self/control.js'),
+            AnyHostService(ns, canAutopilot)('/bin/self/tor.js'),
+            AnyHostService(ns, canAutopilot)('/bin/self/rep-recorder.js'),
+        );
 
     const showServices = () => {
         ns.clearLog();

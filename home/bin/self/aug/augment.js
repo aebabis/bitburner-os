@@ -19,7 +19,6 @@ export async function main(ns) {
 
     while (true) {
         await rmi(ns, retry)('/bin/self/aug/join-factions.js');
-        await rmi(ns, retry)('/bin/self/aug/record-rep.js');
         if (getStaticData(ns).targetFaction != null)
             await rmi(ns, retry)('/bin/self/aug/purchase-augs.js');
         await ns.sleep(100);

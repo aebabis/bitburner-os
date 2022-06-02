@@ -30,18 +30,24 @@ export async function main(ns) {
 		purchasedServerLimit,
 	} = getStaticData(ns);
 
-	const getRamInfo = (hostname, isHighPriority) => {
+	const getRamInfo = (hostname) => {
 		const maxRam = ns.getServerMaxRam(hostname);
 		const ramUsed = ns.getServerUsedRam(hostname);
 		const ramUnused = maxRam - ramUsed;
-		const ramAvailable = (hostname === 'home' && !isHighPriority) ?
-			Math.max(0, ramUnused - 8) : ramUnused;
+		let ramAvailableTo = () => ramUnused;
+		if (hostname === 'home') {
+			// On home, 16GB is unavailable to batch jobs
+			// so that services can use it. The last 2GB
+			// is reserved for manual (cmd) programs.
+			const reserve = (gb) => Math.max(0, ramUnused - gb);
+			ramAvailableTo = (process) => process.isWorker ? reserve(16) : reserve(2);
+		}
 		return {
 			hostname,
 			maxRam,
 			ramUsed,
 			ramUnused,
-			ramAvailable,
+			ramAvailableTo,
 		};
 	};
 
@@ -50,7 +56,7 @@ export async function main(ns) {
 		const rootServers = hostnames
 			.filter(ns.hasRootAccess)
 			.map(getRamInfo)//.filter(server=>server.hasAdminRights)
-			.sort(by(s=>-s.ramAvailable));
+			.sort(by(s=>-s.ramUnused));
 		const purchasedServers = hostnames
 			.filter(hostname=>hostname.startsWith(THREADPOOL))
 			.sort()
@@ -114,8 +120,8 @@ export async function main(ns) {
 
 				if (process.host != null) {
 					// Specific server requested
-					const server = getRamInfo(process.host, true);
-					if (ramRequired <= server.ramAvailable) {
+					const server = getRamInfo(process.host);
+					if (ramRequired <= server.ramAvailableTo(process)) {
 						await fulfill(ns, queue.splice(i, 1)[0], server);
 						continue;
 					}
@@ -124,11 +130,14 @@ export async function main(ns) {
 					const eligibleServers = ramData.rootServers
 						.filter(server => ns.getScriptRam(process.script, server.hostname)>0);
 
-					const server = eligibleServers.find(server => server.ramAvailable >= ramRequired);
+					const isServerValid = server => server?.ramAvailableTo(process) >= ramRequired;
+
+					const server = eligibleServers.find(isServerValid);
 					const settleServer = eligibleServers[0];
+
 					if (server != null) {
 						await fulfill(ns, queue.splice(i, 1)[0], server);
-					} else if (settleServer != null && settleServer.ramAvailable >= scriptRam) {
+					} else if (settleServer?.ramAvailableTo(process) >= scriptRam) {
 						await fulfill(ns, queue.splice(i, 1)[0], settleServer);
 					}
 				}

@@ -7,15 +7,15 @@ export async function main(ns) {
     ns.tprint('Loading Augmentation Names');
 
     const factionAugmentations = {};
-    const nameMap = {};
+    const augSet = new Set();
 
     for (const faction of FACTIONS) {
-        const list = factionAugmentations[faction] = ns.getAugmentationsFromFaction(faction);
-        for (const name of list) {
-            nameMap[name] = true;
-        }
+        const list = ns.getAugmentationsFromFaction(faction);
+        factionAugmentations[faction] = list;
+        for (const name of list)
+            augSet.add(name);
     }
-    const augmentations = Object.keys(nameMap);
+    const augmentations = [...augSet];
 
     putStaticData(ns, { factionAugmentations, augmentations });
 }

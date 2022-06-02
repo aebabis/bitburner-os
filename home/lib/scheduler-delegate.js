@@ -27,23 +27,20 @@ export const delegate = (ns, response, options={}) => async (script, host=null, 
         const start = Date.now();
         await ns.sleep(50);
         const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
+        let prevProcess;
         while (true) {
             const process = port.peek();
             if (process != null) {
-                if (process.ticket === job.ticket) {
+                if (process.ticket === job.ticket)
                     return port.read();
-                } else {
-                    await ns.sleep(1);
-                    // If same process is still in port
-                    // after event-loop pass, parent must have died
-                    if (port.peek()?.pid === process.pid)
-                        port.read();
-                }
-            }
-            await ns.sleep(10);
-            if (Date.now() - start >= 70000) { // TODO: This might not be necessary anymore
+                // If same process in port two consecutive
+                // passes, assume parent died.
+                if (process.pid === prevProcess?.pid)
+                    port.read();
+            } else if (Date.now() - start >= 70000) // Unnecessary if all parents listen
                 throw new Error(`Timed-out: ${script} ${host||'*'} ${numThreads} ${args.join(' ')}`);
-            }
+            await ns.sleep(10);
+            prevProcess = process;
         }
     }
 };
@@ -86,6 +83,10 @@ export const closeTicket = (ns) => async (ticket, pid, hostname, threads) => {
     }
 
     const timestamp = Date.now();
+    const waitTime = timestamp - ticket.startTime;
+    if (waitTime > 40)
+        logger(ns).warn('process delayed by ' + waitTime + 'ms');
+
     port.write({ ticket, pid, hostname, threads, timestamp });
 };
 

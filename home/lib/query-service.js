@@ -7,7 +7,6 @@ import {
     getPlayerData,
     getMoneyData,
 } from './lib/data-store';
-import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
 
 const cache = func => {
     let data;
@@ -101,19 +100,11 @@ export const shouldWorkHaveFocus = (ns) => {
     return !isPlayerActive;
 }
 
-export const hasSingularityApi = (ns) => {
+export const hasBitNode = (ns, bn) => {
     const { bitNodeN, ownedSourceFiles } = getStaticData(ns);
-    const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
-    return bitNodeN === 4 || beatBN4;
-}
-
-export const couldHaveGang = (ns, player) => {
-    const { factions } = player;
-    const { bitNodeN, ownedSourceFiles } = getStaticData(ns);
-    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
-    const inCriminalFaction = factions.some(
-        faction => CRIMINAL_ORGANIZATIONS.includes(faction));
-    return inCriminalFaction && (bitNodeN === 2 || beatBN2);
+    const inBN = bitNodeN === bn;
+    const beatBN = ownedSourceFiles.find(file => file.n === bn);
+    return inBN || beatBN;
 }
 
 /** @param {NS} ns **/

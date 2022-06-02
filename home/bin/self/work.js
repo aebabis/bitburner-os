@@ -1,7 +1,6 @@
-import { afkTracker } from './lib/tracking';
-import { rmi } from './lib/rmi';
 import { getStaticData, getPlayerData } from './lib/data-store';
 import { isMoneyBound, getRepNeeded } from './lib/query-service';
+import { rmi } from './lib/rmi';
 import getConfig from './lib/config';
 import {
     COMBAT_REQUIREMENTS,
@@ -14,7 +13,6 @@ const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'];
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const afkTime = afkTracker(ns);
 
     await rmi(ns, true)('/bin/self/apply.js');
 
@@ -26,8 +24,6 @@ export async function main(ns) {
         const inTargetFaction = player.factions.includes(targetFaction);
         const isFactionGang = ns.gang.inGang() && ns.gang.getGangInformation().faction === targetFaction;
         const rep = factionRep[targetFaction] || 0;
-
-        const isAfk = afkTime() > 20000;
 
         const makeMoney = async () => {
             if (isPlayerActive) {

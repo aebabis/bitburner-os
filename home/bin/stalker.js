@@ -1,5 +1,5 @@
 import { putPlayerData } from './lib/data-store';
-import { hasSingularityApi } from './lib/query-service';
+import { hasBitNode } from './lib/query-service';
 
 const doc = eval('document');
 const win = eval('window');
@@ -80,9 +80,17 @@ const createIndicator = (ns) => {
     return indicator;
 }
 
+const setFocus = (ns, focus) => {
+    try {
+        ns.focus(focus);
+    } catch (error) {
+
+    }
+}
+
 /** @param {NS} ns **/
 export async function main(ns) {
-    const hasSingularity = hasSingularityApi(ns);
+    const hasSingularity = hasBitNode(ns, 4);
 
     autoClosePopUps(ns);
 
@@ -113,7 +121,7 @@ export async function main(ns) {
             putPlayerData(ns, { isPlayerActive, isPlayerUsingTerminal });
         
         if (hasSingularity)
-            ns.setFocus(!isPlayerActive);
+            setFocus(ns, !isPlayerActive);
 
         wasPlayerActive = isPlayerActive;
         wasPlayerUsingTerminal = isPlayerUsingTerminal;

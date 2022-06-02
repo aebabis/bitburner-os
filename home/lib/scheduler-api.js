@@ -1,6 +1,7 @@
 import { logger } from './lib/logger';
 import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
 import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
+import { ERROR } from './lib/colors';
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
 const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
@@ -32,31 +33,24 @@ export const checkPort = async (ns, queue) => {
 	
 /** @param {NS} ns **/
 export const fulfill = async (ns, process, server) => {
-	const { hostname, ramAvailable } = server;
-	const { script, numThreads, args, ticket, requestTime } = process;
+	const { hostname, ramAvailableTo } = server;
+	const { script, numThreads, args, ticket } = process;
 	const scriptRam = ns.getScriptRam(script, 'home');
-	const maxThreads = Math.floor(ramAvailable / scriptRam);
+	const maxThreads = Math.floor(ramAvailableTo(process) / scriptRam);
 	const threads = Math.min(numThreads, maxThreads);
-	let pid = 0;
-	if (threads > 0) {
-		pid = ns.exec(script, hostname, threads, ...args);
-		if (pid === 0) {
-			logger(ns).error('Unable to start process: ' + process.toString(hostname));
-		}
-	} else {
-		logger(ns).error('Scheduler tried to run: ' + process.toString());
-		return reject(ns, process);
-	}
-	if (ticket != null) {
-		const waitTime = Date.now() - requestTime;
-		if (waitTime > 40)
-			logger(ns).warn('process waited ' + waitTime + 'ms');
+	if (threads === 0)
+		return reject(ns, process, 'Scheduler tried to run: ' + process.toString() + ' on ' + hostname);
+	const pid = ns.exec(script, hostname, threads, ...args);
+	if (pid === 0)
+		return reject(ns, process, 'Unable to start process: ' + process.toString(hostname));
+	if (ticket != null)
 		await closeTicket(ns)(ticket, pid, hostname, threads);
-	}
 };
 
 /** @param {NS} ns **/
-export const reject = async (ns, process) => {
+export const reject = async (ns, process, reason) => {
+	if (reason != null)
+		ns.tprint(ERROR + reason);
 	if (process.ticket != null)
 		await closeTicket(ns)(process.ticket, 0, null, 0);
 };

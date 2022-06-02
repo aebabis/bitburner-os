@@ -37,14 +37,15 @@ const backdoorPath = (ns) => {
     if (path == null) {
         return HEAD + ' (no available servers) ' + SPACES.repeat(2) + '\n\n\n\n';
     } else {
-        const extraRowCount = Math.max(0, 5 - path.length);
         const rows = [...path.map(s => s === 'home' ? ' home' : ` connect ${s} `), ' backdoor'];
-        if (rows.length > 6) {
-            rows.length = 6;
+        if (rows.length >= 6) {
+            rows.length = 5;
             rows.push(' ...');
+        } else {
+            for (let i = 0; i < rows.length - 6; i++)
+                rows.push(' ');
         }
-        const text = rows.join('\n') + '\n'.repeat(extraRowCount);
-        return HEAD + text;
+        return HEAD + rows.join('\n');
     }
 };
 
@@ -227,7 +228,7 @@ export async function main(ns) {
         new GrowingWindow(() => goalsTable(ns)),
         new GrowingWindow(() => moneyTable(ns)),
         new GrowingWindow(() => workTable(ns)),
-        new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
+        // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
     ];
     while (true) {
         try {
