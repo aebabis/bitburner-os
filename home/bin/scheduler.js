@@ -40,7 +40,11 @@ export async function main(ns) {
 			// so that services can use it. The last 2GB
 			// is reserved for manual (cmd) programs.
 			const reserve = (gb) => Math.max(0, ramUnused - gb);
-			ramAvailableTo = (process) => process.isWorker ? reserve(16) : reserve(2);
+			ramAvailableTo = (process) => {
+				if (process.isWorker || ns.getScriptRam(process.script) <= 8)
+					return reserve(16);
+				return reserve(2);
+			}
 		}
 		return {
 			hostname,
