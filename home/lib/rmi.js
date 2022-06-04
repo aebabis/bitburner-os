@@ -5,12 +5,15 @@ import { delegateAny } from './lib/scheduler-delegate';
 export const rmi = (ns, retry) => async(...args) => {
     while (true) {
         try {
-            const { pid } = await delegateAny(ns, true)(...args);
-            while (ns.isRunning(pid))
-                await ns.sleep(50);
-            return true;
+            const highPriority = true;
+            const { pid } = await delegateAny(ns, true, { highPriority })(...args);
+            if (pid) {
+                while (ns.isRunning(pid))
+                    await ns.sleep(50);
+                return true;
+            }
         } catch (error) {
-            await logger(ns).error(error);
+            logger(ns).error(error);
             if (!retry)
                 return false;
         }

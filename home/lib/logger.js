@@ -1,47 +1,45 @@
-import { PORT_LOGGER, PORT_REPORTER } from './etc/ports.js';
-import Ports from './lib/ports';
+import { LOG, ERROR, INFO, WARN } from './lib/colors';
 
-const process = (arg) => {
+const DEBUG = true;
+
+const processArg = (arg) => {
 	if (arg instanceof Error) {
 		return arg.name + ' ' + arg.message + ' ' + arg.lineNumber + ':' + arg.columnNumber + '\n' + arg.stack;
 	} else if (typeof arg === 'object')
 		return JSON.stringify(arg, null, 2);
 	return arg;
-};
+}
+
+const process = (args) => args.map(processArg).join(' ');
 
 /** @param {NS} ns **/
 export const logger = (ns, options = {}) => {
-	const { echo = true } = options;
-	const port = Ports(ns).getPortHandle(PORT_LOGGER);
-	const send = async (type, ...args) => {
-		const script = ns.getScriptName();
-		const lead = `${type} ${script}`;
-		const message = args.map(process).join(' ');
-		const output =  `${lead.padEnd(20)} ${message}`;
-		if (type === 'ERROR')
-			ns.tprint(output);
-		else if (echo) {
-			ns.print(output);
-		}
-		let time = Date.now();
-		while (!port.tryWrite(output)) {
-			if (Date.now() - time > 1000) {
-				ns.tprint('ERROR - Log stream blocked. Do you need to start the logger?');
-				return;
-			}
-			await ns.sleep(10);
-		}
-	};
+	const { debug=DEBUG } = options;
+
+	const name = ns.getScriptName();
+	const pad  = Math.max(0, 20 - name.length);
+	const lead = ' '.repeat(pad);
+
+	const print = (TYPE, args) => {
+		const text = process(args);
+		ns.print(TYPE + text);
+		if (debug || TYPE === ERROR)
+			ns.tprint(TYPE + lead + text);
+	}
+
 	return {
-		log:   async (...args) => await send('SUCCESS', ...args),
-		error: async (...args) => await send('ERROR', ...args),
-		info:  async (...args) => await send('INFO', ...args),
-		warn:  async (...args) => await send('WARN', ...args),
+		log:   async (...args) => print(LOG, args),
+		error: async (...args) => print(ERROR, args),
+		info:  async (...args) => print(INFO, args),
+		warn:  async (...args) => print(WARN, args),
 	};
 };
 
 /** @param {NS} ns **/
-export const report = (ns, filename, content, mode) => {
-	const port = Ports(ns).getPortHandle(PORT_REPORTER);
-    port.blockingWrite({ filename, content, mode });
-};
+export async function main(ns) {
+	const console = logger(ns, {debug:true});
+	console.log('This is a test of the logger.log function');
+	console.error('If it was a real log it would probably be the error color');
+	console.info('This has a been a test of the logger functionality');
+	console.warn('You may now resume your previous activity');
+}

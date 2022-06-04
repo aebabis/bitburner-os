@@ -1,10 +1,9 @@
 import { THREADPOOL } from './etc/config';
 import { by } from './lib/util';
 import { checkPort, fulfill, reject } from './lib/scheduler-api';
-import { delegateAny } from './lib/scheduler-delegate';
 import { nmap } from './lib/nmap';
 import { getStaticData, putRamData } from './lib/data-store';
-import { ERROR } from './lib/colors';
+import { logger } from './lib/logger';
 
 const SCHEDULER_HOME = 'home';
 
@@ -17,13 +16,11 @@ export async function main(ns) {
 	}
 
 	// Scheduler completes the bootstrap process
-	// by starting the planner and the logger.
-	// This is done since these 3 programs can't
-	// run on 8GB ram while the boot sequence is
-	// finishing
+	// by starting the planner. This is done since
+	// it can't run on 8GB ram while the boot
+	// sequence is finishing.
 	await ns.sleep(50);
 	ns.exec('/bin/planner.js', 'home');
-	delegateAny(ns)('/bin/logger.js');
 
 	const {
 		purchasedServerMaxRam,
@@ -36,15 +33,18 @@ export async function main(ns) {
 		const ramUnused = maxRam - ramUsed;
 		let ramAvailableTo = () => ramUnused;
 		if (hostname === 'home') {
-			// On home, 16GB is unavailable to batch jobs
-			// so that services can use it. The last 2GB
-			// is reserved for manual (cmd) programs.
+			// On home, 32GB is unavailable to services
+			// and batch jobs so that rmi calls can use it.
+			// The last 2GB is always reserved for manual (user)
+			// programs.
 			const reserve = (gb) => Math.max(0, ramUnused - gb);
 			ramAvailableTo = (process) => {
-				if (process.isWorker || ns.getScriptRam(process.script) <= 8)
-					return reserve(16);
-				return reserve(2);
+				if (process.highPriority)
+					return reserve(2);
+				return reserve(32);
 			}
+		} else if (['foodnstuff', 'neo-net'].includes(hostname)) {
+			ramAvailableTo = (process) => process.isWorker ? 0 : ramUnused;
 		}
 		return {
 			hostname,
@@ -102,7 +102,6 @@ export async function main(ns) {
 			} else if (queue.length !== length)
 				queue.sort(by(job=>job.startTime));
 
-
 			const now = Date.now();
 			for (let i = 0; i < queue.length; i++) {
 				const process = queue[i];
@@ -143,6 +142,8 @@ export async function main(ns) {
 						await fulfill(ns, queue.splice(i, 1)[0], server);
 					} else if (settleServer?.ramAvailableTo(process) >= scriptRam) {
 						await fulfill(ns, queue.splice(i, 1)[0], settleServer);
+					} else if (!process.isWorker) {
+						logger(ns).warn('Failed to find RAM for: ' + process.toString());
 					}
 				}
 			}
@@ -151,7 +152,7 @@ export async function main(ns) {
 				queue.slice(0, 10).forEach(item => ns.print(item.toString()));
 			}
 		} catch(error) {
-			ns.tprint(ERROR+error);
+			logger(ns).error(error);
 		} finally {
 			await ns.sleep(10);
 		}

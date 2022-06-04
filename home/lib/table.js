@@ -1,3 +1,5 @@
+import { length } from './lib/util';
+
 const headData = (column) => {
     const name = column.name != null ? column.name : column;
     const align = column.align || 'left';
@@ -15,8 +17,9 @@ const headData = (column) => {
                 const left = Math.floor(a / 2);
                 return str.padStart(left).padEnd(a - left);
             }
+            const e = str.length - length(str);
             return (align === 'left') ?
-                str.padEnd(a) : str.padStart(a);
+                str.padEnd(a+e) : str.padStart(a+e);
         },
     };
 };
@@ -54,7 +57,7 @@ export const table = (ns, columns, data, options={}) => {
     }
     data = data.map(row => row.map((cell, i) => columns[i].process(cell).toString()));
     const widths = columns.map((column, i) => data
-        .map(row => row[i]?.length).reduce((a,b)=>Math.max(a,b),column.name.length));
+        .map(row => length(row[i]||'')).reduce((a,b)=>Math.max(a,b),length(column.name)));
     const lines = [
         columns.map((column, i) => column.pad(column.name, widths[i])).join(joiner),
         ...data.map(row => row.map((cell, i) => columns[i].pad(cell, widths[i])).join(joiner)),

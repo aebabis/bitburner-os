@@ -6,12 +6,15 @@ export const COLOR = (n) => ({
 export const C = COLOR;
 export const BG = (n) => `\u001b[48;5;${n}m`;
 
-export const ERROR = C(124); // 160
-
-export const KEYWORD = C(69); // 63
+export const KEYWORD = C(69);
 export const GRAY = C(236);
 export const STR = C(165);
 export const NORMAL = C(135);
+
+export const LOG = NORMAL;
+export const ERROR = C(124); // 160
+export const WARN = C(214);
+export const INFO = C(63);
 
 /** @param {NS} ns */
 export async function main(ns) {

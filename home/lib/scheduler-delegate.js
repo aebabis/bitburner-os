@@ -7,20 +7,20 @@ export const snippet = (statements) => `export async function main(ns) {\n${stat
 const desc = (script, host=null, numThreads=1, ...args) =>
     `${script} ${host||'*'} ${numThreads} ${args.join(' ')}`;
 
-const Job = (ns, response, startTime) => (script, host=null, numThreads=1, ...args) => {
+const Job = (ns, response, startTime, highPriority) => (script, host=null, numThreads=1, ...args) => {
     if (script.startsWith('.') || !script.endsWith('.js'))
         throw new Error(`Illegal script name in ${desc(script, host, numThreads, ...args)}`);
     if (!Number.isInteger(numThreads))
         throw new Error(`Illegal thread count in ${desc(script, host, numThreads, ...args)}`);
 
     const ticket = response ? crypto.randomUUID() : undefined;
-    return { script, host, numThreads, args, ticket, startTime, requestTime: Date.now() };
+    return { script, host, numThreads, args, ticket, startTime, requestTime: Date.now(), highPriority };
 };
 
 /** @param {NS} ns **/
 export const delegate = (ns, response, options={}) => async (script, host=null, numThreads=1, ...args) => {
-    const { startTime = Date.now() } = options;
-    const job = Job(ns, response, startTime)(script, host, numThreads, ...args);
+    const { startTime = Date.now(), highPriority=false } = options;
+    const job = Job(ns, response, startTime, highPriority)(script, host, numThreads, ...args);
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     await port.blockingWrite(job);
     if (response) {

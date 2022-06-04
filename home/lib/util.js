@@ -1,4 +1,5 @@
 // export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
+const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
 export const by = (prop) => {
 	let val = prop;
@@ -22,6 +23,8 @@ export const by = (prop) => {
 			return 0;
 	};
 };
+
+export const length = (str) => str.replaceAll(COLOR_REGEX, '').length;
 
 export const small = number => number.toString().toLowerCase().split('').map(n=>'₀₁₂₃₄₅₆₇₈₉'[n]||'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ'[n.charCodeAt(0)-97]||' ').join('');
 export const bold = string => string.toString().split('')

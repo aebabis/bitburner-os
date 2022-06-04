@@ -23,7 +23,7 @@ export async function main(ns) {
         requiredJobRam = 1;
         while (requiredJobRam < maxScriptSize)
             requiredJobRam *= 2;
-        tprint(ns)(STR + `Job RAM Required: ${requiredJobRam}GB`);
+        tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);
     }
 
     putStaticData(ns, { requiredJobRam });

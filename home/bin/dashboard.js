@@ -49,16 +49,6 @@ const backdoorPath = (ns) => {
     }
 };
 
-const tailLogs = (ns, width, height) => {
-    width = Math.min(width, 80);
-    return ns.getRunningScript('/bin/logger.js', 'home').logs
-        .slice(-height).map(x=>x.split('\n')[0])
-        .map(line => line.slice(line.indexOf(' ')+1))
-        .map(line => line.length < width - 8 ? line : line.slice(0, width-8)+'...')
-        .map(line => ` ${line} `)
-        .map(line => line.padEnd(width - 6));
-};
-
 const GB = 1000 ** 3;
 
 const threadpoolRow = (ns, server) => {
