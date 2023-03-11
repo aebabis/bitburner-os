@@ -10,7 +10,7 @@ export async function main(ns) {
         const { isPlayerUsingTerminal } = getPlayerData(ns);
         if (isPlayerUsingTerminal) {
             if (!wasInTerminal)
-                ns.connect('home');
+                ns.singularity.connect('home');
         } else {
             const path = getPath(ns);
             if (path != null)

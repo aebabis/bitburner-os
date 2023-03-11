@@ -3,14 +3,14 @@ import { tprint } from './boot/util';
 import { STR } from './lib/colors';
 
 const getBootSequence = (ns) => {
-    if (ns.getServerMaxRam('home') === 8) {
+    if (ns.getServerMaxRam('home') < ns.getScriptRam('/boot/data2.js')) {
         return [
             '/boot/reset.js',
             '/boot/ui.js',
             '/boot/network.js',
             '/boot/data.js',
             ['/boot/spawn.js', '/boot/data2-lite.js'],
-            '/bin/scheduler.js',
+            '/bin/eight-gig.js',
         ];
     } else {
         return [

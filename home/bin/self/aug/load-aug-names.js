@@ -10,7 +10,7 @@ export async function main(ns) {
     const augSet = new Set();
 
     for (const faction of FACTIONS) {
-        const list = ns.getAugmentationsFromFaction(faction);
+        const list = ns.singularity.getAugmentationsFromFaction(faction);
         factionAugmentations[faction] = list;
         for (const name of list)
             augSet.add(name);

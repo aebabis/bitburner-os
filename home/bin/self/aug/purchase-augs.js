@@ -44,7 +44,7 @@ export async function main(ns) {
         await liquidate(ns);
 
     for (const augmentation of remainingAugs) {
-        const soldTheAug = faction => ns.purchaseAugmentation(faction, augmentation);
+        const soldTheAug = faction => ns.singularity.purchaseAugmentation(faction, augmentation);
         if (purchasable(augmentation)) {
             // Attempt to buy the next augmentation from any faction.
             // Only count the ones for which the prereqs are met.
@@ -80,10 +80,10 @@ export async function main(ns) {
         const byPrice = augmentations.slice().sort(by(aug=>-augmentationPrices[aug]));
         for (const augmentation of byPrice)
             for (const faction of factions)
-                ns.purchaseAugmentation(faction, augmentation);
+                ns.singularity.purchaseAugmentation(faction, augmentation);
 
         // Spend what's left on Neuroflux
-        while (factions.some(faction => ns.purchaseAugmentation(faction, NEUROFLUX)));
+        while (factions.some(faction => ns.singularity.purchaseAugmentation(faction, NEUROFLUX)));
 
         // Buy RAM if we can
         await rmi(ns)('/bin/self/buy-ram.js', 1);

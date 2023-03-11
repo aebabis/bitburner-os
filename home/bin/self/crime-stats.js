@@ -18,6 +18,6 @@ const CRIMES = [
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    const crimeStats = CRIMES.map(ns.getCrimeStats);
+    const crimeStats = CRIMES.map(name => ({ name, ...ns.singularity.getCrimeStats(name) }));
     putPlayerData(ns, { crimeStats });
 }

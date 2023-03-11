@@ -72,14 +72,16 @@ const go = async(ns) => {
     };
 
     const updateTasks = () => {
-        checkQueue(ns).forEach((order) => {
+        for (const order of checkQueue(ns)) {
             const { identifier, type, force } = order;
             const task = tasks.find(task => task.matches(identifier));
+            if (task == null)
+                throw new Error(`No task matching "${identifier}"`)
             if (type === ENABLE)
                 task.enable(force);
             if (type === DISABLE)
                 task.disable();
-        });
+        }
     };
 
     while (true) {

@@ -1,5 +1,5 @@
 /** @param {NS} ns */
 export async function main(ns) {
     ns.disableLog('ALL');
-    ns.travelToCity(ns.args[0]);
+    ns.singularity.travelToCity(ns.args[0]);
 }

@@ -16,7 +16,7 @@ export async function main(ns) {
     while (true) {
         const now = Date.now();
         for (const faction of FACTIONS) {
-            const curRep = ns.getFactionRep(faction);
+            const curRep = ns.singularity.getFactionRep(faction);
             factionRep[faction] = curRep;
 
             // Prevent double-counting

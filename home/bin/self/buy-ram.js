@@ -1,4 +1,4 @@
 /** @param {NS} ns */
 export async function main(ns) {
-    while(ns.upgradeHomeRam());
+    while(ns.singularity.upgradeHomeRam());
 }

@@ -9,7 +9,7 @@ export async function main(ns) {
     const augmentationPrices = {};
 
     for (const aug of augmentations)
-        augmentationPrices[aug] = ns.getAugmentationPrice(aug);
+        augmentationPrices[aug] = ns.singularity.getAugmentationPrice(aug);
 
     putStaticData(ns, { augmentationPrices });
 }

@@ -232,7 +232,7 @@ export async function main(ns) {
                 textField.split('\n').forEach(line=>ns.print(line));
                 await ns.sleep(1);
 
-                colorize(modal.bottom);
+                // colorize(modal.bottom);
             }
         } catch (error) {
             console.error(error);

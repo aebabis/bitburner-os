@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLogs('ALL');
+    ns.disableLog('ALL');
     ns.tail();
 
     const [filename] = ns.args;

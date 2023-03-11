@@ -1,6 +1,7 @@
-import { putStaticData } from './lib/data-store';
+import { putStaticData,  } from './lib/data-store';
 import { defer } from './boot/defer';
 import { tprint } from './boot/util';
+import { saveHostnames } from './lib/nmap';
 import { STR } from './lib/colors';
 
 /** @param {NS} ns */
@@ -18,6 +19,9 @@ export async function main(ns) {
     const scripts = ns.ls('home').filter(file=>file.endsWith('.js'));
     for (const script of scripts)
         scriptRam[script] = ns.getScriptRam(script);
+
+    tprint(ns)(STR + '  Caching network map');
+    saveHostnames(ns);
 
     putStaticData(ns, {
         bitNodeN: ns.getPlayer().bitNodeN,

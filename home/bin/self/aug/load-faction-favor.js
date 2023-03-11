@@ -9,7 +9,7 @@ export async function main(ns) {
     const factionFavor = {};
 
     for (const faction of FACTIONS)
-        factionFavor[faction] = ns.getFactionFavor(faction);
+        factionFavor[faction] = ns.singularity.getFactionFavor(faction);
 
     putStaticData(ns, { factionFavor });
 }

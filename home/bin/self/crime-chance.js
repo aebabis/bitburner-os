@@ -5,7 +5,7 @@ export async function main(ns) {
     ns.disableLog('ALL');
     const crimeStats = getPlayerData(ns).crimeStats.map((stats) => {
         const { money, time } = stats;
-        const chance = ns.getCrimeChance(stats.name);
+        const chance = ns.singularity.getCrimeChance(stats.name);
         return ({
             ...stats, chance, expectedValue: chance * money / time,
         });

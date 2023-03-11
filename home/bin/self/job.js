@@ -4,6 +4,6 @@ import { shouldWorkHaveFocus } from './lib/query-service';
 export async function main(ns) {
     ns.disableLog('ALL');
     const focus = shouldWorkHaveFocus(ns);
-    ns.workForCompany('Joe\'s Guns', focus);
+    ns.singularity.workForCompany('Joe\'s Guns', focus);
     await ns.sleep(10000);
 }

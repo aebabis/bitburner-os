@@ -9,7 +9,7 @@ export async function main(ns) {
     const augmentationPrereqs = {};
 
     for (const aug of augmentations)
-        augmentationPrereqs[aug] = ns.getAugmentationPrereq(aug);
+        augmentationPrereqs[aug] = ns.singularity.getAugmentationPrereq(aug);
 
     putStaticData(ns, { augmentationPrereqs });
 }

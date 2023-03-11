@@ -50,34 +50,36 @@ export async function main(ns) {
             let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
             
             ns.clearLog();
+            const secStr = (hostname) =>
+                `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
+            const moneyStr = (hostname) =>
+                `${ns.formatNumber(ns.getServerMoneyAvailable(hostname), 2)}/${ns.formatNumber(ns.getServerMaxMoney(hostname), 2)}`
             const rows = viableThieves
                 .filter(thief=>thief.currentBatch != null && !thief.currentBatch.hasEnded())
                 .map(thief => thief.getTableData())
                 .map(({ hostname, type, frame, portion, jobs, timeLeft }) => {
-                    const money = ns.getServerMoneyAvailable(hostname);
-                    const maxMoney = ns.getServerMaxMoney(hostname);
-                    const curSecurity = ns.getServerSecurityLevel(hostname);
-                    const minSecurity = ns.getServerMinSecurityLevel(hostname);
-                    const moneyStr = `${ns.nFormat(money, '0.00a')}/${ns.nFormat(maxMoney, '0.00a')}`;
-                    const secStr = `${+curSecurity.toFixed(1)}/${minSecurity}`;
-                    return [hostname, moneyStr, secStr, type, frame, portion, jobs, timeLeft];
+                    return [hostname, moneyStr(hostname), secStr(hostname), type, frame, portion, jobs, timeLeft];
                 })
                 .sort(by(0));
             const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
             ns.print(' RAM AVAILABLE: ' + ns.nFormat(ramAvailable, '0.00'));
             ns.print(' ' + '-'.repeat(tString.indexOf('\n')+1));
+            ns.print(viableThieves.length);
             feed.forEach(message => ns.print(' ' + message));
             const stealing = viableThieves.filter(thief => thief.isStealing());
             const grooming = viableThieves.filter(thief => thief.isGrooming());
             const mayGroom = grooming.length <= stealing.length;
-            const thief = viableThieves
-                .find(thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom));
+            const mayStart = thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom);
+            const thief = viableThieves.find(mayStart);
+            for (const thief of viableThieves.filter(t=>!t.currentBatch).slice(0, 5))
+                ns.print(`${thief.getHostname()}  ${moneyStr(thief.getHostname())} ${secStr(thief.getHostname())}`)
             if (thief != null) {
-                const threads = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
-                if (threads > 0)
+                const outcome = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
+                if (outcome) {
                     log(`Started batch on ${thief.getHostname()}`);
-                ramAvailable -= threads * 1.75;
+                    ramAvailable -= thief.getReservedThreads() * 1.75;
+                }
             }
         } catch (error) {
             console.error(error);

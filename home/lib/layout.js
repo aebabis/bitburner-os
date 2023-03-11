@@ -13,13 +13,15 @@ export class DynamicWindow {
   }
 }
 
+const COLOR_CODES = /\u001b\[[0-9;]+m/g;
+
 export class GrowingWindow {
   constructor(getContent) {
     this.minWidth = 1;
     this.minHeight = 1;
     this.getContent = () => {
       const rows = getContent().split('\n');
-      this.minWidth =  Math.max(this.minWidth, ...rows.map(s=>s.length));
+      this.minWidth =  Math.max(this.minWidth, ...rows.map(s=>s.replace(COLOR_CODES, '').length));
       this.minHeight = Math.max(this.minHeight, rows.length);
       return rows;
     };
@@ -46,7 +48,14 @@ export const renderWindows = (windows, WIDTH) => {
     };
   };
 
-  const text = windows.map(win => win.render(WIDTH)).sort((a,b)=>a.text.length-b.text.length);
+  const text = windows.map(win => {
+    try {
+      return win.render(WIDTH);
+    } catch (error) {
+      console.error(error);
+      return ' '.repeat(WIDTH);
+    }
+  }).sort((a,b)=>a.text.length-b.text.length);
 
   const placed = [];
   let x = 0;
@@ -162,7 +171,7 @@ export const renderWindows = (windows, WIDTH) => {
     const { x, y, width, height, text, getText } = box;
     const drawn = getText ? getText(width, height) : text;
     for (let yy = 0; yy < height; yy++) {
-      const row = drawn[yy] || ' '.repeat(drawn[0].length);
+      const row = drawn[yy]?.match(/((?:\u001b\[[0-9;]+m)?.(?:\u001b\[[0-9;]+m)?)/g) || ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
       for (let xx = 0; xx < width; xx++) {
         grid[y+yy+1][x+xx+1] = row[xx] || ' ';
       }

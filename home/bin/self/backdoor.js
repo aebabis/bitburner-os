@@ -11,7 +11,7 @@ export async function main(ns) {
 
     // Hop along path to target
     for (const hostname of path)
-        ns.connect(hostname);
+        ns.singularity.connect(hostname);
 
-    await ns.installBackdoor();
+    await ns.singularity.installBackdoor();
 }

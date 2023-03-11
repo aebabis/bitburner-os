@@ -15,6 +15,20 @@ export const computeSumPermutations = (MAX) => {
   return table[MAX][MAX] - 1;
 };
 
+export const computeSumPermutationsII = (target, set, max=set.length-1, cache={}) => {
+  let key = `${target},${max}`;
+  if (cache[key] != null)
+    return cache[key]
+  else if (max === 0)
+    return +(target%set[max]===0)
+  let outcomes = 0;
+  let item = set[max];
+  for (let i = Math.floor(target/item); i >= 0; i--)
+    outcomes += computeSumPermutationsII(target - item * i, set, max-1, cache);
+  cache[key] = outcomes;
+  return outcomes;
+}
+
 export const countPaths = (grid) => {
   const h = grid.length;
   const w = grid[0].length;
@@ -225,3 +239,23 @@ export const stockProfit = (prices, n=1, s=0, c={}) => {
   }
   return c[key] = Math.max(pro, split);
 };
+
+export const lzDecode = (str) => {
+  const buffer = str.split('');
+  let isMode1 = true;
+  let result = [];
+  while (buffer.length) {
+    let size = +buffer.shift();
+    if (size > 0) {
+      if (isMode1 && buffer.length > 1)
+        while(size--) result.push(buffer.shift())
+      else {
+        const offset = +buffer.shift();
+        while(size--) result.push(result[result.length-offset])
+      }
+    }
+    console.log(result.join(''))
+    isMode1 = !isMode1;
+  }
+  return result.join('');
+}

@@ -82,6 +82,58 @@ class Batch {
     }
 }
 
+class HGBatch extends Batch {
+    constructor(ns, target, portion, ram, startAfter=Date.now()) {
+        super(ns, target);
+        if (isNaN(portion))
+            throw new Error('Portion must be a number. Got ' + portion);
+        if (isNaN(ram))
+            throw new Error('Ram must be a number. Got ' + ram);
+        if (portion >= 1) {
+            ns.tprint('WARN - Hack portion cannot meet or exceed 1');
+            portion = 63/64;
+        }
+
+        const frame = computeThreads(ns, target, portion);
+        if (frame == null)
+            return;
+        
+        const { growTime, hackTime, growThreads, hackThreads } = frame;
+        this.frame = [growThreads, hackThreads];
+
+        this.portion = portion;
+
+        const totalThreads = growThreads + hackThreads;
+        const ramPerFrame = totalThreads * 1.75;
+
+        let endAfter = startAfter + growTime;
+        let startBefore = endAfter;
+
+        if (hackThreads < 1)
+            return;
+
+        while (ram >= ramPerFrame) {
+            const hackEnd = endAfter;
+            const growEnd = hackEnd + SUBTASK_SPACING;
+
+            const growStart = growEnd - growTime;
+            const hackStart = hackEnd - hackTime;
+
+            if (hackStart >= startBefore)
+                break;
+
+            this.addJob(GROW, growThreads, target, growStart);
+            this.addJob(HACK, hackThreads, target, hackStart);
+
+            ram -= ramPerFrame;
+            endAfter = growEnd + FRAME_SPACING;
+        }
+        this.endAfter = endAfter;
+        if (this.jobs.getSize() === 0)
+            this.endAfter = Date.now();
+    }
+}
+
 class HGWBatch extends Batch {
     constructor(ns, target, portion, ram, startAfter=Date.now()) {
         super(ns, target);
@@ -197,6 +249,38 @@ class HWGWBatch extends Batch {
     }
 }
 
+class GBatch extends Batch {
+    constructor(ns, target, ram, startAfter=Date.now()) {
+        super(ns, target);
+        if (isNaN(ram))
+            throw new Error('Ram must be a number. Got ' + ram);
+
+        const maxMoney = ns.getServerMaxMoney(target);
+        const money = ns.getServerMoneyAvailable(target) || 1;
+
+        if (maxMoney === 0)
+            throw new Error('Cannot hack server with no money: ' + target);
+        const portion = maxMoney / money;
+        let growThreads = Math.ceil(ns.growthAnalyze(target, portion));
+
+        this.frame = [growThreads];
+
+        const growStart = startAfter;
+
+        const threadsPerJob = Math.max(8, Math.ceil(ram/24/1.75/2));
+
+        while (ram > 0 && growThreads > 0) {
+            const threads = Math.min(growThreads, threadsPerJob);
+            this.addJob(GROW, threads, target, growStart);
+            growThreads -= threads;
+            ram -= threads * 1.75;
+        }
+        this.endAfter = growStart + ns.getGrowTime(target) + FRAME_SPACING;
+        if (this.jobs.getSize() === 0)
+            this.endAfter = Date.now();
+    }
+}
+
 class WGWBatch extends Batch {
     constructor(ns, target, ram, startAfter=Date.now()) {
         super(ns, target);
@@ -292,7 +376,9 @@ export default class Thief {
         return currentBatch.type !== 'WGW';
     };
 
-    canHG = () => {
+    preferHGW = () => {
+        // TODO: Determine preference for HGW based on whether
+        // growing substantially changes the number of threads required
         const minSecurity = this.ns.getServerMinSecurityLevel(this.server);
         const baseSecurity = this.ns.getServerBaseSecurityLevel(this.server);
         return minSecurity === baseSecurity;
@@ -312,6 +398,7 @@ export default class Thief {
         if (!this.isGroomed()) {
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         } else {
+            ns.tprint(1);
             const maxThreads = maxRamPerJob / 1.75;
             const portion = PORTIONS.find((portion) => {
                 const growThreads = ns.growthAnalyze(server, 1 / (1-portion));
@@ -320,10 +407,7 @@ export default class Thief {
             });
             if (portion == null)
                 return false;
-            if (this.canHG())
-                this.currentBatch = new HGWBatch(ns, server, portion, ram, endAfter);
-            else
-                this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
+            this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
         }
         await this.currentBatch.send();
         return this.currentBatch.jobs.length > 0;
@@ -364,4 +448,6 @@ export default class Thief {
 
     getReservedThreads = () => this.currentBatch == null ? 0 :
         this.currentBatch.getReservedThreads();
+
+    toString = () => `Thief<${this.server}> ${this.currentBatch}`;
 }

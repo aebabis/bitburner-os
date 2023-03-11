@@ -24,8 +24,6 @@ export async function main(ns) {
     ns.disableLog('ALL');
 
     const crime = selectCrime(ns);
-    ns.commitCrime(crime);
-
-    while (ns.isBusy())
-        await ns.sleep(100);
+    const duration = ns.singularity.commitCrime(crime);
+    await ns.sleep(duration);
 }

@@ -7,15 +7,15 @@ export async function main(ns) {
     const [faction] = ns.args;
     const focus = shouldWorkHaveFocus(ns);
     if (
-        ns.workForFaction(faction, 'Hacking Contracts', focus) ||
-        ns.workForFaction(faction, 'Field Work', focus) ||
-        ns.workForFaction(faction, 'Security Work', focus)
+        ns.singularity.workForFaction(faction, 'Hacking Contracts', focus) ||
+        ns.singularity.workForFaction(faction, 'Field Work', focus) ||
+        ns.singularity.workForFaction(faction, 'Security Work', focus)
     ) {
         const DELAY = 10;
         await ns.sleep(DELAY * 1000);
 
         const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);
-        factionRep[faction] = ns.getFactionRep(faction);
+        factionRep[faction] = ns.singularity.getFactionRep(faction);
         activeRepRate[faction] = ns.getPlayer().workRepGained / DELAY;
         putPlayerData(ns, { factionRep, activeRepRate });
     }

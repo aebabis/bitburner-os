@@ -1,3 +1,4 @@
+import { GRAY } from './lib/colors';
 import { length } from './lib/util';
 
 const headData = (column) => {
@@ -46,8 +47,9 @@ export const transpose = (lines, numCols) => {
 
 /** @param {NS} ns */
 export const table = (ns, columns, data, options={}) => {
-    const { /*outline = true,*/ borders = false } = options;
+    const { /*outline = true,*/ borders = false, colors=false } = options;
     const joiner = borders ? ' | ' : '  ';
+    const head = colors ? GRAY : s=>s;
     if (columns == null) {
         if (data.length === 0)
             return '';
@@ -59,7 +61,7 @@ export const table = (ns, columns, data, options={}) => {
     const widths = columns.map((column, i) => data
         .map(row => length(row[i]||'')).reduce((a,b)=>Math.max(a,b),length(column.name)));
     const lines = [
-        columns.map((column, i) => column.pad(column.name, widths[i])).join(joiner),
+        head(columns.map((column, i) => column.pad(column.name, widths[i])).join(joiner)),
         ...data.map(row => row.map((cell, i) => columns[i].pad(cell, widths[i])).join(joiner)),
     ].map(x=>` ${x} `);
     return lines.join('\n');

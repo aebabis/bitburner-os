@@ -9,19 +9,19 @@ export const getStocks = (ns) => getStaticData(ns).stocks.map(({ sym, maxShares 
     price: ns.stock.getPrice(sym),
     getPurchaseCost: (shares) => ns.stock.getPurchaseCost(sym, shares, 'Long'),
     getSaleGain: (shares=ns.stock.getPosition(sym)[0]) => ns.stock.getSaleGain(sym, shares, 'Long'),
-    buy: (shares) => ns.stock.buy(sym, shares),
-    sell: (shares) => ns.stock.sell(sym, shares),
+    buy: (shares) => ns.stock.buyStock(sym, shares),
+    sell: (shares) => ns.stock.sellStock(sym, shares),
 }));
 
 /** @param {NS} ns **/
-export const optimizeShares = async (ns, stock, maxPurchase, money) => {
+export const optimizeShares = (ns, stock, maxPurchase, money) => {
     let min = 0;
     let max = maxPurchase;
     while (true) {
         let shares = Math.floor((min + max) / 2);
         if (min > max)
             return shares;
-        const cost = await stock.getPurchaseCost(shares);
+        const cost = stock.getPurchaseCost(shares);
         if (cost > money)
             max = shares - 1;
         else

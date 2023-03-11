@@ -1,8 +1,7 @@
 import { THREADPOOL } from './etc/config';
 import { by } from './lib/util';
 import { checkPort, fulfill, reject } from './lib/scheduler-api';
-import { nmap } from './lib/nmap';
-import { getStaticData, putRamData } from './lib/data-store';
+import { getStaticData, putRamData, getHostnames } from './lib/data-store';
 import { logger } from './lib/logger';
 
 const SCHEDULER_HOME = 'home';
@@ -39,6 +38,8 @@ export async function main(ns) {
 			// programs.
 			const reserve = (gb) => Math.max(0, ramUnused - gb);
 			ramAvailableTo = (process) => {
+				if (process.script === '/bin/access.js')
+					return reserve(0);
 				if (process.highPriority)
 					return reserve(2);
 				return reserve(32);
@@ -56,7 +57,7 @@ export async function main(ns) {
 	};
 
 	const getRamData = (ns) => {
-		const hostnames = nmap(ns);
+		const hostnames = getHostnames(ns);
 		const rootServers = hostnames
 			.filter(ns.hasRootAccess)
 			.map(getRamInfo)//.filter(server=>server.hasAdminRights)
@@ -138,13 +139,12 @@ export async function main(ns) {
 					const server = eligibleServers.find(isServerValid);
 					const settleServer = eligibleServers[0];
 
-					if (server != null) {
+					if (server != null)
 						await fulfill(ns, queue.splice(i, 1)[0], server);
-					} else if (settleServer?.ramAvailableTo(process) >= scriptRam) {
+					else if (settleServer?.ramAvailableTo(process) >= scriptRam)
 						await fulfill(ns, queue.splice(i, 1)[0], settleServer);
-					} else if (!process.isWorker) {
+					else if (!process.isWorker && ramRequired <= ns.getServerMaxRam('home'))
 						logger(ns).warn('Failed to find RAM for: ' + process.toString());
-					}
 				}
 			}
 			if (queue.length > 0) {

@@ -1,15 +1,29 @@
-export const COLOR = (n) => ({
-    valueOf: () => `\u001b[38;5;${n}m`,
-    toString: () => `\u001b[38;5;${n}m`,
-    BOLD: `\u001b[1;38;5;${n}m`,
-});
+const builder = (code) => {
+	const func = (str) => {
+		const result = code + str + RESET;
+		return {
+			length: str,
+			valueOf: () => result,
+			toString: () => result,
+			toJSON: () => result,
+		};
+	};
+	func.toString = func.valueOf = func.toJSON = () => code;
+	return func;
+}
+export const COLOR = (n) => {
+	const func = builder(`\u001b[38;5;${n}m`);
+	func.BOLD = builder(`\u001b[1;38;5;${n}m`);
+	return func;
+}
 export const C = COLOR;
 export const BG = (n) => `\u001b[48;5;${n}m`;
 
 export const KEYWORD = C(69);
 export const GRAY = C(236);
 export const STR = C(165);
-export const NORMAL = C(135);
+export const NORMAL = C(98);
+export const RESET = '\u001b[0m';
 
 export const LOG = NORMAL;
 export const ERROR = C(124); // 160
@@ -25,6 +39,7 @@ export async function main(ns) {
 	ns.tprint([164, 165, 170, 171].map(i => `${C(i)}${i} `).join(''));
 	ns.tprint(`${STR.BOLD}TITLE`);
 	ns.tprint(`${STR}Subtitle`);
+	ns.tprint(`${NORMAL.BOLD}SECTION`);
 	ns.tprint(`${NORMAL}Attempting to ${KEYWORD}restart`);
     ns.tprint(`${ERROR}Something went wrong`);
     ns.tprint(`${GRAY}Don't look at me!`);

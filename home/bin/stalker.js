@@ -82,7 +82,7 @@ const createIndicator = (ns) => {
 
 const setFocus = (ns, focus) => {
     try {
-        ns.focus(focus);
+        ns.singularity.setFocus(focus);
     } catch (error) {
 
     }

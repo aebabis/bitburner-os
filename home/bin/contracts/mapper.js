@@ -7,10 +7,12 @@ import {
     fixParensOpt,
     spiralizeMatrix,
     computeSumPermutations,
+    computeSumPermutationsII,
     lpf,
     pathToCorner,
     hammingCorrect,
     stockProfit,
+    lzDecode,
 } from './bin/contracts/algorithms';
 
 const arr2d = (rows, cols) => Array(rows).fill(0).map(()=> Array(cols).fill(0));
@@ -22,6 +24,7 @@ const map = {
     'Algorithmic Stock Trader IV': ([n,p])  => stockProfit(p, n),
     'Array Jumping Game':            (track)=> +!!fewestHops(track),
     'Array Jumping Game II':                   fewestHops,
+    'Compression II: LZ Decompression':        lzDecode,
     'Find Largest Prime Factor':               lpf,
     'Generate IP Addresses':                   generateIPs,
     'HammingCodes: Encoded Binary to Integer': hammingCorrect,
@@ -31,6 +34,7 @@ const map = {
     'Spiralize Matrix':                        spiralizeMatrix,
     'Subarray with Maximum Sum':               maximumSubarraySum,
     'Total Ways to Sum':                       computeSumPermutations,
+    'Total Ways to Sum II':          ([t,a])=> computeSumPermutationsII(t, a),
     'Unique Paths in a Grid I':      ([r,c])=> countPaths(arr2d(r,c)),
     'Unique Paths in a Grid II':               countPaths,
 };
