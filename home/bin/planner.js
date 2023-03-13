@@ -33,7 +33,7 @@ const go = async(ns) => {
     const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 5.2e9;
     const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
     const isCriminal = (faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
-    const inCriminalFaction = ns.getPlayer().factions.some(isCriminal);
+    const inCriminalFaction = () => ns.getPlayer().factions.some(isCriminal);
 
     /* eslint-disable no-unexpected-multiline */
     const tasks = [
@@ -63,6 +63,10 @@ const go = async(ns) => {
             AnyHostService(ns, canAutopilot)('/bin/self/tor.js'),
             AnyHostService(ns, canAutopilot)('/bin/self/rep-recorder.js'),
         );
+    else
+        tasks.push(
+            AnyHostService(ns)('/bin/hinter.js'),
+        )
 
     const showServices = () => {
         ns.clearLog();

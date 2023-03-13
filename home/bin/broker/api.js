@@ -38,6 +38,6 @@ export const getTableString = (ns, stocks) => {
     const HEAD = ['SYM', 'Shares', '+/-', 'Price'];
     const rows = stocks
         .filter(stock=>stock.position[0] > 0)
-        .map((stock) => [stock.sym, stock.position[0], stock.forecast.toFixed(3), stock.price]);
+        .map((stock) => [stock.sym, stock.position[0], stock.forecast?.toFixed(3)||'', stock.price]);
     return table(ns, HEAD, rows);
 };

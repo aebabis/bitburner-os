@@ -1,4 +1,4 @@
-import { getPlayerData  } from './lib/data-store';
+import { getPlayerData, putPlayerData  } from './lib/data-store';
 
 const selectCrime = (ns) => {
     const { crimeStats } = getPlayerData(ns);
@@ -25,5 +25,7 @@ export async function main(ns) {
 
     const crime = selectCrime(ns);
     const duration = ns.singularity.commitCrime(crime);
+    putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
     await ns.sleep(duration);
+    putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
 }

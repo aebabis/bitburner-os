@@ -39,10 +39,12 @@ export async function main(ns) {
         };
         const readyForAscension = (name) => {
             const ascension = ns.gang.getAscensionResult(name);
-            if (ascension == null || ascension.respect > 0)
+            if (ascension == null)
                 return false;
             const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'];
-            return skills.some(s=>ascension[s] >= 1.1);
+            if (!skills.some(s=>ascension[s] >= 1.1))
+                return false;
+            return ascension.respect / gangInfo.respect < .15;
         };
 
         for (const name of memberNames) {
@@ -55,7 +57,7 @@ export async function main(ns) {
         }
         await delegateAny(ns, true)('/bin/gang/decide-war.js', 1, gangInfo.faction, gangInfo.territoryClashChance);
         readyMembers.sort(by(name=>-respect(name)));
-        if (gangInfo.territory < 100)
+        if (gangInfo.territory < 1)
             assignNext(readyMembers, 'Territory Warfare');
         if (gangInfo.wantedPenalty > 1) {
             assignAll(readyMembers, 'Vigilante Justice');
@@ -64,7 +66,9 @@ export async function main(ns) {
         } else {
             readyMembers.sort(by(totalLevels));
             assignNext(readyMembers, 'Train Combat');
-            if (gangInfo.territory < 100 && needsPower()) {
+            if (gangInfo.territory < 1 && needsPower()) {
+                if (memberNames.length === 12)
+                    assignNext(readyMembers, 'Human Trafficking');
                 assignAll(readyMembers, 'Territory Warfare');
             } else {
                 assignNext(readyMembers, 'Human Trafficking');

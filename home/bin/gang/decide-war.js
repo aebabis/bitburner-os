@@ -13,25 +13,15 @@ export async function main(ns) {
         ...info,
         clashWinChance: power / (power + info.power),
     }));
-
+    const livingEnemies = enemyInfo.filter(e=>e.territory > 0);
+    const averageWinChance = livingEnemies.map(e=>e.clashWinChance)
+        .reduce((a,b)=>a+b,0) / livingEnemies.length;
     putGangData(ns, { power, territory, enemyInfo });
 
-    if (clashChance > 0) {
-        ns.gang.setTerritoryWarfare(false);
-        return;
-    }
-
-    if (territory > .99)
-        return;
-
-    const totalExpectedValue = enemyInfo
-        .filter(e=>e.territory > 0)
-        .map(e=>e.clashWinChance)
-        .reduce((a,b)=>a+b, 0);
-
-    if (totalExpectedValue > .55) {
+    if (territory < .99 && averageWinChance > .55) {
         ns.gang.setTerritoryWarfare(true);
         await ns.sleep(11000);
+    } else {
         ns.gang.setTerritoryWarfare(false);
     }
 }

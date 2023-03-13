@@ -5,9 +5,11 @@ import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { getTimeEstimates, getRepNeeded, getGoalCost } from './lib/query-service';
+import { MEDIUM, BRIGHT } from './lib/colors';
+import { getTimeEstimates, getRepNeeded, getGoalCost, hasBitNode } from './lib/query-service';
 
 const doc = eval('document');
+const H = BRIGHT.BOLD;
 
 const getSchedulerTable = (ns) => {
     const { city } = ns.getPlayer();
@@ -21,18 +23,18 @@ const getSchedulerTable = (ns) => {
     const stock = ns.nFormat(estimatedStockValue, '$0.0a');
     const { numPeopleKilled } = ns.getPlayer();
     return table(ns, null,
-        [['UPTIME', time],
-        ['CITY', city],
-        ['THEFT', theft],
+        [[('UPTIME'), time],
+        [H('CITY'), city],
+        [H('THEFT'), theft],
         ['', theftRate],
-        ['KILLS', numPeopleKilled],
-        ['STOCK', stock],
-        ['EXP', exp]]);
+        [H('KILLS'), numPeopleKilled],
+        [H('STOCK'), stock],
+        [H('EXP'), exp]]);
 };
 
 const backdoorPath = (ns) => {
     const SPACES = ' '.repeat(' connect powerhouse-fitness '.length) + '\n';
-    const HEAD = ' BACKDOOR HELPER \n';
+    const HEAD = ` ${BRIGHT.BOLD('BACKDOOR HELPER')} \n`;
     const path = getPath(ns);
     if (path == null) {
         return HEAD + ' (no available servers) ' + SPACES.repeat(2) + '\n\n\n\n';
@@ -80,7 +82,7 @@ const threadpoolTable = (ns) => {
     const left = data.slice(0, half);
     const right = data.slice(half);
     const rows = left.map((list, i) => [...list, ...(right[i]||['',''])]);
-    return ' SERVERS \n' + table(ns, null, rows);
+    return BRIGHT.BOLD(' SERVERS ') + '\n' + table(ns, null, rows);
 };
 
 const goalsTable = (ns) => {
@@ -93,21 +95,21 @@ const goalsTable = (ns) => {
         return table(ns, ['GOALS'], [
             [`${requiredJobRam}GB on ${THREADPOOL}-01`],
             ['Run augmentation suite'],
-        ]);
+        ], {colors: true});
     } else {
         const rows = [
             ['Join ' + targetFaction],
             ['Gain ' + getRepNeeded(ns) + ' rep'],
             ...targetAugmentations.map(aug=>[aug]),
         ];
-        return table(ns, ['GOALS'], rows);
+        return table(ns, ['GOALS'], rows, {colors: true});
     }
 };
 
 const moneyTable = (ns) => {
     const moneyData = getMoneyData(ns);
     if (moneyData == null) {
-        return ' INCOME \n (loading) ';
+        return ` ${H('INCOME')} \n ${MEDIUM(loading)} `;
     }
     const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
     const goalCost = getGoalCost(ns);
@@ -120,16 +122,22 @@ const moneyTable = (ns) => {
         ['   $', ns.nFormat(moneyTime||100*60*60, '00:00:00').padStart(8)],
         ['   r', ns.nFormat(repTime||100*60*60, '00:00:00').padStart(8)],
     ];
-    return ' INCOME \n' + table(ns, null, rows);
+    return ` ${H('INCOME')} \n` + table(ns, null, rows);
 };
 
 const workTable = (ns) => {
-    const { factionRep = {} } = getPlayerData(ns);
+    const { factionRep = {}, currentWork } = getPlayerData(ns);
+    const { location } = ns.getPlayer();
+    const WORK = H('WORK');
+    if (!hasBitNode(ns, 4))
+        return ` ${WORK} \n ${location} `;
+    if (currentWork == null)
+        return ` ${WORK} \n ${MEDIUM('(idle)')} `
     const {
-        workType,
+        type,
         crimeType,
-        currentWorkFactionName,
         companyName,
+        factionName,
         workMoneyGained,
         workRepGained,
         workHackExpGained,
@@ -138,7 +146,7 @@ const workTable = (ns) => {
         workDexExpGained,
         workAgiExpGained,
         workChaExpGained,
-    } = ns.getPlayer();
+    } = currentWork;
     const gains = [
         ['$', workMoneyGained],
         ['Rep', workRepGained],
@@ -151,59 +159,15 @@ const workTable = (ns) => {
     ].filter(([,x])=>!!x).map(([h,v]) => [h, ns.nFormat(v, '0.000a').padStart(8)]);
     const PAD = Math.max(0, 7-gains.length);
     const rows = table(ns, null, gains) + '\n'.repeat(PAD);
-    if (workType === 'Working for Faction') {
-        const rep = Math.floor(factionRep[currentWorkFactionName]);
-        return ` WORK \n ${currentWorkFactionName} (${rep}rep) \n${rows}`;
-    } else if (workType === 'Working for Company') {
-        return ` WORK \n Working at ${companyName} \n${rows}`;
-    } else if (crimeType != null) {
-        return ` WORK \n ${crimeType} \n${rows}`;
+    if (type === 'FACTION') {
+        const rep = Math.floor(factionRep[factionName]);
+        return ` ${WORK} \n ${factionName} (${rep}rep) \n${rows}`;
+    } else if (type === 'COMPANY') {
+        return ` ${WORK} \n Working at ${companyName} \n${rows}`;
+    } else if (type === 'CRIME') {
+        return ` ${WORK} \n ${crimeType} \n${rows}`;
     }
-    return ` WORK \n ${location} \n${rows}`;
-};
-
-const colorize = (root) => {
-    const REGEX = /([^─-◿⊗ ]*)( *)([─-◿⊗]*)(.*)/;
-    const container = root.parentElement;
-    let dupe = container.querySelector('.MuiPaper-root:last-child');
-    if (!dupe) {
-        dupe = root.cloneNode();
-        container.append(dupe);
-    }
-    root.style.display = 'none';
-
-    dupe.innerText = '';
-    root.querySelectorAll('p').forEach((p) => {
-        let text = p.innerText;
-        const newP = doc.createElement('p');
-        newP.className = p.className;
-        dupe.prepend(newP);
-        do {
-            const [, non, w, color, rest] = text.match(REGEX);
-            if (non) {
-                if (non.match(/^[A-Z]+$/)) {
-                    const strong = doc.createElement('strong');
-                    strong.innerText = non;
-                    newP.append(strong);
-                } else
-                    newP.append(doc.createTextNode(non));
-            }
-            if (w)
-                newP.append(doc.createTextNode(w));
-            if (color) {
-                const span = doc.createElement('span');
-                span.innerText = color;
-                if (color === '●')
-                    span.style.color = 'hsl(140, 35%, 45%)';
-                else if (color === '⊗')
-                    span.style.color = 'hsl(340, 65%, 55%)';
-                else
-                    span.style.color = 'hsl(280, 75%, 21%)';
-                newP.append(span);
-            }
-            text = rest;
-        } while (text);
-    });
+    return ` ${WORK} \n ${type} \n ${location} \n${rows}`;
 };
 
 /** @param {NS} ns **/
@@ -212,7 +176,8 @@ export async function main(ns) {
     ns.tail();
     const windows = [
         new GrowingWindow(() => getSchedulerTable(ns)),
-        new GrowingWindow(() => table(ns, ['SERVICES', ''], getServices(ns).map(({name, status})=>[name, status]))),
+        new GrowingWindow(() => table(ns, ['SERVICES', ''],
+            getServices(ns).map(({name, status})=>[name, status]), {colors:true})),
         new GrowingWindow(() => backdoorPath(ns)),
         new GrowingWindow(() => threadpoolTable(ns)),
         new GrowingWindow(() => goalsTable(ns)),

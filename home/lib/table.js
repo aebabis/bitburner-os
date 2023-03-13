@@ -1,4 +1,4 @@
-import { GRAY } from './lib/colors';
+import { BRIGHT } from './lib/colors';
 import { length } from './lib/util';
 
 const headData = (column) => {
@@ -49,7 +49,7 @@ export const transpose = (lines, numCols) => {
 export const table = (ns, columns, data, options={}) => {
     const { /*outline = true,*/ borders = false, colors=false } = options;
     const joiner = borders ? ' | ' : '  ';
-    const head = colors ? GRAY : s=>s;
+    const head = colors ? BRIGHT.BOLD : s=>s;
     if (columns == null) {
         if (data.length === 0)
             return '';

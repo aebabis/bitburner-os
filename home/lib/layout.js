@@ -1,3 +1,5 @@
+import { DARK } from './lib/colors';
+
 export class DynamicWindow {
   constructor(getContent, minWidth, minHeight) {
     this.minWidth = minWidth;
@@ -108,29 +110,29 @@ export const renderWindows = (windows, WIDTH) => {
   const lastRow = grid.length - 1;
   const lastCol = grid[0].length - 1;
   for (let x = 0; x < WIDTH; x++) {
-    grid[0][x] = grid[lastRow][x] = '━';
+    grid[0][x] = grid[lastRow][x] = DARK('━');
   }
   for (let y = 0; y < HEIGHT; y++) {
-    grid[y][0] = grid[y][lastCol] = '┃';
+    grid[y][0] = grid[y][lastCol] = DARK('┃');
   }
-  grid[0][0] = '┏';
-  grid[0][lastCol] = '┓';
-  grid[lastRow][0] = '┗';
-  grid[lastRow][lastCol] = '┛';
+  grid[0][0] = DARK('┏');
+  grid[0][lastCol] = DARK('┓');
+  grid[lastRow][0] = DARK('┗');
+  grid[lastRow][lastCol] = DARK('┛');
 
   for (const box of placed) {
     const { x, y, width, height } = box;
     for (let xx = 0; xx < width; xx++) {
       if (y !== 0)
-        grid[y][x+xx+1] = '─';
+        grid[y][x+xx+1] = DARK('─');
       if (y+height+1 !== HEIGHT-1)
-        grid[y+height+1][x+xx+1] = '─';
+        grid[y+height+1][x+xx+1] = DARK('─');
     }
     for (let yy = 0; yy < height; yy++) {
       if (x !== 0)
-        grid[y+yy+1][x] = '│';
+        grid[y+yy+1][x] = DARK('│');
       if (x+width+1 !== WIDTH-1)
-        grid[y+yy+1][x+width+1] = '│';
+        grid[y+yy+1][x+width+1] = DARK('│');
     }
   }
   for (let i = 0; i < 2; i++)
@@ -143,13 +145,13 @@ export const renderWindows = (windows, WIDTH) => {
       const bottom = y === HEIGHT-1;
 
       if (left && !top && !bottom) {
-        grid[y][x] = '┠';
+        grid[y][x] = DARK('┠');
       } else if (right && !top && !bottom) {
-        grid[y][x] = '┨';
+        grid[y][x] = DARK('┨');
       } else if (top && !left && !right) {
-        grid[y][x] = '┯';
+        grid[y][x] = DARK('┯');
       } else if (bottom && !left && !right) {
-        grid[y][x] = '┷';
+        grid[y][x] = DARK('┷');
       } else if ((top+bottom+left+right)<2) {
         const topNeighbor =    !top && grid[y-1][x]!==' '?1:0;
         const rightNeighbor =  !right && grid[y][x+1]!==' '?2:0;
@@ -159,7 +161,7 @@ export const renderWindows = (windows, WIDTH) => {
               topNeighbor;
         const N = '.';
         const lookup = [N,N,N,'└',N,N,'┌','├',N,'┘',N,'┴','┐','┤','┬','┼'];
-        grid[y][x] = lookup[bitMask];
+        grid[y][x] = DARK(lookup[bitMask]);
       }
     };
     drawCorner(x, y);

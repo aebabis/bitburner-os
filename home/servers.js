@@ -48,7 +48,7 @@ const getTable = (ns) => {
 	const right = data.slice(mid);
 	const doubled = left.map((row, i) => [...row, ...(right[i]||[])]);
 
-	return table(ns, [...columns, ...columns], doubled);
+	return table(ns, [...columns, ...columns], doubled, {colors: true});
 };
 
 /** @param {NS} ns **/

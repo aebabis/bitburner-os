@@ -1,6 +1,6 @@
 import { delegate } from './lib/scheduler-delegate.js';
 import { getServices } from './lib/service-api.js';
-import { ERROR } from './lib/colors';
+import { ERROR, NORMAL, C } from './lib/colors';
 
 const getExistingPid = (ns, desc) => {
     try {
@@ -37,11 +37,11 @@ export const Service = (ns, condition=()=>true, interval=5000) => (script, targe
 
     const statusCode = () => {
         if (!enabled)
-            return '⊗';
+            return ERROR('⊗');
         else if (queued)
             return '△';
         else if (isRunning())
-            return '●';
+            return C(34)('●');
         else
             return '○';
     };

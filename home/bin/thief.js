@@ -18,6 +18,12 @@ export async function main(ns) {
         while (feed.length > 10)
             feed.shift();
     };
+
+    // TODO: Make thief table
+    // Show all servers. Active grouped at top or bottom, different color.
+    // Show expected amortized money/thread and average money/thread within aug timeframe.
+
+    // Separate GUI for frame graph?
     
     const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
