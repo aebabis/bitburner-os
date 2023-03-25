@@ -218,6 +218,37 @@ export const hammingCorrect = (str) => {
   return hammingExtract(bits);
 };
 
+export const hammingEncode = (num) => {
+  const digits = num.toString(2).split('')
+  const encoded = [0];
+
+  let pow = 1;
+  for (let i = 1; digits.length > 0; i++) {
+    if (i === pow) {
+      encoded[i] = 0;
+      pow *= 2;
+    } else {
+      encoded[i] = +digits.shift();
+    }
+  }
+
+  pow /= 2;
+
+  for (let i = encoded.length - 1; i > 0; i--) {
+    if (encoded[i])
+      encoded[0] ^= 1;
+    if (i === pow)
+      pow /= 2;
+    else if (encoded[i])
+      for (let p = pow; p > 0; p>>=1)
+        if (i & p)
+          encoded[p] ^= 1;
+    // console.log('^'.padStart(i+1))
+    // console.log(encoded.join(''))
+  }
+  return encoded.join('')
+}
+
 export const stockProfit = (prices, n=1, s=0, c={}) => {
   let split = 0;
   const key = `${s},${prices.length},${n}`;
@@ -247,7 +278,7 @@ export const lzDecode = (str) => {
   while (buffer.length) {
     let size = +buffer.shift();
     if (size > 0) {
-      if (isMode1 && buffer.length > 1)
+      if (isMode1 && buffer.length >= size)
         while(size--) result.push(buffer.shift())
       else {
         const offset = +buffer.shift();
@@ -258,4 +289,41 @@ export const lzDecode = (str) => {
     isMode1 = !isMode1;
   }
   return result.join('');
+}
+
+const cypher = (char, shift) => {
+  const code = (char.charCodeAt(0) - 65 + shift) % 26 + 65;
+  return String.fromCharCode(code);
+}
+
+export const caesarCypher = ([plaintext, shift]) => {
+  const result = [];
+  for (const c of plaintext)
+    result.push(c === ' ' ? c : cypher(c, 26-shift))
+  return result.join('');
+}
+
+export const vigenereCypher = ([plaintext, password]) => {
+  const pw = password.split('');
+  const pwChar = () => pw.push(pw[0]) && pw.shift();
+  const lookup = (c1, c2) => cypher(c2, c1.charCodeAt(0)-65);
+  return plaintext.split('')
+    .map(ch=>lookup(ch, pwChar()))
+    .join('');
+}
+
+export const rle = (text) => text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x,a)=>x.length+a);
+
+export const twoColor = ([numVertices, edges]) => {
+  const arr = new Array(numVertices);
+  edges.sort((a,b)=>a[0]-b[0]);
+  for (const [a, b] of edges) {
+    if (arr[a] == null)
+      arr[a] = true;
+    if (arr[b] == null)
+      arr[b] = !arr[a];
+    if (arr[a] === arr[b])
+      return [];
+  }
+  return arr.map(Number);
 }

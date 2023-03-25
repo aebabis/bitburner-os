@@ -2,12 +2,10 @@ import { getPlayerData, putPlayerData } from './lib/data-store';
 import algorithms from './bin/contracts/mapper';
 
 /** @param {NS} ns */
-const attemptContract = (ns, { filename, hostname, type, data, tries }) => {
-    if (tries < 3)
-        return false;
+const attemptContract = (ns, { filename, hostname, type, data }) => {
     const algorithm = algorithms(type);
     if (algorithm == null)
-        return false;
+        return null;
     const answer = algorithm(data);
     try {
         const outcome = ns.codingcontract.attempt(answer, filename, hostname, { returnReward: true });
@@ -18,12 +16,23 @@ const attemptContract = (ns, { filename, hostname, type, data, tries }) => {
         return !!outcome;
     } catch (error) {
         ns.tprint('ERROR ' + error);
+        return false;
     }
 };
 
 /** @param {NS} ns */
 export async function main(ns) {
-    let { contracts } = getPlayerData(ns);
-    contracts = contracts.filter((contract) => !attemptContract(ns, contract));
-    putPlayerData(ns, { contracts });
+    const { contracts, failedContractNames=[] } = getPlayerData(ns);
+    const remainingContracts = [];
+    for (const contract of contracts) {
+        if (failedContractNames.includes(contract.filename))
+            continue;
+        const result = attemptContract(ns, contract);
+        if (!result) {
+            remainingContracts.push(contract);
+            if (result === false)
+                failedContractNames.push(contract.filename)
+        }
+    }
+    putPlayerData(ns, { contracts: remainingContracts, failedContractNames });
 }

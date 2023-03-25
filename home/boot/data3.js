@@ -12,7 +12,7 @@ export async function main(ns) {
     const hasSourceFile4 = ownedSourceFiles.some(file=>file.n === 4);
 
     // Compute RAM required on job server
-    let requiredJobRam = null;
+    let requiredJobRam = 32;
     if (bitNodeN === 4 || hasSourceFile4) {
         const maxScriptSize =
             scriptRam['/bin/self/aug/purchase-augs.js'] +
