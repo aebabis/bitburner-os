@@ -19,7 +19,7 @@ const cache = func => {
 
 const getRamInfo = cache((ns) => {
     const { purchasedServerCosts, requiredJobRam } = getStaticData(ns);
-    return { purchasedServerCosts, requiredJobRam };
+    return purchasedServerCosts && { purchasedServerCosts, requiredJobRam };
 });
 
 export const getJobRamCost = cache((ns) => {

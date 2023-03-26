@@ -1,5 +1,22 @@
 import { getStaticData } from './lib/data-store';
 
+const calculateSkill = (exp, mult = 1) => {
+  return Math.max(Math.floor(mult * (32 * Math.log(exp + 534.5) - 200)), 1);
+}
+
+const calculateExp = (skill, mult = 1) => {
+  return Math.exp((skill / mult + 200) / 32) - 534.6;
+}
+
+export const getSkillFormulas = (ns) => {
+    if (ns.fileExists('Formulas.exe', 'home'))
+        return ns.formulas.skills;
+    return {
+        calculateExp,
+        calculateSkill,
+    };
+}
+
 const getHacknetNodeIncomeFormula = (ns) => {
     if (ns.fileExists('Formulas.exe', 'home'))
         return ns.formulas.hacknetNodes.moneyGainRate;

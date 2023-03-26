@@ -173,7 +173,7 @@ export const renderWindows = (windows, WIDTH) => {
     const { x, y, width, height, text, getText } = box;
     const drawn = getText ? getText(width, height) : text;
     for (let yy = 0; yy < height; yy++) {
-      const row = drawn[yy]?.match(/((?:\u001b\[[0-9;]+m)?.(?:\u001b\[[0-9;]+m)?)/g) || ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
+      const row = drawn[yy]?.match(/((?:\u001b\[[0-9;]+m)*.(?:\u001b\[[0-9;]+m)?)/g) || ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
       for (let xx = 0; xx < width; xx++) {
         grid[y+yy+1][x+xx+1] = row[xx] || ' ';
       }

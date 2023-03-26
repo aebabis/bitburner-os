@@ -5,14 +5,15 @@ import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
 import { getTailModal, getModalColumnCount } from './lib/modal';
 import { table } from './lib/table';
 import { getServices } from './lib/service-api';
-import { MEDIUM, BRIGHT } from './lib/colors';
+import { C, BG, MEDIUM, BRIGHT } from './lib/colors';
 import { getTimeEstimates, getRepNeeded, getGoalCost, hasBitNode } from './lib/query-service';
+import { getSkillFormulas } from './lib/formulas';
 
 const doc = eval('document');
 const H = BRIGHT.BOLD;
 
 const getSchedulerTable = (ns) => {
-    const { city } = ns.getPlayer();
+    const { city, bitNodeN } = ns.getPlayer();
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     const { theftIncome=0, theftRatePerGB=0, estimatedStockValue=0 } = getMoneyData(ns);
     const { onlineExpGained, onlineRunningTime } = scheduler;
@@ -22,8 +23,9 @@ const getSchedulerTable = (ns) => {
     const exp = ns.nFormat(onlineExpGained, '0.0a');
     const stock = ns.nFormat(estimatedStockValue, '$0.0a');
     const { numPeopleKilled } = ns.getPlayer();
-    return table(ns, null,
-        [[('UPTIME'), time],
+    return H+table(ns, null,
+        [['BN'+bitNodeN, ''],
+        [H('UPTIME'), time],
         [H('CITY'), city],
         [H('THEFT'), theft],
         ['', theftRate],
@@ -31,6 +33,54 @@ const getSchedulerTable = (ns) => {
         [H('STOCK'), stock],
         [H('EXP'), exp]]);
 };
+
+const getStatTable = (ns) => {
+  const WIDTH = 20;
+  const { calculateSkill, calculateExp } = getSkillFormulas(ns);
+  const { hp, money, skills, exp, mults } = ns.getPlayer();
+  const row = (c1, t1, c2, t2) => {
+    const fill = WIDTH - t1.toString().length - t2.toString().length;
+    return ' ' + c1 + t1 + ' '.repeat(fill) + c2 + t2 + ' ';
+  };
+
+  const computeProgress = (sName) => {
+    const ex = exp[sName];
+    const mult = mults[sName];
+    const skill = calculateSkill(ex, mult);
+    const t1 = calculateExp(skill, mult);
+    const t2 = calculateExp(skill+1, mult);
+    return (ex-t1)/(t2-t1);
+  }
+
+  const progressBar = (portion, size) => {
+    const num = size * portion;
+    const whole = ~~num;
+    const frac = Math.round((num - whole) * 8);
+    const sp = ' '.repeat(20 - whole - 1);
+    return C(238)('█'.repeat(whole) + ' ▏▎▍▌▋▊▉█'[frac] + sp);
+  };
+
+  const abbr = (str) => str[0].toUpperCase() + str[1] + str[2];
+
+  const output = [
+    row(C(133).BOLD, 'HP', C(170), `${hp.current}/${hp.max}`),
+    row(C(223).BOLD, 'Money', C(223), '$'+ns.formatNumber(money)),
+    row(C(36).BOLD, 'Hack', C(72), skills.hacking),
+    ' ' + progressBar(computeProgress('hacking'), WIDTH) + ' ',
+    row(C(251).BOLD, abbr('strength'), C(251), skills.strength),
+    ' ' + progressBar(computeProgress('strength'), WIDTH) + ' ',
+    row(C(251).BOLD, abbr('defense'), C(251), skills.defense),
+    ' ' + progressBar(computeProgress('defense'), WIDTH) + ' ',
+    row(C(251).BOLD, abbr('dexterity'), C(251), skills.dexterity),
+    ' ' + progressBar(computeProgress('dexterity'), WIDTH) + ' ',
+    row(C(251).BOLD, abbr('agility'), C(251), skills.agility),
+    ' ' + progressBar(computeProgress('agility'), WIDTH) + ' ',
+    row(C(251).BOLD, abbr('charisma'), C(251), skills.charisma),
+    ' ' + progressBar(computeProgress('charisma'), WIDTH) + ' ',
+  ];
+
+  return output.join('\n');
+}
 
 const backdoorPath = (ns) => {
     const SPACES = ' '.repeat(' connect powerhouse-fitness '.length) + '\n';
@@ -176,6 +226,7 @@ export async function main(ns) {
     ns.tail();
     const windows = [
         new GrowingWindow(() => getSchedulerTable(ns)),
+        new GrowingWindow(() => getStatTable(ns)),
         new GrowingWindow(() => table(ns, ['SERVICES', ''],
             getServices(ns).map(({name, status})=>[name, status]), {colors:true})),
         new GrowingWindow(() => backdoorPath(ns)),

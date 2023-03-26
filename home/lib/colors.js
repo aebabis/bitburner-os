@@ -17,7 +17,7 @@ export const COLOR = (n) => {
 	return func;
 }
 export const C = COLOR;
-export const BG = (n) => `\u001b[48;5;${n}m`;
+export const BG = (n) => builder(`\u001b[48;5;${n}m`);
 
 export const KEYWORD = C(69);
 export const GRAY = C(236);

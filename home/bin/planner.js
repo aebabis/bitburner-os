@@ -23,10 +23,9 @@ const go = async(ns) => {
         ownedSourceFiles,
     } = getStaticData(ns);
 
-    const beatBN2 = ownedSourceFiles.find(file => file.n === 2);
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
 
-    const gangsAvailable = bitNodeN === 2 || beatBN2;
+    const gangsAvailable = bitNodeN > 1;
     const hasSingularity = bitNodeN === 4 || beatBN4;
 
     const canPurchaseServers = () => ns.getPlayer().money >= purchasedServerCosts[4];
