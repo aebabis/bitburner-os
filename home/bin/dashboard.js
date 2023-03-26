@@ -236,6 +236,8 @@ export async function main(ns) {
         new GrowingWindow(() => workTable(ns)),
         // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
     ];
+    await ns.sleep(1);
+    ns.resizeTail(1000, 500);
     while (true) {
         try {
             const modal = await getTailModal(ns);
