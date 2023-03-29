@@ -55,6 +55,8 @@ const getStatTable = (ns) => {
   const progressBar = (portion, size) => {
     const num = size * portion;
     const whole = ~~num;
+    if (whole >= size)
+        return '█'.repeat(size);
     const frac = Math.round((num - whole) * 8);
     const sp = ' '.repeat(20 - whole - 1);
     return C(238)('█'.repeat(whole) + ' ▏▎▍▌▋▊▉█'[frac] + sp);

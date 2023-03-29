@@ -116,7 +116,6 @@ const FILES = [
   'ram.js',
   'read.js',
   'readme.js',
-  'restart.js',
   'servers.js',
   'services.js',
   'start.js',

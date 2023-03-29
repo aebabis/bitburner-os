@@ -28,8 +28,8 @@ const UTILITIES = {
 const ALIASES = {
     // Main
     start: 'home; ./start.js',
-    stop: 'home; killall; ./stop.js',
-    restart: 'home; killall; ./restart.js',
+    stop: 'home; kill /bin/scheduler.js; ./stop.js',
+    restart: 'home; kill /bin/scheduler.js; ./stop.js start.js',
     services: './services.js',
 
     // Shorthand
