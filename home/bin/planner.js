@@ -19,14 +19,14 @@ const go = async(ns) => {
     const {
         requiredJobRam,
         purchasedServerCosts,
-        bitNodeN,
+        resetInfo,
         ownedSourceFiles,
     } = getStaticData(ns);
 
     const beatBN4 = ownedSourceFiles.find(file => file.n === 4);
 
-    const gangsAvailable = bitNodeN > 1;
-    const hasSingularity = bitNodeN === 4 || beatBN4;
+    const gangsAvailable = resetInfo.currentNode > 1;
+    const hasSingularity = resetInfo.currentNode === 4 || beatBN4;
 
     const canPurchaseServers = () => ns.getPlayer().money >= purchasedServerCosts[4];
     const couldTrade = () => ns.getPlayer().hasTixApiAccess || ns.getPlayer().money >= 5.2e9;

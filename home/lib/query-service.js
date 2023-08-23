@@ -101,8 +101,8 @@ export const shouldWorkHaveFocus = (ns) => {
 }
 
 export const hasBitNode = (ns, bn) => {
-    const { bitNodeN, ownedSourceFiles } = getStaticData(ns);
-    const inBN = bitNodeN === bn;
+    const { resetInfo, ownedSourceFiles } = getStaticData(ns);
+    const inBN = resetInfo.currentNode === bn;
     const beatBN = ownedSourceFiles.find(file => file.n === bn);
     return inBN || beatBN;
 }

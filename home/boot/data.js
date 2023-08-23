@@ -23,8 +23,10 @@ export async function main(ns) {
     tprint(ns)(STR + '  Caching network map');
     saveHostnames(ns);
 
+    const resetInfo = ns.getResetInfo();
+
     putStaticData(ns, {
-        bitNodeN: ns.getPlayer().bitNodeN,
+        resetInfo,
         ownedSourceFiles: [], // To be overwritten in next step, RAM permitting
         scriptRam,
 		purchasedServerLimit: ns.getPurchasedServerLimit(),

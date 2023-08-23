@@ -13,7 +13,8 @@ const doc = eval('document');
 const H = BRIGHT.BOLD;
 
 const getSchedulerTable = (ns) => {
-    const { city, bitNodeN } = ns.getPlayer();
+    const { city, numPeopleKilled } = ns.getPlayer();
+    const { currentNode } = ns.getResetInfo();
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     const { theftIncome=0, theftRatePerGB=0, estimatedStockValue=0 } = getMoneyData(ns);
     const { onlineExpGained, onlineRunningTime } = scheduler;
@@ -22,9 +23,8 @@ const getSchedulerTable = (ns) => {
     const theftRate = ns.nFormat(theftRatePerGB, '$0.0a').padStart(6)+'/GBs';
     const exp = ns.nFormat(onlineExpGained, '0.0a');
     const stock = ns.nFormat(estimatedStockValue, '$0.0a');
-    const { numPeopleKilled } = ns.getPlayer();
     return H+table(ns, null,
-        [['BN'+bitNodeN, ''],
+        [['BN'+currentNode, ''],
         [H('UPTIME'), time],
         [H('CITY'), city],
         [H('THEFT'), theft],
