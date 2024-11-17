@@ -1,7 +1,7 @@
-import { SHARE } from './etc/filenames';
-import getConfig from './lib/config';
-import { getStaticData, getRamData } from './lib/data-store';
-import { delegateAny } from './lib/scheduler-delegate';
+import { SHARE } from '/etc/filenames';
+import getConfig from '/lib/config';
+import { getStaticData, getRamData } from '/lib/data-store';
+import { delegateAny } from '/lib/scheduler-delegate';
 
 const sum = (a,b)=>a+b;
 

@@ -1,6 +1,6 @@
-import { getBestPurchase } from './lib/hacknet';
-import { logger } from './lib/logger';
-import { estimateTimeToGoal } from './lib/query-service';
+import { getBestPurchase } from '/lib/hacknet';
+import { logger } from '/lib/logger';
+import { estimateTimeToGoal } from '/lib/query-service';
 
 /** @param {NS} ns **/
 export async function main(ns) {

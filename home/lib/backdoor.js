@@ -1,5 +1,5 @@
-import { nmap } from './lib/nmap';
-import { by } from './lib/util';
+import { nmap } from '/lib/nmap';
+import { by } from '/lib/util';
 
 const PRIORITIES = ['CSEC', 'I.I.I.I', 'avmnite-02h', 'run4theh111z', 'The-Cave', 'w0r1d_d43m0n'];
 

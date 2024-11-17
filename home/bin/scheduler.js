@@ -1,8 +1,8 @@
-import { THREADPOOL } from './etc/config';
-import { by } from './lib/util';
-import { checkPort, fulfill, reject } from './lib/scheduler-api';
-import { getStaticData, putRamData, getHostnames } from './lib/data-store';
-import { logger } from './lib/logger';
+import { THREADPOOL } from '/etc/config';
+import { by } from '/lib/util';
+import { checkPort, fulfill, reject } from '/lib/scheduler-api';
+import { getStaticData, putRamData, getHostnames } from '/lib/data-store';
+import { logger } from '/lib/logger';
 
 const SCHEDULER_HOME = 'home';
 

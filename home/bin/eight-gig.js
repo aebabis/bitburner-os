@@ -1,5 +1,5 @@
-import { getHostnames } from './lib/data-store';
-import { fullInfect } from './bin/infect';
+import { getHostnames } from '/lib/data-store';
+import { fullInfect } from '/bin/infect';
 
 /** @param {NS} ns */
 export async function main(ns) {

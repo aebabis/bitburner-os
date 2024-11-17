@@ -1,13 +1,13 @@
-import { THREADPOOL } from './etc/config';
-import { getPath } from './lib/backdoor.js';
-import { getStaticData, getMoneyData, getPlayerData } from './lib/data-store';
-import { GrowingWindow, DynamicWindow, renderWindows } from './lib/layout';
-import { getTailModal, getModalColumnCount } from './lib/modal';
-import { table } from './lib/table';
-import { getServices } from './lib/service-api';
-import { C, BG, MEDIUM, BRIGHT } from './lib/colors';
-import { getTimeEstimates, getRepNeeded, getGoalCost, hasBitNode } from './lib/query-service';
-import { getSkillFormulas } from './lib/formulas';
+import { THREADPOOL } from '/etc/config';
+import { getPath } from '/lib/backdoor.js';
+import { getStaticData, getMoneyData, getPlayerData } from '/lib/data-store';
+import { GrowingWindow, DynamicWindow, renderWindows } from '/lib/layout';
+import { getTailModal, getModalColumnCount } from '/lib/modal';
+import { table } from '/lib/table';
+import { getServices } from '/lib/service-api';
+import { C, BG, MEDIUM, BRIGHT } from '/lib/colors';
+import { getTimeEstimates, getRepNeeded, getGoalCost, hasBitNode } from '/lib/query-service';
+import { getSkillFormulas } from '/lib/formulas';
 
 const doc = eval('document');
 const H = BRIGHT.BOLD;

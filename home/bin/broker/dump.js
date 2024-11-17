@@ -1,5 +1,5 @@
-import { getConfig } from './lib/config';
-import { getStaticData } from './lib/data-store';
+import { getConfig } from '/lib/config';
+import { getStaticData } from '/lib/data-store';
 
 /** @param {NS} ns **/
 export async function main(ns) {

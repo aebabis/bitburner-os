@@ -1,6 +1,6 @@
-import { table } from './lib/table';
-import { GRAY } from './lib/colors';
-import { getPlayerData  } from './lib/data-store';
+import { table } from '/lib/table';
+import { GRAY } from '/lib/colors';
+import { getPlayerData  } from '/lib/data-store';
 
 const dec = (num, places=2) => {
     if (num === 0)

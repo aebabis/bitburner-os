@@ -1,5 +1,5 @@
-import { shouldWorkHaveFocus } from './lib/query-service';
-import { getPlayerData, putPlayerData } from './lib/data-store';
+import { shouldWorkHaveFocus } from '/lib/query-service';
+import { getPlayerData, putPlayerData } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {

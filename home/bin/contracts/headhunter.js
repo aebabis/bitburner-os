@@ -1,4 +1,4 @@
-import { getHostnames, putPlayerData, getPlayerData } from './lib/data-store';
+import { getHostnames, putPlayerData, getPlayerData } from '/lib/data-store';
 
 const isContract = file=>file.endsWith('.cct');
 

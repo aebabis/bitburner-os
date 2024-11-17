@@ -1,6 +1,6 @@
-import { rmi } from './lib/rmi';
-import { table } from './lib/table';
-import { getPlayerData } from './lib/data-store';
+import { rmi } from '/lib/rmi';
+import { table } from '/lib/table';
+import { getPlayerData } from '/lib/data-store';
 
 const showContracts = (ns) => {
     const { contracts } = getPlayerData(ns);

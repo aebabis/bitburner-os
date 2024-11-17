@@ -1,6 +1,6 @@
-import { defer } from './boot/defer';
-import { tprint } from './boot/util';
-import { STR } from './lib/colors';
+import { defer } from '/boot/defer';
+import { tprint } from '/boot/util';
+import { STR } from '/lib/colors';
 
 /** @param {NS} ns **/
 export async function main(ns) {

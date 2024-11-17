@@ -1,7 +1,7 @@
-import { getPlayerData, putPlayerData } from './lib/data-store';
-import { FACTIONS } from './bin/self/aug/factions';
-import { Timeline } from './lib/timeline';
-import { table } from './lib/table';
+import { getPlayerData, putPlayerData } from '/lib/data-store';
+import { FACTIONS } from '/bin/self/aug/factions';
+import { Timeline } from '/lib/timeline';
+import { table } from '/lib/table';
 
 /** @param {NS} ns */
 export async function main(ns) {

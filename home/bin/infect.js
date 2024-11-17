@@ -1,4 +1,4 @@
-import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
+import { HACK, GROW, WEAKEN, SHARE } from '/etc/filenames';
 
 /** @param {NS} ns **/
 export const infect = (ns, ...hostnames) => {

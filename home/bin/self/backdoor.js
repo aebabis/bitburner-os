@@ -1,4 +1,4 @@
-import { stop } from './stop';
+import { stop } from '/stop';
 
 /** @param {NS} ns */
 export async function main(ns) {

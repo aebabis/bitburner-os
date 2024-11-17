@@ -1,12 +1,12 @@
-import { getStaticData, getPlayerData } from './lib/data-store';
-import { isMoneyBound, getRepNeeded } from './lib/query-service';
-import { rmi } from './lib/rmi';
-import getConfig from './lib/config';
+import { getStaticData, getPlayerData } from '/lib/data-store';
+import { isMoneyBound, getRepNeeded } from '/lib/query-service';
+import { rmi } from '/lib/rmi';
+import getConfig from '/lib/config';
 import {
     COMBAT_REQUIREMENTS,
     CITY_FACTIONS,
     FACTION_LOCATIONS,
-} from './bin/self/aug/factions';
+} from '/bin/self/aug/factions';
 
 const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'];
 

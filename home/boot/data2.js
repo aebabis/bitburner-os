@@ -1,8 +1,8 @@
-import { getStaticData, putStaticData } from './lib/data-store';
-import { defer } from './boot/defer';
-import { getBitNodeMultipliers } from './boot/cheaty-data';
-import { tprint } from './boot/util';
-import { STR } from './lib/colors';
+import { getStaticData, putStaticData } from '/lib/data-store';
+import { defer } from '/boot/defer';
+import { getBitNodeMultipliers } from '/boot/cheaty-data';
+import { tprint } from '/boot/util';
+import { STR } from '/lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {

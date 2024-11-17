@@ -1,4 +1,4 @@
-import { putStaticData, putPlayerData  } from './lib/data-store';
+import { putStaticData, putPlayerData  } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {

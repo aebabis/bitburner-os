@@ -1,4 +1,4 @@
-import { DARK } from './lib/colors';
+import { DARK } from '/lib/colors';
 
 export class DynamicWindow {
   constructor(getContent, minWidth, minHeight) {

@@ -1,5 +1,5 @@
-import { by } from './lib/util';
-import { getGangData } from './lib/data-store';
+import { by } from '/lib/util';
+import { getGangData } from '/lib/data-store';
 
 const HEADINGS = {
     name: 'Name',

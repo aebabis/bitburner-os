@@ -1,4 +1,4 @@
-import { printTaskTable } from './bin/gang/task-table';
+import { printTaskTable } from '/bin/gang/task-table';
 
 /** @param {NS} ns **/
 export async function main(ns) {

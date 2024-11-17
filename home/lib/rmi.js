@@ -1,5 +1,5 @@
-import { logger } from './lib/logger';
-import { delegateAny } from './lib/scheduler-delegate';
+import { logger } from '/lib/logger';
+import { delegateAny } from '/lib/scheduler-delegate';
 
 /** @param {NS} ns */
 export const rmi = (ns, retry) => async(...args) => {

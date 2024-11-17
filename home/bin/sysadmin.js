@@ -1,8 +1,8 @@
-import { THREADPOOL } from './etc/config';
-import { getRamData, getMoneyData, getStaticData } from './lib/data-store';
-import { disableService } from './lib/service-api';
-import { estimateTimeToGoal, needsJobRam, getJobRamCost } from './lib/query-service';
-import { infect, fullInfect } from './bin/infect';
+import { THREADPOOL } from '/etc/config';
+import { getRamData, getMoneyData, getStaticData } from '/lib/data-store';
+import { disableService } from '/lib/service-api';
+import { estimateTimeToGoal, needsJobRam, getJobRamCost } from '/lib/query-service';
+import { infect, fullInfect } from '/bin/infect';
 
 /** @param {NS} ns **/
 const getServerNames = (maxServers) => {

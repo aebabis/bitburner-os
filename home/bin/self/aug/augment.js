@@ -1,6 +1,6 @@
-import { rmi } from './lib/rmi';
-import { analyzeAugData } from './bin/self/aug/analyze';
-import { getStaticData } from './lib/data-store';
+import { rmi } from '/lib/rmi';
+import { analyzeAugData } from '/bin/self/aug/analyze';
+import { getStaticData } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {

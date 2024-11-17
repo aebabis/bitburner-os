@@ -1,6 +1,6 @@
-import { disableService } from './lib/service-api';
-import { hasBitNode } from './lib/query-service';
-import { rmi } from './lib/rmi';
+import { disableService } from '/lib/service-api';
+import { hasBitNode } from '/lib/query-service';
+import { rmi } from '/lib/rmi';
 
 export const liquidate = async (ns) => {
     // Prevent money from being spent

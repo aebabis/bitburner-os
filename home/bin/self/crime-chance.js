@@ -1,4 +1,4 @@
-import { getPlayerData, putPlayerData  } from './lib/data-store';
+import { getPlayerData, putPlayerData  } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {

@@ -1,6 +1,6 @@
-import { defer } from './boot/defer';
-import { tprint } from './boot/util';
-import { STR } from './lib/colors';
+import { defer } from '/boot/defer';
+import { tprint } from '/boot/util';
+import { STR } from '/lib/colors';
 
 const getBootSequence = (ns) => {
     if (ns.getServerMaxRam('home') < ns.getScriptRam('/boot/data2.js')) {

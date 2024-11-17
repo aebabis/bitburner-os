@@ -1,5 +1,5 @@
-import { putPlayerData } from './lib/data-store';
-import { hasBitNode } from './lib/query-service';
+import { putPlayerData } from '/lib/data-store';
+import { hasBitNode } from '/lib/query-service';
 
 const doc = eval('document');
 const win = eval('window');

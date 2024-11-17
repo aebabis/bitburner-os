@@ -1,4 +1,4 @@
-import { putGangData } from './lib/data-store';
+import { putGangData } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {

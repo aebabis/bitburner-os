@@ -1,11 +1,11 @@
-import { THREADPOOL } from './etc/config';
-import { by } from './lib/util';
-import { defer } from './boot/defer';
-import { access } from './bin/access';
-import { infect, fullInfect } from './bin/infect';
-import { getHostnames } from './lib/data-store';
-import { tprint } from './boot/util';
-import { STR, GRAY } from './lib/colors';
+import { THREADPOOL } from '/etc/config';
+import { by } from '/lib/util';
+import { defer } from '/boot/defer';
+import { access } from '/bin/access';
+import { infect, fullInfect } from '/bin/infect';
+import { getHostnames } from '/lib/data-store';
+import { tprint } from '/boot/util';
+import { STR, GRAY } from '/lib/colors';
 
 const canRunCode = (ns) => (hostname) => ns.getServerMaxRam(hostname) >= 1.6;
 

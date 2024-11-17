@@ -1,5 +1,5 @@
-import { getStaticData } from './lib/data-store';
-import { table } from './lib/table';
+import { getStaticData } from '/lib/data-store';
+import { table } from '/lib/table';
 
 /** @param {NS} ns **/
 export const getStocks = (ns) => getStaticData(ns).stocks.map(({ sym, maxShares }) => ({

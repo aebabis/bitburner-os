@@ -1,8 +1,8 @@
-import { by } from './lib/util';
-import { delegateAny } from './lib/scheduler-delegate';
-import { getGangData, putGangData } from './lib/data-store';
-import { logger } from './lib/logger';
-import { isRepBound } from './lib/query-service';
+import { by } from '/lib/util';
+import { delegateAny } from '/lib/scheduler-delegate';
+import { getGangData, putGangData } from '/lib/data-store';
+import { logger } from '/lib/logger';
+import { isRepBound } from '/lib/query-service';
 
 /** @param {NS} ns **/
 export async function main(ns) {

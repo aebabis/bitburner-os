@@ -1,6 +1,6 @@
-import { delegate } from './lib/scheduler-delegate.js';
-import { getServices } from './lib/service-api.js';
-import { ERROR, NORMAL, C } from './lib/colors';
+import { delegate } from '/lib/scheduler-delegate.js';
+import { getServices } from '/lib/service-api.js';
+import { ERROR, NORMAL, C } from '/lib/colors';
 
 const getExistingPid = (ns, desc) => {
     try {

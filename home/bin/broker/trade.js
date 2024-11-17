@@ -1,9 +1,9 @@
-import { by } from './lib/util';
-import { ERROR } from './lib/colors';
-import { putMoneyData } from './lib/data-store';
-import getConfig from './lib/config';
-import { getStocks, optimizeShares, getHoldings, getTableString } from './bin/broker/api';
-import { getServices } from './lib/service-api';
+import { by } from '/lib/util';
+import { ERROR } from '/lib/colors';
+import { putMoneyData } from '/lib/data-store';
+import getConfig from '/lib/config';
+import { getStocks, optimizeShares, getHoldings, getTableString } from '/bin/broker/api';
+import { getServices } from '/lib/service-api';
 
 /** @param {NS} ns **/
 const getSpendableFunds = (ns, stocks) => {

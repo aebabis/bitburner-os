@@ -1,10 +1,10 @@
-import { nmap } from './lib/nmap';
-import { defer } from './boot/defer';
-import { putHostnames, putStaticData, putMoneyData } from './lib/data-store';
-import { tprint } from './boot/util';
-import { STR } from './lib/colors';
+import { nmap } from '/lib/nmap';
+import { defer } from '/boot/defer';
+import { putHostnames, putStaticData, putMoneyData } from '/lib/data-store';
+import { tprint } from '/boot/util';
+import { STR } from '/lib/colors';
 
-import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from './etc/ports';
+import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from '/etc/ports';
 const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
 
 /** @param {NS} ns **/

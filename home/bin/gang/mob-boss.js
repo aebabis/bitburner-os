@@ -1,4 +1,4 @@
-import { rmi } from './lib/rmi';
+import { rmi } from '/lib/rmi';
 
 /** @param {NS} ns */
 export async function main(ns) {

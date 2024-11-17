@@ -1,7 +1,7 @@
-import { putStaticData } from './lib/data-store';
-import * as cheaty from './boot/cheaty-data';
-import { tprint } from './boot/util';
-import { STR } from './lib/colors';
+import { putStaticData } from '/lib/data-store';
+import * as cheaty from '/boot/cheaty-data';
+import { tprint } from '/boot/util';
+import { STR } from '/lib/colors';
 
 /** 
  * @precondition Running on BN1.1

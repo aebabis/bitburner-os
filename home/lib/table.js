@@ -1,5 +1,5 @@
-import { BRIGHT } from './lib/colors';
-import { length } from './lib/util';
+import { BRIGHT } from './colors';
+import { length } from './util';
 
 const headData = (column) => {
     const name = column.name != null ? column.name : column;

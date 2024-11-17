@@ -1,5 +1,5 @@
-import { PORT_RUN_CONFIG } from './etc/ports';
-import Ports from './lib/ports';
+import { PORT_RUN_CONFIG } from '/etc/ports';
+import Ports from '/lib/ports';
 
 const PROPS = {
     'share': 'Share rate',

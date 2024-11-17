@@ -1,6 +1,6 @@
-import getConfig from './lib/config';
-import { table } from './lib/table';
-import { by } from './lib/util';
+import getConfig from '/lib/config';
+import { table } from '/lib/table';
+import { by } from '/lib/util';
 
 /** @param {NS} ns **/
 export async function main(ns) {

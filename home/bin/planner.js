@@ -1,12 +1,12 @@
-import { AnyHostService } from './lib/service';
-import { getStaticData, getRamData } from './lib/data-store';
-import { logger } from './lib/logger';
-import { CRIMINAL_ORGANIZATIONS } from './bin/self/aug/factions';
+import { AnyHostService } from '/lib/service';
+import { getStaticData, getRamData } from '/lib/data-store';
+import { logger } from '/lib/logger';
+import { CRIMINAL_ORGANIZATIONS } from '/bin/self/aug/factions';
 
 import {
     ENABLE, DISABLE,
     writeServices, checkQueue, getTableString,
-} from './lib/service-api';
+} from '/lib/service-api';
 
 const mostRootRam = (ns) => {
     const { rootServers=[] } = getRamData(ns);

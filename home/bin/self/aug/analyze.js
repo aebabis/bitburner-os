@@ -2,9 +2,9 @@ import {
     STORY_FACTIONS,
     CITY_FACTIONS,
     AUGMENTATION_REQUIREMENTS,
-} from './bin/self/aug/factions';
-import { getStaticData, putStaticData  } from './lib/data-store';
-import { by } from './lib/util';
+} from '/bin/self/aug/factions';
+import { getStaticData, putStaticData  } from '/lib/data-store';
+import { by } from '/lib/util';
 
 // If doing multiple factions, consider sum of max repreqs
 const getAugmentGoals = (ownedAugmentations, {

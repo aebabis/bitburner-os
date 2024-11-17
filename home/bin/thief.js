@@ -1,10 +1,10 @@
-import { THREADPOOL } from './etc/config';
-import { logger } from './lib/logger';
-import { by } from './lib/util';
-import { table } from './lib/table';
-import { getHostnames, getRamData } from './lib/data-store';
+import { THREADPOOL } from '/etc/config';
+import { logger } from '/lib/logger';
+import { by } from '/lib/util';
+import { table } from '/lib/table';
+import { getHostnames, getRamData } from '/lib/data-store';
 
-import Thief from './lib/thief';
+import Thief from '/lib/thief';
 
 /** @param {NS} ns **/
 export async function main(ns) {

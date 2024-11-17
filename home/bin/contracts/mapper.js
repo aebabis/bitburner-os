@@ -18,7 +18,7 @@ import {
     vigenereCypher,
     rle,
     twoColor,
-} from './bin/contracts/algorithms';
+} from '/bin/contracts/algorithms';
 
 const arr2d = (rows, cols) => Array(rows).fill(0).map(()=> Array(cols).fill(0));
 

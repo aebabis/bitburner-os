@@ -1,4 +1,4 @@
-import { LOG, ERROR, INFO, WARN } from './lib/colors';
+import { LOG, ERROR, INFO, WARN } from '/lib/colors';
 
 const DEBUG = true;
 

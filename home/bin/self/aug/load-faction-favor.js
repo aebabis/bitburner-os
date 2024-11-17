@@ -1,5 +1,5 @@
-import { putStaticData  } from './lib/data-store';
-import { FACTIONS } from './bin/self/aug/factions';
+import { putStaticData  } from '/lib/data-store';
+import { FACTIONS } from '/bin/self/aug/factions';
 
 /** @param {NS} ns */
 export async function main(ns) {

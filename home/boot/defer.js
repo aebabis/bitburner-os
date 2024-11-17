@@ -1,5 +1,5 @@
-import { tprint } from './boot/util';
-import { GRAY } from './lib/colors';
+import { tprint } from '/boot/util';
+import { GRAY } from '/lib/colors';
 
 /** @param {NS} ns */
 export const defer = (ns) => async (...args) => {

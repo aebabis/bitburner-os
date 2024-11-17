@@ -1,4 +1,4 @@
-import { getHacknetNodeFormulas } from './lib/formulas';
+import { getHacknetNodeFormulas } from '/lib/formulas';
 
 /** @param {NS} ns **/
 export const getNodeData = (ns) => {

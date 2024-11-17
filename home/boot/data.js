@@ -1,8 +1,8 @@
-import { putStaticData,  } from './lib/data-store';
-import { defer } from './boot/defer';
-import { tprint } from './boot/util';
-import { saveHostnames } from './lib/nmap';
-import { STR } from './lib/colors';
+import { putStaticData,  } from '/lib/data-store';
+import { defer } from '/boot/defer';
+import { tprint } from '/boot/util';
+import { saveHostnames } from '/lib/nmap';
+import { STR } from '/lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {

@@ -1,5 +1,5 @@
-import { getStaticData  } from './lib/data-store';
-import { CITY_FACTIONS } from './bin/self/aug/factions';
+import { getStaticData  } from '/lib/data-store';
+import { CITY_FACTIONS } from '/bin/self/aug/factions';
 
 /** @param {NS} ns */
 export async function main(ns) {

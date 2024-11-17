@@ -1,6 +1,6 @@
-import { getPath } from './lib/backdoor.js';
-import { getPlayerData } from './lib/data-store';
-import { rmi } from './lib/rmi';
+import { getPath } from '/lib/backdoor.js';
+import { getPlayerData } from '/lib/data-store';
+import { rmi } from '/lib/rmi';
 
 /** @param {NS} ns */
 export async function main(ns) {

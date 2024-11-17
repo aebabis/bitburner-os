@@ -1,4 +1,4 @@
-import { getStaticData } from './lib/data-store';
+import { getStaticData } from '/lib/data-store';
 
 const calculateSkill = (exp, mult = 1) => {
   return Math.max(Math.floor(mult * (32 * Math.log(exp + 534.5) - 200)), 1);

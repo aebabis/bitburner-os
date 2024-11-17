@@ -1,6 +1,6 @@
-import { getRamData } from './lib/data-store';
-import { putMoneyData } from './lib/data-store';
-import { Timeline } from './lib/timeline';
+import { getRamData } from '/lib/data-store';
+import { putMoneyData } from '/lib/data-store';
+import { Timeline } from '/lib/timeline';
 
 class Timer {
     constructor(ns, interval=50, maxInterval=null) {

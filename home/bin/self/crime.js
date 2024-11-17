@@ -1,4 +1,4 @@
-import { getPlayerData, putPlayerData  } from './lib/data-store';
+import { getPlayerData, putPlayerData  } from '/lib/data-store';
 
 const selectCrime = (ns) => {
     const { crimeStats } = getPlayerData(ns);

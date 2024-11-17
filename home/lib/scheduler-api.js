@@ -1,7 +1,7 @@
-import { logger } from './lib/logger';
-import { getDelegatedTasks, closeTicket } from './lib/scheduler-delegate';
-import { HACK, GROW, WEAKEN, SHARE } from './etc/filenames';
-import { ERROR } from './lib/colors';
+import { logger } from '/lib/logger';
+import { getDelegatedTasks, closeTicket } from '/lib/scheduler-delegate';
+import { HACK, GROW, WEAKEN, SHARE } from '/etc/filenames';
+import { ERROR } from '/lib/colors';
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
 const TicketItem = ({ script, host, numThreads, args, ...rest }) => {

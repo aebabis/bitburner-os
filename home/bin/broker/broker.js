@@ -1,7 +1,7 @@
-import { AnyHostService } from './lib/service';
-import { getTableString } from './lib/service-api';
-import { getMoneyData } from './lib/data-store';
-import { rmi } from './lib/rmi';
+import { AnyHostService } from '/lib/service';
+import { getTableString } from '/lib/service-api';
+import { getMoneyData } from '/lib/data-store';
+import { rmi } from '/lib/rmi';
 
 const isTixViable = (ns) => {
     const { costToAug } = getMoneyData(ns);

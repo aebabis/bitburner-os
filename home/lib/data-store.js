@@ -1,4 +1,4 @@
-import Ports from './lib/ports';
+import Ports from '/lib/ports';
 import {
     PORT_HOSTNAMES,
     PORT_STATIC_DATA,
@@ -7,7 +7,7 @@ import {
     PORT_SCH_RAM_DATA,
     PORT_PLAYER_DATA,
     PORT_MONEY_DATA,
-} from './etc/ports';
+} from '/etc/ports';
 
 /** @param {NS} ns **/
 const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();

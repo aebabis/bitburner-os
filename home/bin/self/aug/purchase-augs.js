@@ -4,10 +4,10 @@ import {
     getPlayerData,
     putPlayerData,
     getStaticData,
-} from './lib/data-store';
-import { rmi } from './lib/rmi';
-import { by } from './lib/util';
-import { liquidate } from './bin/liquidate';
+} from '/lib/data-store';
+import { rmi } from '/lib/rmi';
+import { by } from '/lib/util';
+import { liquidate } from '/bin/liquidate';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 

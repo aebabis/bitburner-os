@@ -1,5 +1,5 @@
-import { WEAKEN, GROW, HACK } from './etc/filenames';
-import { createBatch } from './lib/scheduler-delegate';
+import { WEAKEN, GROW, HACK } from '/etc/filenames';
+import { createBatch } from '/lib/scheduler-delegate';
 
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;

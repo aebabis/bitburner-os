@@ -1,5 +1,5 @@
-import { nmap } from './lib/nmap';
-import { table } from './lib/table';
+import { nmap } from '/lib/nmap';
+import { table } from '/lib/table';
 
 /** @param {NS} ns **/
 export async function main(ns) {

@@ -1,5 +1,5 @@
-import { getPlayerData, putPlayerData } from './lib/data-store';
-import algorithms from './bin/contracts/mapper';
+import { getPlayerData, putPlayerData } from '/lib/data-store';
+import algorithms from '/bin/contracts/mapper';
 
 /** @param {NS} ns */
 const attemptContract = (ns, { filename, hostname, type, data }) => {

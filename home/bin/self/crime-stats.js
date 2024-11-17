@@ -1,4 +1,4 @@
-import { putPlayerData  } from './lib/data-store';
+import { putPlayerData  } from '/lib/data-store';
 
 const CRIMES = [
   'Shoplift',

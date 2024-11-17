@@ -1,6 +1,6 @@
-import { INFECT } from './etc/filenames';
-import { delegateAny } from './lib/scheduler-delegate';
-import { getHostnames } from './lib/data-store';
+import { INFECT } from '../etc/filenames';
+import { delegateAny } from '../lib/scheduler-delegate';
+import { getHostnames } from '../lib/data-store';
 // import { disableService } from './lib/service-api';
 
 /** @param {NS} ns **/

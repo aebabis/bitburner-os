@@ -1,6 +1,6 @@
-import Ports from './lib/ports';
-import { PORT_SERVICES_LIST, PORT_SERVICES_REPL } from './etc/ports';
-import { table } from './lib/table';
+import Ports from '/lib/ports';
+import { PORT_SERVICES_LIST, PORT_SERVICES_REPL } from '/etc/ports';
+import { table } from '/lib/table';
 
 export const DISABLE = 'DISABLE';
 export const ENABLE = 'ENABLE';

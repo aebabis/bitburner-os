@@ -1,4 +1,4 @@
-import { getStaticData, putStaticData  } from './lib/data-store';
+import { getStaticData, putStaticData  } from '/lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
