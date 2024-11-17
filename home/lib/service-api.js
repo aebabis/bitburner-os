@@ -13,7 +13,7 @@ export const getTableString = (ns, taskData) => {
 };
 
 export const getServices = (ns) => {
-    return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
+    return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek() || [];
 };
 
 export const disableService = async(ns, idOrName=getServiceName(ns.getScriptName())) => {
