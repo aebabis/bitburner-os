@@ -35,7 +35,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
         const stat = s=>s||'-';
         return [
             name, baseRespect, baseWanted,
-            ns.nFormat(baseMoney, '$0.00a'), difficulty,
+            ns.formatNumber(baseMoney, '$0.00a'), difficulty,
             stat(hackWeight), stat(strWeight), stat(defWeight),
             stat(dexWeight), stat(agiWeight), stat(chaWeight),
         ].map(v=>v.toString());

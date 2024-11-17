@@ -168,8 +168,8 @@ async function showChart(ns, element, nodes, links) {
         purchasedByPlayer,
       } = server;
       d.isFullyAccessed = d.name === 'home' || purchasedByPlayer || backdoorInstalled;
-      d.nMoneyAvailable = ns.nFormat(server.moneyAvailable, '$0.000a');
-      d.nMoneyMax = ns.nFormat(server.moneyMax, '$0.000a');
+      d.nMoneyAvailable = ns.formatNumber(server.moneyAvailable, '$0.000a');
+      d.nMoneyMax = ns.formatNumber(server.moneyMax, '$0.000a');
       if (d.isFullyAccessed)
         return theme.primary; //palette.text;
       else if (skill >= requiredHackingSkill && openPortCount >= numOpenPortsRequired)

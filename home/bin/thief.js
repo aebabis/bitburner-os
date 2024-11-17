@@ -69,7 +69,7 @@ export async function main(ns) {
                 .sort(by(0));
             const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
-            ns.print(' RAM AVAILABLE: ' + ns.nFormat(ramAvailable, '0.00'));
+            ns.print(' RAM AVAILABLE: ' + ns.formatNumber(ramAvailable, '0.00'));
             ns.print(' ' + '-'.repeat(tString.indexOf('\n')+1));
             ns.print(viableThieves.length);
             feed.forEach(message => ns.print(' ' + message));

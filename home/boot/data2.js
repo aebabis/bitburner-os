@@ -10,7 +10,7 @@ export async function main(ns) {
     tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 
     tprint(ns)(STR + '  Adding source files to static data cache');
-    const ownedSourceFiles = ns.getOwnedSourceFiles();
+    const ownedSourceFiles = ns.getOwnedSourceFiles?.() || [];
 
     const canUseHackNodes = currentNode === 5 || ownedSourceFiles.some(node => node.n === 5);
     let bitNodeMultipliers = null;

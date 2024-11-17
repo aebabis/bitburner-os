@@ -76,15 +76,15 @@ export async function main(ns) {
         });
 
         ns.clearLog();
-        ns.print('MONEY: ' + ns.nFormat(money,     '0.00a'));
-        ns.print('Total gain: ' + ns.nFormat(estTotalGain,     '0.00a'));
-        ns.print('   1s: ' + ns.nFormat(income1s||0,  '0.00a'));
-        ns.print('   5s: ' + ns.nFormat(income5s||0,  '0.00a'));
-        ns.print('  10s: ' + ns.nFormat(income10s||0, '0.00a'));
-        ns.print('  30s: ' + ns.nFormat(income30s||0, '0.00a'));
-        ns.print('  60s: ' + ns.nFormat(income60s||0, '0.00a'));
-        ns.print('   5m: ' + ns.nFormat(income5m||0, '0.00a'));
-        ns.print('/GB-s: ' + ns.nFormat(theftRatePerGB||0, '0.00a'));
+        ns.print('MONEY: ' + ns.formatNumber(money,     '0.00a'));
+        ns.print('Total gain: ' + ns.formatNumber(estTotalGain,     '0.00a'));
+        ns.print('   1s: ' + ns.formatNumber(income1s||0,  '0.00a'));
+        ns.print('   5s: ' + ns.formatNumber(income5s||0,  '0.00a'));
+        ns.print('  10s: ' + ns.formatNumber(income10s||0, '0.00a'));
+        ns.print('  30s: ' + ns.formatNumber(income30s||0, '0.00a'));
+        ns.print('  60s: ' + ns.formatNumber(income60s||0, '0.00a'));
+        ns.print('   5m: ' + ns.formatNumber(income5m||0, '0.00a'));
+        ns.print('/GB-s: ' + ns.formatNumber(theftRatePerGB||0, '0.00a'));
 
         await timer.next();
     }
