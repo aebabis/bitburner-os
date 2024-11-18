@@ -83,7 +83,7 @@ export async function main(ns) {
             return;
         }
 
-        const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), '0.000a');
+        const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), 3);
 
         if (isUpgrade)
             ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);

@@ -5,7 +5,7 @@ export const getNodeData = (ns) => {
     const formulas = getHacknetNodeFormulas(ns);
     const numNodes = ns.hacknet.numNodes();
     const nodes = new Array(numNodes).fill(null).map((_, i) => ns.hacknet.getNodeStats(i));
-    const m = n => n && ns.formatNumber(n, '$0.a');
+    const m = n => n && ns.formatNumber(n, 1);
     return nodes.map((stats, i) => {
         const lp = formulas.levelUpgradeProfit(stats.level, stats.ram, stats.cores);
         const rp = formulas.ramUpgradeProfit(stats.level, stats.ram, stats.cores);

@@ -28,7 +28,7 @@ export async function main(ns) {
             }
         }
 
-        const n = num => ns.formatNumber(num||0, '0.0a');
+        const n = num => ns.formatNumber(num||0, 1);
         const tableData = FACTIONS.slice().sort().map(
             faction => [faction, n(passiveRepRate[faction]), n(activeRepRate[faction])]);
         ns.clearLog();

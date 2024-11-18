@@ -4,7 +4,7 @@ export async function main(ns) {
     let ram = 1;
     let max = ns.getPurchasedServerMaxRam();
     while (ram <= max) {
-        const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), '$0.000a').padStart(10);
+        const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), 3).padStart(10);
         ns.tprint(ram.toString().padStart(10) + ' ' + cost);
         ram *= 2;
     }

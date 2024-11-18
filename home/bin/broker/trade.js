@@ -57,8 +57,8 @@ const tick = (ns, forecaster) => {
         .reduce((a,b)=>a+b, 0);
     putMoneyData(ns, { estimatedStockValue });
 
-    ns.print('EARMARKED FUNDS: $' + ns.formatNumber(moneyToSpend, '0.000a'));
-    ns.print('ESTIMATED VALUE: $' + ns.formatNumber(estimatedStockValue, '0.000a'));
+    ns.print('EARMARKED FUNDS: $' + ns.formatNumber(moneyToSpend, 3));
+    ns.print('ESTIMATED VALUE: $' + ns.formatNumber(estimatedStockValue, 3));
 
     ns.print(getTableString(ns, stocks));
     return stocks;
