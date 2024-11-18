@@ -315,15 +315,17 @@ export const vigenereCypher = ([plaintext, password]) => {
 export const rle = (text) => text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x,a)=>x.length+a);
 
 export const twoColor = ([numVertices, edges]) => {
-  const arr = new Array(numVertices);
-  edges.sort((a,b)=>a[0]-b[0]);
+  const arr = new Array(numVertices).fill(null);
+  arr[edges[0][0]] = true;
   for (const [a, b] of edges) {
-    if (arr[a] == null)
-      arr[a] = true;
-    if (arr[b] == null)
-      arr[b] = !arr[a];
-    if (arr[a] === arr[b])
+    if (arr[a] === arr[b] && arr[a] != null)
       return [];
+    if (arr[a] != null)
+      arr[b] = !arr[a];
+    else if (arr[b] != null)
+      arr[a] = !arr[b];
+    else
+      edges.push([a, b]);
   }
   return arr.map(Number);
 }
