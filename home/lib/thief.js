@@ -398,7 +398,6 @@ export default class Thief {
         if (!this.isGroomed()) {
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         } else {
-            ns.tprint(1);
             const maxThreads = maxRamPerJob / 1.75;
             const portion = PORTIONS.find((portion) => {
                 const growThreads = ns.growthAnalyze(server, 1 / (1-portion));

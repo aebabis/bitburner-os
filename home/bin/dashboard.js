@@ -17,7 +17,8 @@ const timeFormat = (totalSeconds) => {
   const totalMinutes = ~~(totalSeconds / 60);
   const minutes = minutes % 60;
   const hours = ~~(totalMinutes / 60);
-  return new Intl.DurationFormat('en', { style: 'digital' }).format({ hours, minutes, seconds });
+  const pad = str => str.toString().padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 const getSchedulerTable = (ns) => {
