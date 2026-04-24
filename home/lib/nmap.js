@@ -1,4 +1,4 @@
-import { putHostnames } from '/lib/data-store';
+import { putHostnames } from './data-store';
 
 /** @param {NS} ns **/
 export const nmap = (ns) => {

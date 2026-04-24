@@ -1,7 +1,7 @@
-import { getPlayerData, putPlayerData } from '/lib/data-store';
-import { FACTIONS } from '/bin/self/aug/factions';
-import { Timeline } from '/lib/timeline';
-import { table } from '/lib/table';
+import { getPlayerData, putPlayerData } from '../../lib/data-store';
+import { FACTIONS } from './aug/factions';
+import { Timeline } from '../../lib/timeline';
+import { table } from '../../lib/table';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -28,7 +28,7 @@ export async function main(ns) {
             }
         }
 
-        const n = num => ns.formatNumber(num||0, 1);
+        const n = num => ns.nFormat(num||0, '0.0a');
         const tableData = FACTIONS.slice().sort().map(
             faction => [faction, n(passiveRepRate[faction]), n(activeRepRate[faction])]);
         ns.clearLog();

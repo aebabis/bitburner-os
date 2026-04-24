@@ -6,7 +6,7 @@ import {
     getRamData,
     getPlayerData,
     getMoneyData,
-} from '/lib/data-store';
+} from './data-store';
 
 const cache = func => {
     let data;

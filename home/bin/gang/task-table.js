@@ -1,5 +1,5 @@
-import { by } from '/lib/util';
-import { getGangData } from '/lib/data-store';
+import { by } from '../../lib/util';
+import { getGangData } from '../../lib/data-store';
 
 const HEADINGS = {
     name: 'Name',
@@ -35,7 +35,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
         const stat = s=>s||'-';
         return [
             name, baseRespect, baseWanted,
-            ns.formatNumber(baseMoney, 2), difficulty,
+            ns.nFormat(baseMoney, '$0.00a'), difficulty,
             stat(hackWeight), stat(strWeight), stat(defWeight),
             stat(dexWeight), stat(agiWeight), stat(chaWeight),
         ].map(v=>v.toString());

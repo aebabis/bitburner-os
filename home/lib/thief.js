@@ -1,5 +1,5 @@
-import { WEAKEN, GROW, HACK } from '/etc/filenames';
-import { createBatch } from '/lib/scheduler-delegate';
+import { WEAKEN, GROW, HACK } from '../etc/filenames';
+import { createBatch } from './scheduler-delegate';
 
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
@@ -398,6 +398,7 @@ export default class Thief {
         if (!this.isGroomed()) {
             this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
         } else {
+            ns.tprint(1);
             const maxThreads = maxRamPerJob / 1.75;
             const portion = PORTIONS.find((portion) => {
                 const growThreads = ns.growthAnalyze(server, 1 / (1-portion));

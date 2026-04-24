@@ -1,11 +1,11 @@
-import { getHacknetNodeFormulas } from '/lib/formulas';
+import { getHacknetNodeFormulas } from './formulas';
 
 /** @param {NS} ns **/
 export const getNodeData = (ns) => {
     const formulas = getHacknetNodeFormulas(ns);
     const numNodes = ns.hacknet.numNodes();
     const nodes = new Array(numNodes).fill(null).map((_, i) => ns.hacknet.getNodeStats(i));
-    const m = n => n && ns.formatNumber(n, 1);
+    const m = n => n && ns.nFormat(n, '$0.a');
     return nodes.map((stats, i) => {
         const lp = formulas.levelUpgradeProfit(stats.level, stats.ram, stats.cores);
         const rp = formulas.ramUpgradeProfit(stats.level, stats.ram, stats.cores);

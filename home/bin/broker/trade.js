@@ -1,9 +1,9 @@
-import { by } from '/lib/util';
-import { ERROR } from '/lib/colors';
-import { putMoneyData } from '/lib/data-store';
-import getConfig from '/lib/config';
-import { getStocks, optimizeShares, getHoldings, getTableString } from '/bin/broker/api';
-import { getServices } from '/lib/service-api';
+import { by } from '../../lib/util';
+import { ERROR } from '../../lib/colors';
+import { putMoneyData } from '../../lib/data-store';
+import getConfig from '../../lib/config';
+import { getStocks, optimizeShares, getHoldings, getTableString } from './api';
+import { getServices } from '../../lib/service-api';
 
 /** @param {NS} ns **/
 const getSpendableFunds = (ns, stocks) => {
@@ -57,8 +57,8 @@ const tick = (ns, forecaster) => {
         .reduce((a,b)=>a+b, 0);
     putMoneyData(ns, { estimatedStockValue });
 
-    ns.print('EARMARKED FUNDS: $' + ns.formatNumber(moneyToSpend, 3));
-    ns.print('ESTIMATED VALUE: $' + ns.formatNumber(estimatedStockValue, 3));
+    ns.print('EARMARKED FUNDS: $' + ns.nFormat(moneyToSpend, '0.000a'));
+    ns.print('ESTIMATED VALUE: $' + ns.nFormat(estimatedStockValue, '0.000a'));
 
     ns.print(getTableString(ns, stocks));
     return stocks;

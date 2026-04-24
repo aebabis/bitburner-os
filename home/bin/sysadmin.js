@@ -1,8 +1,8 @@
-import { THREADPOOL } from '/etc/config';
-import { getRamData, getMoneyData, getStaticData } from '/lib/data-store';
-import { disableService } from '/lib/service-api';
-import { estimateTimeToGoal, needsJobRam, getJobRamCost } from '/lib/query-service';
-import { infect, fullInfect } from '/bin/infect';
+import { THREADPOOL } from '../etc/config';
+import { getRamData, getMoneyData, getStaticData } from '../lib/data-store';
+import { disableService } from '../lib/service-api';
+import { estimateTimeToGoal, needsJobRam, getJobRamCost } from '../lib/query-service';
+import { infect, fullInfect } from './infect';
 
 /** @param {NS} ns **/
 const getServerNames = (maxServers) => {
@@ -83,7 +83,7 @@ export async function main(ns) {
             return;
         }
 
-        const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), 3);
+        const cost = ns.nFormat(ns.getPurchasedServerCost(ram), '0.000a');
 
         if (isUpgrade)
             ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);

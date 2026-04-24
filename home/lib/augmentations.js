@@ -1,6 +1,6 @@
-import { FACTIONS } from '/bin/self/aug/factions';
-import { getStaticData  } from '/lib/data-store';
-import { by } from '/lib/util';
+import { FACTIONS } from '../bin/self/aug/factions';
+import { getStaticData  } from './data-store';
+import { by } from './util';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 const MONEY_PER_REP = 4000; // This will vary at some point
@@ -70,4 +70,3 @@ export class AugmentationInfo {
     getNeededAugs = faction => this.factionAugmentations[faction]
       .filter(aug => this.isUnowned(aug));
 }
-
