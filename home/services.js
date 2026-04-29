@@ -2,7 +2,7 @@ import {
   getServices,
   enableService,
   disableService,
-  restartService,
+  // restartService,
   getTableString
 } from './lib/service-api.js';
 
@@ -16,8 +16,8 @@ export async function main(ns) {
     enableService(ns, target, force);
   else if (command === 'disable')
     disableService(ns, target);
-  else if (command === 'restart')
-    restartService(ns, target);
+  // else if (command === 'restart')
+  //   restartService(ns, target);
   else if (command === 'start')
     enableService(ns, target, force);
   else if (command === 'stop')
