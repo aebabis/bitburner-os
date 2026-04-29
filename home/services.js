@@ -27,7 +27,7 @@ export async function main(ns) {
     const service = services
       .find(service => service.id === target || service.name === target);
     if (service != null)
-      ns.tail(service.pid);
+      ns.ui.openTail(service.pid);
     else {
       ns.tprint(`Service not found with descriptor "${target}"`);
       ns.tprint(`Available services: ${services.map(s=>s.name).join(', ')}`);

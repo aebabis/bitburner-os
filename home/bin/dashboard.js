@@ -12,17 +12,24 @@ import { getSkillFormulas } from '../lib/formulas';
 const doc = eval('document');
 const H = BRIGHT.BOLD;
 
+const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+
 const getSchedulerTable = (ns) => {
     const { city, numPeopleKilled } = ns.getPlayer();
     const { currentNode } = ns.getResetInfo();
     const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     const { theftIncome=0, theftRatePerGB=0, estimatedStockValue=0 } = getMoneyData(ns);
     const { onlineExpGained, onlineRunningTime } = scheduler;
-    const time = ns.nFormat(onlineRunningTime, '00:00:00');
-    const theft = ns.nFormat(theftIncome, '$0.0a').padStart(6)+'/s  ';
-    const theftRate = ns.nFormat(theftRatePerGB, '$0.0a').padStart(6)+'/GBs';
-    const exp = ns.nFormat(onlineExpGained, '0.0a');
-    const stock = ns.nFormat(estimatedStockValue, '$0.0a');
+    const time = formatTime(onlineRunningTime);
+    const theft = ('$' + ns.formatNumber(theftIncome, 1)).padStart(6)+'/s  ';
+    const theftRate = ('$' + ns.formatNumber(theftRatePerGB, 1)).padStart(6)+'/GBs';
+    const exp = ns.formatNumber(onlineExpGained, 1);
+    const stock = '$' + ns.formatNumber(estimatedStockValue, 1);
     return H+table(ns, null,
         [['BN'+currentNode, ''],
         [H('UPTIME'), time],
@@ -103,12 +110,10 @@ const backdoorPath = (ns) => {
     }
 };
 
-const GB = 1000 ** 3;
-
 const threadpoolRow = (ns, server) => {
 	const { hostname, ramUsed, maxRam } = server;
     const n = hostname.split('-')[1]||'?';
-	const ram = `${ns.nFormat(ramUsed*GB, '0b').padStart(5)}/${ns.nFormat(maxRam*GB, '0b').padEnd(5)}`;
+	const ram = `${ns.formatRam(ramUsed).padStart(5)}/${ns.formatRam(maxRam).padEnd(5)}`;
 	return [n, ram];
 };
 
@@ -167,12 +172,12 @@ const moneyTable = (ns) => {
     const goalCost = getGoalCost(ns);
     const { income1s=0, income10s=0, income60s=0 } = moneyData;
     const rows = [
-        [' 1s', ns.nFormat(income1s, '$0.0a').padStart(8)],
-        ['10s', ns.nFormat(income10s, '$0.0a').padStart(8)],
-        ['60s', ns.nFormat(income60s, '$0.0a').padStart(8)],
-        ['Goal',ns.nFormat(goalCost||0, '$0.0a').padStart(8)],
-        ['   $', ns.nFormat(moneyTime||100*60*60, '00:00:00').padStart(8)],
-        ['   r', ns.nFormat(repTime||100*60*60, '00:00:00').padStart(8)],
+        [' 1s', ('$' + ns.formatNumber(income1s, 1)).padStart(8)],
+        ['10s', ('$' + ns.formatNumber(income10s, 1)).padStart(8)],
+        ['60s', ('$' + ns.formatNumber(income60s, 1)).padStart(8)],
+        ['Goal', ('$' + ns.formatNumber(goalCost||0, 1)).padStart(8)],
+        ['   $', formatTime(moneyTime||100*60*60).padStart(8)],
+        ['   r', formatTime(repTime||100*60*60).padStart(8)],
     ];
     return ` ${H('INCOME')} \n` + table(ns, null, rows);
 };
@@ -208,7 +213,7 @@ const workTable = (ns) => {
         ['Dex', workDexExpGained],
         ['Agi', workAgiExpGained],
         ['Cha', workChaExpGained],
-    ].filter(([,x])=>!!x).map(([h,v]) => [h, ns.nFormat(v, '0.000a').padStart(8)]);
+    ].filter(([,x])=>!!x).map(([h,v]) => [h, ns.formatNumber(v, 3).padStart(8)]);
     const PAD = Math.max(0, 7-gains.length);
     const rows = table(ns, null, gains) + '\n'.repeat(PAD);
     if (type === 'FACTION') {
@@ -225,7 +230,7 @@ const workTable = (ns) => {
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL');
-    ns.tail();
+    ns.ui.openTail();
     const windows = [
         new GrowingWindow(() => getSchedulerTable(ns)),
         new GrowingWindow(() => getStatTable(ns)),
@@ -239,7 +244,7 @@ export async function main(ns) {
         // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
     ];
     await ns.sleep(1);
-    ns.resizeTail(1000, 500);
+    ns.ui.resizeTail(1000, 500);
     while (true) {
         try {
             const modal = await getTailModal(ns);

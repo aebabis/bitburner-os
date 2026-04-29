@@ -21,12 +21,10 @@ const serverRow = (ns, server) => {
 		moneyAvailable, moneyMax,
 	} = server;
 
-	const GB = 1e9;
-
 	const status = backdoorInstalled ? '💻 ' : hasAdminRights ? '🔗 ' : '❌\u200b ';
 	const name = `${status}${hostname}${small(numOpenPortsRequired)}`;
-	const money = `${ns.nFormat(moneyAvailable, '0.00a')}/${ns.nFormat(moneyMax, '0.00a')}`;
-	const ram = `${ns.nFormat(ramUsed*GB, '0b')}/${ns.nFormat(maxRam*GB, '0b')}`;
+	const money = `${ns.formatNumber(moneyAvailable, 2)}/${ns.formatNumber(moneyMax, 2)}`;
+	const ram = `${ns.formatRam(ramUsed)}/${ns.formatRam(maxRam)}`;
 	const level = requiredHackingSkill;
 	const hacking = `${~~minDifficulty}/${~~hackDifficulty}`;
 	return {

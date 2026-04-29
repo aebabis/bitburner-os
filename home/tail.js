@@ -6,13 +6,13 @@ export async function main(ns) {
         ['find', false],
     ]);
     if (!flags.find) {
-        ns.tail(...ns.args);
+        ns.ui.openTail(...ns.args);
     } else {
         const [script, ...args] = flags._;
         ns.tprint(script + ' ' + args);
         nmap(ns).forEach(hostname => {
             if (ns.scriptRunning(script, hostname)) {
-                ns.tail(script, hostname, ...args);
+                ns.ui.openTail(script, hostname, ...args);
             }
         });
     }

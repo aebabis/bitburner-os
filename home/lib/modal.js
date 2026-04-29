@@ -21,7 +21,7 @@ export function getCommandLine(ns) {
 /** @param {NS} ns **/
 export async function getTailModal(ns, retry=true) {
     if (retry)
-        ns.tail();
+        ns.ui.openTail();
     const commandLine = getCommandLine(ns);
     let titlebar;
     while (true) {
