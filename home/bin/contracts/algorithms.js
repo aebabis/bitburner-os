@@ -345,12 +345,12 @@ export const squareRoot = (bigInt) => {
     let mid = (lowerBound + upperBound) >> 1n;
     const prod = mid * mid;
     if (prod === bigInt) {
-      return mid;
+      return mid.toString();
     } else if (prod < bigInt) {
       lowerBound = mid;
     } else {
       upperBound = mid;
     }
   }
-  return lowerBound;
+  return lowerBound.toString();
 }
