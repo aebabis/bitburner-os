@@ -1,12 +1,14 @@
-import { getPlayerData, putPlayerData } from '../../lib/data-store';
+import { getContractData, putContractData } from '../../lib/data-store';
 import algorithms from './mapper';
+
+const decode = (data) => (typeof data === 'string' && data.match(/^\d+n$/)) ? BitInt(data.slice(0, -1)) : data;
 
 /** @param {NS} ns */
 const attemptContract = (ns, { filename, hostname, type, data }) => {
     const algorithm = algorithms(type);
     if (algorithm == null)
         return null;
-    const answer = algorithm(data);
+    const answer = algorithm(decode(data));
     try {
         const outcome = ns.codingcontract.attempt(answer, filename, hostname, { returnReward: true });
         if (outcome === '')
@@ -22,17 +24,21 @@ const attemptContract = (ns, { filename, hostname, type, data }) => {
 
 /** @param {NS} ns */
 export async function main(ns) {
-    const { contracts, failedContractNames=[] } = getPlayerData(ns);
+  try {
+    const { contracts=[], failedContractNames=[] } = getContractData(ns);
     const remainingContracts = [];
     for (const contract of contracts) {
-        if (failedContractNames.includes(contract.filename))
-            continue;
-        const result = attemptContract(ns, contract);
-        if (!result) {
-            remainingContracts.push(contract);
-            if (result === false)
-                failedContractNames.push(contract.filename)
-        }
+      if (failedContractNames.includes(contract.filename))
+        continue;
+      const result = attemptContract(ns, contract);
+      if (!result) {
+        remainingContracts.push(contract);
+        if (result === false)
+          failedContractNames.push(contract.filename)
+      }
     }
-    putPlayerData(ns, { contracts: remainingContracts, failedContractNames });
+    putContractData(ns, { contracts: remainingContracts, failedContractNames });
+  } catch (error) {
+    console.error(error);
+  }
 }
