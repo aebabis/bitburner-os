@@ -352,5 +352,5 @@ export const squareRoot = (bigInt) => {
       upperBound = mid;
     }
   }
-  return lowerBound.toString();
+  return bigInt-lowerBound*lowerBound<upperBound*upperBound-bigInt ? lowerBound: upperBound;
 }
