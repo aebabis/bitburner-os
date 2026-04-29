@@ -1,7 +1,7 @@
 import { getContractData, putContractData } from '../../lib/data-store';
 import algorithms from './mapper';
 
-const decode = (data) => (typeof data === 'string' && data.match(/^\d+n$/)) ? BitInt(data.slice(0, -1)) : data;
+const decode = (data) => (typeof data === 'string' && data.match(/^\d+n$/)) ? BigInt(data.slice(0, -1)) : data;
 
 /** @param {NS} ns */
 const attemptContract = (ns, { filename, hostname, type, data }) => {
