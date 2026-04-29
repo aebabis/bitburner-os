@@ -327,3 +327,30 @@ export const twoColor = ([numVertices, edges]) => {
   }
   return arr.map(Number);
 }
+
+export const squareRoot = (bigInt) => {
+  if (bigInt < 0n) {
+    return NaN;
+  }
+  if (bigInt < 2n) {
+    return bigInt;
+  }
+  let lowerBound = 1n;
+  let upperBound = 1n;
+  while (upperBound*upperBound < bigInt) {
+    lowerBound = upperBound;
+    upperBound = upperBound << 1n;
+  }
+  while(lowerBound !== upperBound && lowerBound !== upperBound - 1n) {
+    let mid = (lowerBound + upperBound) >> 1n;
+    const prod = mid * mid;
+    if (prod === bigInt) {
+      return mid;
+    } else if (prod < bigInt) {
+      lowerBound = mid;
+    } else {
+      upperBound = mid;
+    }
+  }
+  return lowerBound;
+}
