@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node make-download.js",
+    "bundle:d3": "node scripts/bundle-d3.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,6 +21,10 @@
   "homepage": "https://github.com/aebabis/bitburner-os#readme",
   "description": "",
   "devDependencies": {
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0",
+    "esbuild": "^0.28.0",
     "eslint": "^8.15.0"
   }
 }
