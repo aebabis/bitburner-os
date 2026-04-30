@@ -49,6 +49,11 @@ export async function main(ns) {
 
             let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
 
+            // God mode: when one hack thread can steal 50%+ of the best server,
+            // batches are trivially cheap and spreading across all servers is better.
+            const [topThief] = viableThieves;
+            const godMode = topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
+
             ns.clearLog();
             const secStr = (hostname) =>
                 `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
@@ -63,7 +68,7 @@ export async function main(ns) {
                 .sort(by(0));
             const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'TYPE', 'FRAME', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
-            ns.print(' RAM AVAILABLE: ' + ramAvailable.toFixed(2));
+            ns.print(` RAM AVAILABLE: ${ramAvailable.toFixed(2)}  MODE: ${godMode ? 'GOD' : 'FOCUS'}`);
             ns.print(' ' + '-'.repeat(tString.indexOf('\n')+1));
             feed.forEach(message => ns.print(' ' + message));
 
@@ -72,9 +77,15 @@ export async function main(ns) {
             const mayGroom = grooming.length <= stealing.length;
             const mayStart = thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom);
 
-            for (const thief of viableThieves.filter(mayStart)) {
+            const startable = viableThieves.filter(mayStart);
+            const candidates = godMode ? startable : startable.slice(0, 1);
+            const ramBudget = godMode
+                ? (ramAvailable / Math.max(candidates.length, 1)) * 0.9
+                : ramAvailable * 0.9;
+
+            for (const thief of candidates) {
                 if (ramAvailable <= 0) break;
-                const outcome = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
+                const outcome = await thief.startNextBatch(ramBudget, ramData.maxRamSlot / 2);
                 if (outcome) {
                     log(`Started batch on ${thief.getHostname()}`);
                     ramAvailable -= thief.getReservedThreads() * 1.75;
