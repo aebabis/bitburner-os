@@ -1,5 +1,8 @@
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.print(Date.now());
-    await ns.grow(ns.args[0]);
+    const target = ns.args[0];
+    const jobId = ns.args[1];
+    const actualStart = Date.now();
+    const result = await ns.grow(target);
+    globalThis.__profiler?.recordActual?.(jobId, actualStart, Date.now(), result);
 }

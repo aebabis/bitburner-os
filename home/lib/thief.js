@@ -1,6 +1,8 @@
 import { WEAKEN, GROW, HACK } from '../etc/filenames';
 import { createBatch } from './scheduler-delegate';
 
+const _win = globalThis;
+
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
 const HORIZON_MS = 30 * 60 * 1000;
@@ -58,9 +60,8 @@ class Batch {
         this.threads = 0;
     }
 
-    addJob(script, threads, target, startTime) {
-        const uuid = crypto.randomUUID();
-        this.jobs.delegateAny(startTime)(script, threads, target, uuid);
+    addJob(script, threads, target, startTime, jobId = crypto.randomUUID()) {
+        this.jobs.delegateAny(startTime)(script, threads, target, jobId);
         this.threads += threads;
     }
 
@@ -102,10 +103,24 @@ class HWGWBatch extends Batch {
             const growEnd = weaken1End + SUBTASK_SPACING;
             const weaken2End = growEnd + SUBTASK_SPACING;
 
-            this.addJob(HACK, hackThreads, target, hackEnd - hackTime);
-            this.addJob(WEAKEN, weaken1Threads, target, weaken1End - weakenTime);
-            this.addJob(GROW, growThreads, target, growEnd - growTime);
-            this.addJob(WEAKEN, weaken2Threads, target, weaken2End - weakenTime);
+            const frameId = crypto.randomUUID();
+            const hackId = crypto.randomUUID();
+            const w1Id   = crypto.randomUUID();
+            const growId = crypto.randomUUID();
+            const w2Id   = crypto.randomUUID();
+
+            const _p = _win.__profiler;
+            if (_p) {
+                _p.recordScheduled?.(frameId, hackId, target, 'H',  hackThreads,    hackEnd   - hackTime,    hackEnd);
+                _p.recordScheduled?.(frameId, w1Id,   target, 'W1', weaken1Threads, weaken1End - weakenTime, weaken1End);
+                _p.recordScheduled?.(frameId, growId, target, 'G',  growThreads,    growEnd   - growTime,    growEnd);
+                _p.recordScheduled?.(frameId, w2Id,   target, 'W2', weaken2Threads, weaken2End - weakenTime, weaken2End);
+            }
+
+            this.addJob(HACK,   hackThreads,   target, hackEnd   - hackTime,   hackId);
+            this.addJob(WEAKEN, weaken1Threads, target, weaken1End - weakenTime, w1Id);
+            this.addJob(GROW,   growThreads,   target, growEnd   - growTime,   growId);
+            this.addJob(WEAKEN, weaken2Threads, target, weaken2End - weakenTime, w2Id);
 
             ram -= ramPerFrame;
             endAfter = weaken2End + FRAME_SPACING;

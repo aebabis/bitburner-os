@@ -5,9 +5,11 @@ import { table } from '../lib/table';
 import { getHostnames, getRamData } from '../lib/data-store';
 
 import Thief from '../lib/thief';
+import { initProfiler } from '../lib/profiler';
 
 /** @param {NS} ns **/
 export async function main(ns) {
+    initProfiler();
     ns.disableLog('ALL');
 
     ns.ui.openTail();

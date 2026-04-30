@@ -41,7 +41,7 @@ const ALIASES = {
     // Other utilities
     config: './config.js',
     dispatch: './lib/scheduler-delegate.js',
-    liquidate: 'dispatch liquidate.js',
+    liquidate: 'dispatch ./bin/liquidate.js',
     nmap: 'dispatch nmap-gui.js',
     readme: './readme.js',
     servers: 'dispatch servers.js',
