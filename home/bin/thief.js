@@ -19,24 +19,18 @@ export async function main(ns) {
             feed.shift();
     };
 
-    // TODO: Make thief table
-    // Show all servers. Active grouped at top or bottom, different color.
-    // Show expected amortized money/thread and average money/thread within aug timeframe.
-
-    // Separate GUI for frame graph?
-    
     const hostnames = getHostnames(ns);
     const possibleTargets = hostnames.filter(hostname => hostname !== 'home' &&
         !hostname.startsWith(THREADPOOL) && ns.getServerMaxMoney(hostname) > 0);
 
     const thieves = possibleTargets.map(hostname => new Thief(ns, hostname));
 
-    const prioritze = () => thieves
+    const prioritize = () => thieves
         .filter(thief => thief.canHack())
         .sort(by(thief => -thief.getDesirability()));
 
     let viableThieves;
-    let lastPriorization = 0;
+    let lastPrioritization = 0;
 
     while(true) {
         try {
@@ -44,43 +38,42 @@ export async function main(ns) {
             if (ramData == null)
                 continue;
 
-            if (Date.now() - lastPriorization > 10000) {
-                viableThieves = prioritze();
-                lastPriorization = Date.now();
+            if (Date.now() - lastPrioritization > 10000) {
+                viableThieves = prioritize();
+                lastPrioritization = Date.now();
             }
 
             const reservedThreads = viableThieves
                 .map(thief => thief.getReservedThreads())
                 .reduce((a,b)=>a+b, 0);
-            
+
             let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
-            
+
             ns.clearLog();
             const secStr = (hostname) =>
                 `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
             const moneyStr = (hostname) =>
-                `${ns.formatNumber(ns.getServerMoneyAvailable(hostname), 2)}/${ns.formatNumber(ns.getServerMaxMoney(hostname), 2)}`
+                `${ns.formatNumber(ns.getServerMoneyAvailable(hostname), 2)}/${ns.formatNumber(ns.getServerMaxMoney(hostname), 2)}`;
             const rows = viableThieves
-                .filter(thief=>thief.currentBatch != null && !thief.currentBatch.hasEnded())
+                .filter(thief => thief.currentBatch != null && !thief.currentBatch.hasEnded())
                 .map(thief => thief.getTableData())
                 .map(({ hostname, type, frame, portion, jobs, timeLeft }) => {
                     return [hostname, moneyStr(hostname), secStr(hostname), type, frame, portion, jobs, timeLeft];
                 })
                 .sort(by(0));
-            const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'FRAME', 'STRUCT', 'PORTION', 'JOBS', 'TIME'], rows);
+            const tString = table(ns, ['SERVER', 'MONEY', 'SEC', 'TYPE', 'FRAME', 'PORTION', 'JOBS', 'TIME'], rows);
             ns.print(tString);
             ns.print(' RAM AVAILABLE: ' + ramAvailable.toFixed(2));
             ns.print(' ' + '-'.repeat(tString.indexOf('\n')+1));
-            ns.print(viableThieves.length);
             feed.forEach(message => ns.print(' ' + message));
+
             const stealing = viableThieves.filter(thief => thief.isStealing());
             const grooming = viableThieves.filter(thief => thief.isGrooming());
             const mayGroom = grooming.length <= stealing.length;
             const mayStart = thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom);
-            const thief = viableThieves.find(mayStart);
-            for (const thief of viableThieves.filter(t=>!t.currentBatch).slice(0, 5))
-                ns.print(`${thief.getHostname()}  ${moneyStr(thief.getHostname())} ${secStr(thief.getHostname())}`)
-            if (thief != null) {
+
+            for (const thief of viableThieves.filter(mayStart)) {
+                if (ramAvailable <= 0) break;
                 const outcome = await thief.startNextBatch(ramAvailable * .9, ramData.maxRamSlot / 2);
                 if (outcome) {
                     log(`Started batch on ${thief.getHostname()}`);
