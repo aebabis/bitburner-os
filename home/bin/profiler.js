@@ -7,6 +7,7 @@ const win = eval('window');
 const COLORS = { H: '#e06c75', W1: '#56b6c2', G: '#98c379', W2: '#61afef' };
 const ROW_H = 14;
 const AXIS_H = 22;
+const VIEW_MS = 30_000;
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -74,8 +75,8 @@ export async function main(ns) {
         const now = Date.now();
 
         const allJobs = snapshot.flatMap(f => f.jobs);
-        const tMin = Math.min(...allJobs.map(j => j.scheduledStart));
-        const tMax = Math.max(...allJobs.map(j => j.scheduledEnd));
+        const tMin = now - VIEW_MS;
+        const tMax = Math.max(now, ...allJobs.map(j => j.scheduledEnd));
         const tRange = Math.max(tMax - tMin, 1);
         const toX = t => ((t - tMin) / tRange) * w;
 

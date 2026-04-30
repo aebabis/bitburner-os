@@ -25,6 +25,11 @@ const makeRecordScheduled = (p) => (frameId, jobId, server, type, threads, start
     });
 };
 
+const makeRecordStart = (p) => (jobId, actualStart) => {
+    const job = p.jobs.get(jobId);
+    if (job) job.actualStart = actualStart;
+};
+
 const makeRecordActual = (p) => (jobId, actualStart, actualEnd, result) => {
     const job = p.jobs.get(jobId);
     if (job) { job.actualStart = actualStart; job.actualEnd = actualEnd; job.result = result; }
@@ -33,6 +38,7 @@ const makeRecordActual = (p) => (jobId, actualStart, actualEnd, result) => {
 export const initProfiler = () => {
     const p = { jobs: new Map(), frameIds: new Set(), frames: [] };
     p.recordScheduled = makeRecordScheduled(p);
+    p.recordStart     = makeRecordStart(p);
     p.recordActual    = makeRecordActual(p);
     win.__profiler = p;
 };
