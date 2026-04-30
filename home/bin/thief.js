@@ -78,7 +78,7 @@ export async function main(ns) {
             const mayStart = thief => thief.canStartNextBatch() && (thief.isGroomed() || mayGroom);
 
             const startable = viableThieves.filter(mayStart);
-            const candidates = godMode ? startable : startable.slice(0, 1);
+            const candidates = godMode ? startable : (mayStart(topThief) ? [topThief] : []);
             const ramBudget = godMode
                 ? (ramAvailable / Math.max(candidates.length, 1)) * 0.9
                 : ramAvailable * 0.9;

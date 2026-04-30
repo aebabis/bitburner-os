@@ -77,7 +77,7 @@ class Batch {
 }
 
 class HWGWBatch extends Batch {
-    constructor(ns, target, portion, ram, startAfter=Date.now()) {
+    constructor(ns, target, portion, ram, startAfter=Date.now(), maxFrames=Infinity) {
         super(ns, target);
 
         if (portion >= 1) portion = 63/64;
@@ -94,8 +94,9 @@ class HWGWBatch extends Batch {
         const ramPerFrame = totalThreads * 1.75;
 
         let endAfter = startAfter + weakenTime;
+        let framesAdded = 0;
 
-        while (ram >= ramPerFrame) {
+        while (ram >= ramPerFrame && framesAdded < maxFrames) {
             const hackEnd = endAfter;
             const weaken1End = hackEnd + SUBTASK_SPACING;
             const growEnd = weaken1End + SUBTASK_SPACING;
@@ -108,6 +109,7 @@ class HWGWBatch extends Batch {
 
             ram -= ramPerFrame;
             endAfter = weaken2End + FRAME_SPACING;
+            framesAdded++;
         }
 
         this.endAfter = this.jobs.getSize() > 0 ? endAfter : Date.now();
@@ -202,8 +204,12 @@ export default class Thief {
         return currentBatch.type !== 'WGW';
     };
 
-    canStartNextBatch = () =>
-        this.currentBatch == null || this.currentBatch.hasEnded();
+    canStartNextBatch = () => {
+        if (!this.currentBatch || this.currentBatch.hasEnded()) return true;
+        if (this.currentBatch.type !== 'HWGW') return false;
+        // Allow scheduling next frame one weaken cycle before current ends so there's no gap.
+        return Date.now() >= this.currentBatch.endAfter - this.ns.getWeakenTime(this.server);
+    };
 
     async startNextBatch(ram, maxRamPerJob) {
         const { ns, server, currentBatch } = this;
