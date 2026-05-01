@@ -259,7 +259,6 @@ export default class Thief {
 
     getDesirability() {
         const { ns, server } = this;
-        if (server === 'n00dles') return Infinity;
 
         const weakenTime = ns.getWeakenTime(server);
         const maxMoney = ns.getServerMaxMoney(server);
