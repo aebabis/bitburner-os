@@ -1,10 +1,10 @@
-import { nmap } from './lib/nmap';
+import { nmap } from "./lib/nmap";
 
 /** @param {NS} ns **/
-export const stop = async(ns) => {
+export const stop = async (ns) => {
   const script = ns.getScriptName();
 
-  ns.tprint('Killing all processes');
+  ns.tprint("Killing all processes");
   for (const hostname of nmap(ns)) {
     for (const { pid } of ns.ps(hostname)) {
       if (ns.pid !== pid) {
@@ -15,11 +15,11 @@ export const stop = async(ns) => {
   }
 
   if (ns.args.length > 0) {
-    ns.run(...ns.args)
+    ns.run(...ns.args);
   }
 };
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    await stop(ns);
+  await stop(ns);
 }

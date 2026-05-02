@@ -1,25 +1,25 @@
-import { defer } from './defer';
-import { tprint } from './util';
-import { STR } from '../lib/colors';
+import { defer } from "./defer";
+import { tprint } from "./util";
+import { STR } from "../lib/colors";
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLog('ALL');
+  ns.disableLog("ALL");
 
-    // const FONT = 'https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap';
-    // const doc = eval('document');
-    // if (doc.querySelector(`[href="${FONT}"]`) == null) {
-    //     const div = doc.createElement('div');
-    //     div.innerHTML = `<link href="${FONT}" rel="stylesheet">`;
-    //     doc.head.append(div.firstChild);
-    // }
+  // const FONT = 'https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap';
+  // const doc = eval('document');
+  // if (doc.querySelector(`[href="${FONT}"]`) == null) {
+  //     const div = doc.createElement('div');
+  //     div.innerHTML = `<link href="${FONT}" rel="stylesheet">`;
+  //     doc.head.append(div.firstChild);
+  // }
 
-    tprint(ns)(STR.BOLD + 'SETTING STYLES');
-    const styles = ns.ui.getStyles();
-    styles.lineHeight = 1.18;
-    styles.fontFamily = `monospace`;
-    ns.ui.setStyles(styles);
+  tprint(ns)(STR.BOLD + "SETTING STYLES");
+  const styles = ns.ui.getStyles();
+  styles.lineHeight = 1.18;
+  styles.fontFamily = `monospace`;
+  ns.ui.setStyles(styles);
 
-    // Go to next step in the boot sequence
-	await defer(ns)(...ns.args);
+  // Go to next step in the boot sequence
+  await defer(ns)(...ns.args);
 }

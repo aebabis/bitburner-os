@@ -1,15 +1,15 @@
-import { getStaticData, putStaticData  } from '../../../lib/data-store';
+import { getStaticData, putStaticData } from "../../../lib/data-store";
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.disableLog('ALL');
-    ns.tprint('Loading Augmentation PreReqs');
+  ns.disableLog("ALL");
+  ns.tprint("Loading Augmentation PreReqs");
 
-    const { augmentations } = getStaticData(ns);
-    const augmentationPrereqs = {};
+  const { augmentations } = getStaticData(ns);
+  const augmentationPrereqs = {};
 
-    for (const aug of augmentations)
-        augmentationPrereqs[aug] = ns.singularity.getAugmentationPrereq(aug);
+  for (const aug of augmentations)
+    augmentationPrereqs[aug] = ns.singularity.getAugmentationPrereq(aug);
 
-    putStaticData(ns, { augmentationPrereqs });
+  putStaticData(ns, { augmentationPrereqs });
 }

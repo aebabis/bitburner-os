@@ -1,21 +1,20 @@
-import { putStaticData  } from '../../../lib/data-store';
-import { FACTIONS } from './factions';
+import { putStaticData } from "../../../lib/data-store";
+import { FACTIONS } from "./factions";
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.disableLog('ALL');
-    ns.tprint('Loading Augmentation Names');
+  ns.disableLog("ALL");
+  ns.tprint("Loading Augmentation Names");
 
-    const factionAugmentations = {};
-    const augSet = new Set();
+  const factionAugmentations = {};
+  const augSet = new Set();
 
-    for (const faction of FACTIONS) {
-        const list = ns.singularity.getAugmentationsFromFaction(faction);
-        factionAugmentations[faction] = list;
-        for (const name of list)
-            augSet.add(name);
-    }
-    const augmentations = [...augSet];
+  for (const faction of FACTIONS) {
+    const list = ns.singularity.getAugmentationsFromFaction(faction);
+    factionAugmentations[faction] = list;
+    for (const name of list) augSet.add(name);
+  }
+  const augmentations = [...augSet];
 
-    putStaticData(ns, { factionAugmentations, augmentations });
+  putStaticData(ns, { factionAugmentations, augmentations });
 }

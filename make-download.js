@@ -1,6 +1,6 @@
-import { resolve, relative } from 'path';
-import { writeFile, readdir } from 'fs/promises';
-import EventEmitter from 'events';
+import { resolve, relative } from "path";
+import { writeFile, readdir } from "fs/promises";
+import EventEmitter from "events";
 
 async function* getFiles(dir) {
   const dirents = await readdir(dir, { withFileTypes: true });
@@ -17,22 +17,20 @@ async function* getFiles(dir) {
 const eventEmitter = new EventEmitter();
 
 const toBitburnerPath = (file) => {
-  const fullpath = relative('home', file).replace(/\\/g, '/');
-  if (fullpath.includes('/'))
-    return '/' + fullpath;
+  const fullpath = relative("home", file).replace(/\\/g, "/");
+  if (fullpath.includes("/")) return "/" + fullpath;
   return fullpath;
 };
 
 async function go() {
   const files = [];
-  for await (const f of getFiles('home')) {
+  for await (const f of getFiles("home")) {
     const bitburnerPath = toBitburnerPath(f);
     const item = `  '${bitburnerPath}',`;
     files.push(item);
   }
-  const program =
-`const FILES = [
-${files.join('\n')}
+  const program = `const FILES = [
+${files.join("\n")}
 ];
 
 /** @param {NS} ns **/\nexport async function main(ns) {
@@ -48,14 +46,13 @@ ${files.join('\n')}
   }
   ns.tprint('Download complete');
 }`;
-  await writeFile('download.js', program);
-  
-  eventEmitter.emit('done');
+  await writeFile("download.js", program);
+
+  eventEmitter.emit("done");
 }
 
-eventEmitter.on('done', () => {
-  console.log('done');
+eventEmitter.on("done", () => {
+  console.log("done");
 });
 
 go();
-

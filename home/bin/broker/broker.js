@@ -1,67 +1,73 @@
-import { AnyHostService } from '../../lib/service';
-import { getTableString } from '../../lib/service-api';
-import { getMoneyData } from '../../lib/data-store';
-import { rmi } from '../../lib/rmi';
+import { AnyHostService } from "../../lib/service";
+import { getTableString } from "../../lib/service-api";
+import { getMoneyData } from "../../lib/data-store";
+import { rmi } from "../../lib/rmi";
 
 const isTixViable = (ns) => {
-    const { costToAug } = getMoneyData(ns);
-    const { money } = ns.getPlayer();
-    if (costToAug == null || costToAug > 5e9)
-        return money > 5e9;
-    else
-        return money - costToAug > 5e9;
+  const { costToAug } = getMoneyData(ns);
+  const { money } = ns.getPlayer();
+  if (costToAug == null || costToAug > 5e9) return money > 5e9;
+  else return money - costToAug > 5e9;
 };
 
 const is4SViable = (ns) => {
-    const { costToAug } = getMoneyData(ns);
-    const { money } = ns.getPlayer();
-    if (costToAug > 25e9)
-        return money > 25e9;
-    else
-        return money - costToAug > 25e9;
+  const { costToAug } = getMoneyData(ns);
+  const { money } = ns.getPlayer();
+  if (costToAug > 25e9) return money > 25e9;
+  else return money - costToAug > 25e9;
 };
 
 const getTixApiAccess = async (ns) => {
-    while (!ns.stock.hasTIXAPIAccess()) {
-        while (!isTixViable(ns))
-            await ns.sleep(1000);
-        if (!ns.stock.hasWSEAccount())
-            await rmi(ns)('/bin/broker/purchase.js', 1, 'purchaseWseAccount');
-        await rmi(ns)('/bin/broker/purchase.js', 1, 'purchaseTixApi');
-    }
+  while (!ns.stock.hasTIXAPIAccess()) {
+    while (!isTixViable(ns)) await ns.sleep(1000);
+    if (!ns.stock.hasWSEAccount())
+      await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseWseAccount");
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseTixApi");
+  }
 };
 
-const loadStaticStockData = (ns) => rmi(ns, true)('/bin/broker/load-stocks.js');
+const loadStaticStockData = (ns) => rmi(ns, true)("/bin/broker/load-stocks.js");
 
 const attempt4SApiAccess = async (ns) => {
-    if (is4SViable(ns))
-        await rmi(ns)('/bin/broker/purchase.js', 1, 'purchase4SMarketDataTixApi');
+  if (is4SViable(ns))
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
 };
 
 /** @param {NS} ns */
 export async function main(ns) {
-    ns.disableLog('ALL');
+  ns.disableLog("ALL");
 
-    const isTrendTrader = (ns) => ns.stock.hasTIXAPIAccess() && !ns.stock.has4SDataTIXAPI();
-    const isFourSTrader = (ns) => ns.stock.hasTIXAPIAccess() && ns.stock.has4SDataTIXAPI();
+  const isTrendTrader = (ns) =>
+    ns.stock.hasTIXAPIAccess() && !ns.stock.has4SDataTIXAPI();
+  const isFourSTrader = (ns) =>
+    ns.stock.hasTIXAPIAccess() && ns.stock.has4SDataTIXAPI();
 
-    const trendTraderSubservice = AnyHostService(ns, isTrendTrader)('/bin/broker/trader-trend.js');
-    const fourSTraderSubservice = AnyHostService(ns, isFourSTrader)('/bin/broker/trader-4s.js');
-    const services = [trendTraderSubservice, fourSTraderSubservice];
+  const trendTraderSubservice = AnyHostService(
+    ns,
+    isTrendTrader,
+  )("/bin/broker/trader-trend.js");
+  const fourSTraderSubservice = AnyHostService(
+    ns,
+    isFourSTrader,
+  )("/bin/broker/trader-4s.js");
+  const services = [trendTraderSubservice, fourSTraderSubservice];
 
-    await getTixApiAccess(ns);
-    await loadStaticStockData(ns);
+  await getTixApiAccess(ns);
+  await loadStaticStockData(ns);
 
-    while (true) {
-        if (!ns.stock.has4SDataTIXAPI())
-            await attempt4SApiAccess(ns);
-        
-        for (const service of services)
-            await service.check();
+  while (true) {
+    if (!ns.stock.has4SDataTIXAPI()) await attempt4SApiAccess(ns);
 
-        ns.clearLog();
-        ns.print(getTableString(ns, services.map(s=>s.toData())));
+    for (const service of services) await service.check();
 
-        await ns.sleep(1000);
-    }
+    ns.clearLog();
+    ns.print(
+      getTableString(
+        ns,
+        services.map((s) => s.toData()),
+      ),
+    );
+
+    await ns.sleep(1000);
+  }
 }
