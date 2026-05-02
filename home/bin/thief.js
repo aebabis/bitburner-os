@@ -27,9 +27,9 @@ export async function main(ns) {
 
     const thieves = possibleTargets.map(hostname => new Thief(ns, hostname));
 
-    const prioritize = () => thieves
+    const prioritize = (ram) => thieves
         .filter(thief => thief.canHack())
-        .sort(by(thief => -thief.getDesirability()));
+        .sort(by(thief => -thief.getDesirability(ram)));
 
     let viableThieves;
     let lastPrioritization = 0;
@@ -41,7 +41,7 @@ export async function main(ns) {
                 continue;
 
             if (Date.now() - lastPrioritization > 10000) {
-                viableThieves = prioritize();
+                viableThieves = prioritize(ramData.totalMaxRam);
                 lastPrioritization = Date.now();
             }
 

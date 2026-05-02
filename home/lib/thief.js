@@ -257,24 +257,33 @@ export default class Thief {
         return { hostname: server, type, jobs: jobs.getSize(), portion, timeLeft: `${sign}${minutes}:${seconds}`, frame: frame.join(' ') };
     }
 
-    getDesirability() {
-        const { ns, server } = this;
+  estimateGroomTime(ramAvailable) {
+    const { ns, server } = this;
+    const wgwBatch = new WGWBatch(ns, server, ramAvailable);
+    const minPasses = wgwBatch.threads * 1.75 / ramAvailable;
+    return minPasses * ns.getWeakenTime(server);
+  }
 
-        const weakenTime = ns.getWeakenTime(server);
-        const maxMoney = ns.getServerMaxMoney(server);
-        const portion = .01;
+  getDesirability(timeToAug=HORIZON_MS, ramAvailable=Infinity) {
+    const { ns, server } = this;
 
-        const hackThreads = Math.floor(portion / ns.hackAnalyze(server));
-        const growFactor = 1 / (1 - portion);
-        const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
+    const durationOfIncome = timeToAug - this.estimateGroomTime(ramAvailable);
 
-        const incomePerBatch = maxMoney * portion;
-        const batchesInHorizon = Math.floor(HORIZON_MS / weakenTime);
-        return (incomePerBatch * batchesInHorizon) / (hackThreads + growThreads);
-    }
+    const weakenTime = ns.getWeakenTime(server);
+    const maxMoney = ns.getServerMaxMoney(server);
+    const portion = .01;
 
-    getReservedThreads = () => this.currentBatch == null ? 0 :
-        this.currentBatch.getReservedThreads();
+    const hackThreads = Math.floor(portion / ns.hackAnalyze(server));
+    const growFactor = 1 / (1 - portion);
+    const growThreads = Math.ceil(ns.growthAnalyze(server, growFactor));
 
-    toString = () => `Thief<${this.server}> ${this.currentBatch}`;
+    const incomePerBatch = maxMoney * portion;
+    const batchesInHorizon = Math.floor(durationOfIncome / weakenTime);
+    return (incomePerBatch * batchesInHorizon) / (hackThreads + growThreads);
+  }
+
+  getReservedThreads = () => this.currentBatch == null ? 0 :
+      this.currentBatch.getReservedThreads();
+
+  toString = () => `Thief<${this.server}> ${this.currentBatch}`;
 }

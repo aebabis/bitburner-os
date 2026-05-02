@@ -125,7 +125,7 @@ export async function main(ns) {
         const sx = toX(job.actualEnd || job.scheduledEnd);
         const sw = 1; // Math.max(1, toX(job.scheduledEnd) - toX(job.scheduledStart));
         // if (sx + sw < LABEL_W || sx > w) continue;
-        const clampedSx = Math.max(sx, LABEL_W);
+        // const clampedSx = Math.max(sx, LABEL_W);
 
         // Scheduled stripe (dim, always shown)
         ctx.globalAlpha = 0.3;

@@ -1,6 +1,6 @@
 import { LOG, ERROR, INFO, WARN } from './colors';
 
-const DEBUG = true;
+const DEBUG = false;
 
 const processArg = (arg) => {
 	if (arg instanceof Error) {
