@@ -8,3 +8,4 @@ export async function main(ns) {
   }
   ns.exec('./bin/profiler.js', 'home');
 }
+
