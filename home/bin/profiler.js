@@ -18,6 +18,9 @@ export async function main(ns) {
   ns.disableLog("ALL");
   ns.ui.openTail();
 
+  let startTime = -VIEW_MS;
+  let endTime = VIEW_MS;
+
   const modal = await getTailModal(ns);
   const headerHeight = modal.top.clientHeight;
   const content = modal.bottom;
@@ -29,8 +32,25 @@ export async function main(ns) {
 
   // Canvas
   const canvas = doc.createElement("canvas");
-  canvas.style.cssText = "display:block;width:100%;height:100%";
+  canvas.style.cssText = "display:block;width:100%;height:0;flex:1";
   content.appendChild(canvas);
+
+  const buttons = doc.createElement('div');
+  const zoomIn = doc.createElement('button');
+  const zoomOut = doc.createElement('button');
+  zoomIn.innerText = '+';
+  zoomOut.innerText = '-';
+  zoomIn.addEventListener('click', () => {
+    startTime /= 2;
+    endTime /= 2;
+  });
+  zoomOut.addEventListener('click', () => {
+    startTime *= 2;
+    endTime *= 2;
+  });
+  buttons.appendChild(zoomIn);
+  buttons.appendChild(zoomOut);
+  content.appendChild(buttons);
 
   let rafId;
 
@@ -56,8 +76,8 @@ export async function main(ns) {
     const now = Date.now();
 
     const allJobs = snapshot.flatMap((f) => f.jobs);
-    const tMin = now - VIEW_MS;
-    const tMax = now + VIEW_MS; //Math.max(now, ...allJobs.map(j => j.scheduledEnd));
+    const tMin = now + startTime;
+    const tMax = now + endTime; //Math.max(now, ...allJobs.map(j => j.scheduledEnd));
     const tRange = Math.max(tMax - tMin, 1);
     const toX = (t) => ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
 
