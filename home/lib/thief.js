@@ -57,6 +57,11 @@ class Batch {
     this.jobs = createBatch(ns);
     this.type = this.constructor.name.replace("Batch", "");
     this.threads = 0;
+    this._profilerRecords = [];
+  }
+
+  _queueProfiler(frameId, jobId, target, label, threads, startTime, endTime) {
+    this._profilerRecords.push([frameId, jobId, target, label, threads, startTime, endTime]);
   }
 
   addJob(script, threads, target, startTime, jobId = crypto.randomUUID()) {
@@ -65,6 +70,12 @@ class Batch {
   }
 
   async send() {
+    const _p = _win.__profiler;
+    if (_p) {
+      for (const args of this._profilerRecords) {
+        _p.recordScheduled?.(...args);
+      }
+    }
     await this.jobs.send();
   }
 
@@ -132,45 +143,10 @@ class HWGWBatch extends Batch {
       const growId = crypto.randomUUID();
       const w2Id = crypto.randomUUID();
 
-      const _p = _win.__profiler;
-      if (_p) {
-        _p.recordScheduled?.(
-          frameId,
-          hackId,
-          target,
-          "H",
-          hackThreads,
-          hackEnd - hackTime,
-          hackEnd,
-        );
-        _p.recordScheduled?.(
-          frameId,
-          w1Id,
-          target,
-          "W1",
-          weaken1Threads,
-          weaken1End - weakenTime,
-          weaken1End,
-        );
-        _p.recordScheduled?.(
-          frameId,
-          growId,
-          target,
-          "G",
-          growThreads,
-          growEnd - growTime,
-          growEnd,
-        );
-        _p.recordScheduled?.(
-          frameId,
-          w2Id,
-          target,
-          "W2",
-          weaken2Threads,
-          weaken2End - weakenTime,
-          weaken2End,
-        );
-      }
+      this._queueProfiler(frameId, hackId, target, "H", hackThreads, hackEnd - hackTime, hackEnd);
+      this._queueProfiler(frameId, w1Id, target, "W1", weaken1Threads, weaken1End - weakenTime, weaken1End);
+      this._queueProfiler(frameId, growId, target, "G", growThreads, growEnd - growTime, growEnd);
+      this._queueProfiler(frameId, w2Id, target, "W2", weaken2Threads, weaken2End - weakenTime, weaken2End);
 
       this.addJob(HACK, hackThreads, target, hackEnd - hackTime, hackId);
       this.addJob(
@@ -230,12 +206,11 @@ class WGWBatch extends Batch {
     const threadsPerJob = Math.max(8, Math.ceil(ram / 24 / 1.75 / 2));
 
     const frameId = crypto.randomUUID();
-    const _p = _win.__profiler;
 
     while (ram > 0 && weaken1Threads > 0) {
       const threads = Math.min(weaken1Threads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      _p?.recordScheduled?.(frameId, jobId, target, "W1", threads, weaken1Start, weaken1Start + weakenTime);
+      this._queueProfiler(frameId, jobId, target, "W1", threads, weaken1Start, weaken1Start + weakenTime);
       this.addJob(WEAKEN, threads, target, weaken1Start, jobId);
       weaken1Threads -= threads;
       ram -= threads * 1.75;
@@ -244,7 +219,7 @@ class WGWBatch extends Batch {
     while (ram > 0 && growThreads > 0) {
       const threads = Math.min(growThreads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      _p?.recordScheduled?.(frameId, jobId, target, "G", threads, growStart, growStart + growTime);
+      this._queueProfiler(frameId, jobId, target, "G", threads, growStart, growStart + growTime);
       this.addJob(GROW, threads, target, growStart, jobId);
       growThreads -= threads;
       ram -= threads * 1.75;
@@ -253,7 +228,7 @@ class WGWBatch extends Batch {
     while (ram > 0 && weaken2Threads > 0) {
       const threads = Math.min(weaken2Threads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      _p?.recordScheduled?.(frameId, jobId, target, "W2", threads, weaken2Start, weaken2Start + weakenTime);
+      this._queueProfiler(frameId, jobId, target, "W2", threads, weaken2Start, weaken2Start + weakenTime);
       this.addJob(WEAKEN, threads, target, weaken2Start, jobId);
       weaken2Threads -= threads;
       ram -= threads * 1.75;
