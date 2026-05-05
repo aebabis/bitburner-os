@@ -1,5 +1,11 @@
 import { THREADPOOL } from "../etc/config";
-import { getRamData, getMoneyData, getStaticData } from "../lib/data-store";
+import {
+  getRamData,
+  getMoneyData,
+  getStaticData,
+  getHostnames,
+  putHostnames,
+} from "../lib/data-store";
 import { disableService } from "../lib/service-api";
 import {
   estimateTimeToGoal,
@@ -81,6 +87,9 @@ export async function main(ns) {
     if (isUpgrade) deleteServer(ns, hostname);
 
     const ram = purchaseServer(ns, hostname, minRam, maxRam);
+    const oldHostnames = getHostnames(ns);
+    const newHostnames = new Set(oldHostnames).add(hostname);
+    putHostnames(ns, [...newHostnames]);
 
     if (!ram) {
       // Rare. Seems to happen if a duplicate purchase is made,

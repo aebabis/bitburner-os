@@ -29,7 +29,11 @@ const putData = (ns, portId, data) => {
   port.write(newData);
 };
 
+/** @param {NS} ns
+ *  @returns string[] */
 export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
+/** @param {NS} ns
+ *  @param {string[]} hostnames */
 export const putHostnames = (ns, hostnames) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
