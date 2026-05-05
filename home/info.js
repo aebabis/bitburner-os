@@ -9,6 +9,7 @@ const dec = (num, places = 2) => {
   else return rounded;
 };
 
+/** @param ns {NS} */
 const getCrimeTable = (ns) => {
   const { crimeStats } = getPlayerData(ns);
   const HEAD = [

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target":"ES2022",
+    "checkJs":true,
+    "strict": true,
+    "lib":["ES2022"],
+    "noUnusedLocals": true
+  },
+  "include":[".bitburner/**/*.d.ts","**/*"]
+}
