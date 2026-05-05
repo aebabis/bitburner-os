@@ -70,7 +70,7 @@ export async function main(ns) {
           (thief) =>
             thief.currentBatch != null && !thief.currentBatch.hasEnded(),
         )
-        .map((thief) => thief.getTableData())
+        .flatMap((thief) => thief.getTableData())
         .map(({ hostname, type, frame, portion, jobs, timeLeft }) => {
           return [
             hostname,
@@ -93,8 +93,6 @@ export async function main(ns) {
       ns.print(
         ` RAM AVAILABLE: ${ramAvailable.toFixed(2)}  MODE: ${godMode ? "GOD" : "FOCUS"}`,
       );
-      ns.print(" " + "-".repeat(tString.indexOf("\n") + 1));
-      feed.forEach((message) => ns.print(" " + message));
 
       const stealing = viableThieves.filter((thief) => thief.isStealing());
       const grooming = viableThieves.filter((thief) => thief.isGrooming());

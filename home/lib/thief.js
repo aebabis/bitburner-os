@@ -259,6 +259,7 @@ export default class Thief {
   constructor(ns, server) {
     this.ns = ns;
     this.server = server;
+    this.batches = [];
   }
 
   getHostname = () => this.server;
@@ -316,27 +317,30 @@ export default class Thief {
       this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
     }
     await this.currentBatch.send();
+    this.batches = [...this.batches, this.currentBatch].filter((batch) => !batch.hasEnded());
     return this.currentBatch.jobs.getSize() > 0;
   }
 
   getTableData() {
-    const { server, currentBatch } = this;
+    const { server, batches, currentBatch } = this;
     if (currentBatch == null) return { hostname: server };
-    const { type, jobs, frame = [], portion } = currentBatch;
-    const timeLeft = (currentBatch.endAfter - Date.now()) / 1000;
-    const sign = Math.sign(timeLeft) === -1 ? "-" : "";
-    const minutes = Math.floor(Math.abs(timeLeft / 60));
-    const seconds = Math.floor(Math.abs(timeLeft % 60))
-      .toString()
-      .padStart(2, "0");
-    return {
-      hostname: server,
-      type,
-      jobs: jobs.getSize(),
-      portion,
-      timeLeft: `${sign}${minutes}:${seconds}`,
-      frame: frame.join(" "),
-    };
+    return batches.filter((batch) => !batch.hasEnded()).map((batch) => {
+      const { type, jobs, frame = [], portion } = batch;
+      const timeLeft = (batch.endAfter - Date.now()) / 1000;
+      const sign = Math.sign(timeLeft) === -1 ? "-" : "";
+      const minutes = Math.floor(Math.abs(timeLeft / 60));
+      const seconds = Math.floor(Math.abs(timeLeft % 60))
+        .toString()
+        .padStart(2, "0");
+      return {
+        hostname: server,
+        type,
+        jobs: jobs.getSize(),
+        portion,
+        timeLeft: `${sign}${minutes}:${seconds}`,
+        frame: frame.join(" "),
+      };
+    });
   }
 
   estimateGroomTime(ramAvailable) {
