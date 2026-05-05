@@ -219,33 +219,42 @@ class WGWBatch extends Batch {
 
     this.frame = [weaken1Threads, weaken2Threads, growThreads];
 
+    const weakenTime = ns.getWeakenTime(target);
+    const growTime = ns.getGrowTime(target);
+
     const weaken1Start = startAfter;
     const weaken2Start = startAfter + 2 * SUBTASK_SPACING;
     const growStart =
-      weaken1Start +
-      ns.getWeakenTime(target) +
-      SUBTASK_SPACING -
-      ns.getGrowTime(target);
+      weaken1Start + weakenTime + SUBTASK_SPACING - growTime;
 
     const threadsPerJob = Math.max(8, Math.ceil(ram / 24 / 1.75 / 2));
 
+    const frameId = crypto.randomUUID();
+    const _p = _win.__profiler;
+
     while (ram > 0 && weaken1Threads > 0) {
       const threads = Math.min(weaken1Threads, threadsPerJob);
-      this.addJob(WEAKEN, threads, target, weaken1Start);
+      const jobId = crypto.randomUUID();
+      _p?.recordScheduled?.(frameId, jobId, target, "W1", threads, weaken1Start, weaken1Start + weakenTime);
+      this.addJob(WEAKEN, threads, target, weaken1Start, jobId);
       weaken1Threads -= threads;
       ram -= threads * 1.75;
     }
 
     while (ram > 0 && growThreads > 0) {
       const threads = Math.min(growThreads, threadsPerJob);
-      this.addJob(GROW, threads, target, growStart);
+      const jobId = crypto.randomUUID();
+      _p?.recordScheduled?.(frameId, jobId, target, "G", threads, growStart, growStart + growTime);
+      this.addJob(GROW, threads, target, growStart, jobId);
       growThreads -= threads;
       ram -= threads * 1.75;
     }
 
     while (ram > 0 && weaken2Threads > 0) {
       const threads = Math.min(weaken2Threads, threadsPerJob);
-      this.addJob(WEAKEN, threads, target, weaken2Start);
+      const jobId = crypto.randomUUID();
+      _p?.recordScheduled?.(frameId, jobId, target, "W2", threads, weaken2Start, weaken2Start + weakenTime);
+      this.addJob(WEAKEN, threads, target, weaken2Start, jobId);
       weaken2Threads -= threads;
       ram -= threads * 1.75;
     }
@@ -302,7 +311,7 @@ export default class Thief {
 
   async startNextBatch(ram, maxRamPerJob) {
     const { ns, server, currentBatch } = this;
-    const endAfter = currentBatch?.endAfter ?? Date.now();
+    const endAfter = Math.max(currentBatch?.endAfter ?? Date.now(), Date.now());
 
     if (!this.isGroomed()) {
       this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
@@ -345,8 +354,15 @@ export default class Thief {
 
   estimateGroomTime(ramAvailable) {
     const { ns, server } = this;
-    const wgwBatch = new WGWBatch(ns, server, ramAvailable);
-    const minPasses = (wgwBatch.threads * 1.75) / ramAvailable;
+    const minSec = ns.getServerMinSecurityLevel(server);
+    const curSec = ns.getServerSecurityLevel(server);
+    const money = ns.getServerMoneyAvailable(server) || 1;
+    const maxMoney = ns.getServerMaxMoney(server);
+    const weaken1Threads = getWThreads(ns, curSec - minSec);
+    const growThreads = Math.ceil(ns.growthAnalyze(server, maxMoney / money));
+    const weaken2Threads = getWThreads(ns, ns.growthAnalyzeSecurity(growThreads));
+    const totalThreads = weaken1Threads + growThreads + weaken2Threads;
+    const minPasses = (totalThreads * 1.75) / ramAvailable;
     return minPasses * ns.getWeakenTime(server);
   }
 
