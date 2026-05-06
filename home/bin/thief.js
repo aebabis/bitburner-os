@@ -4,7 +4,7 @@ import { by } from "../lib/util";
 import { table } from "../lib/table";
 import { getHostnames, getRamData } from "../lib/data-store";
 
-import Thief from "../lib/thief";
+import Thief, { HORIZON_MS } from "../lib/thief";
 import { initProfiler } from "../lib/profiler";
 
 /** @param {NS} ns **/
@@ -33,7 +33,7 @@ export async function main(ns) {
   const prioritize = (ram) =>
     thieves
       .filter((thief) => thief.canHack())
-      .sort(by((thief) => -thief.getDesirability(ram)));
+      .sort(by((thief) => -thief.getDesirability(HORIZON_MS, ram)));
 
   let viableThieves;
   let lastPrioritization = 0;

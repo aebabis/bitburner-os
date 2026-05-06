@@ -5,7 +5,7 @@ const _win = globalThis;
 
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
-const HORIZON_MS = 30 * 60 * 1000;
+export const HORIZON_MS = 30 * 60 * 1000;
 
 const count = 64;
 const e = Math.E;
@@ -212,7 +212,10 @@ class WGWBatch extends Batch {
 
     this.frame = [weaken1Threads, weaken2Threads, growThreads];
 
-    const { weakenTime, growTime } = getTimes(ns, target);
+    // Use current-security times here: WGWBatch runs on an ungroomed server,
+    // so the actual weaken duration is longer than the min-security estimate.
+    const weakenTime = ns.getWeakenTime(target);
+    const growTime = ns.getGrowTime(target);
 
     const weaken1Start = startAfter;
     const weaken2Start = startAfter + 2 * SUBTASK_SPACING;
@@ -358,8 +361,8 @@ export default class Thief {
     const growThreads = Math.ceil(ns.growthAnalyze(server, maxMoney / money));
     const weaken2Threads = getWThreads(ns, ns.growthAnalyzeSecurity(growThreads));
     const totalThreads = weaken1Threads + growThreads + weaken2Threads;
-    const minPasses = (totalThreads * 1.75) / ramAvailable;
-    return minPasses * getTimes(ns, server).weakenTime;
+    const minPasses = Math.ceil((totalThreads * 1.75) / ramAvailable);
+    return minPasses * ns.getWeakenTime(server);
   }
 
   getDesirability(timeToAug = HORIZON_MS, ramAvailable = Infinity) {
