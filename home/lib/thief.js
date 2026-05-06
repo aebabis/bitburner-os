@@ -16,6 +16,25 @@ const PORTIONS = new Array(count + 1)
   .map((_, i) => i / count)
   .map((x) => 1 - 1 / (1 + e ** (-1 * k * (x - x_0))));
 
+const getTimes = (ns, target) => {
+  if (ns.fileExists("Formulas.exe", "home")) {
+    const server = {
+      hackDifficulty: ns.getServerMinSecurityLevel(target),
+      requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
+    };
+    const hackTime = ns.formulas.hacking.hackTime(server, ns.getPlayer());
+    return { hackTime, growTime: hackTime * 3.2, weakenTime: hackTime * 4 };
+  }
+  const minSec = ns.getServerMinSecurityLevel(target);
+  const curSec = ns.getServerSecurityLevel(target);
+  const ratio = minSec / curSec;
+  return {
+    hackTime: ns.getHackTime(target) * ratio,
+    growTime: ns.getGrowTime(target) * ratio,
+    weakenTime: ns.getWeakenTime(target) * ratio,
+  };
+};
+
 const getWThreads = (ns, targetDecrease, cores = 1) => {
   let threads = 1;
   while (ns.weakenAnalyze(threads, cores) < targetDecrease) threads++;
@@ -40,9 +59,7 @@ const computeThreads = (ns, target, portion) => {
   if (secIncrease2 === Infinity) return null;
 
   return {
-    weakenTime: ns.getWeakenTime(target),
-    growTime: ns.getGrowTime(target),
-    hackTime: ns.getHackTime(target),
+    ...getTimes(ns, target),
     weaken1Threads: getWThreads(ns, secIncrease1),
     weaken2Threads: getWThreads(ns, secIncrease2),
     growThreads,
@@ -195,8 +212,7 @@ class WGWBatch extends Batch {
 
     this.frame = [weaken1Threads, weaken2Threads, growThreads];
 
-    const weakenTime = ns.getWeakenTime(target);
-    const growTime = ns.getGrowTime(target);
+    const { weakenTime, growTime } = getTimes(ns, target);
 
     const weaken1Start = startAfter;
     const weaken2Start = startAfter + 2 * SUBTASK_SPACING;
@@ -234,7 +250,7 @@ class WGWBatch extends Batch {
       ram -= threads * 1.75;
     }
 
-    this.endAfter = weaken2Start + ns.getWeakenTime(target) + FRAME_SPACING;
+    this.endAfter = weaken2Start + weakenTime + FRAME_SPACING;
     if (this.jobs.getSize() === 0) this.endAfter = Date.now();
   }
 }
@@ -284,11 +300,16 @@ export default class Thief {
     );
   };
 
+  isPipelining = () =>
+    this.currentBatch != null && !this.currentBatch.hasEnded();
+
   async startNextBatch(ram, maxRamPerJob) {
     const { ns, server, currentBatch } = this;
     const endAfter = Math.max(currentBatch?.endAfter ?? Date.now(), Date.now());
 
-    if (!this.isGroomed()) {
+    // When pipelining, server state is mid-batch (post-hack, pre-grow/weaken).
+    // The current HWGW will restore groomed state by endAfter, so trust it.
+    if (!this.isPipelining() && !this.isGroomed()) {
       this.currentBatch = new WGWBatch(ns, server, ram, endAfter);
     } else {
       const maxThreads = maxRamPerJob / 1.75;
@@ -338,7 +359,7 @@ export default class Thief {
     const weaken2Threads = getWThreads(ns, ns.growthAnalyzeSecurity(growThreads));
     const totalThreads = weaken1Threads + growThreads + weaken2Threads;
     const minPasses = (totalThreads * 1.75) / ramAvailable;
-    return minPasses * ns.getWeakenTime(server);
+    return minPasses * getTimes(ns, server).weakenTime;
   }
 
   getDesirability(timeToAug = HORIZON_MS, ramAvailable = Infinity) {
@@ -346,7 +367,7 @@ export default class Thief {
 
     const durationOfIncome = timeToAug - this.estimateGroomTime(ramAvailable);
 
-    const weakenTime = ns.getWeakenTime(server);
+    const { weakenTime } = getTimes(ns, server);
     const maxMoney = ns.getServerMaxMoney(server);
     const portion = 0.01;
 

@@ -98,7 +98,7 @@ export async function main(ns) {
       const grooming = viableThieves.filter((thief) => thief.isGrooming());
       const mayGroom = grooming.length <= stealing.length;
       const mayStart = (thief) =>
-        thief.canStartNextBatch() && (thief.isGroomed() || mayGroom);
+        thief.canStartNextBatch() && (thief.isGroomed() || thief.isPipelining() || mayGroom);
 
       const startable = viableThieves.filter(mayStart);
       const candidates = godMode
