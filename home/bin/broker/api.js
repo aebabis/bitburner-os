@@ -1,6 +1,8 @@
 import { getStaticData } from "../../lib/data-store";
 import { table } from "../../lib/table";
 
+/** @typedef {{sym: string, maxShares: number, position: [number, number, number, number], price: number, forecast: number | null | undefined, getPurchaseCost: (shares: number) => number, getSaleGain: (shares?: number) => number, buy: (shares: number) => number, sell: (shares: number) => number}} Stock */
+
 /** @param {NS} ns **/
 export const getStocks = (ns) =>
   getStaticData(ns).stocks.map((/** @type {{sym: string, maxShares: number}} */ { sym, maxShares }) => ({
@@ -15,8 +17,8 @@ export const getStocks = (ns) =>
     sell: (/** @type {number} */ shares) => ns.stock.sellStock(sym, shares),
   }));
 
-/** @param {NS} ns **/
-export const optimizeShares = (ns, stock, /** @type {number} */ maxPurchase, /** @type {number} */ money) => {
+/** @param {NS} ns @param {Stock} stock @param {number} maxPurchase @param {number} money **/
+export const optimizeShares = (ns, stock, maxPurchase, money) => {
   let min = 0;
   let max = maxPurchase;
   while (true) {
@@ -28,12 +30,13 @@ export const optimizeShares = (ns, stock, /** @type {number} */ maxPurchase, /**
   }
 };
 
+/** @param {Stock[]} stocks */
 export const getHoldings = (stocks) =>
   stocks
     .map((stock) => stock.position[0] * stock.position[1])
     .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {Stock[]} stocks **/
 export const getTableString = (ns, stocks) => {
   const HEAD = ["SYM", "Shares", "+/-", "Price"];
   const rows = stocks
