@@ -44,19 +44,23 @@ export const fulfill = async (ns, process, server) => {
   const scriptRam = ns.getScriptRam(script, "home");
   const maxThreads = Math.floor(ramAvailableTo(process) / scriptRam);
   const threads = Math.min(numThreads, maxThreads);
-  if (threads === 0)
+  if (threads === 0) {
+    if (process.isWorker) globalThis.__profiler?.recordReaped?.(args[1]);
     return reject(
       ns,
       process,
       "Scheduler tried to run: " + process.toString() + " on " + hostname,
     );
+  }
   const pid = ns.exec(script, hostname, threads, ...args);
-  if (pid === 0)
+  if (pid === 0) {
+    if (process.isWorker) globalThis.__profiler?.recordReaped?.(args[1]);
     return reject(
       ns,
       process,
       "Unable to start process: " + process.toString(hostname),
     );
+  }
   if (ticket != null) await closeTicket(ns)(ticket, pid, hostname, threads);
 };
 

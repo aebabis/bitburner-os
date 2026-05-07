@@ -148,21 +148,28 @@ export async function main(ns) {
       ctx.fillText(type, 4, laneY + LANE_H / 2);
 
       for (const job of byType[type]) {
+        const started = job.actualStart != null;
         const completed = job.actualEnd != null;
         const failed = type === "H" && job.result === 0;
         const ooo = outOfOrder.has(job.jobId) || failed;
 
-        // Dim stripe at scheduled end (always shown)
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = color;
-        ctx.fillRect(toX(job.scheduledEnd), stripeY, 1, STRIPE_H);
-        ctx.globalAlpha = 1;
-
-        if (!completed) continue;
-
-        // Bright stripe at actual end
-        ctx.fillStyle = ooo ? "#ff4444" : color;
-        ctx.fillRect(toX(job.actualEnd), stripeY, 1, STRIPE_H);
+        // Dim stripe at scheduled end: not yet started
+        // Medium stripe: started but not finished
+        // Bright stripe at actual end: completed
+        if (!started) {
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = color;
+          ctx.fillRect(toX(job.scheduledEnd), stripeY, 1, STRIPE_H);
+          ctx.globalAlpha = 1;
+        } else if (!completed) {
+          ctx.globalAlpha = 0.65;
+          ctx.fillStyle = color;
+          ctx.fillRect(toX(job.scheduledEnd), stripeY, 1, STRIPE_H);
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = ooo ? "#ff4444" : color;
+          ctx.fillRect(toX(job.actualEnd), stripeY, 1, STRIPE_H);
+        }
       }
     });
 
