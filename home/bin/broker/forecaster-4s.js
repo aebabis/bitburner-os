@@ -1,3 +1,4 @@
+/** @param {NS} ns */
 export const forecaster = (ns) => {
   return {
     record: () => {},

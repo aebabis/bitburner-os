@@ -259,6 +259,8 @@ class WGWBatch extends Batch {
 }
 
 export default class Thief {
+  /** @param {NS} ns
+   *  @param {string} server */
   constructor(ns, server) {
     this.ns = ns;
     this.server = server;

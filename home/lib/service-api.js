@@ -7,6 +7,7 @@ export const ENABLE = "ENABLE";
 
 const getServiceName = (script) => script.split("/").pop().split(".").shift();
 
+/** @param {NS} ns */
 export const getTableString = (ns, taskData) => {
   return table(
     ns,
@@ -21,10 +22,12 @@ export const getTableString = (ns, taskData) => {
   );
 };
 
+/** @param {NS} ns */
 export const getServices = (ns) => {
   return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 
+/** @param {NS} ns */
 export const disableService = async (
   ns,
   idOrName = getServiceName(ns.getScriptName()),
@@ -35,6 +38,7 @@ export const disableService = async (
   });
 };
 
+/** @param {NS} ns */
 export const enableService = async (ns, idOrName, override = false) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
     identifier: idOrName,
@@ -44,12 +48,14 @@ export const enableService = async (ns, idOrName, override = false) => {
   // TODO: Await response?
 };
 
+/** @param {NS} ns */
 export const writeServices = (ns, services) => {
   const handle = Ports(ns).getPortHandle(PORT_SERVICES_LIST);
   handle.clear();
   handle.write(services);
 };
 
+/** @param {NS} ns */
 export const checkQueue = (ns) => {
   const port = Ports(ns).getPortHandle(PORT_SERVICES_REPL);
   const tasks = [];

@@ -75,6 +75,7 @@ export const delegateAny =
   async (script, numThreads = 1, ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
+/** @param {NS} ns */
 export const createBatch = (ns) => {
   let jobs = [];
   const delegate =

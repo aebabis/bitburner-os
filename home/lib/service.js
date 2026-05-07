@@ -15,6 +15,7 @@ const getExistingPid = (ns, desc) => {
 
 let count = 1;
 
+/** @param {NS} ns */
 export const Service =
   (ns, condition = () => true, interval = 5000) =>
   (script, target = null, numThreads = 1, ...args) => {
@@ -103,6 +104,7 @@ export const Service =
     };
   };
 
+/** @param {NS} ns */
 export const AnyHostService =
   (ns, condition = () => true, interval) =>
   (script, numThreads, ...args) =>

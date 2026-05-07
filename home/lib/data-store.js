@@ -37,27 +37,41 @@ export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
 export const putHostnames = (ns, hostnames) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
+/** @param {NS} ns */
 export const getStaticData = (ns) => readData(ns, PORT_STATIC_DATA) || {};
+/** @param {NS} ns */
 export const putStaticData = (ns, data) => putData(ns, PORT_STATIC_DATA, data);
 
+/** @param {NS} ns */
 export const getGangData = (ns) => readData(ns, PORT_GANG_DATA);
+/** @param {NS} ns */
 export const putGangData = (ns, data) => putData(ns, PORT_GANG_DATA, data);
 
+/** @param {NS} ns */
 export const getDataboardData = (ns) => readData(ns, PORT_DASHBOARD_DATA);
+/** @param {NS} ns */
 export const putDashboardData = (ns, data) =>
   putData(ns, PORT_DASHBOARD_DATA, data);
 
+/** @param {NS} ns */
 export const getRamData = (ns) => readData(ns, PORT_SCH_RAM_DATA);
+/** @param {NS} ns */
 export const putRamData = (ns, data) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 
+/** @param {NS} ns */
 export const getPlayerData = (ns) => readData(ns, PORT_PLAYER_DATA) || {};
+/** @param {NS} ns */
 export const putPlayerData = (ns, data) => putData(ns, PORT_PLAYER_DATA, data);
 
+/** @param {NS} ns */
 export const getMoneyData = (ns) => readData(ns, PORT_MONEY_DATA) || {};
+/** @param {NS} ns */
 export const putMoneyData = (ns, data) => putData(ns, PORT_MONEY_DATA, data);
 
+/** @param {NS} ns */
 export const getContractData = (ns) => readData(ns, PORT_CONTRACT_DATA) || {};
+/** @param {NS} ns */
 export const putContractData = (ns, data) =>
   putData(ns, PORT_CONTRACT_DATA, data);
 

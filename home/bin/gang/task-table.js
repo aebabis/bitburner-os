@@ -75,6 +75,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
   ns.tprint(output);
 };
 
+/** @param {NS} ns */
 export async function main(ns) {
   await printTaskTable(ns, ns.args[0]);
 }

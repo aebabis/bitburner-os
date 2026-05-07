@@ -6,6 +6,7 @@ const NEUROFLUX = "NeuroFlux Governor";
 const MONEY_PER_REP = 4000; // This will vary at some point
 
 export class AugmentationInfo {
+  /** @param {NS} ns */
   constructor(ns) {
     this.ns = ns;
     const {

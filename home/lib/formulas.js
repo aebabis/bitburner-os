@@ -8,6 +8,7 @@ const calculateExp = (skill, mult = 1) => {
   return Math.exp((skill / mult + 200) / 32) - 534.6;
 };
 
+/** @param {NS} ns */
 export const getSkillFormulas = (ns) => {
   if (ns.fileExists("Formulas.exe", "home")) return ns.formulas.skills;
   return {
@@ -26,6 +27,7 @@ const getHacknetNodeIncomeFormula = (ns) => {
     prodMult * (level * 1.5) * 1.035 ** (ram - 1) * ((cores + 5) / 6);
 };
 
+/** @param {NS} ns */
 export const getHacknetNodeFormulas = (ns) => {
   const income = getHacknetNodeIncomeFormula(ns);
   return {

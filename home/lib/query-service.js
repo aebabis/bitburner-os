@@ -8,8 +8,10 @@ import {
   getMoneyData,
 } from "./data-store";
 
+/** @param {(ns: NS) => <X>(ns: NS) => X} func */
 const cache = (func) => {
   let data;
+  /** @param {NS} ns */
   return (ns) => {
     if (data === undefined) data = func(ns);
     return data;

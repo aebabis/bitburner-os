@@ -83,6 +83,7 @@ const getAugmentGoals = (
   };
 };
 
+/** @param {NS} ns */
 export const analyzeAugData = async (ns) => {
   const augData = getStaticData(ns);
   const cityFaction = ns
