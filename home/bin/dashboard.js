@@ -44,6 +44,7 @@ const getRunStats = (ns) => {
     H('PORTFOLIO') + C(216)(` $${stock}`),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
+    getWork(ns),
   ].join('  ');
 };
 
@@ -173,49 +174,30 @@ const moneyTable = (ns) => {
   return ` ${H("INCOME")} \n` + table(ns, null, rows);
 };
 
-const workTable = (ns) => {
+/** @param {NS} ns */
+const getWork = (ns) => {
   const { factionRep = {}, currentWork } = getPlayerData(ns);
   const { location } = ns.getPlayer();
   const WORK = H("WORK");
-  if (!hasBitNode(ns, 4)) return ` ${WORK} \n ${location} `;
-  if (currentWork == null) return ` ${WORK} \n ${MEDIUM("(idle)")} `;
+  if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
+  if (currentWork == null) return ` ${WORK} ${MEDIUM("(idle)")} `;
   const {
     type,
     crimeType,
     companyName,
     factionName,
-    workMoneyGained,
-    workRepGained,
-    workHackExpGained,
-    workStrExpGained,
-    workDefExpGained,
-    workDexExpGained,
-    workAgiExpGained,
-    workChaExpGained,
+    // workMoneyGained,
+    // workRepGained,
   } = currentWork;
-  const gains = [
-    ["$", workMoneyGained],
-    ["Rep", workRepGained],
-    ["Hack", workHackExpGained],
-    ["Str", workStrExpGained],
-    ["Def", workDefExpGained],
-    ["Dex", workDexExpGained],
-    ["Agi", workAgiExpGained],
-    ["Cha", workChaExpGained],
-  ]
-    .filter(([, x]) => !!x)
-    .map(([h, v]) => [h, ns.formatNumber(v, 3).padStart(8)]);
-  const PAD = Math.max(0, 7 - gains.length);
-  const rows = table(ns, null, gains) + "\n".repeat(PAD);
   if (type === "FACTION") {
     const rep = Math.floor(factionRep[factionName]);
-    return ` ${WORK} \n ${factionName} (${rep}rep) \n${rows}`;
+    return ` ${WORK} ${factionName} (${rep}rep) `;
   } else if (type === "COMPANY") {
-    return ` ${WORK} \n Working at ${companyName} \n${rows}`;
+    return ` ${WORK} ${companyName} `;
   } else if (type === "CRIME") {
-    return ` ${WORK} \n ${crimeType} \n${rows}`;
+    return ` ${WORK} ${crimeType} `;
   }
-  return ` ${WORK} \n ${type} \n ${location} \n${rows}`;
+  return ` ${WORK} ${type} ${location} `;
 };
 
 /** @param {NS} ns **/
@@ -237,7 +219,6 @@ export async function main(ns) {
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => moneyTable(ns)),
-    new GrowingWindow(() => workTable(ns)),
     // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
   ];
   await ns.sleep(1);
