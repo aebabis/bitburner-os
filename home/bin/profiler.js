@@ -171,7 +171,7 @@ export async function main(ns) {
           ctx.globalAlpha = 1;
         } else {
           ctx.fillStyle = ooo ? "#ff4444" : color;
-          ctx.fillRect(toX(job.actualEnd), stripeY, 1, STRIPE_H);
+          ctx.fillRect(toX(/** @type {number} */ (job.actualEnd)), stripeY, 1, STRIPE_H);
         }
       }
     });

@@ -8,7 +8,7 @@ import {
   FACTION_LOCATIONS,
 } from "./aug/factions";
 
-const COMBAT_STATS = ["strength", "defense", "dexterity", "agility"];
+const COMBAT_STATS = /** @type {(keyof Skills)[]} */ (["strength", "defense", "dexterity", "agility"]);
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -37,11 +37,11 @@ export async function main(ns) {
       }
     };
 
-    const getStatToTrain = (lvlReq) =>
-      COMBAT_STATS.find((stat) => player[stat] < lvlReq);
+    const getStatToTrain = (/** @type {number} */ lvlReq) =>
+      COMBAT_STATS.find((stat) => player.skills[stat] < lvlReq);
 
-    const getFactionStat = (targetFaction) =>
-      getStatToTrain(COMBAT_REQUIREMENTS[targetFaction] || 0);
+    const getFactionStat = (/** @type {string} */ targetFaction) =>
+      getStatToTrain((/** @type {Record<string, number>} */ (COMBAT_REQUIREMENTS))[targetFaction] || 0);
 
     const statForCrimeTraining = getStatToTrain(5);
     if (statForCrimeTraining != null) {
@@ -51,7 +51,7 @@ export async function main(ns) {
     } else if (isMoneyBound(ns) || isFactionGang) {
       await makeMoney();
     } else if (inTargetFaction) {
-      if (rep < getRepNeeded(ns)) {
+      if (rep < (getRepNeeded(ns) ?? 0)) {
         getConfig(ns).set("share", 0.1);
         await rmi(ns)("/bin/self/faction-work.js", 1, targetFaction);
       } else {
@@ -61,13 +61,13 @@ export async function main(ns) {
     } else {
       const statToTrain = getFactionStat(targetFaction);
       const requiredLocations =
-        FACTION_LOCATIONS[targetFaction] || CITY_FACTIONS;
+        (/** @type {Record<string, string[]>} */ (FACTION_LOCATIONS))[targetFaction] || CITY_FACTIONS;
       if (statToTrain != null)
         await rmi(ns)(
           "/bin/self/improvement.js",
           1,
           statToTrain,
-          COMBAT_REQUIREMENTS[targetFaction],
+          (/** @type {Record<string, number>} */ (COMBAT_REQUIREMENTS))[targetFaction],
         );
       else if (!requiredLocations.includes(player.city))
         await rmi(ns)("/bin/self/travel.js", 1, requiredLocations[0]);

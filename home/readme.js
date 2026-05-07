@@ -1,5 +1,5 @@
 import { KEYWORD, NORMAL } from "./lib/colors";
-import { table, transpose } from "./lib/table";
+import { table } from "./lib/table";
 
 const MAIN = {
   start: "Boots the system and services",
@@ -48,24 +48,14 @@ const ALIASES = {
   update: "home; killall; ./update.js",
 };
 
-const twoLine = (obj) => {
-  let line1 = KEYWORD.BOLD;
-  let line2 = NORMAL;
-  for (const [command, desc] of Object.entries(obj)) {
-    line1 += command + " ".repeat(desc.length + 2 + 2);
-    line2 += "  " + desc + " ".repeat(command.length + 2);
-  }
-  return line1 + "\n" + line2 + "\n";
-};
-
-const getLines = (commands) => {
+const getLines = (/** @type {Record<string, string>} */ commands) => {
   const lines = [];
   for (const [command, desc] of Object.entries(commands))
     lines.push(KEYWORD.BOLD + command, NORMAL + "  " + desc);
   return lines;
 };
 
-const getHelp = (ns) => {
+const getHelp = (/** @type {NS} */ ns) => {
   const column1 = [...getLines(MAIN), " ", ...getLines(SHORTHAND)];
   const column2 = getLines(UTILITIES);
   const iters = Math.max(column1.length, column2.length);
@@ -75,7 +65,7 @@ const getHelp = (ns) => {
   return table(ns, ["", ""], rows);
 };
 
-const getAliases = (ns) =>
+const getAliases = (/** @type {NS} */ ns) =>
   KEYWORD.BOLD +
   Object.entries(ALIASES)
     .map(([alias, command]) => `alias ${alias}=${JSON.stringify(command)}`)
