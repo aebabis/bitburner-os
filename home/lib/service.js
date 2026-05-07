@@ -1,6 +1,7 @@
 import { delegate } from "./scheduler-delegate.js";
 import { getServices } from "./service-api.js";
-import { ERROR, NORMAL, C } from "./colors";
+import { getStaticData } from './data-store';
+import { ERROR, C } from "./colors";
 
 const getExistingPid = (ns, desc) => {
   try {
@@ -23,6 +24,7 @@ export const Service =
         ? [script, numThreads, ...args].join(" ")
         : [script, target, numThreads, ...args].join(" ");
     const shortname = script.split("/").pop().split(".").shift();
+    const ram = getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
     let pid = getExistingPid(ns, desc);
     let lastRun = 0;
     let enabled = true;
@@ -84,6 +86,7 @@ export const Service =
       status: statusCode(),
       pid,
       desc,
+      ram,
     });
 
     return {

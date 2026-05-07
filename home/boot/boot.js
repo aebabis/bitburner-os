@@ -2,6 +2,7 @@ import { defer } from "./defer";
 import { tprint } from "./util";
 import { STR } from "../lib/colors";
 
+/** @param {NS} ns */
 const getBootSequence = (ns) => {
   if (ns.getServerMaxRam("home") < ns.getScriptRam("/boot/data2.js")) {
     return [

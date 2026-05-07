@@ -32,7 +32,7 @@ export const checkPort = async (ns, queue) => {
       logger(ns).error(
         `Scheduler received task for non-existant script: ${script}`,
       );
-      await closeTicket(ns, ticket);
+      await closeTicket(ns)(ticket);
     } else queue.push(TicketItem(taskData));
   }
 };

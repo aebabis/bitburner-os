@@ -40,8 +40,8 @@ const getRunStats = (ns) => {
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH') + C(216)(` $${ns.formatNumber(money, 1)}`),
-    H('PORTFOLIO') + C(216)(` $${stock}`),
+    H('CASH') + C(217)(` $${ns.formatNumber(money, 1)}`),
+    H('PORTFOLIO') + C(217)(` $${stock}`),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),
@@ -52,18 +52,18 @@ const getRunStats = (ns) => {
 const getPlayerLevels = (ns) => {
   const WIDTH = 10;
   const { skills } = ns.getPlayer();
-  const row = (c1, left, c2, right) => {
+  const row = (left, c2, right) => {
     const val = right;
     const padding = WIDTH - left.length - val.toString().length;
-    return ` ${C(c1).BOLD(left)}${' '.repeat(padding)}${C(c2)(val)} `;
+    return ` ${H(left)}${' '.repeat(padding)}${C(c2)(val)} `;
   }
   return [
-    row(36,  'Hack', 72, skills.hacking),
-    row(251, 'Str', 251, skills.strength),
-    row(251, 'Def', 251, skills.defense),
-    row(251, 'Dex', 251, skills.dexterity),
-    row(251, 'Agi', 251, skills.agility),
-    row(251, 'Cha', 251, skills.charisma),
+    row('Hack', 72, skills.hacking),
+    row('Str', 251, skills.strength),
+    row('Def', 251, skills.defense),
+    row('Dex', 251, skills.dexterity),
+    row('Agi', 251, skills.agility),
+    row('Cha', 251, skills.charisma),
   ].join('\n');
 };
 
@@ -210,8 +210,9 @@ export async function main(ns) {
     new GrowingWindow(() =>
       table(
         ns,
-        ["SERVICES", ""],
-        getServices(ns).map(({ name, status }) => [name, status]),
+        ['SERVICES', '', ''],
+        getServices(ns).map(({ name, status, ram }) =>
+          [name, status, MEDIUM(ram.toFixed(2)+'GB')]),
         { colors: true },
       ),
     ),
