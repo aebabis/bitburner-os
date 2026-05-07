@@ -3,6 +3,7 @@ import { getServices } from "./service-api.js";
 import { getStaticData } from './data-store';
 import { ERROR, C } from "./colors";
 
+/** @param {NS} ns @param {string} desc */
 const getExistingPid = (ns, desc) => {
   try {
     const services = getServices(ns);
@@ -17,8 +18,8 @@ let count = 1;
 
 /** @param {NS} ns */
 export const Service =
-  (ns, condition = () => true, interval = 5000) =>
-  (script, target = null, numThreads = 1, ...args) => {
+  (ns, condition = () => true, /** @type {number} */ interval = 5000) =>
+  (/** @type {string} */ script, target = null, /** @type {number} */ numThreads = 1, ...args) => {
     const id = count++;
     const desc =
       target == null
@@ -48,7 +49,7 @@ export const Service =
       else return "○";
     };
 
-    const check = async (beforeRun) => {
+    const check = async (/** @type {(() => void) | undefined} */ beforeRun) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
       if (!running && shouldBe) {
@@ -79,7 +80,7 @@ export const Service =
       }
     };
 
-    const matches = (identifier) =>
+    const matches = (/** @type {string | number} */ identifier) =>
       identifier == id || identifier === shortname;
     const toData = () => ({
       id,
@@ -106,6 +107,6 @@ export const Service =
 
 /** @param {NS} ns */
 export const AnyHostService =
-  (ns, condition = () => true, interval) =>
-  (script, numThreads, ...args) =>
+  (ns, condition = () => true, /** @type {number} */ interval) =>
+  (/** @type {string} */ script, /** @type {number} */ numThreads, ...args) =>
     Service(ns, condition, interval)(script, null, numThreads, ...args);

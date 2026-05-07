@@ -21,6 +21,7 @@ export const by = (prop) => {
   };
 };
 
+/** @param {string} str */
 export const length = (str) => str.replaceAll(COLOR_REGEX, "").length;
 
 export const small = (number) =>
@@ -29,7 +30,7 @@ export const small = (number) =>
     .toLowerCase()
     .split("")
     .map(
-      (n) =>
+      /** @param {string} n */ (n) =>
         "₀₁₂₃₄₅₆₇₈₉"[n] ||
         "ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ"[n.charCodeAt(0) - 97] ||
         " ",
@@ -40,7 +41,7 @@ export const bold = (string) =>
     .toString()
     .split("")
     .map(
-      (n) =>
+      /** @param {string} n */ (n) =>
         "𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗"[n] ||
         "𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳"[n.charCodeAt(0) - 97] ||
         "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙"[n.charCodeAt(0) - 65] ||

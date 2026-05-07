@@ -48,7 +48,7 @@ export async function main(ns) {
   if (hasEnoughRep && hasEnoughMoney) await liquidate(ns);
 
   for (const augmentation of remainingAugs) {
-    const soldTheAug = (faction) =>
+    const soldTheAug = (/** @type {string} */ faction) =>
       ns.singularity.purchaseAugmentation(faction, augmentation);
     if (purchasable(augmentation)) {
       // Attempt to buy the next augmentation from any faction.

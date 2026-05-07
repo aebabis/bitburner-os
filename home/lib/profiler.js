@@ -12,7 +12,7 @@ const evict = (p) => {
 };
 
 const makeRecordScheduled =
-  (p) => (frameId, jobId, server, type, threads, start, end) => {
+  (p) => (/** @type {string} */ frameId, /** @type {string} */ jobId, /** @type {string} */ server, /** @type {string} */ type, /** @type {number} */ threads, /** @type {number} */ start, /** @type {number} */ end) => {
     if (!p.frameIds.has(frameId)) {
       p.frameIds.add(frameId);
       p.frames.push({ frameId, jobIds: [], scheduledStart: start });
@@ -33,12 +33,12 @@ const makeRecordScheduled =
     });
   };
 
-const makeRecordStart = (p) => (jobId, actualStart) => {
+const makeRecordStart = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart) => {
   const job = p.jobs.get(jobId);
   if (job) job.actualStart = actualStart;
 };
 
-const makeRecordActual = (p) => (jobId, actualStart, actualEnd, result) => {
+const makeRecordActual = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart, /** @type {number} */ actualEnd, result) => {
   const job = p.jobs.get(jobId);
   if (job) {
     job.actualStart = actualStart;
@@ -47,7 +47,7 @@ const makeRecordActual = (p) => (jobId, actualStart, actualEnd, result) => {
   }
 };
 
-const makeRecordReaped = (p) => (jobId) => {
+const makeRecordReaped = (p) => (/** @type {string} */ jobId) => {
   const job = p.jobs.get(jobId);
   if (!job) return;
   p.jobs.delete(jobId);

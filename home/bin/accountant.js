@@ -3,7 +3,7 @@ import { putMoneyData } from "../lib/data-store";
 import { Timeline } from "../lib/timeline";
 
 class Timer {
-  constructor(ns, interval = 50, maxInterval = null) {
+  constructor(/** @type NS */ ns, interval = 50, maxInterval = null) {
     this.ns = ns;
     this.interval = +interval;
     this.maxInterval = maxInterval && +maxInterval;

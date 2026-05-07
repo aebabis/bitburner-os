@@ -15,13 +15,15 @@ const builder = (code) => {
   func.toString = func.valueOf = func.toJSON = () => code;
   return func;
 };
-/** @returns {ReturnType<typeof builder> & { BOLD: ReturnType<typeof builder> }} */
+/** @param {number} n
+ *  @returns {ReturnType<typeof builder> & { BOLD: ReturnType<typeof builder> }} */
 export const COLOR = (n) => {
   const func = builder(`\u001b[38;5;${n}m`);
   func.BOLD = builder(`\u001b[1;38;5;${n}m`);
   return func;
 };
 export const C = COLOR;
+/** @param {number} n */
 export const BG = (n) => builder(`\u001b[48;5;${n}m`);
 
 export const KEYWORD = C(69);

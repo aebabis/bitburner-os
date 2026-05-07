@@ -23,7 +23,7 @@ export async function main(ns) {
 
   const { purchasedServerMaxRam, purchasedServerLimit } = getStaticData(ns);
 
-  /** @param hostname {string} */
+  /** @param {string} hostname */
   const getRamInfo = (hostname) => {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);

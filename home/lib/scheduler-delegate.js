@@ -2,15 +2,15 @@ import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
 import Ports from "./ports";
 import { logger } from "./logger";
 
-export const snippet = (statements) =>
+export const snippet = (/** @type {string} */ statements) =>
   `export async function main(ns) {\n${statements}\n}`;
 
-const desc = (script, host = null, numThreads = 1, ...args) =>
+const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) =>
   `${script} ${host || "*"} ${numThreads} ${args.join(" ")}`;
 
 const Job =
-  (ns, response, startTime, highPriority) =>
-  (script, host = null, numThreads = 1, ...args) => {
+  (/** @type {NS} */ ns, /** @type {boolean} */ response, /** @type {number} */ startTime, /** @type {boolean} */ highPriority) =>
+  (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) => {
     if (script.startsWith(".") || !script.endsWith(".js"))
       throw new Error(
         `Illegal script name in ${desc(script, host, numThreads, ...args)}`,
@@ -35,8 +35,8 @@ const Job =
 
 /** @param {NS} ns **/
 export const delegate =
-  (ns, response, options = {}) =>
-  async (script, host = null, numThreads = 1, ...args) => {
+  (ns, /** @type {boolean} */ response, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
+  async (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) => {
     const { startTime = Date.now(), highPriority = false } = options;
     const job = Job(ns, response, startTime, highPriority)(
       script,
@@ -71,22 +71,22 @@ export const delegate =
 
 /** @param {NS} ns **/
 export const delegateAny =
-  (ns, response, options) =>
-  async (script, numThreads = 1, ...args) =>
+  (ns, /** @type {boolean} */ response, /** @type {{startTime?: number, highPriority?: boolean}} */ options) =>
+  async (/** @type {string} */ script, /** @type {number} */ numThreads = 1, ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
 /** @param {NS} ns */
 export const createBatch = (ns) => {
   let jobs = [];
   const delegate =
-    (startTime) =>
-    (script, host = null, numThreads = 1, ...args) =>
+    (/** @type {number} */ startTime) =>
+    (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) =>
       jobs.push(Job(ns, false, startTime)(script, host, numThreads, ...args));
   return {
     delegate,
     delegateAny:
-      (startTime) =>
-      (script, numThreads = 1, ...args) =>
+      (/** @type {number} */ startTime) =>
+      (/** @type {string} */ script, /** @type {number} */ numThreads = 1, ...args) =>
         delegate(startTime)(script, null, numThreads, ...args),
     getSize: () => jobs.length,
     send: async () =>
@@ -110,7 +110,7 @@ export const getDelegatedTasks = async (ns) => {
 };
 
 /** @param {NS} ns **/
-export const closeTicket = (ns) => async (ticket, pid, hostname, threads) => {
+export const closeTicket = (ns) => async (ticket, /** @type {number} */ pid, /** @type {string} */ hostname, /** @type {number} */ threads) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
   while (port.full()) {
     await ns.sleep(50);

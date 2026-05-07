@@ -61,9 +61,9 @@ export async function main(ns) {
         topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
 
       ns.clearLog();
-      const secStr = (hostname) =>
+      const secStr = (/** @type {string} */ hostname) =>
         `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
-      const moneyStr = (hostname) =>
+      const moneyStr = (/** @type {string} */ hostname) =>
         `${ns.formatNumber(ns.getServerMoneyAvailable(hostname), 2)}/${ns.formatNumber(ns.getServerMaxMoney(hostname), 2)}`;
       const rows = viableThieves
         .filter(

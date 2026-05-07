@@ -9,10 +9,10 @@ const PROPS = {
 };
 
 const VALIDATORS = {
-  share: (x) => x >= 0 && x <= 1,
-  "share-cap": (x) => x >= 0,
-  "reserved-funds": (x) => x >= 0,
-  "reserved-home-ram": (x) => x > 0 && x <= 1 << 20,
+  share: (/** @type {number} */ x) => x >= 0 && x <= 1,
+  "share-cap": (/** @type {number} */ x) => x >= 0,
+  "reserved-funds": (/** @type {number} */ x) => x >= 0,
+  "reserved-home-ram": (/** @type {number} */ x) => x > 0 && x <= 1 << 20,
 };
 
 const DEFAULT_VALUES = {
@@ -37,9 +37,9 @@ export const getConfig = (ns) => {
     port.write(obj);
   };
 
-  const get = (prop) => getAll()[prop];
+  const get = (/** @type {string} */ prop) => getAll()[prop];
 
-  const set = (prop, value) => {
+  const set = (/** @type {string} */ prop, value) => {
     if (PROPS[prop] == null) throw new Error(`Unrecognized prop "${prop}"`);
     if (!VALIDATORS[prop](value))
       throw new Error(`Illegal value for "${prop}": "${value}"`);

@@ -3,7 +3,7 @@ import { delegateAny } from "../lib/scheduler-delegate";
 import { getHostnames } from "../lib/data-store";
 
 /** @param {NS} ns **/
-export const access = (ns) => async (target) => {
+export const access = (ns) => async (/** @type string */ target) => {
   if (ns.fileExists("BruteSSH.exe", "home")) ns.brutessh(target);
   if (ns.fileExists("FTPCrack.exe", "home")) ns.ftpcrack(target);
   if (ns.fileExists("relaySMTP.exe", "home")) ns.relaysmtp(target);
@@ -26,7 +26,7 @@ export async function main(ns) {
   }
 
   let hostnames = getHostnames(ns).filter(
-    (hostname) => !ns.hasRootAccess(hostname),
+    (/** @type string */ hostname) => !ns.hasRootAccess(hostname),
   );
 
   while (hostnames.length > 0) {

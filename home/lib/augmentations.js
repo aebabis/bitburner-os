@@ -37,17 +37,18 @@ export class AugmentationInfo {
     this.augmentationFactions = augmentationFactions;
   }
 
-  isUnowned = (aug) =>
+  isUnowned = (/** @type {string} */ aug) =>
     !this.ownedAugmentations.includes(aug) && aug !== NEUROFLUX;
 
-  weightedCost = (aug) =>
+  weightedCost = (/** @type {string} */ aug) =>
     Math.max(
       this.augmentationPrices[aug] / MONEY_PER_REP,
       this.augmentationRepReqs[aug],
     );
 
+  /** @param {string[]} augs @param {number} limit */
   getPurchaseOrder(augs, limit = Infinity) {
-    const order = new Set([]);
+    const order = new Set(/** @type {string[]} */([]));
     augs.sort(by((aug) => -this.augmentationPrices[aug]));
     for (const aug of augs) {
       const prereqs = this.augmentationPrereqs[aug]
@@ -59,6 +60,7 @@ export class AugmentationInfo {
     return [...order].splice(0, limit);
   }
 
+  /** @param {string[]} augs */
   getOrderCost(augs) {
     let mult = 1;
     let cost = 0;
@@ -69,6 +71,6 @@ export class AugmentationInfo {
     return cost;
   }
 
-  getNeededAugs = (faction) =>
+  getNeededAugs = (/** @type {string} */ faction) =>
     this.factionAugmentations[faction].filter((aug) => this.isUnowned(aug));
 }

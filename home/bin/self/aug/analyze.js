@@ -8,7 +8,7 @@ import { by } from "../../../lib/util";
 
 // If doing multiple factions, consider sum of max repreqs
 const getAugmentGoals = (
-  ownedAugmentations,
+  /** @type {string[]} */ ownedAugmentations,
   {
     augmentations,
     augmentationPrices,

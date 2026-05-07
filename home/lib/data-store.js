@@ -10,17 +10,17 @@ import {
   PORT_CONTRACT_DATA,
 } from "../etc/ports";
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {number} port */
 const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {number} portId */
 const replaceData = (ns, portId, data) => {
   const port = Ports(ns).getPortHandle(portId);
   port.clear();
   port.write(data);
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {number} portId */
 const putData = (ns, portId, data) => {
   const oldData = readData(ns, portId) || {};
   const newData = Object.assign(oldData, data);

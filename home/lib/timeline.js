@@ -37,13 +37,15 @@ export class Timeline {
     this.samples = new LogarithmicQueue();
   }
 
+  /** @param {number} timestamp @param {number} value */
   addPoint(timestamp, value) {
     const { samples } = this;
     samples.push({ timestamp, value });
   }
 
+  /** @param {number} timestamp */
   findValue(timestamp) {
-    const terpolate = (s1, s2, timestamp) => {
+    const terpolate = (s1, s2, /** @type {number} */ timestamp) => {
       const portion =
         (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
       return s1.value + portion * (s2.value - s1.value);

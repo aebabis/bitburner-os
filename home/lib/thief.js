@@ -16,6 +16,8 @@ const PORTIONS = new Array(count + 1)
   .map((_, i) => i / count)
   .map((x) => 1 - 1 / (1 + e ** (-1 * k * (x - x_0))));
 
+/** @param {NS} ns
+ *  @param {string} target */
 const getTimes = (ns, target) => {
   if (ns.fileExists("Formulas.exe", "home")) {
     const server = {
@@ -35,12 +37,20 @@ const getTimes = (ns, target) => {
   };
 };
 
+/** @param {NS} ns
+ *  @param {number} targetDecrease
+ *  @param {number} [cores]
+ */
 const getWThreads = (ns, targetDecrease, cores = 1) => {
   let threads = 1;
   while (ns.weakenAnalyze(threads, cores) < targetDecrease) threads++;
   return threads;
 };
 
+/** @param {NS} ns
+ *  @param {string} target
+ *  @param {number} portion
+ */
 const computeThreads = (ns, target, portion) => {
   if (portion <= 0 || portion >= 1)
     throw new Error(`Invalid theft portion: ${portion}`);
@@ -77,10 +87,12 @@ class Batch {
     this._profilerRecords = [];
   }
 
+  /** @param {string} frameId @param {string} jobId @param {string} target @param {string} label @param {number} threads @param {number} startTime @param {number} endTime */
   _queueProfiler(frameId, jobId, target, label, threads, startTime, endTime) {
     this._profilerRecords.push([frameId, jobId, target, label, threads, startTime, endTime]);
   }
 
+  /** @param {string} script @param {number} threads @param {string} target @param {number} startTime @param {string} jobId */
   addJob(script, threads, target, startTime, jobId = crypto.randomUUID()) {
     this.jobs.delegateAny(startTime)(script, threads, target, jobId);
     this.threads += threads;
@@ -308,6 +320,7 @@ export default class Thief {
   isPipelining = () =>
     this.currentBatch != null && !this.currentBatch.hasEnded();
 
+  /** @param {number} ram @param {number} maxRamPerJob */
   async startNextBatch(ram, maxRamPerJob) {
     const { ns, server, currentBatch } = this;
     const endAfter = Math.max(currentBatch?.endAfter ?? Date.now(), Date.now());
@@ -353,6 +366,7 @@ export default class Thief {
     });
   }
 
+  /** @param {number} ramAvailable */
   estimateGroomTime(ramAvailable) {
     const { ns, server } = this;
     const minSec = ns.getServerMinSecurityLevel(server);
@@ -367,6 +381,7 @@ export default class Thief {
     return minPasses * ns.getWeakenTime(server);
   }
 
+  /** @param {number} timeToAug @param {number} ramAvailable */
   getDesirability(timeToAug = HORIZON_MS, ramAvailable = Infinity) {
     const { ns, server } = this;
 
