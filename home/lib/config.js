@@ -1,19 +1,19 @@
 import { PORT_RUN_CONFIG } from "../etc/ports";
 import Ports from "./ports";
 
-const PROPS = {
+const PROPS = /** @type {Record<string, string>} */({
   share: "Share rate",
   "share-cap": "Max share threads",
   "reserved-funds": "Threshold for investment",
   "reserved-home-ram": "On-demand RAM",
-};
+});
 
-const VALIDATORS = {
+const VALIDATORS = /** @type {Record<string, (x: number) => boolean>} */({
   share: (/** @type {number} */ x) => x >= 0 && x <= 1,
   "share-cap": (/** @type {number} */ x) => x >= 0,
   "reserved-funds": (/** @type {number} */ x) => x >= 0,
   "reserved-home-ram": (/** @type {number} */ x) => x > 0 && x <= 1 << 20,
-};
+});
 
 const DEFAULT_VALUES = {
   share: 0,
@@ -39,7 +39,7 @@ export const getConfig = (ns) => {
 
   const get = (/** @type {string} */ prop) => getAll()[prop];
 
-  const set = (/** @type {string} */ prop, value) => {
+  const set = (/** @type {string} */ prop, /** @type {number} */ value) => {
     if (PROPS[prop] == null) throw new Error(`Unrecognized prop "${prop}"`);
     if (!VALIDATORS[prop](value))
       throw new Error(`Illegal value for "${prop}": "${value}"`);

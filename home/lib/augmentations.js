@@ -24,10 +24,10 @@ export class AugmentationInfo {
     this.factionAugmentations = factionAugmentations;
     this.ownedAugmentations = ownedAugmentations;
     this.unownedAugmentations = augmentations
-      .filter((aug) => this.isUnowned(aug))
-      .sort(by((aug) => this.weightedCost(aug)));
+      .filter((/** @type {string} */ aug) => this.isUnowned(aug))
+      .sort(by((/** @type {string} */ aug) => this.weightedCost(aug)));
 
-    const augmentationFactions = {};
+    const augmentationFactions = /** @type {Record<string, string[]>} */({});
     for (const faction of FACTIONS)
       for (const augmentation of factionAugmentations[faction])
         if (augmentationFactions[augmentation] == null)
