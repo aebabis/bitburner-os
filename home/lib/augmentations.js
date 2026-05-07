@@ -49,10 +49,10 @@ export class AugmentationInfo {
   /** @param {string[]} augs @param {number} limit */
   getPurchaseOrder(augs, limit = Infinity) {
     const order = new Set(/** @type {string[]} */([]));
-    augs.sort(by((aug) => -this.augmentationPrices[aug]));
+    augs.sort(by((/** @type {string} */ aug) => -this.augmentationPrices[aug]));
     for (const aug of augs) {
       const prereqs = this.augmentationPrereqs[aug]
-        .filter((aug) => this.isUnowned(aug))
+        .filter((/** @type {string} */ aug) => this.isUnowned(aug))
         .reverse();
       for (const prereq of prereqs) order.add(prereq);
       order.add(aug);
@@ -72,5 +72,5 @@ export class AugmentationInfo {
   }
 
   getNeededAugs = (/** @type {string} */ faction) =>
-    this.factionAugmentations[faction].filter((aug) => this.isUnowned(aug));
+    this.factionAugmentations[faction].filter((/** @type {string} */ aug) => this.isUnowned(aug));
 }

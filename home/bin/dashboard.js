@@ -52,7 +52,7 @@ const getRunStats = (ns) => {
 const getPlayerLevels = (ns) => {
   const WIDTH = 10;
   const { skills } = ns.getPlayer();
-  const row = (left, c2, right) => {
+  const row = (/** @type {string} */ left, /** @type {number} */ c2, /** @type {number} */ right) => {
     const val = right;
     const padding = WIDTH - left.length - val.toString().length;
     return ` ${H(left)}${' '.repeat(padding)}${C(c2)(val)} `;
@@ -67,7 +67,7 @@ const getPlayerLevels = (ns) => {
   ].join('\n');
 };
 
-const backdoorPath = (ns) => {
+const backdoorPath = (/** @type {NS} */ ns) => {
   const SPACES = " ".repeat(" connect powerhouse-fitness ".length) + "\n";
   const HEAD = ` ${BRIGHT.BOLD("BACKDOOR HELPER")} \n`;
   const path = getPath(ns);
