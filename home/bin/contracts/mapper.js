@@ -30,7 +30,7 @@ const map = {
   "Algorithmic Stock Trader I": (prices) => stockProfit(prices, 1),
   "Algorithmic Stock Trader II": (prices) => stockProfit(prices, Infinity),
   "Algorithmic Stock Trader III": (prices) => stockProfit(prices, 2),
-  "Algorithmic Stock Trader IV": ([n, p]) => stockProfit(p, n),
+  "Algorithmic Stock Trader IV": (/** @type {[number, number[]]} */ [n, p]) => stockProfit(p, n),
   "Array Jumping Game": (track) => +!!fewestHops(track),
   "Array Jumping Game II": fewestHops,
   "Compression I: RLE Compression": rle,
@@ -49,9 +49,9 @@ const map = {
   "Square Root": squareRoot,
   "Subarray with Maximum Sum": maximumSubarraySum,
   "Total Ways to Sum": computeSumPermutations,
-  "Total Ways to Sum II": ([t, a]) => computeSumPermutationsII(t, a),
-  "Unique Paths in a Grid I": ([r, c]) => countPaths(arr2d(r, c)),
+  "Total Ways to Sum II": (/** @type {[number, number[]]} */ [t, a]) => computeSumPermutationsII(t, a),
+  "Unique Paths in a Grid I": (/** @type {[number, number]} */ [r, c]) => countPaths(arr2d(r, c)),
   "Unique Paths in a Grid II": countPaths,
 };
 
-export default (contractType) => map[contractType];
+export default (/** @type {string} */ contractType) => map[/** @type {keyof typeof map} */(contractType)];

@@ -211,7 +211,7 @@ export async function main(ns) {
       table(
         ns,
         ['SERVICES', '', ''],
-        getServices(ns).map(({ name, status, ram }) =>
+        getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
           [name, status, MEDIUM(ram.toFixed(2)+'GB')]),
         { colors: true },
       ),

@@ -5,7 +5,7 @@ import { getContractData } from "../../lib/data-store";
 const showContracts = (ns) => {
   try {
     const { contracts } = getContractData(ns);
-    const rows = contracts.map(({ id, hostname, filename, type, tries }) => [
+    const rows = contracts.map((/** @type {{id: number, hostname: string, filename: string, type: string, tries: number}} */ { id, hostname, filename, type, tries }) => [
       id,
       hostname,
       filename,

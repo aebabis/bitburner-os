@@ -78,6 +78,7 @@ const computeThreads = (ns, target, portion) => {
 };
 
 class Batch {
+  /** @param {NS} ns @param {string} target */
   constructor(ns, target) {
     this.ns = ns;
     this.target = target;
@@ -125,6 +126,7 @@ class Batch {
 }
 
 class HWGWBatch extends Batch {
+  /** @param {NS} ns @param {string} target @param {number} portion @param {number} ram @param {number} startAfter @param {number} maxFrames */
   constructor(
     ns,
     target,
@@ -204,6 +206,7 @@ class HWGWBatch extends Batch {
 }
 
 class WGWBatch extends Batch {
+  /** @param {NS} ns @param {string} target @param {number} ram @param {number} startAfter */
   constructor(ns, target, ram, startAfter = Date.now()) {
     super(ns, target);
 

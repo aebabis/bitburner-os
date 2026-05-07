@@ -1,8 +1,8 @@
 const HISTORY = 10;
 
 export const forecaster = () => {
-  const histories = {};
-  const record = (data) => {
+  const histories = /** @type {{[sym: string]: {price: number}[]}} */({});
+  const record = (/** @type {{sym: string, price: number}} */ data) => {
     const { sym } = data;
     if (histories[sym] == null) histories[sym] = [];
     histories[sym].push(data);
@@ -11,7 +11,7 @@ export const forecaster = () => {
 
   return {
     record,
-    getStockForecast: (sym) => {
+    getStockForecast: (/** @type {string} */ sym) => {
       const history = histories[sym];
       if (history == null || history.length < HISTORY) return null;
       let prev = history[0];

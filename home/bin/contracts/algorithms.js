@@ -288,13 +288,13 @@ const cypher = (char, shift) => {
   return String.fromCharCode(code);
 };
 
-export const caesarCypher = ([plaintext, shift]) => {
+export const caesarCypher = (/** @type {[string, number]} */ [plaintext, shift]) => {
   const result = [];
   for (const c of plaintext) result.push(c === " " ? c : cypher(c, 26 - shift));
   return result.join("");
 };
 
-export const vigenereCypher = ([plaintext, password]) => {
+export const vigenereCypher = (/** @type {[string, string]} */ [plaintext, password]) => {
   const pw = password.split("");
   const pwChar = () => pw.push(pw[0]) && pw.shift();
   const lookup = (c1, c2) => cypher(c2, c1.charCodeAt(0) - 65);
@@ -307,7 +307,7 @@ export const vigenereCypher = ([plaintext, password]) => {
 export const rle = (text) =>
   text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x, a) => x.length + a);
 
-export const twoColor = ([numVertices, edges]) => {
+export const twoColor = (/** @type {[number, number[][]]} */ [numVertices, edges]) => {
   const arr = new Array(numVertices);
   edges.sort((a, b) => a[0] - b[0]);
   for (const [a, b] of edges) {

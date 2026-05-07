@@ -7,7 +7,7 @@ const decode = (data) =>
     : data;
 
 /** @param {NS} ns */
-const attemptContract = (ns, { filename, hostname, type, data }) => {
+const attemptContract = (ns, /** @type {{filename: string, hostname: string, type: string, data: unknown}} */ { filename, hostname, type, data }) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
   const answer = algorithm(decode(data));

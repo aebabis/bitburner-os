@@ -14,7 +14,7 @@ import {
 } from "../lib/query-service";
 import { infect, fullInfect } from "./infect";
 
-/** @param {NS} ns **/
+/** @param {number} maxServers */
 const getServerNames = (maxServers) => {
   return new Array(maxServers)
     .fill(null)
@@ -22,7 +22,7 @@ const getServerNames = (maxServers) => {
     .map((n) => `${THREADPOOL}-${n}`);
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {number} maxServers */
 const getPurchasedServerRams = (ns, maxServers) => {
   return getServerNames(maxServers)
     .filter(ns.serverExists)
@@ -32,7 +32,7 @@ const getPurchasedServerRams = (ns, maxServers) => {
     }));
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {number} maxServers */
 const getNextServerName = (ns, maxServers) =>
   getServerNames(maxServers).find((hostname) => !ns.serverExists(hostname));
 
@@ -47,13 +47,13 @@ const atCapacity = (ns) => {
   return totalRamUsed + ramQueued > totalMaxRam * 0.8;
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {string} hostname */
 const deleteServer = (ns, hostname) => {
   ns.killall(hostname);
   ns.deleteServer(hostname);
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {string} hostname @param {number} minRam @param {number} maxRam */
 const purchaseServer = (ns, hostname, minRam, maxRam) => {
   let ram = maxRam;
   while (!ns.purchaseServer(hostname, ram)) {
@@ -75,9 +75,9 @@ export async function main(ns) {
   } = getStaticData(ns);
 
   const buyServer = async (
-    minRam,
-    maxRam,
-    hostname = getNextServerName(ns, purchasedServerLimit),
+    /** @type {number} */ minRam,
+    /** @type {number} */ maxRam,
+    /** @type {string} */ hostname = getNextServerName(ns, purchasedServerLimit),
   ) => {
     const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 
@@ -113,7 +113,7 @@ export async function main(ns) {
     return servers.reduce((s1, s2) => (s1.ram <= s2.ram ? s1 : s2));
   };
 
-  const attemptPurchase = async (ns) => {
+  const attemptPurchase = async (/** @type {NS} */ ns) => {
     const { income, theftRatePerGB } = getMoneyData(ns);
     const timeToGoal = estimateTimeToGoal(ns);
     const money = ns.getServerMoneyAvailable("home");
@@ -122,7 +122,7 @@ export async function main(ns) {
     const atMaxServers = servers.length === purchasedServerLimit;
     const smallest = getSmallestServer(servers);
 
-    const profit = (ram) => {
+    const profit = (/** @type {number} */ ram) => {
       const newRam = ram - (smallest?.ram || 0);
       const ramProfit = timeToGoal * theftRatePerGB * newRam;
       return ramProfit - purchasedServerCosts[ram];

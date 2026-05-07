@@ -31,17 +31,17 @@ export async function main(ns) {
   const rep = factionRep[targetFaction] || 0;
 
   const remainingAugs = targetAugmentations
-    .filter((aug) => !purchasedAugmentations.includes(aug))
-    .sort(by((aug) => -augmentationRepReqs[aug]))
-    .sort(by((aug) => -augmentationPrices[aug]));
+    .filter((/** @type {string} */ aug) => !purchasedAugmentations.includes(aug))
+    .sort(by((/** @type {string} */ aug) => -augmentationRepReqs[aug]))
+    .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
 
-  const purchasable = (aug) =>
-    (augmentationPrereqs[aug] || []).every((prereq) =>
+  const purchasable = (/** @type {string} */ aug) =>
+    (augmentationPrereqs[aug] || []).every((/** @type {string} */ prereq) =>
       purchasedAugmentations.includes(prereq),
     );
 
   const hasEnoughRep = remainingAugs.every(
-    (aug) => rep >= augmentationRepReqs[aug],
+    (/** @type {string} */ aug) => rep >= augmentationRepReqs[aug],
   );
   const hasEnoughMoney = 0.9 * estimatedStockValue + money > augCost;
   // If our networth is enough to finish the run, do it.
@@ -64,7 +64,7 @@ export async function main(ns) {
   }
 
   const queuedAugmentations = purchasedAugmentations.filter(
-    (aug) => !ownedAugmentations.includes(aug),
+    (/** @type {string} */ aug) => !ownedAugmentations.includes(aug),
   );
   let multiplier = 1.9 ** queuedAugmentations.length;
   let costToAug = 0;
@@ -76,7 +76,7 @@ export async function main(ns) {
   }
   putMoneyData(ns, { costToAug, costOfNextAugmentation });
 
-  if (remainingAugs.every((aug) => purchasedAugmentations.includes(aug))) {
+  if (remainingAugs.every((/** @type {string} */ aug) => purchasedAugmentations.includes(aug))) {
     // Sell stocks and prevent spending
     await liquidate(ns);
 
@@ -87,7 +87,7 @@ export async function main(ns) {
     // as possible, starting with the most expensive
     const byPrice = augmentations
       .slice()
-      .sort(by((aug) => -augmentationPrices[aug]));
+      .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
     for (const augmentation of byPrice)
       for (const faction of factions)
         ns.singularity.purchaseAugmentation(faction, augmentation);

@@ -72,6 +72,6 @@ export const getSnapshot = () => {
   if (!p) return null;
   return p.frames.map(({ frameId, jobIds }) => ({
     frameId,
-    jobs: jobIds.map((id) => p.jobs.get(id)).filter(Boolean),
+    jobs: jobIds.map((/** @type {string} */ id) => p.jobs.get(id)).filter(Boolean),
   }));
 };

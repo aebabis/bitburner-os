@@ -15,22 +15,22 @@ export async function main(ns) {
   ns.ui.openTail();
 
   const feed = [];
-  const log = (message) => {
+  const log = (/** @type {string} */ message) => {
     feed.push(message);
     while (feed.length > 10) feed.shift();
   };
 
   const hostnames = getHostnames(ns);
   const possibleTargets = hostnames.filter(
-    (hostname) =>
+    (/** @type {string} */ hostname) =>
       hostname !== "home" &&
       !hostname.startsWith(THREADPOOL) &&
       ns.getServerMaxMoney(hostname) > 0,
   );
 
-  const thieves = possibleTargets.map((hostname) => new Thief(ns, hostname));
+  const thieves = possibleTargets.map((/** @type {string} */ hostname) => new Thief(ns, hostname));
 
-  const prioritize = (ram) =>
+  const prioritize = (/** @type {number} */ ram) =>
     thieves
       .filter((thief) => thief.canHack())
       .sort(by((thief) => -thief.getDesirability(HORIZON_MS, ram)));
@@ -50,7 +50,7 @@ export async function main(ns) {
 
       const reservedThreads = viableThieves
         .map((thief) => thief.getReservedThreads())
-        .reduce((a, b) => a + b, 0);
+        .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 
       let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
 

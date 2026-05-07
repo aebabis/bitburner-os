@@ -21,7 +21,7 @@ const getSpendableFunds = (ns, stocks) => {
   }
 };
 
-const tick = (ns, forecaster) => {
+const tick = (/** @type {NS} */ ns, forecaster) => {
   ns.clearLog();
   const stocks = getStocks(ns);
 
@@ -56,7 +56,7 @@ const tick = (ns, forecaster) => {
 
   const estimatedStockValue = getStocks(ns)
     .map((stock) => stock.getSaleGain())
-    .reduce((a, b) => a + b, 0);
+    .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
   putMoneyData(ns, { estimatedStockValue });
 
   ns.print("EARMARKED FUNDS: $" + ns.formatNumber(moneyToSpend, 3));

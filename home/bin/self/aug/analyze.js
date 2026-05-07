@@ -16,15 +16,15 @@ const getAugmentGoals = (
     augmentationPrereqs,
     factionAugmentations,
   },
-  cityFaction,
+  /** @type {string | undefined} */ cityFaction,
 ) => {
   const MAX_AUGS = 6;
   const NEUROFLUX = "NeuroFlux Governor";
   const MONEY_PER_REP = 4000; // This will vary at some point
 
-  const notNeuroFlux = (aug) => aug !== NEUROFLUX;
-  const stillNeeds = (aug) => !ownedAugmentations.includes(aug);
-  const weightedCost = (aug) =>
+  const notNeuroFlux = (/** @type {string} */ aug) => aug !== NEUROFLUX;
+  const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
+  const weightedCost = (/** @type {string} */ aug) =>
     Math.max(augmentationPrices[aug] / MONEY_PER_REP, augmentationRepReqs[aug]);
 
   const factions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
@@ -36,11 +36,11 @@ const getAugmentGoals = (
     return true;
     // return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
   });
-  const getNeededAugs = (faction) =>
+  const getNeededAugs = (/** @type {string} */ faction) =>
     factionAugmentations[faction].filter(stillNeeds).filter(notNeuroFlux);
-  const getPurchaseOrder = (augs) => {
+  const getPurchaseOrder = (/** @type {string[]} */ augs) => {
     const order = new Set([]);
-    augs.sort(by((aug) => -augmentationPrices[aug]));
+    augs.sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
     for (const aug of augs) {
       const prereqs = augmentationPrereqs[aug].filter(stillNeeds).reverse();
       for (const prereq of prereqs) order.add(prereq);
@@ -59,13 +59,13 @@ const getAugmentGoals = (
   }
 
   const unownedAugmentations = augmentations
-    .filter((aug) => !ownedAugmentations.includes(aug) && notNeuroFlux(aug))
+    .filter((/** @type {string} */ aug) => !ownedAugmentations.includes(aug) && notNeuroFlux(aug))
     .sort(by(weightedCost));
 
   const top = unownedAugmentations.slice(0, 4);
-  const faction = factions.reduce((a, b) => {
-    const numA = getNeededAugs(a).filter((aug) => top.includes(aug)).length;
-    const numB = getNeededAugs(b).filter((aug) => top.includes(aug)).length;
+  const faction = factions.reduce((/** @type {string} */ a, /** @type {string} */ b) => {
+    const numA = getNeededAugs(a).filter((/** @type {string} */ aug) => top.includes(aug)).length;
+    const numB = getNeededAugs(b).filter((/** @type {string} */ aug) => top.includes(aug)).length;
     if (numA >= numB) return a;
     return b;
   });
@@ -73,7 +73,7 @@ const getAugmentGoals = (
     .filter(stillNeeds)
     .filter(notNeuroFlux)
     .slice(0, MAX_AUGS)
-    .sort(by((aug) => -weightedCost(aug)));
+    .sort(by((/** @type {string} */ aug) => -weightedCost(aug)));
   while (augs.length > 1 && weightedCost(augs[0]) > weightedCost(augs[1]) * 10)
     augs.shift();
   if (augs.length) return { faction, augmentations: getPurchaseOrder(augs) };

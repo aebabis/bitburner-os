@@ -34,7 +34,7 @@ export async function main(ns) {
       // and batch jobs so that rmi calls can use it.
       // The last 2GB is always reserved for manual (user)
       // programs.
-      const reserve = (gb) => Math.max(0, ramUnused - gb);
+      const reserve = (/** @type {number} */ gb) => Math.max(0, ramUnused - gb);
       ramAvailableTo = (process) => {
         if (process.script === "/bin/access.js") return reserve(0);
         if (process.highPriority) return reserve(2);
@@ -60,7 +60,7 @@ export async function main(ns) {
       .map(getRamInfo) //.filter(server=>server.hasAdminRights)
       .sort(by((s) => -s.ramUnused));
     const purchasedServers = hostnames
-      .filter((hostname) => hostname.startsWith(THREADPOOL))
+      .filter((/** @type {string} */ hostname) => hostname.startsWith(THREADPOOL))
       .sort()
       .map(getRamInfo);
     const purchasedServersMaxedOut =
@@ -69,13 +69,13 @@ export async function main(ns) {
         (server) => server.maxRam === purchasedServerMaxRam,
       );
     const totalMaxRam =
-      rootServers.map((s) => s.maxRam).reduce((a, b) => a + b, 0) || 0;
+      rootServers.map((s) => s.maxRam).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
     const totalRamUsed =
-      rootServers.map((s) => s.ramUsed).reduce((a, b) => a + b, 0) || 0;
+      rootServers.map((s) => s.ramUsed).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
     const totalRamUnused = totalMaxRam - totalRamUsed;
     const maxRamSlot = rootServers
       .map((s) => s.maxRam - s.ramUsed)
-      .reduce((a, b) => (a > b ? a : b), 0);
+      .reduce((/** @type {number} */ a, /** @type {number} */ b) => (a > b ? a : b), 0);
     const demand = queue
       .map(
         ({ script, numThreads }) =>
