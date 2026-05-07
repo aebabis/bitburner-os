@@ -1,4 +1,8 @@
+/** @param {string} code
+ *  @returns {string & ((str: string|number) => string)} */
 const builder = (code) => {
+  /** @param {string|number} str
+   *  @returns {string} */
   const func = (str) => {
     const result = code + str + RESET;
     return {
@@ -11,6 +15,7 @@ const builder = (code) => {
   func.toString = func.valueOf = func.toJSON = () => code;
   return func;
 };
+/** @returns {ReturnType<typeof builder> & { BOLD: ReturnType<typeof builder> }} */
 export const COLOR = (n) => {
   const func = builder(`\u001b[38;5;${n}m`);
   func.BOLD = builder(`\u001b[1;38;5;${n}m`);

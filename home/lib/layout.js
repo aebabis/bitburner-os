@@ -18,9 +18,10 @@ export class DynamicWindow {
 const COLOR_CODES = /\u001b\[[0-9;]+m/g;
 
 export class GrowingWindow {
-  constructor(getContent) {
+  constructor(getContent, stretch=false) {
     this.minWidth = 1;
     this.minHeight = 1;
+    this.stretch = stretch;
     this.getContent = () => {
       const rows = getContent().split("\n");
       this.minWidth = Math.max(
@@ -34,7 +35,7 @@ export class GrowingWindow {
 
   render(WIDTH) {
     const text = this.getContent();
-    const width = Math.min(WIDTH, this.minWidth);
+    const width = this.stretch ? WIDTH-2 : Math.min(WIDTH-2, this.minWidth);
     const height = this.minHeight;
     return { text, width, height };
   }

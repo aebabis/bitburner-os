@@ -15,65 +15,55 @@ import {
 
 const H = BRIGHT.BOLD;
 
+/** @param {number} seconds */
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  /** @param {number} n */
+  const pad = (n) => n.toString().padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 };
 
-const getSchedulerTable = (ns) => {
-  const { city, numPeopleKilled } = ns.getPlayer();
-  const { currentNode } = ns.getResetInfo();
-  const scheduler = ns.getRunningScript("/bin/scheduler.js", "home");
-  const {
-    theftIncome = 0,
-    theftRatePerGB = 0,
-    estimatedStockValue = 0,
-  } = getMoneyData(ns);
-  const { onlineExpGained, onlineRunningTime } = scheduler;
+/** @param {NS} ns */
+const getRunStats = (ns) => {
+  const { city, hp, numPeopleKilled, money } = ns.getPlayer();
+  const { onlineRunningTime = 0 } = ns.getRunningScript("/bin/scheduler.js", "home") || {};
+  const { estimatedStockValue = 0 } = getMoneyData(ns);
+
+  const karma = Math.trunc(ns.heart.break());
+  const BN = `BN${ns.getResetInfo().currentNode}`;
   const time = formatTime(onlineRunningTime);
-  const theft = ("$" + ns.formatNumber(theftIncome, 1)).padStart(6) + "/s  ";
-  const theftRate =
-    ("$" + ns.formatNumber(theftRatePerGB, 1)).padStart(6) + "/GBs";
-  const exp = ns.formatNumber(onlineExpGained, 1);
-  const stock = "$" + ns.formatNumber(estimatedStockValue, 1);
-  return (
-    H +
-    table(ns, null, [
-      ["BN" + currentNode, ""],
-      [H("UPTIME"), time],
-      [H("CITY"), city],
-      [H("THEFT"), theft],
-      ["", theftRate],
-      [H("KILLS"), numPeopleKilled],
-      [H("STOCK"), stock],
-      [H("EXP"), exp],
-    ])
-  );
+  const stock = ns.formatNumber(estimatedStockValue, 1);
+  return [
+    ' ' + H(BN),
+    H('UP') + ' ' + time,
+    H('CITY') + ' ' + city,
+    H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
+    H('CASH') + C(216)(` $${ns.formatNumber(money, 1)}`),
+    H('PORTFOLIO') + C(216)(` $${stock}`),
+    H('KILLS') + ' ' + numPeopleKilled,
+    H('KARMA') + ' ' + karma,
+  ].join('  ');
 };
 
-const getStatTable = (ns) => {
+/** @param {NS} ns */
+const getPlayerLevels = (ns) => {
   const WIDTH = 10;
-  const { hp, skills } = ns.getPlayer();
-  const row = (c1, t1, c2, t2) => {
-    const fill = WIDTH - t1.toString().length - t2.toString().length;
-    return " " + c1 + t1 + " ".repeat(fill) + c2 + t2 + " ";
-  };
-
-  const abbr = (str) => str[0].toUpperCase() + str[1] + str[2];
-
-  const output = [
-    row(C(133).BOLD, "HP", C(170), `${hp.current}/${hp.max}`),
-    row(C(36).BOLD, "Hack", C(72), skills.hacking),
-    row(C(251).BOLD, abbr("strength"), C(251), skills.strength),
-    row(C(251).BOLD, abbr("defense"), C(251), skills.defense),
-    row(C(251).BOLD, abbr("dexterity"), C(251), skills.dexterity),
-    row(C(251).BOLD, abbr("agility"), C(251), skills.agility),
-    row(C(251).BOLD, abbr("charisma"), C(251), skills.charisma),
-  ];
-
-  return output.join("\n");
+  const { skills } = ns.getPlayer();
+  const row = (c1, left, c2, right) => {
+    const val = right;
+    const padding = WIDTH - left.length - val.toString().length;
+    return ` ${C(c1).BOLD(left)}${' '.repeat(padding)}${C(c2)(val)} `;
+  }
+  return [
+    row(36,  'Hack', 72, skills.hacking),
+    row(251, 'Str', 251, skills.strength),
+    row(251, 'Def', 251, skills.defense),
+    row(251, 'Dex', 251, skills.dexterity),
+    row(251, 'Agi', 251, skills.agility),
+    row(251, 'Cha', 251, skills.charisma),
+  ].join('\n');
 };
 
 const backdoorPath = (ns) => {
@@ -97,10 +87,13 @@ const backdoorPath = (ns) => {
   }
 };
 
+/** @param {NS} ns
+ *  @param {ReturnType<typeof NS.getServer>} server
+ */
 const threadpoolRow = (ns, server) => {
   const { hostname, ramUsed, maxRam } = server;
   const n = hostname.split("-")[1] || "?";
-  const ram = `${ns.formatRam(ramUsed).padStart(5)}/${ns.formatRam(maxRam).padEnd(5)}`;
+  const ram = `${ns.formatRam(ramUsed, 0).padStart(5)}/${ns.formatRam(maxRam, 0).padEnd(5)}`;
   return [n, ram];
 };
 
@@ -126,13 +119,15 @@ const threadpools = (ns) => {
     .map((server) => threadpoolRow(ns, server));
 };
 
+/** @param {NS} ns */
 const threadpoolTable = (ns) => {
   const { purchasedServerLimit } = getStaticData(ns);
-  const half = Math.ceil(purchasedServerLimit / 2);
+  const third = Math.ceil(purchasedServerLimit / 3);
   const data = threadpools(ns);
-  const left = data.slice(0, half);
-  const right = data.slice(half);
-  const rows = left.map((list, i) => [...list, ...(right[i] || ["", ""])]);
+  const left = data.slice(0, third);
+  const middle = data.slice(third, third * 2);
+  const right = data.slice(third * 2);
+  const rows = left.map((list, i) => [...list, ...(middle[i] || ["", ""]), ...(right[i] || ["", ""])]);
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
@@ -163,7 +158,10 @@ const moneyTable = (ns) => {
   }
   const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
   const goalCost = getGoalCost(ns);
-  const { income1s = 0, income10s = 0, income60s = 0 } = moneyData;
+  const { income1s = 0, income10s = 0, income60s = 0, themeIncome, theftRatePerGB } = moneyData;
+  // const theft = ("$" + ns.formatNumber(theftIncome, 1)).padStart(6) + "/s  ";
+  // const theftRate =
+  //   ("$" + ns.formatNumber(theftRatePerGB, 1)).padStart(6) + "/GBs";
   const rows = [
     [" 1s", ("$" + ns.formatNumber(income1s, 1)).padStart(8)],
     ["10s", ("$" + ns.formatNumber(income10s, 1)).padStart(8)],
@@ -225,8 +223,8 @@ export async function main(ns) {
   ns.disableLog("ALL");
   ns.ui.openTail();
   const windows = [
-    new GrowingWindow(() => getSchedulerTable(ns)),
-    new GrowingWindow(() => getStatTable(ns)),
+    new GrowingWindow(() => getRunStats(ns), true),
+    new GrowingWindow(() => getPlayerLevels(ns)),
     new GrowingWindow(() =>
       table(
         ns,
