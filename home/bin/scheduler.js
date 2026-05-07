@@ -28,7 +28,7 @@ export async function main(ns) {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);
     const ramUnused = maxRam - ramUsed;
-    let ramAvailableTo = (_process) => ramUnused;
+    let ramAvailableTo = (/** @type {unknown} */ _process) => ramUnused;
     if (hostname === "home") {
       // On home, 32GB is unavailable to services
       // and batch jobs so that rmi calls can use it.
@@ -58,7 +58,7 @@ export async function main(ns) {
     const rootServers = hostnames
       .filter(ns.hasRootAccess)
       .map(getRamInfo) //.filter(server=>server.hasAdminRights)
-      .sort(by((s) => -s.ramUnused));
+      .sort(by((/** @type {ReturnType<typeof getRamInfo>} */ s) => -s.ramUnused));
     const purchasedServers = hostnames
       .filter((/** @type {string} */ hostname) => hostname.startsWith(THREADPOOL))
       .sort()
@@ -66,15 +66,15 @@ export async function main(ns) {
     const purchasedServersMaxedOut =
       purchasedServers.length === purchasedServerLimit &&
       purchasedServers.every(
-        (server) => server.maxRam === purchasedServerMaxRam,
+        (/** @type {ReturnType<typeof getRamInfo>} */ server) => server.maxRam === purchasedServerMaxRam,
       );
     const totalMaxRam =
-      rootServers.map((s) => s.maxRam).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
+      rootServers.map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.maxRam).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
     const totalRamUsed =
-      rootServers.map((s) => s.ramUsed).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
+      rootServers.map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.ramUsed).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
     const totalRamUnused = totalMaxRam - totalRamUsed;
     const maxRamSlot = rootServers
-      .map((s) => s.maxRam - s.ramUsed)
+      .map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.maxRam - s.ramUsed)
       .reduce((/** @type {number} */ a, /** @type {number} */ b) => (a > b ? a : b), 0);
     const demand = queue
       .map(
@@ -98,7 +98,7 @@ export async function main(ns) {
     return data;
   };
 
-  const queue = [];
+  const queue = /** @type {{script: string, numThreads: number, startTime: number, isWorker: boolean, args: string[], host: string | null, waitTime: () => number, toString: (hostname?: string) => string, highPriority: boolean, ticket?: string}[]} */ ([]);
   while (true) {
     try {
       ns.clearLog();
@@ -146,7 +146,7 @@ export async function main(ns) {
             (server) => ns.getScriptRam(process.script, server.hostname) > 0,
           );
 
-          const isServerValid = (server) =>
+          const isServerValid = (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
             server?.ramAvailableTo(process) >= ramRequired;
 
           const server = eligibleServers.find(isServerValid);

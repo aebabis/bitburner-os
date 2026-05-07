@@ -3,21 +3,21 @@ import { getTableString } from "../../lib/service-api";
 import { getMoneyData } from "../../lib/data-store";
 import { rmi } from "../../lib/rmi";
 
-const isTixViable = (ns) => {
+const isTixViable = (/** @type {NS} */ ns) => {
   const { costToAug } = getMoneyData(ns);
   const { money } = ns.getPlayer();
   if (costToAug == null || costToAug > 5e9) return money > 5e9;
   else return money - costToAug > 5e9;
 };
 
-const is4SViable = (ns) => {
+const is4SViable = (/** @type {NS} */ ns) => {
   const { costToAug } = getMoneyData(ns);
   const { money } = ns.getPlayer();
   if (costToAug > 25e9) return money > 25e9;
   else return money - costToAug > 25e9;
 };
 
-const getTixApiAccess = async (ns) => {
+const getTixApiAccess = async (/** @type {NS} */ ns) => {
   while (!ns.stock.hasTIXAPIAccess()) {
     while (!isTixViable(ns)) await ns.sleep(1000);
     if (!ns.stock.hasWSEAccount())
@@ -26,9 +26,9 @@ const getTixApiAccess = async (ns) => {
   }
 };
 
-const loadStaticStockData = (ns) => rmi(ns, true)("/bin/broker/load-stocks.js");
+const loadStaticStockData = (/** @type {NS} */ ns) => rmi(ns, true)("/bin/broker/load-stocks.js");
 
-const attempt4SApiAccess = async (ns) => {
+const attempt4SApiAccess = async (/** @type {NS} */ ns) => {
   if (is4SViable(ns))
     await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
 };
@@ -37,9 +37,9 @@ const attempt4SApiAccess = async (ns) => {
 export async function main(ns) {
   ns.disableLog("ALL");
 
-  const isTrendTrader = (ns) =>
+  const isTrendTrader = (/** @type {NS} */ ns) =>
     ns.stock.hasTIXAPIAccess() && !ns.stock.has4SDataTIXAPI();
-  const isFourSTrader = (ns) =>
+  const isFourSTrader = (/** @type {NS} */ ns) =>
     ns.stock.hasTIXAPIAccess() && ns.stock.has4SDataTIXAPI();
 
   const trendTraderSubservice = AnyHostService(

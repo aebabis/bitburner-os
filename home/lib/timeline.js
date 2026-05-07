@@ -1,11 +1,14 @@
+/** @typedef {{timestamp: number, value: number}} Sample */
+
 class LogarithmicQueue {
   constructor(scale = 10) {
-    this.list = [];
+    this.list = /** @type {Sample[]} */ ([]);
     this.count = 0;
-    this.back = null;
+    this.back = /** @type {LogarithmicQueue | null} */ (null);
     this.scale = scale;
   }
 
+  /** @param {Sample} item */
   _addBack(item) {
     if (this.back == null) this.back = new LogarithmicQueue(this.scale);
     this.back.push(item);
@@ -20,6 +23,7 @@ class LogarithmicQueue {
     }
   }
 
+  /** @param {Sample} item */
   push(item) {
     this.list.push(item);
     this._percolate();
@@ -45,7 +49,7 @@ export class Timeline {
 
   /** @param {number} timestamp */
   findValue(timestamp) {
-    const terpolate = (s1, s2, /** @type {number} */ timestamp) => {
+    const terpolate = (/** @type {Sample} */ s1, /** @type {Sample} */ s2, /** @type {number} */ timestamp) => {
       const portion =
         (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
       return s1.value + portion * (s2.value - s1.value);

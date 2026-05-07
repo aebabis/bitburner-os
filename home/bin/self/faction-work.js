@@ -4,12 +4,12 @@ import { getPlayerData, putPlayerData } from "../../lib/data-store";
 /** @param {NS} ns */
 export async function main(ns) {
   ns.disableLog("ALL");
-  const [faction] = ns.args;
+  const faction = /** @type {string} */ (ns.args[0]);
   const focus = shouldWorkHaveFocus(ns);
   if (
-    ns.singularity.workForFaction(faction, "Hacking Contracts", focus) ||
-    ns.singularity.workForFaction(faction, "Field Work", focus) ||
-    ns.singularity.workForFaction(faction, "Security Work", focus)
+    ns.singularity.workForFaction(faction, 'hacking', focus) ||
+    ns.singularity.workForFaction(faction, 'field', focus) ||
+    ns.singularity.workForFaction(faction, 'security', focus)
   ) {
     putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
     const DELAY = 10;

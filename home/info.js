@@ -2,14 +2,14 @@ import { table } from "./lib/table";
 import { GRAY } from "./lib/colors";
 import { getPlayerData } from "./lib/data-store";
 
-const dec = (num, places = 2) => {
+const dec = (/** @type {number} */ num, places = 2) => {
   if (num === 0) return GRAY("-");
   const rounded = +num.toFixed(places);
   if (rounded < 1) return GRAY(0) + rounded.toString().substring(1);
   else return rounded;
 };
 
-/** @param ns {NS} */
+/** @param {NS} ns */
 const getCrimeTable = (ns) => {
   const { crimeStats } = getPlayerData(ns);
   const HEAD = [
@@ -32,7 +32,7 @@ const getCrimeTable = (ns) => {
     ns,
     HEAD,
     crimeStats.map(
-      ({
+      (/** @type {CrimeStats & {type: string}} */ {
         type,
         difficulty,
         karma,

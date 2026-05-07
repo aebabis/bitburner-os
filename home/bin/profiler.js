@@ -4,7 +4,7 @@ import { getSnapshot } from "../lib/profiler";
 const doc = eval("document");
 const win = eval("window");
 
-const COLORS = { H: "#e5c07b", W1: "#56b6c2", G: "#98c379", W2: "#61afef" };
+const COLORS = /** @type {Record<string, string>} */ ({ H: "#e5c07b", W1: "#56b6c2", G: "#98c379", W2: "#61afef" });
 const TYPES = ["H", "W1", "G", "W2"];
 const AXIS_H = 22;
 const LABEL_W = 28;
@@ -22,6 +22,7 @@ export async function main(ns) {
   let endTime = VIEW_MS;
 
   const modal = await getTailModal(ns);
+  if (!modal) return;
   const headerHeight = modal.top.clientHeight;
   const content = modal.bottom;
   content.style.overflow = "hidden";
@@ -52,7 +53,7 @@ export async function main(ns) {
   buttons.appendChild(zoomOut);
   content.appendChild(buttons);
 
-  let rafId;
+  let /** @type {number} */ rafId = 0;
 
   const render = () => {
     const snapshot = getSnapshot();
@@ -79,7 +80,7 @@ export async function main(ns) {
     const tMin = now + startTime;
     const tMax = now + endTime; //Math.max(now, ...allJobs.map(j => j.scheduledEnd));
     const tRange = Math.max(tMax - tMin, 1);
-    const toX = (t) => ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
+    const toX = (/** @type {number} */ t) => ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
 
     // Time axis
     ctx.fillStyle = "#222";
@@ -98,7 +99,7 @@ export async function main(ns) {
       ctx.fillRect(x, AXIS_H - 4, 1, 4);
       ctx.fillStyle = "#666";
       const offsetS = ((t - now) / 1000).toFixed(0);
-      ctx.fillText(`${offsetS >= 0 ? "+" : ""}${offsetS}s`, x + 2, AXIS_H - 6);
+      ctx.fillText(`${+offsetS >= 0 ? "+" : ""}${offsetS}s`, x + 2, AXIS_H - 6);
     }
 
     // Now line
@@ -120,6 +121,7 @@ export async function main(ns) {
       for (let i = 0; i < sorted.length - 1; i++) {
         const cur = sorted[i];
         const next = sorted[i + 1];
+        if (cur == null || next == null) continue;
         if (cur.actualEnd != null && cur.actualEnd > next.scheduledEnd) {
           outOfOrder.add(cur.jobId);
         }
@@ -127,8 +129,9 @@ export async function main(ns) {
     }
 
     // Group jobs by type into fixed lanes
-    const byType = Object.fromEntries(TYPES.map((t) => [t, []]));
+    const byType = /** @type {Record<string, typeof allJobs>} */ (Object.fromEntries(TYPES.map((t) => [t, []])));
     for (const job of allJobs) {
+      if (!job) continue;
       if (byType[job.type]) byType[job.type].push(job);
     }
 

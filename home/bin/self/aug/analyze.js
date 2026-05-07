@@ -9,6 +9,7 @@ import { by } from "../../../lib/util";
 // If doing multiple factions, consider sum of max repreqs
 const getAugmentGoals = (
   /** @type {string[]} */ ownedAugmentations,
+  /** @type {{augmentations: string[], augmentationPrices: Record<string,number>, augmentationRepReqs: Record<string,number>, augmentationPrereqs: Record<string,string[]>, factionAugmentations: Record<string,string[]>}} */
   {
     augmentations,
     augmentationPrices,
@@ -28,7 +29,7 @@ const getAugmentGoals = (
     Math.max(augmentationPrices[aug] / MONEY_PER_REP, augmentationRepReqs[aug]);
 
   const factions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
-    const requiredAugCount = AUGMENTATION_REQUIREMENTS[faction] || 0;
+    const requiredAugCount = (/** @type {Record<string,number>} */ (AUGMENTATION_REQUIREMENTS))[faction] || 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
     const isCityFaction = CITY_FACTIONS.includes(faction);
     if (isCityFaction && cityFaction != null && cityFaction !== faction)
@@ -39,7 +40,8 @@ const getAugmentGoals = (
   const getNeededAugs = (/** @type {string} */ faction) =>
     factionAugmentations[faction].filter(stillNeeds).filter(notNeuroFlux);
   const getPurchaseOrder = (/** @type {string[]} */ augs) => {
-    const order = new Set([]);
+    const order = new Set(/** @type {string[]} */([]));
+
     augs.sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
     for (const aug of augs) {
       const prereqs = augmentationPrereqs[aug].filter(stillNeeds).reverse();

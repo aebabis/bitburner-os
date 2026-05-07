@@ -8,7 +8,7 @@ const getExistingPid = (ns, desc) => {
   try {
     const services = getServices(ns);
     if (services != null)
-      return services.find((service) => service.desc === desc).pid;
+      return services.find((/** @type {{desc: string, pid: number}} */ service) => service.desc === desc)?.pid;
   } catch (error) {
     ns.tprint(error);
   }
@@ -18,14 +18,14 @@ let count = 1;
 
 /** @param {NS} ns */
 export const Service =
-  (ns, condition = () => true, /** @type {number} */ interval = 5000) =>
-  (/** @type {string} */ script, target = null, /** @type {number} */ numThreads = 1, ...args) => {
+  (ns, /** @type {(ns: NS) => boolean} */ condition = () => true, /** @type {number} */ interval = 5000) =>
+  (/** @type {string} */ script, target = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
     const id = count++;
     const desc =
       target == null
         ? [script, numThreads, ...args].join(" ")
         : [script, target, numThreads, ...args].join(" ");
-    const shortname = script.split("/").pop().split(".").shift();
+    const shortname = script.split("/").pop()?.split(".")[0] ?? '';
     const ram = getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
     let pid = getExistingPid(ns, desc);
     let lastRun = 0;
@@ -49,7 +49,7 @@ export const Service =
       else return "○";
     };
 
-    const check = async (/** @type {(() => void) | undefined} */ beforeRun) => {
+    const check = async (/** @type {(() => void) | undefined} */ beforeRun = undefined) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
       if (!running && shouldBe) {
@@ -107,6 +107,6 @@ export const Service =
 
 /** @param {NS} ns */
 export const AnyHostService =
-  (ns, condition = () => true, /** @type {number} */ interval) =>
-  (/** @type {string} */ script, /** @type {number} */ numThreads, ...args) =>
+  (ns, /** @type {(ns: NS) => boolean} */ condition = () => true, /** @type {number} */ interval = 5000) =>
+  (/** @type {string} */ script, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
     Service(ns, condition, interval)(script, null, numThreads, ...args);

@@ -88,14 +88,14 @@ export async function main(ns) {
   };
   const [command, data] = ns.args;
   if (command === "peek") {
-    const [portname, ...props] = data.split(".");
-    const portId = ports[portname];
+    const [portname, ...props] = (/** @type {string} */ (data)).split(".");
+    const portId = ports[/** @type {keyof typeof ports} */ (portname)];
     let content = Ports(ns).getPortHandle(portId).peek();
     for (const prop of props) content = content[prop];
     ns.tprint(JSON.stringify(content, null, 2));
   }
   if (command === "keys") {
-    const portId = ports[data];
+    const portId = ports[/** @type {keyof typeof ports} */ (data)];
     let content = Ports(ns).getPortHandle(portId).peek();
     ns.tprint("\n" + Object.keys(content).join("\n"));
   }

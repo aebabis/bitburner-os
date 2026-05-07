@@ -20,10 +20,10 @@ const PORTIONS = new Array(count + 1)
  *  @param {string} target */
 const getTimes = (ns, target) => {
   if (ns.fileExists("Formulas.exe", "home")) {
-    const server = {
+    const server = /** @type {Server} */ ({
       hackDifficulty: ns.getServerMinSecurityLevel(target),
       requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
-    };
+    });
     const hackTime = ns.formulas.hacking.hackTime(server, ns.getPlayer());
     return { hackTime, growTime: hackTime * 3.2, weakenTime: hackTime * 4 };
   }
@@ -85,7 +85,10 @@ class Batch {
     this.jobs = createBatch(ns);
     this.type = this.constructor.name.replace("Batch", "");
     this.threads = 0;
-    this._profilerRecords = [];
+    this._profilerRecords = /** @type {[string, string, string, string, number, number, number][]} */ ([]);
+    this.endAfter = /** @type {number | null} */ (null);
+    this.frame = /** @type {number[] | undefined} */ (undefined);
+    this.portion = /** @type {number | undefined} */ (undefined);
   }
 
   /** @param {string} frameId @param {string} jobId @param {string} target @param {string} label @param {number} threads @param {number} startTime @param {number} endTime */
@@ -110,7 +113,7 @@ class Batch {
   }
 
   getReservedThreads = () => (this.hasEnded() ? 0 : this.threads);
-  hasEnded = () => !this.endAfter || new Date() >= this.endAfter;
+  hasEnded = () => !this.endAfter || Date.now() >= this.endAfter;
 
   toString() {
     return (
@@ -120,7 +123,7 @@ class Batch {
       " " +
       this.jobs.getSize() +
       " " +
-      (this.endAfter - Date.now())
+      ((this.endAfter ?? 0) - Date.now())
     );
   }
 }
@@ -279,7 +282,7 @@ export default class Thief {
   constructor(ns, server) {
     this.ns = ns;
     this.server = server;
-    this.batches = [];
+    this.batches = /** @type {Batch[]} */ ([]);
   }
 
   getHostname = () => this.server;
@@ -316,7 +319,7 @@ export default class Thief {
     // Allow scheduling next frame one weaken cycle before current ends so there's no gap.
     return (
       Date.now() >=
-      this.currentBatch.endAfter - this.ns.getWeakenTime(this.server)
+      (this.currentBatch.endAfter ?? Infinity) - this.ns.getWeakenTime(this.server)
     );
   };
 
@@ -352,7 +355,7 @@ export default class Thief {
     if (currentBatch == null) return { hostname: server };
     return batches.filter((batch) => !batch.hasEnded()).map((batch) => {
       const { type, jobs, frame = [], portion } = batch;
-      const timeLeft = (batch.endAfter - Date.now()) / 1000;
+      const timeLeft = ((batch.endAfter ?? 0) - Date.now()) / 1000;
       const sign = Math.sign(timeLeft) === -1 ? "-" : "";
       const minutes = Math.floor(Math.abs(timeLeft / 60));
       const seconds = Math.floor(Math.abs(timeLeft % 60))

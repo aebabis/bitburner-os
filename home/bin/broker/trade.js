@@ -5,7 +5,9 @@ import getConfig from "../../lib/config";
 import { getStocks, optimizeShares, getHoldings, getTableString } from "./api";
 import { getServices } from "../../lib/service-api";
 
-/** @param {NS} ns **/
+/** @typedef {{sym: string, maxShares: number, position: [number, number, number, number], price: number, forecast: number | null | undefined, getPurchaseCost: (shares: number) => number, getSaleGain: (shares?: number) => number, buy: (shares: number) => number, sell: (shares: number) => number}} Stock */
+
+/** @param {NS} ns @param {Stock[]} stocks **/
 const getSpendableFunds = (ns, stocks) => {
   const reserveParam = getConfig(ns).get("reserved-funds");
   const money = ns.getServerMoneyAvailable("home");
@@ -21,9 +23,9 @@ const getSpendableFunds = (ns, stocks) => {
   }
 };
 
-const tick = (/** @type {NS} */ ns, forecaster) => {
+const tick = (/** @type {NS} */ ns, /** @type {{record: (data: {sym: string, price: number}) => void, getStockForecast: (sym: string) => number | null}} */ forecaster) => {
   ns.clearLog();
-  const stocks = getStocks(ns);
+  const stocks = /** @type {Stock[]} */ (getStocks(ns));
 
   for (const stock of stocks) {
     forecaster.record(stock);
@@ -54,7 +56,7 @@ const tick = (/** @type {NS} */ ns, forecaster) => {
     moneyToSpend -= shares * price;
   }
 
-  const estimatedStockValue = getStocks(ns)
+  const estimatedStockValue = (/** @type {Stock[]} */ (getStocks(ns)))
     .map((stock) => stock.getSaleGain())
     .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
   putMoneyData(ns, { estimatedStockValue });
@@ -67,9 +69,9 @@ const tick = (/** @type {NS} */ ns, forecaster) => {
 };
 
 /** @param {NS} ns **/
-export const trade = async (ns, forecaster) => {
+export const trade = async (ns, /** @type {{record: (data: {sym: string, price: number}) => void, getStockForecast: (sym: string) => number | null}} */ forecaster) => {
   while (true) {
-    const broker = getServices(ns).find((s) => s.name === "broker");
+    const broker = getServices(ns).find((/** @type {{name: string, pid: number | null}} */ s) => s.name === "broker");
     if (broker == null || broker.pid == null) return;
     try {
       const stocks = tick(ns, forecaster);

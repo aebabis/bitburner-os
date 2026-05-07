@@ -65,7 +65,7 @@ export const fulfill = async (ns, process, server) => {
 };
 
 /** @param {NS} ns **/
-export const reject = async (ns, process, /** @type {string | undefined} */ reason) => {
+export const reject = async (ns, process, /** @type {string | undefined} */ reason = undefined) => {
   if (reason != null) ns.tprint(ERROR + reason);
   if (process.ticket != null) await closeTicket(ns)(process.ticket, 0, null, 0);
 };
