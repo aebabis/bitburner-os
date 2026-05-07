@@ -28,7 +28,7 @@ export async function main(ns) {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);
     const ramUnused = maxRam - ramUsed;
-    let ramAvailableTo = () => ramUnused;
+    let ramAvailableTo = (_process) => ramUnused;
     if (hostname === "home") {
       // On home, 32GB is unavailable to services
       // and batch jobs so that rmi calls can use it.
@@ -131,8 +131,7 @@ export async function main(ns) {
           .map(({ script, numThreads }) => ns.getScriptRam(script) * numThreads)
           .reduce((a, b) => a + b, 0);
         const ramData = getRamData(ns);
-        ramData.ramQueued = ramQueued;
-        putRamData(ns, ramData);
+        putRamData(ns, { ...ramData, ramQueued });
 
         if (process.host != null) {
           // Specific server requested

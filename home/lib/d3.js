@@ -1,3 +1,4 @@
+// @ts-nocheck
 var rt = "http://www.w3.org/1999/xhtml",
   it = {
     svg: "http://www.w3.org/2000/svg",
