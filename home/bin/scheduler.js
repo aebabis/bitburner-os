@@ -115,8 +115,12 @@ export async function main(ns) {
       for (let i = 0; i < queue.length; i++) {
         const process = queue[i];
         if (process.startTime > now) break;
-        // await systemLog(ns, process);
-        if (process.waitTime() > 60000) {
+        const waitTime = process.waitTime();
+        if (waitTime > 50 && process.isWorker) {
+          globalThis.__profiler?.recordReaped?.(process.args[1]);
+          queue.splice(i--, 1);
+          continue;
+        } else if (waitTime > 60000) {
           await reject(ns, queue.splice(i--, 1)[0]);
           continue;
         }

@@ -47,11 +47,23 @@ const makeRecordActual = (p) => (jobId, actualStart, actualEnd, result) => {
   }
 };
 
+const makeRecordReaped = (p) => (jobId) => {
+  const job = p.jobs.get(jobId);
+  if (!job) return;
+  p.jobs.delete(jobId);
+  const frame = p.frames.find((f) => f.frameId === job.frameId);
+  if (frame) {
+    const idx = frame.jobIds.indexOf(jobId);
+    if (idx !== -1) frame.jobIds.splice(idx, 1);
+  }
+};
+
 export const initProfiler = () => {
   const p = { jobs: new Map(), frameIds: new Set(), frames: [] };
   p.recordScheduled = makeRecordScheduled(p);
   p.recordStart = makeRecordStart(p);
   p.recordActual = makeRecordActual(p);
+  p.recordReaped = makeRecordReaped(p);
   win.__profiler = p;
 };
 
