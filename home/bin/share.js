@@ -15,7 +15,7 @@ export const getTotalRam = (ns) => getRamData(ns).totalMaxRam;
 export async function main(ns) {
   ns.disableLog("ALL");
   const config = getConfig(ns);
-  const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE];
+  const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE.slice(1)];
   let processes = [];
 
   let wait = MIN_WAIT;

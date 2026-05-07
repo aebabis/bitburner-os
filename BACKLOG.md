@@ -3,3 +3,4 @@
 - Implement service restarts
 - Accurate money reporting after liquidate
 - Port inspector
+- Find all places where leading / being removed from file names in game is causing bugs
