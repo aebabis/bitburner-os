@@ -48,7 +48,7 @@ export default (ns) => {
       read: () => readPort(handle),
       write: (data) => writePort(handle, data),
       tryWrite: (data) => tryWritePort(handle, data),
-      blockingWrite: (data, /** @type {number} */ timeout) =>
+      blockingWrite: (data, /** @type {number} */ timeout = 60000) =>
         blockingWritePort(handle, data, timeout),
       clear: () => clearPort(handle),
       peek: () => peek(handle),

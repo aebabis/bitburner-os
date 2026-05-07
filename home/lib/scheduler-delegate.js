@@ -5,12 +5,12 @@ import { logger } from "./logger";
 export const snippet = (/** @type {string} */ statements) =>
   `export async function main(ns) {\n${statements}\n}`;
 
-const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) =>
+const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
   `${script} ${host || "*"} ${numThreads} ${args.join(" ")}`;
 
 const Job =
-  (/** @type {NS} */ ns, /** @type {boolean} */ response, /** @type {number} */ startTime, /** @type {boolean} */ highPriority) =>
-  (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) => {
+  (/** @type {NS} */ ns, /** @type {boolean} */ response, /** @type {number} */ startTime, /** @type {boolean} */ highPriority = false) =>
+  (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
     if (script.startsWith(".") || !script.endsWith(".js"))
       throw new Error(
         `Illegal script name in ${desc(script, host, numThreads, ...args)}`,
@@ -36,7 +36,7 @@ const Job =
 /** @param {NS} ns **/
 export const delegate =
   (ns, /** @type {boolean} */ response, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
-  async (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) => {
+  async (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
     const { startTime = Date.now(), highPriority = false } = options;
     const job = Job(ns, response, startTime, highPriority)(
       script,
@@ -71,22 +71,22 @@ export const delegate =
 
 /** @param {NS} ns **/
 export const delegateAny =
-  (ns, /** @type {boolean} */ response, /** @type {{startTime?: number, highPriority?: boolean}} */ options) =>
-  async (/** @type {string} */ script, /** @type {number} */ numThreads = 1, ...args) =>
+  (ns, /** @type {boolean} */ response = false, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
+  async (/** @type {string} */ script, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
 /** @param {NS} ns */
 export const createBatch = (ns) => {
-  let jobs = [];
+  const jobs = /** @type {ReturnType<ReturnType<typeof Job>>[]} */ ([]);
   const delegate =
     (/** @type {number} */ startTime) =>
-    (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, ...args) =>
-      jobs.push(Job(ns, false, startTime)(script, host, numThreads, ...args));
+    (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
+      jobs.push(Job(ns, false, startTime, false)(script, host, numThreads, ...args));
   return {
     delegate,
     delegateAny:
       (/** @type {number} */ startTime) =>
-      (/** @type {string} */ script, /** @type {number} */ numThreads = 1, ...args) =>
+      (/** @type {string} */ script, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
         delegate(startTime)(script, null, numThreads, ...args),
     getSize: () => jobs.length,
     send: async () =>
@@ -110,7 +110,7 @@ export const getDelegatedTasks = async (ns) => {
 };
 
 /** @param {NS} ns **/
-export const closeTicket = (ns) => async (ticket, /** @type {number} */ pid, /** @type {string} */ hostname, /** @type {number} */ threads) => {
+export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
   while (port.full()) {
     await ns.sleep(50);
@@ -126,5 +126,5 @@ export const closeTicket = (ns) => async (ticket, /** @type {number} */ pid, /**
 /** @param {NS} ns **/
 export async function main(ns) {
   const [script, ...args] = ns.args;
-  delegateAny(ns)(script, 1, ...args);
+  delegateAny(ns)(/** @type {string} */ (script), 1, ...args);
 }

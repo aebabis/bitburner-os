@@ -8,8 +8,10 @@ import {
   getMoneyData,
 } from "./data-store";
 
-/** @param {(ns: NS) => <X>(ns: NS) => X} func */
+/** @template T
+ *  @param {(ns: NS) => T} func */
 const cache = (func) => {
+  /** @type {T | undefined} */
   let data;
   /** @param {NS} ns */
   return (ns) => {
@@ -52,7 +54,7 @@ export const getTimeEstimates = (ns) => {
     activeRepRate[targetFaction] || passiveRepRate[targetFaction] || 0.1;
   const repAcquired = factionRep != null ? factionRep[targetFaction] : 0;
 
-  const repRemaining = getRepNeeded(ns) - repAcquired;
+  const repRemaining = (getRepNeeded(ns) ?? 0) - repAcquired;
   const repTime = repRemaining / repRate;
 
   return { moneyTime, repTime };
@@ -81,7 +83,7 @@ export const needsJobRam = (ns) => {
   const { requiredJobRam } = getRamInfo(ns);
   const { rootServers, purchasedServers } = getRamData(ns);
 
-  const homeRam = rootServers.find((s) => s.hostname === "home").maxRam;
+  const homeRam = rootServers.find((/** @type {{hostname: string, maxRam: number}} */ s) => s.hostname === "home")?.maxRam ?? 0;
   const jobRam = purchasedServers[0]?.maxRam || 0;
 
   return homeRam < requiredJobRam * 2 && jobRam < requiredJobRam;
@@ -106,7 +108,7 @@ export const getGoalCost = (ns) =>
 export const getRepNeeded = (ns) => {
   const { targetAugmentations, augmentationRepReqs } = getStaticData(ns);
   if (targetAugmentations == null) return null;
-  const repCosts = targetAugmentations.map((aug) => augmentationRepReqs[aug]);
+  const repCosts = targetAugmentations.map((/** @type {string} */ aug) => augmentationRepReqs[aug]);
   return Math.max(...repCosts, 0);
 };
 
@@ -125,7 +127,7 @@ export const shouldWorkHaveFocus = (ns) => {
 export const hasBitNode = (ns, bn) => {
   const { resetInfo, ownedSourceFiles } = getStaticData(ns);
   const inBN = resetInfo.currentNode === bn;
-  const beatBN = ownedSourceFiles.find((file) => file.n === bn);
+  const beatBN = ownedSourceFiles.find((/** @type {{n: number}} */ file) => file.n === bn);
   return inBN || beatBN;
 };
 
@@ -138,8 +140,8 @@ const queryService = (ns) => {
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  const [func, ...rest] = ns.args;
-  ns.tprint(queryService(ns)[func](...rest));
+  const [func] = ns.args;
+  ns.tprint(queryService(ns)[/** @type {keyof ReturnType<typeof queryService>} */ (func)]());
 }
 
 export default queryService;

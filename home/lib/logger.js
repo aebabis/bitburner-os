@@ -4,16 +4,17 @@ const DEBUG = false;
 
 const processArg = (arg) => {
   if (arg instanceof Error) {
+    const e = /** @type {Error & {lineNumber?: number, columnNumber?: number}} */ (arg);
     return (
-      arg.name +
+      e.name +
       " " +
-      arg.message +
+      e.message +
       " " +
-      arg.lineNumber +
+      e.lineNumber +
       ":" +
-      arg.columnNumber +
+      e.columnNumber +
       "\n" +
-      arg.stack
+      e.stack
     );
   } else if (typeof arg === "object") return JSON.stringify(arg, null, 2);
   return arg;
@@ -22,14 +23,14 @@ const processArg = (arg) => {
 const process = (args) => args.map(processArg).join(" ");
 
 /** @param {NS} ns **/
-export const logger = (ns, options = {}) => {
+export const logger = (ns, /** @type {{debug?: boolean}} */ options = {}) => {
   const { debug = DEBUG } = options;
 
   const name = ns.getScriptName();
   const pad = Math.max(0, 20 - name.length);
   const lead = " ".repeat(pad);
 
-  const print = (TYPE, args) => {
+  const print = (/** @type {string} */ TYPE, args) => {
     const text = process(args);
     ns.print(TYPE + text);
     if (debug || TYPE === ERROR) ns.tprint(TYPE + lead + text);

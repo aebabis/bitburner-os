@@ -5,14 +5,14 @@ import { table } from "./table";
 export const DISABLE = "DISABLE";
 export const ENABLE = "ENABLE";
 
-const getServiceName = (script) => script.split("/").pop().split(".").shift();
+const getServiceName = (/** @type {string} */ script) => script.split("/").pop()?.split(".").shift();
 
 /** @param {NS} ns */
 export const getTableString = (ns, taskData) => {
   return table(
     ns,
     ["ID", "NAME", "", "PID", "DESC"],
-    taskData.map(({ id, name, status, pid, desc }) => [
+    taskData.map((/** @type {{id: number | string, name: string, status: string, pid: number, desc: string}} */ { id, name, status, pid, desc }) => [
       id,
       name,
       status,
@@ -39,7 +39,7 @@ export const disableService = async (
 };
 
 /** @param {NS} ns */
-export const enableService = async (ns, idOrName, override = false) => {
+export const enableService = async (ns, /** @type {string | number} */ idOrName, override = false) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
     identifier: idOrName,
     type: ENABLE,

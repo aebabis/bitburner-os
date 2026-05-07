@@ -4,7 +4,7 @@ import { HACK, GROW, WEAKEN, SHARE } from "../etc/filenames";
 import { ERROR } from "./colors";
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
-const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
+const TicketItem = (/** @type {{script: string, host: string | null, numThreads: number, args: string[], startTime?: number}} */ { script, host, numThreads, args, ...rest }) => {
   const time = rest.startTime || Date.now();
   const waitTime = () => Date.now() - time;
   const wait = () => (waitTime() / 1000).toFixed(3);
@@ -18,7 +18,7 @@ const TicketItem = ({ script, host, numThreads, args, ...rest }) => {
     time,
     waitTime,
     isWorker,
-    toString: (hostname) =>
+    toString: (/** @type {string | undefined} */ hostname) =>
       `${script} ${hostname || host} ${numThreads} ${args.join(" ")} (${wait()}s)`,
   };
 };
@@ -65,7 +65,7 @@ export const fulfill = async (ns, process, server) => {
 };
 
 /** @param {NS} ns **/
-export const reject = async (ns, process, reason) => {
+export const reject = async (ns, process, /** @type {string | undefined} */ reason) => {
   if (reason != null) ns.tprint(ERROR + reason);
   if (process.ticket != null) await closeTicket(ns)(process.ticket, 0, null, 0);
 };

@@ -75,7 +75,7 @@ const backdoorPath = (/** @type {NS} */ ns) => {
     return HEAD + " (no available servers) " + SPACES.repeat(2) + "\n\n\n\n";
   } else {
     const rows = [
-      ...path.map((s) => (s === "home" ? " home" : ` connect ${s} `)),
+      ...path.map((/** @type {string} */ s) => (s === "home" ? " home" : ` connect ${s} `)),
       " backdoor",
     ];
     if (rows.length >= 6) {
@@ -132,7 +132,7 @@ const threadpoolTable = (ns) => {
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
-const goalsTable = (ns) => {
+const goalsTable = (/** @type {NS} */ ns) => {
   const { requiredJobRam, targetFaction, targetAugmentations } =
     getStaticData(ns);
   if (targetAugmentations == null) {
@@ -146,13 +146,13 @@ const goalsTable = (ns) => {
     const rows = [
       ["Join " + targetFaction],
       ["Gain " + getRepNeeded(ns) + " rep"],
-      ...targetAugmentations.map((aug) => [aug]),
+      ...targetAugmentations.map((/** @type {string} */ aug) => [aug]),
     ];
     return table(ns, ["GOALS"], rows, { colors: true });
   }
 };
 
-const moneyTable = (ns) => {
+const moneyTable = (/** @type {NS} */ ns) => {
   const moneyData = getMoneyData(ns);
   if (moneyData == null) {
     return ` ${H("INCOME")} \n ${MEDIUM(loading)} `;
@@ -233,7 +233,7 @@ export async function main(ns) {
         const textField = renderWindows(windows, width);
 
         ns.clearLog();
-        textField.split("\n").forEach((line) => ns.print(line));
+        textField.split("\n").forEach((/** @type {string} */ line) => ns.print(line));
         await ns.sleep(1);
 
         // colorize(modal.bottom);

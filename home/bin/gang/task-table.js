@@ -15,7 +15,8 @@ const HEADINGS = {
   chaWeight: "chaW",
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns
+ *  @param {number | undefined} sortColumnIndex **/
 export const printTaskTable = async (ns, sortColumnIndex) => {
   const gangData = getGangData(ns);
   if (gangData == null)
@@ -60,22 +61,22 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
 
   const cw = Object.values(HEADINGS).map((heading, col) => {
     // Get column widths
-    const cellWidths = [heading.length, ...rows.map((row) => row[col].length)];
+    const cellWidths = [heading.length, ...rows.map((/** @type {string[]} */ row) => row[col].length)];
     return cellWidths.reduce((a, b) => (a < b ? b : a), 0);
   });
-  const pad = (content, i) =>
+  const pad = (/** @type {string} */ content, /** @type {number} */ i) =>
     i >= 4 ? content.padStart(cw[i]) : content.padEnd(cw[i]);
   let output = [
     "",
     Object.values(HEADINGS)
       .map((heading, i) => pad(heading, i))
       .join("  "),
-    ...rows.map((cells) => cells.map((cell, i) => pad(cell, i)).join("  ")),
+    ...rows.map((/** @type {string[]} */ cells) => cells.map((/** @type {string} */ cell, /** @type {number} */ i) => pad(cell, i)).join("  ")),
   ].join("\n");
   ns.tprint(output);
 };
 
 /** @param {NS} ns */
 export async function main(ns) {
-  await printTaskTable(ns, ns.args[0]);
+  await printTaskTable(ns, /** @type {number | undefined} */ (ns.args[0]));
 }
