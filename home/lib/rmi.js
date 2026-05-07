@@ -3,7 +3,7 @@ import { delegateAny } from "./scheduler-delegate";
 
 /** @param {NS} ns */
 export const rmi =
-  (ns, retry) =>
+  (ns, retry=false) =>
   async (...args) => {
     while (true) {
       try {

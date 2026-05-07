@@ -27,6 +27,7 @@ export const getJobRamCost = cache((ns) => {
 });
 
 const DAY = 60 * 60 * 24;
+/** @param {NS} ns */
 export const getTimeEstimates = (ns) => {
   const {
     money,
@@ -55,21 +56,25 @@ export const getTimeEstimates = (ns) => {
   return { moneyTime, repTime };
 };
 
+/** @param {NS} ns */
 export const estimateTimeToAug = (ns) => {
   const { moneyTime, repTime } = getTimeEstimates(ns);
   return Math.max(moneyTime, repTime);
 };
 
+/** @param {NS} ns */
 export const isMoneyBound = (ns) => {
   const { moneyTime, repTime } = getTimeEstimates(ns);
   return moneyTime > repTime;
 };
 
+/** @param {NS} ns */
 export const isRepBound = (ns) => {
   const { moneyTime, repTime } = getTimeEstimates(ns);
   return repTime > moneyTime;
 };
 
+/** @param {NS} ns */
 export const needsJobRam = (ns) => {
   const { requiredJobRam } = getRamInfo(ns);
   const { rootServers, purchasedServers } = getRamData(ns);
@@ -80,6 +85,7 @@ export const needsJobRam = (ns) => {
   return homeRam < requiredJobRam * 2 && jobRam < requiredJobRam;
 };
 
+/** @param {NS} ns */
 export const estimateTimeToGoal = (ns) => {
   if (needsJobRam(ns)) {
     const jobRamCost = getJobRamCost(ns);
@@ -90,9 +96,11 @@ export const estimateTimeToGoal = (ns) => {
   }
 };
 
+/** @param {NS} ns */
 export const getGoalCost = (ns) =>
   getMoneyData(ns).costToAug || getJobRamCost(ns);
 
+/** @param {NS} ns */
 export const getRepNeeded = (ns) => {
   const { targetAugmentations, augmentationRepReqs } = getStaticData(ns);
   if (targetAugmentations == null) return null;
@@ -100,6 +108,7 @@ export const getRepNeeded = (ns) => {
   return Math.max(...repCosts, 0);
 };
 
+/** @param {NS} ns */
 export const shouldWorkHaveFocus = (ns) => {
   const { isPlayerActive } = getPlayerData(ns);
   const { ownedAugmentations } = getStaticData(ns);
@@ -109,6 +118,8 @@ export const shouldWorkHaveFocus = (ns) => {
   return !isPlayerActive;
 };
 
+/** @param {NS} ns
+ *  @param {number} bn */
 export const hasBitNode = (ns, bn) => {
   const { resetInfo, ownedSourceFiles } = getStaticData(ns);
   const inBN = resetInfo.currentNode === bn;
