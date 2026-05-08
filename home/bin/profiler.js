@@ -14,6 +14,9 @@ const STRIPE_H = 16;
 const VIEW_MS = 10_000;
 const DOT_SIZE = 3;
 const PANEL_GAP = 6;
+const STATS_LINE_H = 14;
+const STATS_ROWS = 3;
+const DRIFT_STATS_H = STATS_ROWS * STATS_LINE_H + 6;
 
 const TIMELINE_H = AXIS_H + TYPES.length * (LANE_H + LANE_GAP);
 
@@ -138,10 +141,21 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 
 // -- Drift panel --
 
+/** @param {number} ms */
+const fmtMs = (ms) => Math.abs(ms) >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms.toFixed(0)}ms`;
+
 /**
- * Plots actualEnd - scheduledEnd per completed job. If timing drift is caused by
- * player leveling up after batch creation, W1/W2 drift should be ~4× H drift and
- * G drift ~3.2× H drift, because weakenTime = 4×hackTime and growTime = 3.2×hackTime.
+ * Plots drift decomposed into start delay and duration error.
+ * Each completed job shows two markers at the same X (actualEnd):
+ *   - dim dot at startDelay (actualStart - scheduledStart) — how late the script launched
+ *   - bright dot at totalDrift (actualEnd - scheduledEnd) — full error including duration
+ * A faint vertical line connects them; its height is the duration error.
+ *
+ * Stats rows show:
+ *   1. Mean total drift per type with ratio vs H
+ *   2. Mean start delay per type (isolates scheduling latency from duration error)
+ *   3. Within-frame W/H and G/H ratios (frames where all 4 types completed)
+ *      — if these match 1:3.2:4, the cross-frame mean is a sampling artifact
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {NonNullable<ReturnType<typeof getSnapshot>>} snapshot
@@ -155,7 +169,8 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   drawTimeAxis(ctx, toX, bounds, now, tMin, tMax);
 
   const plotY = bounds.y + AXIS_H;
-  const plotH = bounds.h - AXIS_H;
+  const plotH = Math.max(20, bounds.h - AXIS_H - DRIFT_STATS_H);
+  const statsY0 = plotY + plotH + 4;
 
   ctx.fillStyle = "#111";
   ctx.fillRect(LABEL_W, plotY, bounds.w - LABEL_W, plotH);
@@ -173,10 +188,16 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     return;
   }
 
-  // Drift = actualEnd - scheduledEnd; negative means finished early.
+  // Total drift = actualEnd - scheduledEnd.
+  // Start delay = actualStart - scheduledStart (how late the script launched).
+  // Duration error = total drift - start delay (how much longer the op ran than scheduled).
   const drifts = completedJobs.map((j) => /** @type {number} */ (j.actualEnd) - j.scheduledEnd);
-  const driftMin = Math.min(...drifts);
-  const driftMax = Math.max(...drifts);
+  const startDelays = completedJobs.map((j) =>
+    j.actualStart != null ? j.actualStart - j.scheduledStart : 0,
+  );
+  const allValues = [...drifts, ...startDelays];
+  const driftMin = Math.min(...allValues);
+  const driftMax = Math.max(...allValues);
   const pad = Math.max(100, (driftMax - driftMin) * 0.15 + 50);
   const dLo = driftMin - pad;
   const dHi = driftMax + pad;
@@ -195,7 +216,7 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     if (y < plotY || y > plotY + plotH) continue;
     ctx.fillStyle = "#2a2a2a";
     ctx.fillRect(LABEL_W, y, bounds.w - LABEL_W, 1);
-    const label = Math.abs(d) >= 1000 ? `${(d / 1000).toFixed(1)}s` : `${d}ms`;
+    const label = fmtMs(d);
     ctx.fillStyle = d === 0 ? "#777" : "#555";
     ctx.fillText(label, 2, y);
   }
@@ -212,41 +233,132 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     ctx.setLineDash([]);
   }
 
-  // Dots
+  // Dots: dim marker at startDelay, bright marker at totalDrift, line between them.
   for (const job of completedJobs) {
     const drift = /** @type {number} */ (job.actualEnd) - job.scheduledEnd;
+    const delay = job.actualStart != null ? job.actualStart - job.scheduledStart : null;
     const x = Math.round(toX(/** @type {number} */ (job.actualEnd)));
-    const y = Math.round(toYDrift(drift));
-    if (x < LABEL_W || x > bounds.w || y < plotY || y > plotY + plotH) continue;
-    ctx.fillStyle = COLORS[job.type] || "#888";
-    ctx.fillRect(x - DOT_SIZE / 2, y - DOT_SIZE / 2, DOT_SIZE, DOT_SIZE);
+    if (x < LABEL_W || x > bounds.w) continue;
+
+    const color = COLORS[job.type] || "#888";
+    const yDrift = Math.round(toYDrift(drift));
+    const yDelay = delay != null ? Math.round(toYDrift(delay)) : null;
+
+    // Line from startDelay to totalDrift (height = duration error)
+    if (yDelay != null && Math.abs(yDrift - yDelay) > 1) {
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, Math.min(yDrift, yDelay));
+      ctx.lineTo(x, Math.max(yDrift, yDelay));
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 1;
+    }
+
+    // Dim dot at start delay
+    if (yDelay != null && yDelay >= plotY && yDelay <= plotY + plotH) {
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = color;
+      ctx.fillRect(x - DOT_SIZE / 2, yDelay - DOT_SIZE / 2, DOT_SIZE, DOT_SIZE);
+      ctx.globalAlpha = 1;
+    }
+
+    // Bright dot at total drift
+    if (yDrift >= plotY && yDrift <= plotY + plotH) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x - DOT_SIZE / 2, yDrift - DOT_SIZE / 2, DOT_SIZE, DOT_SIZE);
+    }
   }
 
-  // Stats row: mean drift per type + ratio vs H to confirm 1:3.2:4 theory
-  /** @type {Record<string, number>} */
-  const meanDrift = {};
-  for (const type of TYPES) {
-    const jobs = completedJobs.filter((j) => j.type === type);
-    if (jobs.length === 0) continue;
-    meanDrift[type] = jobs.reduce((s, j) => s + (/** @type {number} */ (j.actualEnd) - j.scheduledEnd), 0) / jobs.length;
-  }
-
-  const hMean = meanDrift["H"];
+  // -- Stats rows --
   ctx.font = "10px monospace";
   ctx.textBaseline = "top";
-  let statsX = LABEL_W + 8;
-  const statsY = plotY + 4;
-  for (const type of TYPES) {
-    const mean = meanDrift[type];
-    if (mean == null) continue;
-    const ratioStr =
-      hMean != null && hMean !== 0 && type !== "H"
-        ? ` (×${(mean / hMean).toFixed(1)})`
-        : "";
-    const label = `${type}:${mean >= 0 ? "+" : ""}${mean.toFixed(0)}ms${ratioStr}`;
-    ctx.fillStyle = COLORS[type];
-    ctx.fillText(label, statsX, statsY);
-    statsX += ctx.measureText(label).width + 12;
+
+  /** @param {(j: typeof completedJobs[0]) => number} fn @returns {Record<string, number>} */
+  const meanByType = (fn) => {
+    /** @type {Record<string, number>} */ const out = {};
+    for (const type of TYPES) {
+      const jobs = completedJobs.filter((j) => j.type === type);
+      if (jobs.length === 0) continue;
+      out[type] = jobs.reduce((s, j) => s + fn(j), 0) / jobs.length;
+    }
+    return out;
+  };
+
+  /** @param {Record<string, number>} means @param {number} rowY @param {string} label */
+  const drawStatsRow = (means, rowY, label) => {
+    const hVal = means["H"];
+    let x = LABEL_W + 8;
+    ctx.fillStyle = "#555";
+    ctx.fillText(label, x, rowY);
+    x += ctx.measureText(label).width + 6;
+    for (const type of TYPES) {
+      const val = means[type];
+      if (val == null) continue;
+      const ratioStr = hVal != null && hVal !== 0 && type !== "H" ? ` (×${(val / hVal).toFixed(1)})` : "";
+      const text = `${type}:${val >= 0 ? "+" : ""}${fmtMs(val)}${ratioStr}`;
+      ctx.fillStyle = COLORS[type];
+      ctx.fillText(text, x, rowY);
+      x += ctx.measureText(text).width + 10;
+    }
+  };
+
+  // Row 1: total drift
+  drawStatsRow(
+    meanByType((j) => /** @type {number} */ (j.actualEnd) - j.scheduledEnd),
+    statsY0,
+    "drift:",
+  );
+
+  // Row 2: start delay only (how late each script was launched)
+  drawStatsRow(
+    meanByType((j) => (j.actualStart != null ? j.actualStart - j.scheduledStart : 0)),
+    statsY0 + STATS_LINE_H,
+    "start:",
+  );
+
+  // Row 3: within-frame drift ratio (only frames where all 4 types completed)
+  // If the cross-frame mean ratio (row 1) exceeds these, it's a sampling artifact.
+  const completedFrames = snapshot.filter(({ jobs }) =>
+    TYPES.every((t) => jobs.some((j) => j != null && j.type === t && j.actualEnd != null)),
+  );
+  const frameRatioRow = statsY0 + STATS_LINE_H * 2;
+  if (completedFrames.length > 0) {
+    /** @type {Record<string, number[]>} */
+    const ratiosByType = Object.fromEntries(TYPES.map((t) => [t, []]));
+    for (const { jobs } of completedFrames) {
+      const hJob = jobs.find((j) => j != null && j.type === "H" && j.actualEnd != null);
+      if (!hJob) continue;
+      const hDrift = /** @type {number} */ (hJob.actualEnd) - hJob.scheduledEnd;
+      if (hDrift === 0) continue;
+      for (const type of TYPES) {
+        const j = jobs.find((jj) => jj != null && jj.type === type && jj.actualEnd != null);
+        if (j) ratiosByType[type].push((/** @type {number} */ (j.actualEnd) - j.scheduledEnd) / hDrift);
+      }
+    }
+    const frameMeans = /** @type {Record<string, number>} */ ({});
+    for (const type of TYPES) {
+      const rs = ratiosByType[type];
+      if (rs.length > 0) frameMeans[type] = rs.reduce((a, b) => a + b, 0) / rs.length;
+    }
+    let x = LABEL_W + 8;
+    ctx.fillStyle = "#555";
+    const frameLabel = `frame(${completedFrames.length}):`;
+    ctx.fillText(frameLabel, x, frameRatioRow);
+    x += ctx.measureText(frameLabel).width + 6;
+    for (const type of TYPES) {
+      const r = frameMeans[type];
+      if (r == null) continue;
+      const text = type === "H" ? `H:1.0` : `${type}:×${r.toFixed(1)}`;
+      ctx.fillStyle = COLORS[type];
+      ctx.fillText(text, x, frameRatioRow);
+      x += ctx.measureText(text).width + 10;
+    }
+  } else {
+    ctx.fillStyle = "#444";
+    ctx.fillText("frame: waiting for complete frames…", LABEL_W + 8, frameRatioRow);
   }
 };
 
@@ -325,7 +437,7 @@ export async function main(ns) {
     ctx.fillStyle = "#333";
     ctx.fillRect(0, TIMELINE_H + 2, w, 2);
 
-    if (driftH > AXIS_H + 20)
+    if (driftH > AXIS_H + DRIFT_STATS_H + 20)
       drawDriftPanel(ctx, snapshot, toX, { y: driftY, w, h: driftH }, now, tMin, tMax);
 
     rafId = win.requestAnimationFrame(render);
