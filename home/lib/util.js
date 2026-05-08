@@ -1,12 +1,12 @@
 // export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
 const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
-/** @template T @param {(item: T) => (number | string)} prop @returns {(a: T, b: T) => number} */
+/** @template T @param {((item: T) => (number | string)) | string} prop @returns {(a: T, b: T) => number} */
 export const by = (prop) => {
   let val = prop;
   if (typeof val !== "function") {
-    val = /** @type {(item: T) => (number | string)} */ ((/** @type {Record<string, number | string>} */ obj) => {
-      const ret = obj[/** @type {string} */ (/** @type {unknown} */ (prop))];
+    val = /** @type {(item: T) => (number | string)} */ ((/** @type {T} */ obj) => {
+      const ret = (/** @type {Record<string, number | string>} */ (/** @type {unknown} */ (obj)))[/** @type {string} */ (prop)];
       if (typeof ret === "undefined") {
         throw new Error(`invalid prop ${prop}`);
       }
@@ -25,7 +25,7 @@ export const by = (prop) => {
 /** @param {string} str */
 export const length = (str) => str.replaceAll(COLOR_REGEX, "").length;
 
-/** @param {number} number */
+/** @param {string | number} number */
 export const small = (number) =>
   number
     .toString()

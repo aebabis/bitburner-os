@@ -6,7 +6,7 @@ import { by } from "./lib/util";
 export async function main(ns) {
   ns.disableLog("ALL");
 
-  const [prop, value] = ns.args;
+  const [prop, value] = /** @type {[string?, number?]} */ (ns.args);
   const config = getConfig(ns);
 
   if (prop == null)

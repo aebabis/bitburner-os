@@ -7,7 +7,8 @@ export const ENABLE = "ENABLE";
 
 const getServiceName = (/** @type {string} */ script) => script.split("/").pop()?.split(".").shift();
 
-/** @param {NS} ns */
+/** @typedef {{id: number | string, name: string, status: string, pid: number, desc: string}} ServiceData */
+/** @param {NS} ns @param {ServiceData[]} taskData */
 export const getTableString = (ns, taskData) => {
   return table(
     ns,
@@ -49,7 +50,7 @@ export const enableService = async (ns, /** @type {string | number} */ idOrName,
 };
 
 /** @param {NS} ns */
-export const writeServices = (ns, services) => {
+export const writeServices = (ns, /** @type {ServiceData[]} */ services) => {
   const handle = Ports(ns).getPortHandle(PORT_SERVICES_LIST);
   handle.clear();
   handle.write(services);

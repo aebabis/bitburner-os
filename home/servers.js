@@ -12,7 +12,7 @@ const getServers = (ns) =>
     .sort(by("maxRam"))
     .sort(by("requiredHackingSkill"));
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {Server} server **/
 const serverRow = (ns, server) => {
   const {
     backdoorInstalled,
@@ -33,11 +33,11 @@ const serverRow = (ns, server) => {
     : hasAdminRights
       ? "🔗 "
       : "❌\u200b ";
-  const name = `${status}${hostname}${small(numOpenPortsRequired)}`;
-  const money = `${ns.formatNumber(moneyAvailable, 2)}/${ns.formatNumber(moneyMax, 2)}`;
-  const ram = `${ns.formatRam(ramUsed)}/${ns.formatRam(maxRam)}`;
-  const level = requiredHackingSkill;
-  const hacking = `${~~minDifficulty}/${~~hackDifficulty}`;
+  const name = `${status}${hostname}${small(numOpenPortsRequired ?? 0)}`;
+  const money = `${ns.formatNumber(moneyAvailable ?? 0, 2)}/${ns.formatNumber(moneyMax ?? 0, 2)}`;
+  const ram = `${ns.formatRam(ramUsed ?? 0)}/${ns.formatRam(maxRam)}`;
+  const level = requiredHackingSkill ?? 0;
+  const hacking = `${~~(minDifficulty ?? 0)}/${~~(hackDifficulty ?? 0)}`;
   return {
     name,
     money,
