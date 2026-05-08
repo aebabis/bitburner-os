@@ -19,6 +19,7 @@ export const getSkillFormulas = (ns) => {
   };
 };
 
+/** @param {NS} ns */
 const getHacknetNodeIncomeFormula = (ns) => {
   if (ns.fileExists("Formulas.exe", "home"))
     return ns.formulas.hacknetNodes.moneyGainRate;

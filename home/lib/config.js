@@ -32,7 +32,7 @@ export const getConfig = (ns) => {
     return {};
   };
 
-  const writeConfig = (obj) => {
+  const writeConfig = (/** @type {Record<string, number>} */ obj) => {
     port.clear();
     port.write(obj);
   };

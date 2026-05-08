@@ -29,7 +29,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
       : by(propOrder[sortColumnIndex]); // Sort by column
 
   const tasks = gangData.tasks.sort(comparator);
-  const rows = tasks.map((stats) => {
+  const rows = tasks.map((/** @type {GangTaskStats} */ stats) => {
     const {
       baseMoney,
       baseRespect,
@@ -43,7 +43,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
       agiWeight,
       chaWeight,
     } = stats;
-    const stat = (s) => s || "-";
+    const stat = (/** @type {number} */ s) => s || "-";
     return [
       name,
       baseRespect,

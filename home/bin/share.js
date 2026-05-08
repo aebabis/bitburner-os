@@ -33,7 +33,7 @@ export async function main(ns) {
     if (sharedThreads > maxDesiredThreads) {
       ns.print(`Overallocated. T=${sharedThreads} MAX=${maxDesiredThreads}`);
       while (sharedThreads > maxDesiredThreads) {
-        const process = processes.shift();
+        const process = /** @type {{pid: number, threads: number}} */ (processes.shift());
         ns.kill(process.pid);
         sharedThreads -= process.threads;
       }

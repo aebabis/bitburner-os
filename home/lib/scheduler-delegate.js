@@ -72,7 +72,7 @@ export const delegate =
 /** @param {NS} ns **/
 export const delegateAny =
   (ns, /** @type {boolean} */ response = false, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
-  async (/** @type {string} */ script, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
+  async (/** @type {string} */ script, numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
 /** @param {NS} ns */

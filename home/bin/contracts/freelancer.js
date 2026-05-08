@@ -2,7 +2,7 @@ import { rmi } from "../../lib/rmi";
 import { table } from "../../lib/table";
 import { getContractData } from "../../lib/data-store";
 
-const showContracts = (ns) => {
+const showContracts = (/** @type {NS} */ ns) => {
   try {
     const { contracts } = getContractData(ns);
     const rows = contracts.map((/** @type {{id: number, hostname: string, filename: string, type: string, tries: number}} */ { id, hostname, filename, type, tries }) => [

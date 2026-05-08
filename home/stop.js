@@ -26,7 +26,7 @@ export const stop = async (ns) => {
   }
 
   if (ns.args.length > 0) {
-    ns.run(...ns.args);
+    ns.run(.../** @type {[string, ...ScriptArg[]]} */ (ns.args));
   }
 };
 

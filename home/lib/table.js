@@ -49,7 +49,7 @@ export const transpose = (lines, numCols) => {
   return rows;
 };
 
-/** @param {NS} ns @param {(string | ColumnSpec)[] | null} columns @param {(string | number)[][]} data @param {{ borders?: boolean, colors?: boolean }} [options] */
+/** @param {NS} ns @param {(string | ColumnSpec)[] | null} columns @param {(string | number | undefined)[][]} data @param {{ borders?: boolean, colors?: boolean }} [options] */
 export const table = (ns, columns, data, options = {}) => {
   const { borders = false, colors = false } = options;
   const joiner = borders ? " | " : "  ";
@@ -63,7 +63,7 @@ export const table = (ns, columns, data, options = {}) => {
     processedColumns = columns.map(headData);
   }
   const processedData = data.map((row) =>
-    row.map((cell, i) => processedColumns[i].process(cell).toString()),
+    row.map((cell, i) => processedColumns[i].process(cell ?? "").toString()),
   );
   const widths = processedColumns.map((column, i) =>
     processedData

@@ -12,7 +12,7 @@ export async function main(ns) {
     passiveRepRate = /** @type {Record<string, number>} */ ({}),
   } = getPlayerData(ns);
 
-  const timelines = {};
+  const timelines = /** @type {Record<string, Timeline>} */ ({});
 
   for (const faction of FACTIONS) timelines[faction] = new Timeline();
 

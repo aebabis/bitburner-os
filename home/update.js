@@ -13,7 +13,7 @@ export async function main(ns) {
     "download.js",
     "home",
   );
-  const pid = ns.exec("download.js", "home", 1, "--branch", branch);
+  const pid = ns.exec("download.js", "home", 1, "--branch", /** @type {ScriptArg} */ (branch));
   while (ns.isRunning(pid)) await ns.sleep(50);
   ns.exec("start.js", "home");
 }

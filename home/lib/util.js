@@ -1,7 +1,7 @@
 // export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
 const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
-/** @template T @param {((item: T) => (number | string)) | string} prop @returns {(a: T, b: T) => number} */
+/** @template T @param {((item: T) => (number | string)) | string | number} prop @returns {(a: T, b: T) => number} */
 export const by = (prop) => {
   let val = prop;
   if (typeof val !== "function") {
