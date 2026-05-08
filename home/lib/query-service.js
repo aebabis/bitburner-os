@@ -35,7 +35,7 @@ const DAY = 60 * 60 * 24;
 export const getTimeEstimates = (ns) => {
   const {
     money,
-    income,
+    referenceIncome,
     costToAug,
     estimatedStockValue: stock = 0,
   } = getMoneyData(ns);
@@ -47,7 +47,7 @@ export const getTimeEstimates = (ns) => {
   const { targetFaction } = getStaticData(ns);
 
   const moneyTime =
-    costToAug != null ? (costToAug - money - stock) / income : DAY;
+    costToAug != null ? (costToAug - money - stock) / referenceIncome : DAY;
   // Because activeRepRate includes passiveRepRate implicitly with no
   // known way to separate the two, we only use active when possible
   const repRate =
@@ -93,8 +93,8 @@ export const needsJobRam = (ns) => {
 export const estimateTimeToGoal = (ns) => {
   if (needsJobRam(ns)) {
     const jobRamCost = getJobRamCost(ns);
-    const { money, income } = getMoneyData(ns);
-    return (jobRamCost - money) / income;
+    const { money, referenceIncome } = getMoneyData(ns);
+    return (jobRamCost - money) / referenceIncome;
   } else {
     return estimateTimeToAug(ns);
   }

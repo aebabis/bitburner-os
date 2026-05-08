@@ -406,6 +406,11 @@ export default class Thief {
     return (incomePerBatch * batchesInHorizon) / (hackThreads + growThreads);
   }
 
+  getWeakenTime() {
+    const { ns, server } = this;
+    return getTimes(ns, server).weakenTime;
+  }
+
   getReservedThreads = () =>
     this.currentBatch == null ? 0 : this.currentBatch.getReservedThreads();
 

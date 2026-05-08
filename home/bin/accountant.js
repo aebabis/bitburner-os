@@ -1,5 +1,4 @@
-import { getRamData } from "../lib/data-store";
-import { putMoneyData } from "../lib/data-store";
+import { getMoneyData, putMoneyData } from "../lib/data-store";
 import { Timeline } from "../lib/timeline";
 
 class Timer {
@@ -45,8 +44,11 @@ export async function main(ns) {
     if (scheduler == null) return;
     const timestamp = Date.now();
     const { money } = ns.getPlayer();
-    const { onlineMoneyMade, offlineMoneyMade } = scheduler;
+    const { thiefReferenceWindow = 60, hacknetIncome = 0, gangIncome = 0 } = getMoneyData(ns);
+    const { onlineMoneyMade, offlineMoneyMade, onlineRunningTime, offlineRunningTime } = scheduler;
     const moneyMade = onlineMoneyMade + offlineMoneyMade;
+    const timeSpent = onlineRunningTime + offlineRunningTime;
+    const incomeWindow = Math.min(timeSpent, thiefReferenceWindow);
 
     if (money > prevMoney)
       // Skip ticks where a purchase is made
@@ -56,50 +58,17 @@ export async function main(ns) {
     moneyTimeline.addPoint(timestamp, estTotalGain);
     theftTimeline.addPoint(timestamp, moneyMade);
 
-    const theftIncome60s =
-      moneyMade - theftTimeline.findValue(timestamp - 60000);
-    const theftIncome = theftIncome60s / 60;
-    const { totalMaxRam } = getRamData(ns);
-    const theftRatePerGB = theftIncome / totalMaxRam;
-
-    const income1s = estTotalGain - moneyTimeline.findValue(timestamp - 1000);
-    const income5s = estTotalGain - moneyTimeline.findValue(timestamp - 5000);
-    const income10s = estTotalGain - moneyTimeline.findValue(timestamp - 10000);
-    const income30s = estTotalGain - moneyTimeline.findValue(timestamp - 30000);
-    const income60s = estTotalGain - moneyTimeline.findValue(timestamp - 60000);
-    const income5m =
-      estTotalGain - moneyTimeline.findValue(timestamp - 5 * 60000);
-    const income =
-      income5m / 5 / 60 ||
-      income60s / 60 ||
-      income30s / 30 ||
-      income10s / 10 ||
-      income5s / 5 ||
-      income1s;
+    const moneyAtStartOfWindow = theftTimeline.findValue(timestamp - incomeWindow * 1000);
+    const theftIncome = (moneyMade - moneyAtStartOfWindow) / incomeWindow;
+    const referenceIncome = theftIncome + hacknetIncome + gangIncome;
 
     putMoneyData(ns, {
       money,
-      income,
-      income1s,
-      income5s,
-      income10s,
-      income30s,
-      income60s,
       theftIncome,
-      theftIncome60s,
-      theftRatePerGB,
+      hacknetIncome,
+      gangIncome,
+      referenceIncome,
     });
-
-    ns.clearLog();
-    ns.print("MONEY: " + ns.formatNumber(money, 2));
-    ns.print("Total gain: " + ns.formatNumber(estTotalGain, 2));
-    ns.print("   1s: " + ns.formatNumber(income1s || 0, 2));
-    ns.print("   5s: " + ns.formatNumber(income5s || 0, 2));
-    ns.print("  10s: " + ns.formatNumber(income10s || 0, 2));
-    ns.print("  30s: " + ns.formatNumber(income30s || 0, 2));
-    ns.print("  60s: " + ns.formatNumber(income60s || 0, 2));
-    ns.print("   5m: " + ns.formatNumber(income5m || 0, 2));
-    ns.print("/GB-s: " + ns.formatNumber(theftRatePerGB || 0, 2));
 
     await timer.next();
   }

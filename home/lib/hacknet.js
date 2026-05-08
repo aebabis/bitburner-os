@@ -1,14 +1,18 @@
 import { getHacknetNodeFormulas } from "./formulas";
 
 /** @param {NS} ns **/
-export const getNodeData = (ns) => {
-  const formulas = getHacknetNodeFormulas(ns);
+export const getNodes = (ns) => {
   const numNodes = ns.hacknet.numNodes();
-  const nodes = new Array(numNodes)
+  return new Array(numNodes)
     .fill(null)
     .map((_, i) => ns.hacknet.getNodeStats(i));
+};
+
+/** @param {NS} ns **/
+export const getNodeData = (ns) => {
+  const formulas = getHacknetNodeFormulas(ns);
   const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.formatNumber(n, 0);
-  return nodes.map((stats, i) => {
+  return getNodes(ns).map((stats, i) => {
     const lp = formulas.levelUpgradeProfit(stats.level, stats.ram, stats.cores);
     const rp = formulas.ramUpgradeProfit(stats.level, stats.ram, stats.cores);
     const cp = formulas.coreUpgradeProfit(stats.level, stats.ram, stats.cores);

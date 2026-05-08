@@ -181,14 +181,20 @@ const moneyTable = (/** @type {NS} */ ns) => {
   }
   const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
   const goalCost = getGoalCost(ns);
-  const { income1s = 0, income10s = 0, income60s = 0 } = moneyData;
-  // const theft = ("$" + ns.formatNumber(theftIncome, 1)).padStart(6) + "/s  ";
-  // const theftRate =
-  //   ("$" + ns.formatNumber(theftRatePerGB, 1)).padStart(6) + "/GBs";
+  const {
+    theftIncome = 0,
+    thiefReferenceWindow = 0,
+    hacknetIncome = 0,
+    gangIncome = 0,
+    referenceIncome = 0,
+  } = moneyData;
   const rows = [
-    [" 1s", ("$" + ns.formatNumber(income1s, 1)).padStart(8)],
-    ["10s", ("$" + ns.formatNumber(income10s, 1)).padStart(8)],
-    ["60s", ("$" + ns.formatNumber(income60s, 1)).padStart(8)],
+    ["Theft", `$${ns.formatNumber(theftIncome, 1)}/s`],
+    ['', formatTime(thiefReferenceWindow)],
+    ["Hacknet", `$${ns.formatNumber(hacknetIncome, 1)}/s`],
+    ["Gang", `$${ns.formatNumber(gangIncome, 1)}/s`],
+    ["Total", `$${ns.formatNumber(referenceIncome, 1)}/s`],
+    ['', ''],
     ["Goal", ("$" + ns.formatNumber(goalCost || 0, 1)).padStart(8)],
     ["   $", formatTime(moneyTime || 100 * 60 * 60).padStart(8)],
     ["   r", formatTime(repTime || 100 * 60 * 60).padStart(8)],

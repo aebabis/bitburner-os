@@ -1,6 +1,7 @@
-import { getBestPurchase } from "../lib/hacknet";
+import { getNodes, getBestPurchase } from "../lib/hacknet";
 import { logger } from "../lib/logger";
 import { estimateTimeToGoal } from "../lib/query-service";
+import { getMoneyData, putMoneyData } from "../lib/data-store";
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -10,6 +11,10 @@ export async function main(ns) {
   let waitMessageShown = false;
   let lastMessageTime = 0;
   while (true) {
+    const hacknetIncome = getNodes(ns).map((node) => node.production).reduce((a, b) => a+b);
+    const moneyData = getMoneyData(ns);
+    putMoneyData(ns, { ...moneyData, hacknetIncome });
+
     try {
       const purchase = await getBestPurchase(ns);
       const timeToGoal = estimateTimeToGoal(ns);

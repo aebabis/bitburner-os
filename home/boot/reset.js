@@ -48,14 +48,7 @@ export async function main(ns) {
   putStaticData(ns, { scripts, contracts });
 
   tprint(ns)(STR + "  Initializing money data");
-  putMoneyData(ns, {
-    income: 0,
-    income1s: 0,
-    income5s: 0,
-    income10s: 10,
-    income30s: 0,
-    income60s: 0,
-  });
+  putMoneyData(ns, {});
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);

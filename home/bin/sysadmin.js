@@ -114,7 +114,7 @@ export async function main(ns) {
   };
 
   const attemptPurchase = async (/** @type {NS} */ ns) => {
-    const { income, theftRatePerGB } = getMoneyData(ns);
+    const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     const timeToGoal = estimateTimeToGoal(ns);
     const money = ns.getServerMoneyAvailable("home");
 
@@ -136,7 +136,7 @@ export async function main(ns) {
       }
       while (
         minRam < purchasedServerMaxRam &&
-        purchasedServerCosts[minRam] < income * 5
+        purchasedServerCosts[minRam] < referenceIncome * 5
       )
         minRam *= 2;
       return minRam;

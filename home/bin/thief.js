@@ -2,7 +2,7 @@ import { THREADPOOL } from "../etc/config";
 import { logger } from "../lib/logger";
 import { by } from "../lib/util";
 import { table } from "../lib/table";
-import { getHostnames, getRamData } from "../lib/data-store";
+import { getHostnames, getRamData, getMoneyData, putMoneyData } from "../lib/data-store";
 
 import Thief, { HORIZON_MS } from "../lib/thief";
 import { initProfiler } from "../lib/profiler";
@@ -111,6 +111,18 @@ export async function main(ns) {
       const ramBudget = godMode
         ? (ramAvailable / Math.max(candidates.length, 1)) * 0.9
         : ramAvailable * 0.9;
+
+      const weakenTimes = candidates
+        .filter((thief) => thief.isPipelining())
+        .map((thief) => thief.getWeakenTime() / 1000);
+      if (weakenTimes.length > 0) {
+        const thiefReferenceWindow = 2 * Math.max(...weakenTimes);
+        const moneyData = getMoneyData(ns);
+        putMoneyData(ns, {
+          ...moneyData,
+          thiefReferenceWindow,
+        });
+      }
 
       for (const thief of candidates) {
         if (ramAvailable <= 0) break;
