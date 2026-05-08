@@ -16,7 +16,7 @@ export async function main(ns) {
 
     const assignNext = (/** @type {string[]} */ members, /** @type {string} */ task) => {
       if (members.length > 0) {
-        ns.gang.setMemberTask(members.shift(), task);
+        ns.gang.setMemberTask(/** @type {string} */ (members.shift()), task);
         return true;
       }
       return false;
@@ -33,7 +33,7 @@ export async function main(ns) {
       return (
         enemyInfo &&
         enemyInfo.some(
-          (enemy) => enemy.territory > 0 && enemy.clashWinChance < 0.8,
+          (/** @type {{territory: number, clashWinChance: number}} */ enemy) => enemy.territory > 0 && enemy.clashWinChance < 0.8,
         )
       );
     };
@@ -45,8 +45,8 @@ export async function main(ns) {
     const readyForAscension = (/** @type {string} */ name) => {
       const ascension = ns.gang.getAscensionResult(name);
       if (ascension == null) return false;
-      const skills = ["agi", "cha", "def", "dex", "hack", "str"];
-      if (!skills.some((/** @type {string} */ s) => ascension[s] >= 1.1)) return false;
+      const skills = /** @type {(keyof GangMemberAscension)[]} */ (["agi", "cha", "def", "dex", "hack", "str"]);
+      if (!skills.some((s) => ascension[s] >= 1.1)) return false;
       return ascension.respect / gangInfo.respect < 0.15;
     };
 

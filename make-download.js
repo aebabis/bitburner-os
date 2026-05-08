@@ -2,6 +2,7 @@ import { resolve, relative } from "path";
 import { writeFile, readdir } from "fs/promises";
 import EventEmitter from "events";
 
+/** @param {string} dir @returns {AsyncGenerator<string>} */
 async function* getFiles(dir) {
   const dirents = await readdir(dir, { withFileTypes: true });
   for (const dirent of dirents) {
@@ -16,7 +17,7 @@ async function* getFiles(dir) {
 
 const eventEmitter = new EventEmitter();
 
-const toBitburnerPath = (file) => {
+const toBitburnerPath = (/** @type {string} */ file) => {
   const fullpath = relative("home", file).replace(/\\/g, "/");
   if (fullpath.includes("/")) return "/" + fullpath;
   return fullpath;

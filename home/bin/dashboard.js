@@ -213,7 +213,7 @@ const getWork = (ns) => {
   } = currentWork;
   if (type === "FACTION") {
     const rep = Math.floor(factionRep[factionName]);
-    return ` ${WORK} ${factionName} (${rep}rep) `;
+    return ` ${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
   } else if (type === "COMPANY") {
     return ` ${WORK} ${companyName} `;
   } else if (type === "CRIME") {

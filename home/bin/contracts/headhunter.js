@@ -4,20 +4,22 @@ import {
   getContractData,
 } from "../../lib/data-store";
 
-const isContract = (file) => file.endsWith(".cct");
+/** @typedef {{filename: string, maxTries?: number}} StoredContract */
+
+const isContract = (/** @type {string} */ file) => file.endsWith(".cct");
 
 const encode = (data) => (typeof data === "bigint" ? `${data}n` : data);
 
 /** @param {NS} ns */
 const findContracts = (ns) => {
-  const { contracts = [] } = getContractData(ns);
+  const { contracts = /** @type {StoredContract[]} */ ([]) } = getContractData(ns);
   return getHostnames(ns)
     .map((hostname) => {
       return ns
         .ls(hostname)
         .filter(isContract)
         .map((filename) => {
-          const prevEntry = contracts.find((c) => c.filename === filename);
+          const prevEntry = contracts.find((/** @type {StoredContract} */ c) => c.filename === filename);
           const type = ns.codingcontract.getContractType(filename, hostname);
           const data = encode(ns.codingcontract.getData(filename, hostname));
           const tries = ns.codingcontract.getNumTriesRemaining(

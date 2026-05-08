@@ -15,9 +15,9 @@ export async function main(ns) {
     const DELAY = 10;
     await ns.sleep(DELAY * 1000);
 
-    const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);
+    const { factionRep = {}, activeRepRate = {}, currentWork } = getPlayerData(ns);
     factionRep[faction] = ns.singularity.getFactionRep(faction);
-    activeRepRate[faction] = ns.getPlayer().workRepGained / DELAY;
+    activeRepRate[faction] = currentWork.workRepGained / DELAY;
     putPlayerData(ns, {
       factionRep,
       activeRepRate,

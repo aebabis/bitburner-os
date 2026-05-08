@@ -7,9 +7,9 @@ import { table } from "../../lib/table";
 export async function main(ns) {
   ns.disableLog("ALL");
   const {
-    factionRep = {},
-    activeRepRate = {},
-    passiveRepRate = {},
+    factionRep = /** @type {Record<string, number>} */ ({}),
+    activeRepRate = /** @type {Record<string, number>} */ ({}),
+    passiveRepRate = /** @type {Record<string, number>} */ ({}),
   } = getPlayerData(ns);
 
   const timelines = {};
@@ -31,7 +31,7 @@ export async function main(ns) {
       }
     }
 
-    const n = (num) => ns.formatNumber(num || 0, 1);
+    const n = (/** @type {number} */ num) => ns.formatNumber(num || 0, 1);
     const tableData = FACTIONS.slice()
       .sort()
       .map((faction) => [
