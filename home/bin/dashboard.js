@@ -132,24 +132,46 @@ const threadpoolTable = (ns) => {
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
-const goalsTable = (/** @type {NS} */ ns) => {
+/** @param {string} desc
+ *  @param {() => boolean} isDone */
+const goal = (desc, isDone) => ({
+  desc,
+  isDone,
+  toString: () => isDone() ? desc : MEDIUM(desc),
+});
+
+/** @param {NS} ns */
+const getGoals = (ns) => {
+  const { factions } = ns.getPlayer();
+  const { factionRep, purchasedAugmentations } = getPlayerData(ns);
   const { requiredJobRam, targetFaction, targetAugmentations } =
     getStaticData(ns);
   if (targetAugmentations == null) {
-    return table(
-      ns,
-      ["GOALS"],
-      [[`${requiredJobRam}GB on ${THREADPOOL}-01`], ["Run augmentation suite"]],
-      { colors: true },
-    );
-  } else {
-    const rows = [
-      ["Join " + targetFaction],
-      ["Gain " + getRepNeeded(ns) + " rep"],
-      ...targetAugmentations.map((/** @type {string} */ aug) => [aug]),
+    const POOL1 = `${THREADPOOL}-01`;
+    return [
+      goal(`${requiredJobRam}GB on ${POOL1}`,
+        () => ns.getPurchasedServerMaxRam(POOL1) >= requiredJobRam),
+      goal('Run augmentation suite', () => false),
     ];
-    return table(ns, ["GOALS"], rows, { colors: true });
+  } else {
+    const repNeeded = getRepNeeded(ns);
+    return [
+      goal("Join " + targetFaction, () => factions.includes(targetFaction)),
+      goal("Gain " + repNeeded  + " rep", () => factionRep[targetFaction] >= repNeeded),
+      ...targetAugmentations.map((/** @type {string} */ aug) => (
+        goal(aug, () => purchasedAugmentations.includes(aug)))),
+    ];
   }
+};
+
+const goalsTable = (/** @type {NS} */ ns) => {
+  const goals = getGoals(ns);
+  return table(
+    ns,
+    ["GOALS"],
+    goals.map(goal => [goal.toString()]),
+    { colors: true },
+  );
 };
 
 const moneyTable = (/** @type {NS} */ ns) => {
