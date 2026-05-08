@@ -30,7 +30,7 @@ const putData = (ns, portId, data) => {
 };
 
 /** @param {NS} ns
- *  @returns string[] */
+ *  @returns {string[]} */
 export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
 /** @param {NS} ns
  *  @param {string[]} hostnames */

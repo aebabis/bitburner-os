@@ -22,7 +22,7 @@ export const access = (ns) => async (/** @type string */ target) => {
 export async function main(ns) {
   ns.disableLog("ALL");
   if (ns.args[0] != null) {
-    return access(ns.args[0]);
+    return access(ns)(ns.args[0]);
   }
 
   let hostnames = getHostnames(ns).filter(
