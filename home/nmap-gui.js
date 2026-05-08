@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { nmap } from "./lib/nmap";
 import { getTailModal } from "./lib/modal";
 import * as d3 from "./lib/d3";

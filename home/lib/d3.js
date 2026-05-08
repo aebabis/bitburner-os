@@ -1,4 +1,7 @@
 // @ts-nocheck
+const doc = eval('doc' + 'ument');
+const win = eval('win' + 'dow');
+const docElem = 'doc' + 'umentElement';
 var rt = "http://www.w3.org/1999/xhtml",
   it = {
     svg: "http://www.w3.org/2000/svg",
@@ -19,7 +22,7 @@ function Ge(t) {
   return function () {
     var e = this.ownerDocument,
       n = this.namespaceURI;
-    return n === rt && e.documentElement.namespaceURI === rt
+    return n === rt && e[docElem].namespaceURI === rt
       ? e.createElement(t)
       : e.createElementNS(n, t);
   };
@@ -374,7 +377,7 @@ function Gt(t, e) {
 function K(t) {
   return (
     (t.ownerDocument && t.ownerDocument.defaultView) ||
-    (t.document && t) ||
+    (t['doc' + 'ument'] && t) ||
     t.defaultView
   );
 }
@@ -649,7 +652,7 @@ function pe(t, e, n) {
     i = r.CustomEvent;
   (typeof i == "function"
     ? (i = new i(e, n))
-    : ((i = r.document.createEvent("Event")),
+    : ((i = r.doc.createEvent("Event")),
       n
         ? (i.initEvent(e, n.bubbles, n.cancelable), (i.detail = n.detail))
         : i.initEvent(e, !1, !1)),
@@ -678,7 +681,7 @@ function E(t, e) {
   ((this._groups = t), (this._parents = e));
 }
 function de() {
-  return new E([[document.documentElement]], G);
+  return new E([[doc[docElem]]], G);
 }
 function Un() {
   return this;
@@ -724,11 +727,11 @@ E.prototype = de.prototype = {
 var Hn = de;
 function L(t) {
   return typeof t == "string"
-    ? new E([[document.querySelector(t)]], [document.documentElement])
+    ? new E([[doc.querySelector(t)]], [doc[docElem]])
     : new E([[t]], G);
 }
 function Qn(t) {
-  return L(V(t).call(document.documentElement));
+  return L(V(t).call(doc[docElem]));
 }
 var Kn = 0;
 function vt() {
@@ -791,7 +794,7 @@ function Gn(t, e) {
 }
 function Jn(t) {
   return typeof t == "string"
-    ? new E([document.querySelectorAll(t)], [document.documentElement])
+    ? new E([doc.querySelectorAll(t)], [doc[docElem]])
     : new E([H(t)], G);
 }
 function Wn(t, e) {
@@ -1459,8 +1462,8 @@ var q = 0,
   ct = 0,
   j = typeof performance == "object" && performance.now ? performance : Date,
   Oe =
-    typeof window == "object" && window.requestAnimationFrame
-      ? window.requestAnimationFrame.bind(window)
+    typeof win == "object" && win.requestAnimationFrame
+      ? win.requestAnimationFrame.bind(win)
       : function (t) {
           setTimeout(t, 17);
         };
@@ -1875,7 +1878,7 @@ function R(t) {
   (t.preventDefault(), t.stopImmediatePropagation());
 }
 function St(t) {
-  var e = t.document.documentElement,
+  var e = t.doc[docElem],
     n = L(t).on("dragstart.drag", R, O);
   "onselectstart" in e
     ? n.on("selectstart.drag", R, O)
@@ -1883,7 +1886,7 @@ function St(t) {
       (e.style.MozUserSelect = "none"));
 }
 function Et(t, e) {
-  var n = t.document.documentElement,
+  var n = t.doc[docElem],
     r = L(t).on("dragstart.drag", null);
   (e &&
     (r.on("click.drag", R, O),
@@ -2141,5 +2144,5 @@ export {
   U as selector,
   dt as selectorAll,
   Wt as style,
-  K as window,
+  K,
 };

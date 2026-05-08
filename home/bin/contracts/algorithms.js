@@ -1,4 +1,4 @@
-export const computeSumPermutations = (MAX) => {
+export const computeSumPermutations = (/** @type {number} */ MAX) => {
   const arr = () => new Array(MAX + 1).fill(1);
   const table = arr().map(arr);
 
@@ -17,10 +17,10 @@ export const computeSumPermutations = (MAX) => {
 };
 
 export const computeSumPermutationsII = (
-  target,
-  set,
+  /** @type {number} */ target,
+  /** @type {number[]} */ set,
   max = set.length - 1,
-  cache = {},
+  /** @type {Record<string, number>} */ cache = {},
 ) => {
   let key = `${target},${max}`;
   if (cache[key] != null) return cache[key];
@@ -38,7 +38,7 @@ export const computeSumPermutationsII = (
   return outcomes;
 };
 
-export const countPaths = (grid) => {
+export const countPaths = (/** @type {number[][]} */ grid) => {
   const h = grid.length;
   const w = grid[0].length;
   grid[h - 1][w - 1] = 1;
@@ -61,12 +61,13 @@ export const countPaths = (grid) => {
 };
 
 export const generateIPs = (() => {
-  const isValid = (seq) => {
+  const isValid = (/** @type {string} */ seq) => {
     const badZero = seq[0] === "0" && seq.length > 1;
     return seq.length > 0 && !badZero && +seq <= 255;
   };
 
-  function* getIPs(input, sections = 4) {
+  /** @returns {Generator<string>} */
+  function* getIPs(/** @type {string} */ input, sections = 4) {
     if (sections === 1) {
       if (isValid(input)) yield input;
       return;
@@ -81,10 +82,10 @@ export const generateIPs = (() => {
     }
   }
 
-  return (numerals) => [...getIPs(numerals)];
+  return (/** @type {string} */ numerals) => [...getIPs(numerals)];
 })();
 
-export const maximumSubarraySum = (arr) => {
+export const maximumSubarraySum = (/** @type {number[]} */ arr) => {
   let cur = -Infinity;
   let sum = -Infinity;
   for (const num of arr) {
@@ -94,15 +95,15 @@ export const maximumSubarraySum = (arr) => {
   return sum;
 };
 
-export const fewestHops = (track) => {
+export const fewestHops = (/** @type {number[]} */ track) => {
   track[track.length - 1] = 0;
   for (let i = track.length - 2; i >= 0; i--)
     track[i] = 1 + Math.min(Infinity, ...track.slice(i + 1, i + 1 + track[i]));
   return ~~track[0];
 };
 
-export const mergeIntervals = (intervals) => {
-  const result = [intervals.shift()];
+export const mergeIntervals = (/** @type {[number, number][]} */ intervals) => {
+  const result = /** @type {[number, number][]} */ ([intervals.shift()]);
   for (let [left, right] of intervals) {
     let i = 0;
     while (i < result.length) {
@@ -120,7 +121,8 @@ export const mergeIntervals = (intervals) => {
   return result.sort(([a], [b]) => a - b);
 };
 
-const fixParens = (str, index = 0, balance = 0) => {
+/** @returns {string[]} */
+const fixParens = (/** @type {string} */ str, index = 0, balance = 0) => {
   if (balance < 0) return [];
   if (index === str.length) return balance === 0 ? [""] : [];
 
@@ -140,10 +142,10 @@ const fixParens = (str, index = 0, balance = 0) => {
   }
 };
 
-export const fixParensOpt = (str) => {
+export const fixParensOpt = (/** @type {string} */ str) => {
   const solns = fixParens(str);
   let bestLen = 0;
-  let map = {};
+  let map = /** @type {Record<string, boolean>} */ ({});
   for (const soln of solns) {
     if (soln.length > bestLen) {
       bestLen = soln.length;
@@ -153,25 +155,25 @@ export const fixParensOpt = (str) => {
   return Object.keys(map);
 };
 
-export const spiralizeMatrix = (grid) => {
+export const spiralizeMatrix = (/** @type {number[][]} */ grid) => {
   const result = [];
   while (grid.length > 0) {
-    result.push(...grid.shift());
+    result.push(.../** @type {number[]} */ (grid.shift()));
     if (grid.length === 0 || grid[0].length === 0) break;
     result.push(...grid.map((r) => r.pop()));
-    result.push(...grid.pop().reverse());
+    result.push(...(/** @type {number[]} */ (grid.pop())).reverse());
     if (grid.length === 0 || grid[0].length === 0) break;
     result.push(...grid.map((r) => r.shift()).reverse());
   }
   return result;
 };
 
-export const pathToCorner = (grid) => {
+export const pathToCorner = (/** @type {number[][]} */ grid) => {
   const h = grid.length;
   const w = grid[0].length;
-  const k = (x, y) => `${x},${y}`;
+  const k = (/** @type {number} */ x, /** @type {number} */ y) => `${x},${y}`;
   const map = new Map();
-  const gset = (x, y, v) => !map.get(k(x, y)) && map.set(k(x, y), v);
+  const gset = (/** @type {number} */ x, /** @type {number} */ y, /** @type {string} */ v) => !map.get(k(x, y)) && map.set(k(x, y), v);
   map.set(k(0, 0), "");
   for (const [coords, path] of map) {
     const [x, y] = coords.split(",").map(Number);
@@ -184,12 +186,12 @@ export const pathToCorner = (grid) => {
   return "";
 };
 
-export const lpf = (num) => {
+export const lpf = (/** @type {number} */ num) => {
   for (let f = 2; f * f < num; f++) while (num % f === 0) num /= f;
   return num;
 };
 
-const hammingExtract = (str) => {
+const hammingExtract = (/** @type {string | number[]} */ str) => {
   let result = "0b";
   let b = 4;
   for (let i = 3; i < str.length; i++) {
@@ -199,7 +201,7 @@ const hammingExtract = (str) => {
   return `${+result}`;
 };
 
-export const hammingCorrect = (str) => {
+export const hammingCorrect = (/** @type {string} */ str) => {
   const bits = str.split("").map(Number);
   let badbit = 0;
   for (let b = 1; b < str.length; b *= 2) {
@@ -214,7 +216,7 @@ export const hammingCorrect = (str) => {
   return hammingExtract(bits);
 };
 
-export const hammingEncode = (num) => {
+export const hammingEncode = (/** @type {number} */ num) => {
   const digits = num.toString(2).split("");
   const encoded = [0];
 
@@ -224,7 +226,7 @@ export const hammingEncode = (num) => {
       encoded[i] = 0;
       pow *= 2;
     } else {
-      encoded[i] = +digits.shift();
+      encoded[i] = +(/** @type {string} */ (digits.shift()));
     }
   }
 
@@ -241,7 +243,7 @@ export const hammingEncode = (num) => {
   return encoded.join("");
 };
 
-export const stockProfit = (prices, n = 1, s = 0, c = {}) => {
+export const stockProfit = (/** @type {number[]} */ prices, n = 1, s = 0, /** @type {Record<string, number>} */ c = {}) => {
   let split = 0;
   const key = `${s},${prices.length},${n}`;
   if (c[key]) return c[key];
@@ -263,17 +265,17 @@ export const stockProfit = (prices, n = 1, s = 0, c = {}) => {
   return (c[key] = Math.max(pro, split));
 };
 
-export const lzDecode = (str) => {
+export const lzDecode = (/** @type {string} */ str) => {
   const buffer = str.split("");
   let isMode1 = true;
-  let result = [];
+  let result = /** @type {string[]} */ ([]);
   while (buffer.length) {
-    let size = +buffer.shift();
+    let size = +(/** @type {string} */ (buffer.shift()));
     if (size > 0) {
       if (isMode1 && buffer.length >= size)
-        while (size--) result.push(buffer.shift());
+        while (size--) result.push(/** @type {string} */ (buffer.shift()));
       else {
-        const offset = +buffer.shift();
+        const offset = +(/** @type {string} */ (buffer.shift()));
         while (size--) result.push(result[result.length - offset]);
       }
     }
@@ -283,7 +285,7 @@ export const lzDecode = (str) => {
   return result.join("");
 };
 
-const cypher = (char, shift) => {
+const cypher = (/** @type {string} */ char, /** @type {number} */ shift) => {
   const code = ((char.charCodeAt(0) - 65 + shift) % 26) + 65;
   return String.fromCharCode(code);
 };
@@ -297,14 +299,14 @@ export const caesarCypher = (/** @type {[string, number]} */ [plaintext, shift])
 export const vigenereCypher = (/** @type {[string, string]} */ [plaintext, password]) => {
   const pw = password.split("");
   const pwChar = () => pw.push(pw[0]) && pw.shift();
-  const lookup = (c1, c2) => cypher(c2, c1.charCodeAt(0) - 65);
+  const lookup = (/** @type {string} */ c1, /** @type {string} */ c2) => cypher(c2, c1.charCodeAt(0) - 65);
   return plaintext
     .split("")
-    .map((ch) => lookup(ch, pwChar()))
+    .map((ch) => lookup(ch, /** @type {string} */ (pwChar())))
     .join("");
 };
 
-export const rle = (text) =>
+export const rle = (/** @type {string} */ text) =>
   text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x, a) => x.length + a);
 
 export const twoColor = (/** @type {[number, number[][]]} */ [numVertices, edges]) => {
@@ -318,7 +320,7 @@ export const twoColor = (/** @type {[number, number[][]]} */ [numVertices, edges
   return arr.map(Number);
 };
 
-export const squareRoot = (bigInt) => {
+export const squareRoot = (/** @type {bigint} */ bigInt) => {
   if (bigInt < 0n) {
     return NaN;
   }
