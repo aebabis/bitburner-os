@@ -4,3 +4,4 @@
 - Accurate money reporting after liquidate
 - Port inspector
 - Find all places where leading / being removed from file names in game is causing bugs
+- See if you can use an editable iterator type to make the scheduler queue less bug prone. Refactor scheduler

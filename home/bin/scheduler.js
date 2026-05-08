@@ -117,6 +117,7 @@ export async function main(ns) {
         if (process.startTime > now) break;
         const waitTime = process.waitTime();
         if (waitTime > 50 && process.isWorker) {
+          console.log('REAPED', process);
           globalThis.__profiler?.recordReaped?.(process.args[1]);
           queue.splice(i--, 1);
           continue;
@@ -137,7 +138,7 @@ export async function main(ns) {
           // Specific server requested
           const server = getRamInfo(process.host);
           if (ramRequired <= server.ramAvailableTo(process)) {
-            await fulfill(ns, queue.splice(i, 1)[0], server);
+            await fulfill(ns, queue.splice(i--, 1)[0], server);
             continue;
           }
         } else {
@@ -152,9 +153,9 @@ export async function main(ns) {
           const server = eligibleServers.find(isServerValid);
           const settleServer = eligibleServers[0];
 
-          if (server != null) await fulfill(ns, queue.splice(i, 1)[0], server);
+          if (server != null) await fulfill(ns, queue.splice(i--, 1)[0], server);
           else if (settleServer?.ramAvailableTo(process) >= scriptRam)
-            await fulfill(ns, queue.splice(i, 1)[0], settleServer);
+            await fulfill(ns, queue.splice(i--, 1)[0], settleServer);
           else if (
             !process.isWorker &&
             ramRequired <= ns.getServerMaxRam("home")
@@ -162,10 +163,8 @@ export async function main(ns) {
             logger(ns).warn("Failed to find RAM for: " + process.toString());
         }
       }
-      if (queue.length > 0) {
-        ns.print(`${queue.length} items queued`);
-        queue.slice(0, 10).forEach((item) => ns.print(item.toString()));
-      }
+      ns.print(`${queue.length} items queued`);
+      queue.forEach((item) => ns.print(item.toString()));
     } catch (error) {
       logger(ns).error(error);
     } finally {
