@@ -1,7 +1,21 @@
 typeof purchaseWseAccount; // Reserve RAM
 
+/** @param {NS} ns
+ *  @param {'purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData'} funcName */
+const mayPurchase = (ns, funcName) => {
+  if (funcName === 'purchaseWseAccount') {
+    return true;
+  } else if (funcName.includes('urchaseTixApi')) {
+    return ns.stock.hasWSEAccount();
+  } else {
+    return ns.stock.hasTIXAPIAccess();
+  }
+};
+
 /** @param {NS} ns */
 export async function main(ns) {
-  const [api] = /** @type {('purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData')[]} */ (ns.args);
-  ns.stock[api]();
+  const [funcName] = /** @type {('purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData')[]} */ (ns.args);
+  if (mayPurchase(ns, funcName)) {
+    ns.stock[funcName]();
+  }
 }
