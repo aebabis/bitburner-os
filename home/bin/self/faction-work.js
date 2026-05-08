@@ -12,12 +12,20 @@ export async function main(ns) {
     ns.singularity.workForFaction(faction, 'security', focus)
   ) {
     putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
-    const DELAY = 10;
-    await ns.sleep(DELAY * 1000);
+    const start = new Date();
+    const repBefore = ns.singularity.getFactionRep(faction);
 
-    const { factionRep = {}, activeRepRate = {}, currentWork } = getPlayerData(ns);
+    await ns.sleep(10 * 1000);
+
+    const end = new Date();
+    const repAfter = ns.singularity.getFactionRep(faction);
+
+    const seconds = (+end - + start) / 1000;
+    const repRate = (repAfter - repBefore) / seconds;
+
+    const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);
     factionRep[faction] = ns.singularity.getFactionRep(faction);
-    activeRepRate[faction] = currentWork.workRepGained / DELAY;
+    activeRepRate[faction] = repRate;
     putPlayerData(ns, {
       factionRep,
       activeRepRate,
