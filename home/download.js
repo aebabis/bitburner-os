@@ -127,7 +127,7 @@ const FILES = [
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  const { branch } = ns.flags([["branch", "main"]]);
+  const { branch, _ } = ns.flags([["branch", "main"]]);
   if (_[0] != null) {
     ns.tprint(
       "\u001b[31mUnrecognized parameter(s): " +

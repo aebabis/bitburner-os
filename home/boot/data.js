@@ -10,12 +10,12 @@ export async function main(ns) {
 
   tprint(ns)(STR + "  Precalculating static server costs");
   const purchasedServerMaxRam = ns.getPurchasedServerMaxRam();
-  const purchasedServerCosts = {};
+  const purchasedServerCosts = /** @type {Record<number, number>} */ ({});
   for (let ram = purchasedServerMaxRam; ram >= 2; ram /= 2)
     purchasedServerCosts[ram] = ns.getPurchasedServerCost(ram);
 
   tprint(ns)(STR + "  Storing script RAM costs");
-  const scriptRam = {};
+  const scriptRam = /** @type {Record<string, number>} */ ({});
   const scripts = ns.ls("home").filter((file) => file.endsWith(".js"));
   for (const script of scripts) scriptRam[script] = ns.getScriptRam(script);
 

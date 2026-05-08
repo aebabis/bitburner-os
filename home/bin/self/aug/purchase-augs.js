@@ -103,10 +103,10 @@ export async function main(ns) {
     await rmi(ns)("/bin/self/buy-ram.js", 1);
 
     // Try to start next aug with market access
-    await rmi(ns)("/bin/broker/purchase.js", "purchaseWseAccount");
-    await rmi(ns)("/bin/broker/purchase.js", "purchaseTixApi");
-    await rmi(ns)("/bin/broker/purchase.js", "purchase4SMarketDataTixApi");
-    await rmi(ns)("/bin/broker/purchase.js", "purchase4SMarketData");
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseWseAccount");
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseTixApi");
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
+    await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketData");
 
     // Start all over
     await rmi(ns)("/bin/self/aug/install.js", 1, "init.js");

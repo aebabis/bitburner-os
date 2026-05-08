@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.tprint("Loading Augmentation PreReqs");
 
   const { augmentations } = getStaticData(ns);
-  const augmentationPrereqs = {};
+  const augmentationPrereqs = /** @type {Record<string, string[]>} */ ({});
 
   for (const aug of augmentations)
     augmentationPrereqs[aug] = ns.singularity.getAugmentationPrereq(aug);

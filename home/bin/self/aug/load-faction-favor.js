@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.disableLog("ALL");
   ns.tprint("Loading Faction Favor");
 
-  const factionFavor = {};
+  const factionFavor = /** @type {Record<string, number>} */ ({});
 
   for (const faction of FACTIONS)
     factionFavor[faction] = ns.singularity.getFactionFavor(faction);

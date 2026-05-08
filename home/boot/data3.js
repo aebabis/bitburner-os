@@ -1,7 +1,7 @@
-import { getStaticData, putStaticData } from "../lib/data-store";
-import { defer } from "./defer";
-import { tprint } from "./util";
-import { STR } from "../lib/colors";
+import { getStaticData, putStaticData } from '../lib/data-store';
+import { defer } from './defer';
+import { tprint } from './util';
+import { STR } from '../lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -9,17 +9,17 @@ export async function main(ns) {
 
   const { resetInfo, ownedSourceFiles, scriptRam } = getStaticData(ns);
 
-  const hasSourceFile4 = ownedSourceFiles.some((file) => file.n === 4);
+  const hasSourceFile4 = ownedSourceFiles.some((/** @type {{n: number}} */ file) => file.n === 4);
 
   // Compute RAM required on job server
   let requiredJobRam = 32;
   if (resetInfo.currentNode === 4 || hasSourceFile4) {
     const maxScriptSize =
-      scriptRam["/bin/self/aug/purchase-augs.js"] +
-      scriptRam["/bin/self/job.js"] +
-      scriptRam["/bin/self/work.js"] +
-      scriptRam["/bin/self/tor.js"] +
-      scriptRam["/bin/self/faction-work.js"];
+      scriptRam['/bin/self/aug/purchase-augs.js'] +
+      scriptRam['/bin/self/job.js'] +
+      scriptRam['/bin/self/work.js'] +
+      scriptRam['/bin/self/tor.js'] +
+      scriptRam['/bin/self/faction-work.js'];
     requiredJobRam = 1;
     while (requiredJobRam < maxScriptSize) requiredJobRam *= 2;
     tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);

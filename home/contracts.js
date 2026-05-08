@@ -33,7 +33,7 @@ export async function main(ns) {
     const match = isNaN(/** @type {number} */ (query))
       ? (/** @type {Contract} */ cct) => cct.filename.includes(/** @type {string} */ (query))
       : (/** @type {Contract} */ cct) => cct.id == query;
-    const { filename, hostname, type } = contracts.find(match);
+    const { filename, hostname, type } = /** @type {Contract} */ (contracts.find(match));
     const data = ns.codingcontract.getData(filename, hostname);
     const desc = ns.codingcontract.getDescription(filename, hostname);
     const tries = ns.codingcontract.getNumTriesRemaining(filename, hostname);

@@ -77,7 +77,7 @@ export async function main(ns) {
   const buyServer = async (
     /** @type {number} */ minRam,
     /** @type {number} */ maxRam,
-    /** @type {string} */ hostname = getNextServerName(ns, purchasedServerLimit),
+    /** @type {string} */ hostname = /** @type {string} */ (getNextServerName(ns, purchasedServerLimit)),
   ) => {
     const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 
@@ -129,7 +129,7 @@ export async function main(ns) {
     };
 
     const getMinRam = () => {
-      let minRam = !atMaxServers ? 4 : smallest.ram * 2;
+      let minRam = !atMaxServers ? 4 : /** @type {{hostname: string, ram: number}} */ (smallest).ram * 2;
       while (profit(minRam) < 0) {
         minRam *= 2;
         if (minRam > purchasedServerMaxRam) return null;
@@ -157,7 +157,7 @@ export async function main(ns) {
     }
 
     const minRam = getMinRam();
-    const maxRam = Math.min(purchasedServerMaxRam, minRam * 4);
+    const maxRam = Math.min(purchasedServerMaxRam, /** @type {number} */ (minRam) * 4);
 
     if (minRam == null) {
       ns.print("Not purchasing server because estimated time of goal too soon");
@@ -170,7 +170,7 @@ export async function main(ns) {
     if (servers.length > 0 && !atCapacity(ns)) return;
 
     if (!atMaxServers) await buyServer(minRam, maxRam);
-    else await buyServer(minRam, maxRam, smallest.hostname);
+    else await buyServer(minRam, maxRam, /** @type {{hostname: string, ram: number}} */ (smallest).hostname);
   };
 
   while (true) {

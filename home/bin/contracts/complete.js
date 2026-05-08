@@ -1,7 +1,7 @@
 import { getContractData, putContractData } from "../../lib/data-store";
 import algorithms from "./mapper";
 
-const decode = (data) =>
+const decode = (/** @type {unknown} */ data) =>
   typeof data === "string" && data.match(/^\d+n$/)
     ? BigInt(data.slice(0, -1))
     : data;
@@ -10,8 +10,9 @@ const decode = (data) =>
 const attemptContract = (ns, /** @type {{filename: string, hostname: string, type: string, data: unknown}} */ { filename, hostname, type, data }) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
-  const answer = algorithm(decode(data));
+  const answer = algorithm(/** @type {never} */ (decode(data)));
   try {
+    // @ts-ignore -- returnReward option not in type definitions
     const outcome = ns.codingcontract.attempt(answer, filename, hostname, {
       returnReward: true,
     });

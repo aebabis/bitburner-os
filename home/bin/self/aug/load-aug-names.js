@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.disableLog("ALL");
   ns.tprint("Loading Augmentation Names");
 
-  const factionAugmentations = {};
+  const factionAugmentations = /** @type {Record<string, string[]>} */ ({});
   const augSet = new Set();
 
   for (const faction of FACTIONS) {

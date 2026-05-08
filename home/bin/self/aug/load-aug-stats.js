@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.tprint("Loading Augmentation Stats");
 
   const { augmentations } = getStaticData(ns);
-  const augmentationStats = {};
+  const augmentationStats = /** @type {Record<string, AugmentationStats>} */ ({});
 
   for (const aug of augmentations)
     augmentationStats[aug] = ns.singularity.getAugmentationStats(aug);

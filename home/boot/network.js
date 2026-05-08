@@ -7,7 +7,7 @@ import { getHostnames } from "../lib/data-store";
 import { tprint } from "./util";
 import { STR, GRAY } from "../lib/colors";
 
-const canRunCode = (ns) => (hostname) => ns.getServerMaxRam(hostname) >= 1.6;
+const canRunCode = (/** @type {NS} */ ns) => (/** @type {string} */ hostname) => ns.getServerMaxRam(hostname) >= 1.6;
 
 /** @param {NS} ns **/
 export async function main(ns) {

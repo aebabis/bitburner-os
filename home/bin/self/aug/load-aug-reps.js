@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.tprint("Loading Augmentation Rep Costs");
 
   const { augmentations } = getStaticData(ns);
-  const augmentationRepReqs = {};
+  const augmentationRepReqs = /** @type {Record<string, number>} */ ({});
 
   for (const aug of augmentations)
     augmentationRepReqs[aug] = ns.singularity.getAugmentationRepReq(aug);
