@@ -11,9 +11,9 @@ import {
   getTableString,
 } from "../lib/service-api";
 
-const mostRootRam = (ns) => {
+const mostRootRam = (/** @type {NS} */ ns) => {
   const { rootServers = [] } = getRamData(ns);
-  return Math.max(0, ...rootServers.map((server) => server.maxRam));
+  return Math.max(0, ...rootServers.map((/** @type {{maxRam: number}} */ server) => server.maxRam));
 };
 
 /** @param {NS} ns **/
@@ -22,7 +22,7 @@ const go = async (ns) => {
   const { requiredJobRam, purchasedServerCosts, resetInfo, ownedSourceFiles } =
     getStaticData(ns);
 
-  const beatBN4 = ownedSourceFiles.find((file) => file.n === 4);
+  const beatBN4 = ownedSourceFiles.find((/** @type {{n: number}} */ file) => file.n === 4);
 
   const gangsAvailable = resetInfo.currentNode > 1;
   const hasSingularity = resetInfo.currentNode === 4 || beatBN4;
@@ -33,7 +33,7 @@ const go = async (ns) => {
     ns.stock.hasTIXAPIAccess() || ns.getPlayer().money >= 5.2e9;
   const canAutopilot = () =>
     hasSingularity && requiredJobRam <= mostRootRam(ns);
-  const isCriminal = (faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
+  const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
   const inCriminalFaction = () => ns.getPlayer().factions.some(isCriminal);
 
   /* eslint-disable no-unexpected-multiline */

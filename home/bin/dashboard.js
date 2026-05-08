@@ -89,7 +89,7 @@ const backdoorPath = (/** @type {NS} */ ns) => {
 };
 
 /** @param {NS} ns
- *  @param {ReturnType<typeof NS.getServer>} server
+ *  @param {Server} server
  */
 const threadpoolRow = (ns, server) => {
   const { hostname, ramUsed, maxRam } = server;
@@ -181,7 +181,7 @@ const moneyTable = (/** @type {NS} */ ns) => {
   }
   const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
   const goalCost = getGoalCost(ns);
-  const { income1s = 0, income10s = 0, income60s = 0, themeIncome, theftRatePerGB } = moneyData;
+  const { income1s = 0, income10s = 0, income60s = 0 } = moneyData;
   // const theft = ("$" + ns.formatNumber(theftIncome, 1)).padStart(6) + "/s  ";
   // const theftRate =
   //   ("$" + ns.formatNumber(theftRatePerGB, 1)).padStart(6) + "/GBs";
@@ -248,7 +248,7 @@ export async function main(ns) {
   ns.ui.resizeTail(1000, 500);
   while (true) {
     try {
-      const modal = await getTailModal(ns);
+      await getTailModal(ns);
       const width = await getModalColumnCount(ns);
 
       if (width != null) {

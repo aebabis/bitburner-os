@@ -28,7 +28,7 @@ export async function main(ns) {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);
     const ramUnused = maxRam - ramUsed;
-    let ramAvailableTo = (/** @type {unknown} */ _process) => ramUnused;
+    let ramAvailableTo = (/** @type {{script: string, highPriority?: boolean, isWorker: boolean}} */ _process) => ramUnused;
     if (hostname === "home") {
       // On home, 32GB is unavailable to services
       // and batch jobs so that rmi calls can use it.
@@ -98,7 +98,7 @@ export async function main(ns) {
     return data;
   };
 
-  const queue = /** @type {{script: string, numThreads: number, startTime: number, isWorker: boolean, args: string[], host: string | null, waitTime: () => number, toString: (hostname?: string) => string, highPriority: boolean, ticket?: string}[]} */ ([]);
+  const queue = /** @type {{script: string, numThreads: number, startTime: number, time: number, isWorker: boolean, args: string[], host: string | null, waitTime: () => number, toString: (hostname?: string) => string, highPriority: boolean, ticket?: string}[]} */ ([]);
   while (true) {
     try {
       ns.clearLog();
@@ -109,7 +109,7 @@ export async function main(ns) {
         await ns.sleep(20);
         continue;
       } else if (queue.length !== length)
-        queue.sort(by((job) => job.startTime));
+        queue.sort(by((/** @type {{startTime: number}} */ job) => job.startTime));
 
       const now = Date.now();
       for (let i = 0; i < queue.length; i++) {

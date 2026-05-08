@@ -13,7 +13,7 @@ const ERRORS = [MAIN_FUNCTION_ERROR, DYNAMIC_LOAD_ERROR];
 
 /** @param {NS} ns */
 const autoClosePopUps = (ns) => {
-  let timer;
+  let timer = /** @type {ReturnType<typeof setTimeout>} */ (0);
   let timeout = 1;
   const check = () => {
     const popup = doc.querySelector(".MuiModal-root");
@@ -56,8 +56,8 @@ const afkTracker = (ns) => {
 const terminalTracker = (ns) => {
   let lastTerminalActivity = Date.now();
 
-  const update = (event) => {
-    if (event.target.id === "terminal-input") lastTerminalActivity = Date.now();
+  const update = (/** @type {KeyboardEvent} */ event) => {
+    if ((/** @type {HTMLElement | null} */ (event.target))?.id === "terminal-input") lastTerminalActivity = Date.now();
   };
 
   doc.body.addEventListener("keypress", update, true);
@@ -69,6 +69,7 @@ const terminalTracker = (ns) => {
   return () => lastTerminalActivity;
 };
 
+/** @param {NS} ns */
 const createIndicator = (ns) => {
   const indicator = doc.createElement("div");
   indicator.innerText = "●";
@@ -82,6 +83,7 @@ const createIndicator = (ns) => {
   return indicator;
 };
 
+/** @param {NS} ns @param {boolean} focus */
 const setFocus = (ns, focus) => {
   try {
     ns.singularity.setFocus(focus);

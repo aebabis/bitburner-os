@@ -21,17 +21,17 @@ import {
   squareRoot,
 } from "./algorithms";
 
-const arr2d = (rows, cols) =>
+const arr2d = (/** @type {number} */ rows, /** @type {number} */ cols) =>
   Array(rows)
     .fill(0)
     .map(() => Array(cols).fill(0));
 
 const map = {
-  "Algorithmic Stock Trader I": (prices) => stockProfit(prices, 1),
-  "Algorithmic Stock Trader II": (prices) => stockProfit(prices, Infinity),
-  "Algorithmic Stock Trader III": (prices) => stockProfit(prices, 2),
+  "Algorithmic Stock Trader I": (/** @type {number[]} */ prices) => stockProfit(prices, 1),
+  "Algorithmic Stock Trader II": (/** @type {number[]} */ prices) => stockProfit(prices, Infinity),
+  "Algorithmic Stock Trader III": (/** @type {number[]} */ prices) => stockProfit(prices, 2),
   "Algorithmic Stock Trader IV": (/** @type {[number, number[]]} */ [n, p]) => stockProfit(p, n),
-  "Array Jumping Game": (track) => +!!fewestHops(track),
+  "Array Jumping Game": (/** @type {number[]} */ track) => +!!fewestHops(track),
   "Array Jumping Game II": fewestHops,
   "Compression I: RLE Compression": rle,
   "Compression II: LZ Decompression": lzDecode,

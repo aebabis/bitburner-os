@@ -4,7 +4,7 @@ import { HACK, GROW, WEAKEN, SHARE } from "../etc/filenames";
 import { ERROR } from "./colors";
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
-const TicketItem = (/** @type {{script: string, host: string | null, numThreads: number, args: string[], startTime?: number}} */ { script, host, numThreads, args, ...rest }) => {
+const TicketItem = (/** @type {{script: string, host: string | null, numThreads: number, args: string[], ticket?: string, startTime?: number, highPriority?: boolean}} */ { script, host, numThreads, args, ...rest }) => {
   const time = rest.startTime || Date.now();
   const waitTime = () => Date.now() - time;
   const wait = () => (waitTime() / 1000).toFixed(3);
@@ -18,12 +18,14 @@ const TicketItem = (/** @type {{script: string, host: string | null, numThreads:
     time,
     waitTime,
     isWorker,
-    toString: (/** @type {string | undefined} */ hostname) =>
+    toString: (/** @type {string | undefined} */ hostname = undefined) =>
       `${script} ${hostname || host} ${numThreads} ${args.join(" ")} (${wait()}s)`,
   };
 };
 
-/** @param {NS} ns **/
+/** @typedef {ReturnType<typeof TicketItem>} TicketEntry */
+
+/** @param {NS} ns @param {TicketEntry[]} queue **/
 export const checkPort = async (ns, queue) => {
   const delegated = await getDelegatedTasks(ns);
   for (const taskData of delegated) {
@@ -37,7 +39,7 @@ export const checkPort = async (ns, queue) => {
   }
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {TicketEntry} process @param {{hostname: string, ramAvailableTo: (process: TicketEntry) => number}} server **/
 export const fulfill = async (ns, process, server) => {
   const { hostname, ramAvailableTo } = server;
   const { script, numThreads, args, ticket } = process;
@@ -64,7 +66,7 @@ export const fulfill = async (ns, process, server) => {
   if (ticket != null) await closeTicket(ns)(ticket, pid, hostname, threads);
 };
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {TicketEntry} process **/
 export const reject = async (ns, process, /** @type {string | undefined} */ reason = undefined) => {
   if (reason != null) ns.tprint(ERROR + reason);
   if (process.ticket != null) await closeTicket(ns)(process.ticket, 0, null, 0);

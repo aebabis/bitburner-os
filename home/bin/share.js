@@ -3,7 +3,7 @@ import getConfig from "../lib/config";
 import { getStaticData, getRamData } from "../lib/data-store";
 import { delegateAny } from "../lib/scheduler-delegate";
 
-const sum = (a, b) => a + b;
+const sum = (/** @type {number} */ a, /** @type {number} */ b) => a + b;
 
 let MIN_WAIT = 50;
 let MAX_WAIT = 10000;
@@ -16,7 +16,7 @@ export async function main(ns) {
   ns.disableLog("ALL");
   const config = getConfig(ns);
   const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE.slice(1)];
-  let processes = [];
+  let processes = /** @type {{pid: number, threads: number}[]} */ ([]);
 
   let wait = MIN_WAIT;
   while (true) {

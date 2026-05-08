@@ -45,7 +45,7 @@ const tick = (/** @type {NS} */ ns, /** @type {{record: (data: {sym: string, pri
   const eligiblePurchases = stocks
     .filter((stock) => stock.forecast > 0.51)
     .filter((stock) => stock.position[0] < stock.maxShares)
-    .sort(by((stock) => -stock.forecast));
+    .sort(by((/** @type {Stock} */ stock) => -stock.forecast));
 
   let moneyToSpend = getSpendableFunds(ns, stocks);
   while (moneyToSpend > 1e9 && eligiblePurchases.length > 0) {

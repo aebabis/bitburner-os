@@ -18,7 +18,7 @@ class LogarithmicQueue {
     const { list, scale, count } = this;
     if (list.length > scale) {
       const oldest = list.shift();
-      if (count === 0) this._addBack(oldest);
+      if (count === 0 && oldest != null) this._addBack(oldest);
       this.count = (count + 1) % scale;
     }
   }
@@ -29,6 +29,7 @@ class LogarithmicQueue {
     this._percolate();
   }
 
+  /** @returns {Generator<Sample>} */
   *[Symbol.iterator]() {
     const { back, list } = this;
     if (back != null) for (const item of back) yield item;

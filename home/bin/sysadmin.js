@@ -107,10 +107,10 @@ export async function main(ns) {
     else await infect(ns, hostname);
   };
 
-  const getSmallestServer = (servers) => {
+  const getSmallestServer = (/** @type {{hostname: string, ram: number}[]} */ servers) => {
     if (servers.length === 0) return null;
     if (servers.length === 1) return servers[0];
-    return servers.reduce((s1, s2) => (s1.ram <= s2.ram ? s1 : s2));
+    return servers.reduce((/** @type {{hostname: string, ram: number}} */ s1, /** @type {{hostname: string, ram: number}} */ s2) => (s1.ram <= s2.ram ? s1 : s2));
   };
 
   const attemptPurchase = async (/** @type {NS} */ ns) => {

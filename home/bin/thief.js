@@ -37,7 +37,7 @@ export async function main(ns) {
       .filter((/** @type {Thief} */ thief) => thief.canHack())
       .sort(by((/** @type {Thief} */ thief) => -thief.getDesirability(HORIZON_MS, ram)));
 
-  let viableThieves;
+  let viableThieves = /** @type {Thief[]} */ ([]);
   let lastPrioritization = 0;
 
   while (true) {

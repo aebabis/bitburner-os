@@ -29,9 +29,10 @@ export async function main(ns) {
     ]);
     ns.tprint("\n" + table(ns, ["ID", "HOST", "FILE", ""], rows));
   } else {
-    const match = isNaN(query)
-      ? (cct) => cct.filename.includes(query)
-      : (cct) => cct.id == query;
+    /** @typedef {{filename: string, hostname: string, id: number, type: string}} Contract */
+    const match = isNaN(/** @type {number} */ (query))
+      ? (/** @type {Contract} */ cct) => cct.filename.includes(/** @type {string} */ (query))
+      : (/** @type {Contract} */ cct) => cct.id == query;
     const { filename, hostname, type } = contracts.find(match);
     const data = ns.codingcontract.getData(filename, hostname);
     const desc = ns.codingcontract.getDescription(filename, hostname);

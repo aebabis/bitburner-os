@@ -26,7 +26,9 @@ const OUTPUT_FILE = "/.bitburner/info.json";
 const CMD_FILE = "/.bitburner/cmd.json";
 const INTERVAL_MS = 2000;
 
-/** Return the string shown in the Neovim statusline. */
+/** @typedef {{v: number, ts: number, ram: {max: number, used: number}, player: {money: number, hacking: number}, procs: {file: string, pid: number, threads: number, args: ScriptArg[]}[], status: string, reset: {bitnode: number, playtime: number}, last_cmd_id: number}} NvimData */
+
+/** @param {NvimData} data */
 function formatStatus(data) {
   const ram = `home:${Math.round(data.ram.used)}/${Math.round(data.ram.max)}GB`;
   const money = formatMoney(data.player.money);
@@ -34,6 +36,7 @@ function formatStatus(data) {
   return [ram, money, hk].join(" | ");
 }
 
+/** @param {number} n */
 function formatMoney(n) {
   if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}t`;
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}b`;
@@ -47,7 +50,7 @@ export async function main(ns) {
   ns.disableLog("ALL");
   let lastCmdId = -1;
   while (true) {
-    const data = { v: 1, ts: Date.now() };
+    const data = /** @type {NvimData} */ ({ v: 1, ts: Date.now() });
     data.ram = {
       max: ns.getServerMaxRam("home"),
       used: ns.getServerUsedRam("home"),
@@ -62,7 +65,7 @@ export async function main(ns) {
     }));
     data.status = formatStatus(data);
     const r = ns.getResetInfo();
-    data.reset = { bitnode: r.currentNode, playtime: r.totalPlaytime };
+    data.reset = { bitnode: r.currentNode, playtime: p.totalPlaytime };
     const cmdRaw = ns.read(CMD_FILE);
     if (cmdRaw) {
       try {

@@ -11,8 +11,10 @@ const evict = (p) => {
   const cutoff = Date.now() - HISTORY_MS;
   while (p.frames.length > 1 && p.frames[0].scheduledStart < cutoff) {
     const evicted = p.frames.shift();
-    p.frameIds.delete(evicted.frameId);
-    for (const id of evicted.jobIds) p.jobs.delete(id);
+    if (evicted != null) {
+      p.frameIds.delete(evicted.frameId);
+      for (const id of evicted.jobIds) p.jobs.delete(id);
+    }
   }
 };
 
@@ -46,7 +48,7 @@ const makeRecordStart = (p) => (/** @type {string} */ jobId, /** @type {number} 
 };
 
 /** @param {ProfilerState} p */
-const makeRecordActual = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart, /** @type {number} */ actualEnd, result) => {
+const makeRecordActual = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart, /** @type {number} */ actualEnd, /** @type {unknown} */ result) => {
   const job = p.jobs.get(jobId);
   if (job) {
     job.actualStart = actualStart;

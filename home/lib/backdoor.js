@@ -10,13 +10,13 @@ const PRIORITIES = [
   "w0r1d_d43m0n",
 ];
 
-/** @param {NS} ns **/
+/** @param {NS} ns @param {string} hostname **/
 const getPathTo = (ns, hostname) => {
   if (ns.getServer(hostname).isConnectedTo) return [];
-  const next = {};
+  const next = /** @type {Record<string, string>} */ ({});
   const visited = [hostname];
-  const path = (start) =>
-    start === hostname ? [hostname] : [start, ...path(next[start])];
+  const path = /** @type {(start: string) => string[]} */ ((start) =>
+    start === hostname ? [hostname] : [start, ...path(next[start])]);
   for (let i = 0; i < visited.length; i++) {
     const neighbors = ns.scan(visited[i]).filter((s) => !visited.includes(s));
     for (const neighbor of neighbors) {
