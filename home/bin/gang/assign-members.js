@@ -1,6 +1,6 @@
 import { by } from "../../lib/util";
 import { delegateAny } from "../../lib/scheduler-delegate";
-import { getGangData, putGangData } from "../../lib/data-store";
+import { getGangData, putGangData, putMoneyData } from "../../lib/data-store";
 import { logger } from "../../lib/logger";
 import { isRepBound } from "../../lib/query-service";
 
@@ -12,6 +12,9 @@ export async function main(ns) {
     const memberNames = ns.gang.getMemberNames();
     const readyMembers = [];
 
+    const gangIncome = gangInfo.moneyGainRate * 5;
+
+    putMoneyData(ns, { gangIncome });
     putGangData(ns, { gangInfo, memberNames });
 
     const assignNext = (/** @type {string[]} */ members, /** @type {string} */ task) => {
