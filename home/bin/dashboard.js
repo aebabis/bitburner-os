@@ -150,14 +150,14 @@ const getGoals = (ns) => {
     const POOL1 = `${THREADPOOL}-01`;
     return [
       goal(`${requiredJobRam}GB on ${POOL1}`,
-        () => ns.getPurchasedServerMaxRam(POOL1) >= requiredJobRam),
+        () => ns.getServer(POOL1).maxRam >= requiredJobRam),
       goal('Run augmentation suite', () => false),
     ];
   } else {
     const repNeeded = getRepNeeded(ns);
     return [
       goal("Join " + targetFaction, () => factions.includes(targetFaction)),
-      goal("Gain " + repNeeded  + " rep", () => factionRep[targetFaction] >= repNeeded),
+      goal("Gain " + repNeeded  + " rep", () => repNeeded != null && factionRep[targetFaction] >= repNeeded),
       ...targetAugmentations.map((/** @type {string} */ aug) => (
         goal(aug, () => purchasedAugmentations.includes(aug)))),
     ];
