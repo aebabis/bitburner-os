@@ -112,7 +112,7 @@ export async function main(ns) {
         ? (ramAvailable / Math.max(candidates.length, 1)) * 0.9
         : ramAvailable * 0.9;
 
-      const weakenTimes = candidates
+      const weakenTimes = viableThieves
         .filter((thief) => thief.isPipelining())
         .map((thief) => thief.getWeakenTime() / 1000);
       if (weakenTimes.length > 0) {
