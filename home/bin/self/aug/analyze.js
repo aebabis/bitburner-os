@@ -62,6 +62,7 @@ const getAugmentGoals = (
 
   const unownedAugmentations = augmentations
     .filter((/** @type {string} */ aug) => !ownedAugmentations.includes(aug) && notNeuroFlux(aug))
+    .filter((aug) => factions.some((faction) => factionAugmentations[faction].includes(aug)))
     .sort(by(weightedCost));
 
   const top = unownedAugmentations.slice(0, 4);
