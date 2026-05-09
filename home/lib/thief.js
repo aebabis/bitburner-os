@@ -313,15 +313,7 @@ export default class Thief {
     return currentBatch.type !== "WGW";
   };
 
-  canStartNextBatch = () => {
-    if (!this.currentBatch || this.currentBatch.hasEnded()) return true;
-    if (this.currentBatch.type !== "HWGW") return false;
-    // Allow scheduling next frame one weaken cycle before current ends so there's no gap.
-    return (
-      Date.now() >=
-      (this.currentBatch.endAfter ?? Infinity) - this.ns.getWeakenTime(this.server)
-    );
-  };
+  canStartNextBatch = () => !this.currentBatch || this.currentBatch.hasEnded();
 
   isPipelining = () =>
     this.currentBatch != null && !this.currentBatch.hasEnded();
