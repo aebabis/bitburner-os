@@ -14,7 +14,13 @@ export async function main(ns) {
   initProfiler();
   ns.disableLog("ALL");
 
+  const WIDTH = 800;
+  const HEIGHT = 150;
+  const x = eval('doc' + 'ument.body').clientWidth - WIDTH;
+  const y = eval('doc' + 'ument.body').clientHeight - HEIGHT;
   ns.ui.openTail();
+  ns.ui.resizeTail(WIDTH, HEIGHT);
+  ns.ui.moveTail(x - 2, y - 30);
 
   const feed = /** @type {string[]} */ ([]);
   const log = (/** @type {string} */ message) => {

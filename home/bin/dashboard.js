@@ -222,7 +222,11 @@ export async function main(ns) {
     // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
   ].filter(Boolean);
   await ns.sleep(1);
-  ns.ui.resizeTail(1000, 500);
+  const WIDTH = 1200;
+  const HEIGHT = 400;
+  ns.ui.resizeTail(WIDTH, HEIGHT);
+  const x = eval('doc' + 'ument.body').clientWidth - WIDTH;
+  ns.ui.moveTail(x - 2, 2);
   while (true) {
     try {
       await getTailModal(ns);
