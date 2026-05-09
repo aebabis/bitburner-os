@@ -46,7 +46,9 @@ export async function getTailModal(ns, retry = true) {
   };
 }
 
-const charWidth = 9.65;
+/** @param {NS} ns **/
+const charWidth = (ns) => 9.65 * ns.ui.getStyles().fontSize / 16;
+
 /** @param {NS} ns **/
 export async function getModalColumnCount(ns) {
   const tailPane = await getTailModal(ns, true);
@@ -54,6 +56,6 @@ export async function getModalColumnCount(ns) {
   tailPane.bottom.classList.add("windower");
   ns.clearLog();
   return Math.floor(
-    (tailPane.bottom.parentElement.clientWidth - 2) / charWidth,
+    (tailPane.bottom.parentElement.clientWidth - 2) / charWidth(ns),
   );
 }

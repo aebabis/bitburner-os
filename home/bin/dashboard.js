@@ -240,16 +240,16 @@ export async function main(ns) {
         ns,
         ['SERVICES', '', ''],
         getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-          [name, status, MEDIUM(ram.toFixed(2)+'GB')]),
+          [name, status, '  ' + MEDIUM(ram.toFixed(2)+'GB')]),
         { colors: true },
       ),
     ),
-    new GrowingWindow(() => backdoorPath(ns)),
+    !hasBitNode(ns, 4) && new GrowingWindow(() => backdoorPath(ns)),
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => moneyTable(ns)),
     // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
-  ];
+  ].filter(Boolean);
   await ns.sleep(1);
   ns.ui.resizeTail(1000, 500);
   while (true) {
