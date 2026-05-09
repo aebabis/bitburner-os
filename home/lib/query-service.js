@@ -6,6 +6,7 @@ import {
   getRamData,
   getPlayerData,
   getMoneyData,
+  getGoalsData,
 } from "./data-store";
 
 /** @template T
@@ -44,7 +45,9 @@ export const getTimeEstimates = (ns) => {
     activeRepRate = {},
     passiveRepRate = {},
   } = getPlayerData(ns);
-  const { targetFaction } = getStaticData(ns);
+  const staticData = getStaticData(ns);
+  const goalsData = getGoalsData(ns);
+  const targetFaction = goalsData.targetFaction ?? staticData.targetFaction;
 
   const moneyTime =
     costToAug != null ? (costToAug - money - stock) / referenceIncome : DAY;
@@ -106,7 +109,10 @@ export const getGoalCost = (ns) =>
 
 /** @param {NS} ns */
 export const getRepNeeded = (ns) => {
-  const { targetAugmentations, augmentationRepReqs } = getStaticData(ns);
+  const staticData = getStaticData(ns);
+  const { augmentationRepReqs } = staticData;
+  const goalsData = getGoalsData(ns);
+  const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
   if (targetAugmentations == null) return null;
   const repCosts = targetAugmentations.map((/** @type {string} */ aug) => augmentationRepReqs[aug]);
   return Math.max(...repCosts, 0);

@@ -42,6 +42,7 @@ const go = async (ns) => {
     AnyHostService(ns)("/bin/hacknet.js"),
     AnyHostService(ns)("/bin/thief.js"),
     AnyHostService(ns, canPurchaseServers, 1000)("/bin/sysadmin.js"),
+    AnyHostService(ns)("/bin/goals.js"),
     AnyHostService(ns)("/bin/dashboard.js"),
     AnyHostService(ns)("/bin/accountant.js"),
     AnyHostService(ns)("/bin/contracts/freelancer.js"),

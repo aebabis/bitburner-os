@@ -21,3 +21,5 @@ export const PORT_DASHBOARD_DATA = port++;
 export const PORT_PLAYER_DATA = port++;
 export const PORT_MONEY_DATA = port++;
 export const PORT_CONTRACT_DATA = port++;
+
+export const PORT_GOALS_DATA = port++;

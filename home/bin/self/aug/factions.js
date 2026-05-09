@@ -63,6 +63,13 @@ export const FACTION_LOCATIONS = {
   "The Syndicate": ["Aevum", "Sector-12"],
 };
 
+export const HACKING_REQUIREMENTS = {
+  CyberSec: 50,
+  NiteSec: 80,
+  "The Black Hand": 100,
+  BitRunners: 175,
+};
+
 export const COMBAT_REQUIREMENTS = {
   "The Covenant": 850,
   Daedalus: 1500, // Or 2500 hacking

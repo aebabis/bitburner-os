@@ -1,6 +1,7 @@
 import { THREADPOOL } from "../etc/config";
 import { getPath } from "../lib/backdoor.js";
-import { getStaticData, getMoneyData, getPlayerData } from "../lib/data-store";
+import { getStaticData, getMoneyData, getPlayerData, getGoalsData } from "../lib/data-store";
+import { getGoals } from "../lib/goals";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
@@ -8,7 +9,6 @@ import { getServices } from "../lib/service-api";
 import { C, MEDIUM, BRIGHT } from "../lib/colors";
 import {
   getTimeEstimates,
-  getRepNeeded,
   getGoalCost,
   hasBitNode,
 } from "../lib/query-service";
@@ -132,39 +132,10 @@ const threadpoolTable = (ns) => {
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
-/** @param {string} desc
- *  @param {() => boolean} isDone */
-const goal = (desc, isDone) => ({
-  desc,
-  isDone,
-  toString: () => isDone() ? desc : MEDIUM(desc),
-});
-
-/** @param {NS} ns */
-const getGoals = (ns) => {
-  const { factions } = ns.getPlayer();
-  const { factionRep, purchasedAugmentations } = getPlayerData(ns);
-  const { requiredJobRam, targetFaction, targetAugmentations } =
-    getStaticData(ns);
-  if (targetAugmentations == null) {
-    const POOL1 = `${THREADPOOL}-01`;
-    return [
-      goal(`${requiredJobRam}GB on ${POOL1}`,
-        () => ns.getServer(POOL1).maxRam >= requiredJobRam),
-      goal('Run augmentation suite', () => false),
-    ];
-  } else {
-    const repNeeded = getRepNeeded(ns);
-    return [
-      goal("Join " + targetFaction, () => factions.includes(targetFaction)),
-      goal("Gain " + repNeeded  + " rep", () => repNeeded != null && factionRep[targetFaction] >= repNeeded),
-      ...targetAugmentations.map((/** @type {string} */ aug) => (
-        goal(aug, () => purchasedAugmentations.includes(aug)))),
-    ];
-  }
-};
 
 const goalsTable = (/** @type {NS} */ ns) => {
+  const { enabled = true } = getGoalsData(ns);
+  if (!enabled) return ` ${H("GOALS")} \n ${MEDIUM("(disabled)")} `;
   const goals = getGoals(ns);
   return table(
     ns,
