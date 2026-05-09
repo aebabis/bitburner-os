@@ -11,7 +11,7 @@ export async function main(ns) {
   let waitMessageShown = false;
   let lastMessageTime = 0;
   while (true) {
-    const hacknetIncome = getNodes(ns).map((node) => node.production).reduce((a, b) => a+b);
+    const hacknetIncome = getNodes(ns).map((node) => node.production).reduce((a, b) => a+b, 0);
     const moneyData = getMoneyData(ns);
     putMoneyData(ns, { ...moneyData, hacknetIncome });
 

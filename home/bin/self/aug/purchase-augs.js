@@ -28,7 +28,10 @@ export async function main(ns) {
   const { estimatedStockValue = 0, costToAug: augCost = Infinity } =
     getMoneyData(ns);
 
-  const rep = factionRep[targetFaction] || 0;
+  const gang = getPlayerData(ns).gangInfo?.faction;
+  const gangRep = gang && factionRep[gang];
+  const usedFaction = gangRep > factionRep[targetFaction] ? gang : targetFaction;
+  const rep = factionRep[usedFaction] || 0;
 
   const remainingAugs = targetAugmentations
     .filter((/** @type {string} */ aug) => !purchasedAugmentations.includes(aug))

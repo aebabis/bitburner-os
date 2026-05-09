@@ -1,6 +1,6 @@
 import { rmi } from "../../../lib/rmi";
 import { analyzeAugData } from "./analyze";
-import { getStaticData } from "../../../lib/data-store";
+import { getStaticData, getPlayerData } from "../../../lib/data-store";
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -19,7 +19,7 @@ export async function main(ns) {
 
   while (true) {
     await rmi(ns, retry)("/bin/self/aug/join-factions.js");
-    if (getStaticData(ns).targetFaction != null)
+    if (getStaticData(ns).targetFaction != null || getPlayerData(ns).gang)
       await rmi(ns, retry)("/bin/self/aug/purchase-augs.js");
     await ns.sleep(100);
   }
