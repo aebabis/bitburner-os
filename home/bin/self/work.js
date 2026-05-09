@@ -1,5 +1,5 @@
-import { getStaticData, getPlayerData, getGoalsData } from "../../lib/data-store";
-import { isMoneyBound, getRepNeeded } from "../../lib/query-service";
+import { getPlayerData } from "../../lib/data-store";
+import { isMoneyBound, getRepNeeded, getTargetFaction } from "../../lib/query-service";
 import { getGoals } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 import getConfig from "../../lib/config";
@@ -16,9 +16,7 @@ export async function main(ns) {
 
   while (true) {
     const player = ns.getPlayer();
-    const staticData = getStaticData(ns);
-    const goalsData = getGoalsData(ns);
-    const targetFaction = goalsData.targetFaction ?? staticData.targetFaction;
+    const targetFaction = getTargetFaction(ns);
     const { isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
     const inTargetFaction = player.factions.includes(targetFaction);

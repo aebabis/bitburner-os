@@ -7,6 +7,7 @@ import {
   getPlayerData,
   getMoneyData,
   getGoalsData,
+  getGangData,
 } from "./data-store";
 
 /** @template T
@@ -31,6 +32,17 @@ export const getJobRamCost = cache((ns) => {
   return purchasedServerCosts[requiredJobRam];
 });
 
+/** @param {NS} ns */
+export const getTargetFaction = (ns) => {
+  const { targetFaction, manualOverride } = getGoalsData(ns);
+  if (manualOverride) return targetFaction;
+  const { factionRep } = getPlayerData(ns);
+  const gang = getGangData(ns)?.gangInfo?.faction;
+  const gangRep = factionRep?.[gang] ?? 0;
+  const targetFactionRep = factionRep?.[targetFaction] ?? 0;
+  return gangRep > targetFactionRep ? gang : targetFaction;
+};
+
 const DAY = 60 * 60 * 24;
 /** @param {NS} ns */
 export const getTimeEstimates = (ns) => {
@@ -45,9 +57,7 @@ export const getTimeEstimates = (ns) => {
     activeRepRate = {},
     passiveRepRate = {},
   } = getPlayerData(ns);
-  const staticData = getStaticData(ns);
-  const goalsData = getGoalsData(ns);
-  const targetFaction = goalsData.targetFaction ?? staticData.targetFaction;
+  const targetFaction = getTargetFaction(ns);
 
   const moneyTime =
     costToAug != null ? (costToAug - money - stock) / referenceIncome : DAY;

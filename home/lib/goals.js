@@ -1,5 +1,5 @@
 import { getStaticData, getGoalsData, getPlayerData } from "./data-store";
-import { getRepNeeded } from "./query-service";
+import { getRepNeeded, getTargetFaction } from "./query-service";
 import { MEDIUM } from "./colors";
 import { COMBAT_REQUIREMENTS, HACKING_REQUIREMENTS } from "../bin/self/aug/factions";
 import { THREADPOOL } from "../etc/config";
@@ -42,7 +42,7 @@ export const getGoals = (ns) => {
   const staticData = getStaticData(ns);
   const { requiredJobRam } = staticData;
   const goalsData = getGoalsData(ns);
-  const targetFaction = goalsData.targetFaction ?? staticData.targetFaction;
+  const targetFaction = getTargetFaction(ns);
   const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
 
   if (targetAugmentations == null) {
