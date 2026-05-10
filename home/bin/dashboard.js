@@ -225,8 +225,8 @@ export async function main(ns) {
   const WIDTH = 1200;
   const HEIGHT = 400;
   ns.ui.resizeTail(WIDTH, HEIGHT);
-  const x = eval('doc' + 'ument.body').clientWidth - WIDTH;
-  ns.ui.moveTail(x - 2, 2);
+  const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
+  if (clientWidth) ns.ui.moveTail(clientWidth - WIDTH - 2, 2);
   while (true) {
     try {
       await getTailModal(ns);
