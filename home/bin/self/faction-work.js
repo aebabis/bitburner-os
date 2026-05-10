@@ -20,7 +20,7 @@ export async function main(ns) {
     const end = new Date();
     const repAfter = ns.singularity.getFactionRep(faction);
 
-    const seconds = (+end - + start) / 1000;
+    const seconds = (+end - +start) / 1000;
     const repRate = (repAfter - repBefore) / seconds;
 
     const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);

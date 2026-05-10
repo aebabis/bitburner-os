@@ -1,5 +1,5 @@
-import { getStaticData, getGoalsData, getPlayerData, getGangData } from "./data-store";
-import { getRepNeeded, getTargetFaction } from "./query-service";
+import { getStaticData, getGoalsData, getPlayerData } from "./data-store";
+import { getRepTargets, getTargetFaction } from "./query-service";
 import { MEDIUM } from "./colors";
 import { COMBAT_REQUIREMENTS, HACKING_REQUIREMENTS } from "../bin/self/aug/factions";
 import { THREADPOOL } from "../etc/config";
@@ -43,7 +43,7 @@ export const getGoals = (ns) => {
   const { factions } = ns.getPlayer();
   const { factionRep, purchasedAugmentations } = getPlayerData(ns);
   const staticData = getStaticData(ns);
-  const { requiredJobRam, factionAugmentations = {}, augmentationRepReqs = {} } = staticData;
+  const { requiredJobRam } = staticData;
   const goalsData = getGoalsData(ns);
   const effectiveFaction = getTargetFaction(ns);
   const originalFaction = goalsData.targetFaction ?? staticData.targetFaction;
@@ -76,32 +76,11 @@ export const getGoals = (ns) => {
     goal("FACTION_JOIN", "Join " + effectiveFaction, () => factions.includes(effectiveFaction)),
   );
 
-  const gangFaction = getGangData(ns)?.gangInfo?.faction;
-  const isGangTarget = effectiveFaction === gangFaction && gangFaction !== originalFaction;
-
-  if (isGangTarget) {
-    const gangAugs = /** @type {string[]} */ (factionAugmentations[gangFaction] ?? []);
-    const gangTargetAugs = targetAugmentations.filter((/** @type {string} */ aug) => gangAugs.includes(aug));
-    const factionOnlyAugs = targetAugmentations.filter((/** @type {string} */ aug) => !gangAugs.includes(aug));
-
-    const maxRep = (/** @type {string[]} */ augs) =>
-      Math.max(...augs.map((/** @type {string} */ aug) => augmentationRepReqs[aug] ?? 0));
-
-    if (gangTargetAugs.length > 0) {
-      const req = maxRep(gangTargetAugs);
-      goals.push(goal("FACTION_REP", `Gain ${req} rep (${gangFaction})`,
-        () => (factionRep[gangFaction] ?? 0) >= req, req, gangFaction));
-    }
-    if (factionOnlyAugs.length > 0) {
-      const req = maxRep(factionOnlyAugs);
-      goals.push(goal("FACTION_REP", `Gain ${req} rep (${originalFaction})`,
-        () => (factionRep[originalFaction] ?? 0) >= req, req, originalFaction));
-    }
-  } else {
-    const repNeeded = getRepNeeded(ns);
-    goals.push(goal("FACTION_REP", `Gain ${repNeeded} rep (${effectiveFaction})`,
-      () => repNeeded != null && (factionRep[effectiveFaction] ?? 0) >= repNeeded,
-      repNeeded ?? undefined, effectiveFaction));
+  for (const { faction, requirement } of getRepTargets(ns)) {
+    if (faction !== effectiveFaction)
+      goals.push(goal("FACTION_JOIN", "Join " + faction, () => factions.includes(faction)));
+    goals.push(goal("FACTION_REP", `Gain ${requirement} rep (${faction})`,
+      () => (factionRep?.[faction] ?? 0) >= requirement, requirement, faction));
   }
 
   goals.push(

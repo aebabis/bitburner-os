@@ -1,5 +1,5 @@
-import { getPlayerData } from "../../lib/data-store";
-import { isMoneyBound, getRepNeeded, getTargetFaction } from "../../lib/query-service";
+import { getPlayerData, getGoalsData } from "../../lib/data-store";
+import { isMoneyBound } from "../../lib/query-service";
 import { getGoals } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 import getConfig from "../../lib/config";
@@ -7,6 +7,22 @@ import {
   CITY_FACTIONS,
   FACTION_LOCATIONS,
 } from "./aug/factions";
+
+/**
+ * Returns the faction with the largest remaining rep gap that the player
+ * is already a member of, or null if no rep work is needed.
+ * @param {ReturnType<typeof getGoals>} goals
+ * @param {string[]} factions
+ * @param {Record<string, number>} factionRep
+ * @returns {string | null}
+ */
+const getWorkFaction = (goals, factions, factionRep) => {
+  const gap = (/** @type {import("../../lib/goals").Goal} */ g) =>
+    (g.requirement ?? 0) - (factionRep[/** @type {string} */ (g.faction)] ?? 0);
+  return goals
+    .filter(g => g.type === "FACTION_REP" && g.faction != null && !g.isDone() && factions.includes(/** @type {string} */ (g.faction)))
+    .sort((a, b) => gap(b) - gap(a))[0]?.faction ?? null;
+};
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -16,14 +32,13 @@ export async function main(ns) {
 
   while (true) {
     const player = ns.getPlayer();
-    const targetFaction = getTargetFaction(ns);
+    const { targetFaction } = getGoalsData(ns);
     const { isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
     const inTargetFaction = player.factions.includes(targetFaction);
     const isFactionGang =
       ns.gang.inGang() &&
       ns.gang.getGangInformation().faction === targetFaction;
-    const rep = factionRep[targetFaction] || 0;
 
     const makeMoney = async () => {
       if (isPlayerActive) {
@@ -36,6 +51,7 @@ export async function main(ns) {
     };
 
     const goals = getGoals(ns);
+    const workFaction = getWorkFaction(goals, player.factions, factionRep);
     const statForCrimeTraining = (["strength", "defense", "dexterity", "agility"])
       .find((/** @type {string} */ stat) => player.skills[/** @type {keyof Skills} */ (stat)] < 5);
 
@@ -45,14 +61,12 @@ export async function main(ns) {
       else await rmi(ns)("/bin/self/job.js", 1);
     } else if (isMoneyBound(ns) || isFactionGang) {
       await makeMoney();
+    } else if (workFaction != null) {
+      getConfig(ns).set("share", 0.1);
+      await rmi(ns)("/bin/self/faction-work.js", 1, workFaction);
     } else if (inTargetFaction) {
-      if (rep < (getRepNeeded(ns) ?? 0)) {
-        getConfig(ns).set("share", 0.1);
-        await rmi(ns)("/bin/self/faction-work.js", 1, targetFaction);
-      } else {
-        getConfig(ns).set("share", 0);
-        await makeMoney();
-      }
+      getConfig(ns).set("share", 0);
+      await makeMoney();
     } else {
       const combatGoal = goals.find(g => g.type === "COMBAT_LEVELS" && !g.isDone());
       const requiredLocations =
