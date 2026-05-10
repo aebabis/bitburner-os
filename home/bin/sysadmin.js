@@ -49,7 +49,7 @@ const atCapacity = (ns) => {
 
 /** @param {NS} ns @param {string} hostname */
 const deleteServer = (ns, hostname) => {
-  ns.killall(hostname);
+  ns.killall(hostname, true);
   ns.deleteServer(hostname);
 };
 
