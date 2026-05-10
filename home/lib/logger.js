@@ -33,7 +33,7 @@ export const logger = (ns, /** @type {{debug?: boolean}} */ options = {}) => {
   const print = (/** @type {string} */ TYPE, args) => {
     const text = process(args);
     ns.print(TYPE + text);
-    if (debug || TYPE === ERROR) ns.tprint(TYPE + lead + text);
+    if (debug) ns.tprint(TYPE + lead + text);
   };
 
   return {

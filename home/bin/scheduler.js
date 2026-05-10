@@ -166,6 +166,7 @@ export async function main(ns) {
       ns.print(`${queue.length} items queued`);
       queue.forEach((item) => ns.print(item.toString()));
     } catch (error) {
+      if (error?.name === 'ScriptDeath') throw error;
       logger(ns).error(error);
     } finally {
       await ns.sleep(10);

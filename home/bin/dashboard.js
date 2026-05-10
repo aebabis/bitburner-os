@@ -242,6 +242,7 @@ export async function main(ns) {
         // colorize(modal.bottom);
       }
     } catch (error) {
+      if (error?.name === 'ScriptDeath') throw error;
       console.error(error);
     }
     await ns.sleep(1000);

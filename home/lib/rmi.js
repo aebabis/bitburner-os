@@ -14,6 +14,7 @@ export const rmi =
           return true;
         }
       } catch (error) {
+        if (error?.name === 'ScriptDeath') throw error;
         logger(ns).error(error);
         if (!retry) return false;
       }

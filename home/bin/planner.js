@@ -88,6 +88,7 @@ const go = async (ns) => {
         showServices();
         await task.check(showServices);
       } catch (error) {
+        if (error?.name === 'ScriptDeath') throw error;
         await logger(ns).error(error);
       }
     }
@@ -103,6 +104,7 @@ export async function main(ns) {
   try {
     await go(ns);
   } catch (error) {
+    if (error?.name === 'ScriptDeath') throw error;
     await logger(ns).error(error);
   }
 }
