@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip/schema.json",
+  "entry": [
+    "scripts/**/*.js",
+    "home/**/*.js",
+    "!home/lib/**/*.js",
+    "!home/etc/**/*.js",
+    "!home/bin/broker/api.js",
+    "!home/bin/broker/forecaster-4s.js",
+    "!home/bin/broker/forecaster-trend.js",
+    "!home/bin/broker/trade.js",
+    "!home/bin/contracts/algorithms.js",
+    "!home/bin/contracts/mapper.js",
+    "!home/bin/self/aug/factions.js",
+    "!home/boot/cheaty-data.js",
+    "!home/boot/util.js"
+  ],
+  "project": [
+    "scripts/**/*.js",
+    "home/**/*.js"
+  ],
+  "ignoreDependencies": ["d3-drag", "d3-force", "d3-selection", "prettier"],
+  "ignore": ["home/lib/d3.js"]
+}

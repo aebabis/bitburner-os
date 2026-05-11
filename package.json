@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node make-download.js",
     "bundle:d3": "node scripts/bundle-d3.js",
+    "knip": "knip",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,6 +27,7 @@
     "d3-selection": "^3.0.0",
     "esbuild": "^0.28.0",
     "eslint": "^8.15.0",
+    "knip": "^6.12.2",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   }
