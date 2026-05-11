@@ -16,14 +16,44 @@ const SHORTHAND = {
 };
 
 const UTILITIES = {
-  config: "Global config variables",
-  dispatch: "Tell scheduler to run a program",
-  liquidate: "Sell all stocks and stop spending",
-  nmap: "Graphical network map",
-  readme: "View this help",
-  servers: "List non-purchased servers",
-  update: "Download most recent code from GitHub",
+  config: {
+    command: "./config.js",
+    desc: "Global config variables",
+  },
+  data: {
+    command: "./data.js",
+    desc: "View stored by various services",
+  },
+  dispatch: {
+    command: "./lib/scheduler-delegate.js",
+    desc: "Tell scheduler to run a program",
+  },
+  liquidate: {
+    command: "dispatch ./bin/liquidate.js",
+    desc: "Sell all stocks and stop spending",
+  },
+  nmap: {
+    command: "dispatch nmap-gui.js",
+    desc: "Graphical network map",
+  },
+  readme: {
+    command: "./readme.js",
+    desc: "View this help",
+  },
+  servers: {
+    command: "dispatch servers.js",
+    desc: "List non-purchased servers",
+  },
+  update: {
+    command: "home; killall; ./update.js",
+    desc: "Download most recent code from GitHub",
+  },
 };
+
+const UTILITY_ALIASES = (Object.fromEntries(
+  Object.entries(UTILITIES).map(([alias, entry]) => [alias, entry.command])));
+const UTILITY_DESCRIPTIONS = (Object.fromEntries(
+  Object.entries(UTILITIES).map(([alias, entry]) => [alias, entry.desc])));
 
 const ALIASES = {
   // Main
@@ -39,13 +69,7 @@ const ALIASES = {
   b: "buy BruteSSH.exe; buy FTPCrack.exe; buy relaySMTP.exe; buy HTTPWorm.exe; buy SQLInject.exe",
 
   // Other utilities
-  config: "./config.js",
-  dispatch: "./lib/scheduler-delegate.js",
-  liquidate: "dispatch ./bin/liquidate.js",
-  nmap: "dispatch nmap-gui.js",
-  readme: "./readme.js",
-  servers: "dispatch servers.js",
-  update: "home; killall; ./update.js",
+  ...UTILITY_ALIASES,
 };
 
 const getLines = (/** @type {Record<string, string>} */ commands) => {
@@ -57,7 +81,7 @@ const getLines = (/** @type {Record<string, string>} */ commands) => {
 
 const getHelp = (/** @type {NS} */ ns) => {
   const column1 = [...getLines(MAIN), " ", ...getLines(SHORTHAND)];
-  const column2 = getLines(UTILITIES);
+  const column2 = getLines(UTILITY_DESCRIPTIONS);
   const iters = Math.max(column1.length, column2.length);
   const rows = [];
   for (let i = 0; i < iters; i++)
