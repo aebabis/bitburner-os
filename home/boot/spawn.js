@@ -14,5 +14,9 @@ export const deferLite =
 export async function main(ns) {
   tprint(ns)(GRAY + "  Deferred execution resumed: " + ns.args.join(", "));
   const [nextProgram, ...remainder] = ns.args;
-  ns.spawn(/** @type {string} */ (nextProgram), 1, ...remainder);
+  ns.spawn(
+    /** @type {string} */ (nextProgram),
+    { threads: 1, spawnDelay: 500 },
+    ...remainder
+  );
 }
