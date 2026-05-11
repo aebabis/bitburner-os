@@ -24,13 +24,12 @@ export const stop = async (ns) => {
   for (const { pid } of processes()) {
     kill(pid);
   }
-
-  if (ns.args.length > 0) {
-    ns.run(.../** @type {[string, ...ScriptArg[]]} */ (ns.args));
-  }
 };
 
 /** @param {NS} ns **/
 export async function main(ns) {
   await stop(ns);
+  if (ns.args.length > 0) {
+    ns.run(.../** @type {[string, ...ScriptArg[]]} */ (ns.args));
+  }
 }
