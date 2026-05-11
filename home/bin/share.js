@@ -1,6 +1,6 @@
 import { SHARE } from "../etc/filenames";
 import getConfig from "../lib/config";
-import { getStaticData, getRamData } from "../lib/data-store";
+import { getStaticData, getRamData, getHostnames } from "../lib/data-store";
 import { delegateAny } from "../lib/scheduler-delegate";
 
 const sum = (/** @type {number} */ a, /** @type {number} */ b) => a + b;
@@ -16,18 +16,19 @@ export async function main(ns) {
   ns.disableLog("ALL");
   const config = getConfig(ns);
   const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE.slice(1)];
-  let processes = /** @type {{pid: number, threads: number}[]} */ ([]);
 
   let wait = MIN_WAIT;
   while (true) {
     const shareRate = config.get("share");
     const shareCap = config.get("share-cap");
+    const hostnames = getHostnames(ns);
+    const processes = hostnames
+      .flatMap((hostname) => ns.ps(hostname))
+      .filter((process) => SHARE.includes(process.filename));
 
     const ramToUse = Math.min(shareCap, shareRate * getTotalRam(ns));
     const desiredThreads = Math.floor(ramToUse / RAM_PER_SHARE);
     const maxDesiredThreads = desiredThreads * 1.1;
-
-    processes = processes.filter((process) => ns.isRunning(process.pid));
 
     let sharedThreads = processes.map(({ threads }) => threads).reduce(sum, 0);
     if (sharedThreads > maxDesiredThreads) {
