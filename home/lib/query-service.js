@@ -47,7 +47,7 @@ export const getTargetFaction = (ns) => {
  * Returns all (faction, repRequired) pairs the player still needs to satisfy.
  * Handles the gang scenario where augs are split across two factions.
  * @param {NS} ns
- * @returns {{ faction: string, requirement: number }[]}
+ * @returns {{ faction: string, requirement: number, isGang: boolean }[]}
  */
 export const getRepTargets = (ns) => {
   const staticData = getStaticData(ns);
@@ -70,13 +70,13 @@ export const getRepTargets = (ns) => {
     const factionOnlyAugs = targetAugmentations.filter((/** @type {string} */ aug) => !gangAugs.includes(aug));
     const targets = [];
     if (gangTargetAugs.length > 0)
-      targets.push({ faction: gangFaction, requirement: maxRep(gangTargetAugs) });
+      targets.push({ faction: gangFaction, requirement: maxRep(gangTargetAugs), isGang: true });
     if (factionOnlyAugs.length > 0)
-      targets.push({ faction: originalFaction, requirement: maxRep(factionOnlyAugs) });
+      targets.push({ faction: originalFaction, requirement: maxRep(factionOnlyAugs), isGang: false });
     return targets;
   } else {
     const repNeeded = getRepNeeded(ns);
-    return repNeeded != null ? [{ faction: effectiveFaction, requirement: repNeeded }] : [];
+    return repNeeded != null ? [{ faction: effectiveFaction, requirement: repNeeded, isGang: false }] : [];
   }
 };
 

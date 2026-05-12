@@ -45,7 +45,6 @@ export const getGoals = (ns) => {
   const { requiredJobRam, factionRequirements } = staticData;
   const goalsData = getGoalsData(ns);
   const effectiveFaction = getTargetFaction(ns);
-  const originalFaction = goalsData.targetFaction ?? staticData.targetFaction;
   const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
 
   if (targetAugmentations == null) {
@@ -60,9 +59,9 @@ export const getGoals = (ns) => {
   const repTargets = getRepTargets(ns);
   const goals = [];
 
-  const hasNonGangTarget = repTargets.length > 1;
-  if (hasNonGangTarget) {
-    const requirements = factionRequirements?.[originalFaction]??[];
+  const nonGangTarget = repTargets.find((target) => !target.isGang);
+  if (nonGangTarget) {
+    const requirements = factionRequirements?.[nonGangTarget.faction]??[];
     const skillReqs = Object.assign({}, ...(requirements)
       .filter((req) => req.type === 'skills')
       .map((req) => req.skills));
@@ -74,7 +73,6 @@ export const getGoals = (ns) => {
       ...requirements.filter((req) => req.type === 'someCondition')
         .flatMap((req) => req.conditions).filter((req) => req.type === 'city')
     ].map((req) => req.city);
-    console.log(locationReqs);
 
     if (hackReq != null) {
       goals.push(goal("HACKING_LEVEL", `Hacking ≥ ${hackReq}`,
@@ -84,12 +82,18 @@ export const getGoals = (ns) => {
       goals.push(goal("COMBAT_LEVELS", `Combat stats ≥ ${combatReq}`,
         () => COMBAT_STATS.every(stat => ns.getPlayer().skills[stat] >= combatReq), combatReq));
     }
-    if (moneyTarget) {
-      goals.push(
-        goal("MONEY", "Have $" + ns.formatNumber(moneyTarget, 1), () => ns.getPlayer().money >= moneyTarget, moneyTarget),
-      );
-    }
-    if (!factions.includes(effectiveFaction)) {
+    // Money and location sub-goals for joining a faction
+    // are no longer considered requirements once the
+    // faction is joined.
+    // The level goals above are kept because they can't
+    // be invalidated, but they could be nested here to 
+    // save space in the user's dashboard.
+    if (!factions.includes(nonGangTarget.faction)) {
+      if (moneyTarget) {
+        goals.push(
+          goal("MONEY", "Have $" + ns.formatNumber(moneyTarget, 1), () => ns.getPlayer().money >= moneyTarget, moneyTarget),
+        );
+      }
       const [location] = locationReqs;
       goals.push(
         goal("LOCATION", "Visit " + location, () => ns.getPlayer().location === location, location),
