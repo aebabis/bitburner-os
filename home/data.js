@@ -20,12 +20,22 @@ export async function main(ns) {
     contracts: getContractData,
     goals: getGoalsData,
   };
-  const [type] = ns.args;
+  const usage = () => ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
+  const [input = ''] = ns.args;
+  if (typeof input !== 'string') {
+    usage();
+    return;
+  }
+  const [type, ...props] = input.split('.');
   if (typeof type === 'string' && Object.hasOwn(OPTIONS, type)) {
+    let data = OPTIONS[type](ns);
+    while (props.length) {
+      data = data[props.shift()];
+    }
     ns.disableLog('ALL');
     ns.ui.openTail();
-    ns.print(JSON.stringify(OPTIONS[type](ns), null, 2));
+    ns.print(JSON.stringify(data, null, 2));
   } else {
-    ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
+    usage();
   }
 }
