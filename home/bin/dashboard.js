@@ -219,7 +219,6 @@ export async function main(ns) {
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => moneyTable(ns)),
-    // new DynamicWindow((width, height) => tailLogs(ns, width, height), 80, 10),
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1200;

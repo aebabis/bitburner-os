@@ -1,8 +1,8 @@
-export const EARLY_FACTIONS = ["CyberSec", "Tian Di Hui", "Netburners"];
+const EARLY_FACTIONS = ["CyberSec", "Tian Di Hui", "Netburners"];
 
-export const HACKING_GROUPS = ["NiteSec", "The Black Hand", "BitRunners"];
+const HACKING_GROUPS = ["NiteSec", "The Black Hand", "BitRunners"];
 
-export const ENDGAME_FACTIONS = ["The Covenant", "Daedalus", "Illuminati"];
+const ENDGAME_FACTIONS = ["The Covenant", "Daedalus", "Illuminati"];
 
 export const STORY_FACTIONS = [
   ...EARLY_FACTIONS,
@@ -10,7 +10,7 @@ export const STORY_FACTIONS = [
   ...ENDGAME_FACTIONS,
 ];
 
-export const MEGACORPORATIONS = [
+const MEGACORPORATIONS = [
   "ECorp",
   "MegaCorp",
   "KuaiGong International",

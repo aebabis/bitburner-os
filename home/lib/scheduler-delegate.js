@@ -2,9 +2,6 @@ import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
 import Ports from "./ports";
 import { logger } from "./logger";
 
-export const snippet = (/** @type {string} */ statements) =>
-  `export async function main(ns) {\n${statements}\n}`;
-
 const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
   `${script} ${host || "*"} ${numThreads} ${args.join(" ")}`;
 

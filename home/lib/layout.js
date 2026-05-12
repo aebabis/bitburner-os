@@ -3,21 +3,6 @@ import { DARK } from "./colors";
 /** @typedef {{ text: string | string[], width: number, height: number, getText?: (w: number, h: number) => string[] }} RenderResult */
 /** @typedef {RenderResult & { x: number, y: number }} PlacedItem */
 
-export class DynamicWindow {
-  constructor(/** @type {() => string} */ getContent, /** @type {number} */ minWidth, /** @type {number} */ minHeight) {
-    this.minWidth = minWidth;
-    this.minHeight = minHeight;
-    this.getContent = getContent;
-  }
-
-  render(/** @type {number} */ WIDTH) {
-    const text = this.getContent();
-    const width = Math.min(WIDTH, this.minWidth);
-    const height = this.minHeight;
-    return { text, width, height, getText: this.getContent };
-  }
-}
-
 const COLOR_CODES = /\[[0-9;]+m/g;
 
 export class GrowingWindow {

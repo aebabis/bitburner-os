@@ -10,6 +10,3 @@ export const nmap = (ns) => {
 
 /** @param {NS} ns **/
 export const saveHostnames = (ns) => putHostnames(ns, nmap(ns));
-
-/** @param {NS} ns **/
-export const main = saveHostnames;

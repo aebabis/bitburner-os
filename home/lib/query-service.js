@@ -111,7 +111,7 @@ export const getTimeEstimates = (ns) => {
 };
 
 /** @param {NS} ns */
-export const estimateTimeToAug = (ns) => {
+const estimateTimeToAug = (ns) => {
   const { moneyTime, repTime } = getTimeEstimates(ns);
   return Math.max(moneyTime, repTime);
 };
@@ -155,7 +155,7 @@ export const getGoalCost = (ns) =>
   getMoneyData(ns).costToAug || getJobRamCost(ns);
 
 /** @param {NS} ns */
-export const getRepNeeded = (ns) => {
+const getRepNeeded = (ns) => {
   const staticData = getStaticData(ns);
   const { augmentationRepReqs } = staticData;
   const goalsData = getGoalsData(ns);

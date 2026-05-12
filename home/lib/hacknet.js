@@ -9,7 +9,7 @@ export const getNodes = (ns) => {
 };
 
 /** @param {NS} ns **/
-export const getNodeData = (ns) => {
+const getNodeData = (ns) => {
   const formulas = getHacknetNodeFormulas(ns);
   const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.formatNumber(n, 0);
   return getNodes(ns).map((stats, i) => {
@@ -62,7 +62,7 @@ export const getNodeData = (ns) => {
 };
 
 /** @param {NS} ns **/
-export const getBestUpgrade = (ns) => {
+const getBestUpgrade = (ns) => {
   const upgrades = getNodeData(ns).map((stats) => stats.upgrades.getBest());
   return upgrades.reduce(
     (a, b) => (a.profitPerCost > b.profitPerCost ? a : b),

@@ -17,7 +17,7 @@ const getExistingPid = (ns, desc) => {
 let count = 1;
 
 /** @param {NS} ns */
-export const Service =
+const Service =
   (ns, /** @type {(ns: NS) => boolean} */ condition = () => true, /** @type {number} */ interval = 5000) =>
   (/** @type {string} */ script, target = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
     const id = count++;

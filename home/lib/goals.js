@@ -28,7 +28,7 @@ export const COMBAT_STATS = /** @type {(keyof Skills)[]} */ (["strength", "defen
  * @param {string} [faction]
  * @returns {Goal}
  */
-export const goal = (type, desc, isDone, requirement = undefined, faction = undefined) => ({
+const goal = (type, desc, isDone, requirement = undefined, faction = undefined) => ({
   type,
   desc,
   isDone,

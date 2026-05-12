@@ -14,7 +14,7 @@ if (style == null) {
 }
 
 /** @param {NS} ns **/
-export function getCommandLine(ns) {
+function getCommandLine(ns) {
   return ns.getScriptName() + " " + ns.args.join(" ");
 }
 
