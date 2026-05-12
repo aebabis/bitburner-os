@@ -1,4 +1,4 @@
-import { getStaticData, getGangData } from "../../../lib/data-store";
+import { getStaticData, getGangData, putPlayerData } from "../../../lib/data-store";
 import { CITY_FACTIONS } from "./factions";
 
 /** @param {NS} ns */
@@ -16,4 +16,5 @@ export async function main(ns) {
     )
       ns.singularity.joinFaction(faction);
   }
+  putPlayerData(ns, { factions: ns.getPlayer().factions });
 }

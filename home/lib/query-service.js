@@ -82,9 +82,10 @@ export const getRepTargets = (ns) => {
 
 /** @param {NS} ns */
 const getMoneyTime = (ns) => {
+  const { factions=[] } = getPlayerData(ns);
   const repTargets = getRepTargets(ns);
   const nonGangTarget = repTargets.find((target) => !target.isGang);
-  if (nonGangTarget) {
+  if (nonGangTarget && !factions.includes(nonGangTarget.faction)) {
     const { factionRequirements } = getStaticData(ns);
     const requirements = factionRequirements?.[nonGangTarget.faction];
     const moneyTarget = requirements?.find((req) => req.type === 'money')?.money;
@@ -109,12 +110,14 @@ const getMoneyTime = (ns) => {
 
 /** @param {NS} ns */
 const getRepTime = (ns) => {
-  const { factionRep, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
-  const targets = getRepTargets(ns);
+  const { factions=[], factionRep, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
+  const targets = getRepTargets(ns).filter((target) => (
+    factions.includes(target.faction)
+  ));
   if (targets.length === 0) return 0;
   // Because activeRepRate includes passiveRepRate implicitly with no
   // known way to separate the two, we only use active when possible
-  return Math.max(...targets.map(({ faction, requirement }) => {
+  return Math.max(0, ...targets.map(({ faction, requirement }) => {
     const remaining = requirement - (factionRep?.[faction] ?? 0);
     const rate = activeRepRate[faction] || passiveRepRate[faction] || 0.1;
     return remaining / rate;

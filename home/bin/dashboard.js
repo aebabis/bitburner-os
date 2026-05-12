@@ -168,7 +168,7 @@ const moneyTable = (/** @type {NS} */ ns) => {
     ['', ''],
     ["Goal", ("$" + ns.formatNumber(goalCost || 0, 1)).padStart(8)],
     ["   $", formatTime(moneyTime != null ? moneyTime : 100 * 60 * 60).padStart(8)],
-    ["   r", formatTime(repTime || 100 * 60 * 60).padStart(8)],
+    ["   r", formatTime(repTime != null ? repTime : 100 * 60 * 60).padStart(8)],
   ];
   return ` ${H("INCOME")} \n` + table(ns, null, rows);
 };
