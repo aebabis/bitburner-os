@@ -117,7 +117,6 @@ export async function main(ns) {
         if (process.startTime > now) break;
         const waitTime = process.waitTime();
         if (waitTime > 50 && process.isWorker) {
-          console.log('REAPED', process);
           globalThis.__profiler?.recordReaped?.(process.args[1]);
           queue.splice(i--, 1);
           continue;

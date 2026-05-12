@@ -3,7 +3,6 @@ import {
   PORT_HOSTNAMES,
   PORT_STATIC_DATA,
   PORT_GANG_DATA,
-  PORT_DASHBOARD_DATA,
   PORT_SCH_RAM_DATA,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
@@ -47,12 +46,6 @@ export const putStaticData = (ns, data) => putData(ns, PORT_STATIC_DATA, data);
 export const getGangData = (ns) => readData(ns, PORT_GANG_DATA);
 /** @param {NS} ns */
 export const putGangData = (ns, data) => putData(ns, PORT_GANG_DATA, data);
-
-/** @param {NS} ns */
-export const getDataboardData = (ns) => readData(ns, PORT_DASHBOARD_DATA);
-/** @param {NS} ns */
-export const putDashboardData = (ns, data) =>
-  putData(ns, PORT_DASHBOARD_DATA, data);
 
 /** @param {NS} ns */
 export const getRamData = (ns) => readData(ns, PORT_SCH_RAM_DATA);
