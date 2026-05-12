@@ -1,6 +1,11 @@
 import { nmap } from "../lib/nmap";
 import { defer } from "./defer";
-import { putHostnames, putStaticData, putMoneyData } from "../lib/data-store";
+import {
+  putHostnames,
+  putStaticData,
+  putMoneyData,
+  putContractData,
+} from "../lib/data-store";
 import { tprint } from "./util";
 import { STR } from "../lib/colors";
 
@@ -35,7 +40,6 @@ export async function main(ns) {
   }
 
   tprint(ns)(STR + "  Cataloging all local scripts");
-  const scripts = ns.ls("home").filter((s) => s.endsWith(".js"));
 
   tprint(ns)(STR + "  Cataloging coding contracts");
   const contracts = hostnames
@@ -45,7 +49,7 @@ export async function main(ns) {
     })
     .flat();
 
-  putStaticData(ns, { scripts, contracts });
+  putContractData(ns, { contracts });
 
   tprint(ns)(STR + "  Initializing money data");
   putMoneyData(ns, {});

@@ -71,13 +71,11 @@ export async function main(ns) {
   );
   let multiplier = 1.9 ** queuedAugmentations.length;
   let costToAug = 0;
-  const costOfNextAugmentation =
-    remainingAugs.find(purchasable) * multiplier || null;
   for (const augmentation of remainingAugs) {
     costToAug += multiplier * augmentationPrices[augmentation];
     multiplier *= 1.9;
   }
-  putMoneyData(ns, { costToAug, costOfNextAugmentation });
+  putMoneyData(ns, { costToAug });
 
   if (remainingAugs.every((/** @type {string} */ aug) => purchasedAugmentations.includes(aug))) {
     // Sell stocks and prevent spending
@@ -115,5 +113,5 @@ export async function main(ns) {
     await rmi(ns)("/bin/self/aug/install.js", 1, "init.js");
   }
 
-  putPlayerData(ns, { purchasedAugmentations, remainingAugs });
+  putPlayerData(ns, { purchasedAugmentations });
 }
