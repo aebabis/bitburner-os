@@ -20,5 +20,5 @@
     "home/**/*.js"
   ],
   "ignoreDependencies": ["d3-drag", "d3-force", "d3-selection", "prettier"],
-  "ignore": ["home/lib/d3.js"]
+  "ignore": ["home/lib/d3.js", "home/lib/colors.js"]
 }
