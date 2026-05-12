@@ -155,7 +155,7 @@ class HWGWBatch extends Batch {
       hackThreads,
     } = frame;
 
-    this.frame = [weaken1Threads, weaken2Threads, growThreads, hackThreads];
+    this.frame = [hackThreads, weaken1Threads, growThreads, weaken2Threads];
     this.portion = portion;
 
     const totalThreads =
@@ -228,7 +228,7 @@ class WGWBatch extends Batch {
     const secBump = ns.growthAnalyzeSecurity(growThreads);
     let weaken2Threads = getWThreads(ns, secBump);
 
-    this.frame = [weaken1Threads, weaken2Threads, growThreads];
+    this.frame = [weaken1Threads, growThreads, weaken2Threads];
 
     // Use current-security times here: WGWBatch runs on an ungroomed server,
     // so the actual weaken duration is longer than the min-security estimate.
