@@ -51,7 +51,7 @@ export const getGoals = (ns) => {
     const POOL1 = `${THREADPOOL}-01`;
     return [
       goal("JOB_RAM", `${requiredJobRam}GB on ${POOL1}`,
-        () => ns.serverExists(POOL1) && ns.getServer(POOL1).maxRam >= requiredJobRam),
+        () => ns.serverExists(POOL1) && ns.getServerMaxRam(POOL1) >= requiredJobRam),
       goal("AUG_SUITE", "Run augmentation suite", () => false),
     ];
   }
