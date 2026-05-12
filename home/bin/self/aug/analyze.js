@@ -1,7 +1,6 @@
 import {
   STORY_FACTIONS,
   CITY_FACTIONS,
-  AUGMENTATION_REQUIREMENTS,
 } from "./factions";
 import { getStaticData, putStaticData } from "../../../lib/data-store";
 import { by } from "../../../lib/util";
@@ -16,6 +15,8 @@ const getAugmentGoals = (
     augmentationRepReqs,
     augmentationPrereqs,
     factionAugmentations,
+    /** @type Record<string, PlayerRequirement[]> */
+    factionRequirements,
   },
   /** @type {string | undefined} */ cityFaction,
 ) => {
@@ -29,7 +30,7 @@ const getAugmentGoals = (
     Math.max(augmentationPrices[aug] / MONEY_PER_REP, augmentationRepReqs[aug]);
 
   const factions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
-    const requiredAugCount = (/** @type {Record<string,number>} */ (AUGMENTATION_REQUIREMENTS))[faction] || 0;
+    const requiredAugCount = factionRequirements[faction].find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
     const isCityFaction = CITY_FACTIONS.includes(faction);
     if (isCityFaction && cityFaction != null && cityFaction !== faction)

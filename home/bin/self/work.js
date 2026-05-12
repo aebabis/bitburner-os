@@ -3,10 +3,6 @@ import { isMoneyBound } from "../../lib/query-service";
 import { getGoals } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 import getConfig from "../../lib/config";
-import {
-  CITY_FACTIONS,
-  FACTION_LOCATIONS,
-} from "./aug/factions";
 
 /**
  * Returns the faction with the largest remaining rep gap that the player
@@ -69,12 +65,11 @@ export async function main(ns) {
       await makeMoney();
     } else {
       const combatGoal = goals.find(g => g.type === "COMBAT_LEVELS" && !g.isDone());
-      const requiredLocations =
-        (/** @type {Record<string, string[]>} */ (FACTION_LOCATIONS))[targetFaction] || CITY_FACTIONS;
+      const locationGoal = goals.find(g => g.type === "LOCATION" && !g.isDone())?.requirement;
       if (combatGoal != null)
         await rmi(ns)("/bin/self/improvement.js", 1);
-      else if (!requiredLocations.includes(player.city))
-        await rmi(ns)("/bin/self/travel.js", 1, requiredLocations[0]);
+      else if (locationGoal)
+        await rmi(ns)("/bin/self/travel.js", 1, locationGoal);
       else await makeMoney();
     }
     await ns.sleep(100);

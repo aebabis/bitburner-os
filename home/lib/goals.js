@@ -1,11 +1,10 @@
 import { getStaticData, getGoalsData, getPlayerData } from "./data-store";
 import { getRepTargets, getTargetFaction } from "./query-service";
 import { MEDIUM } from "./colors";
-import { COMBAT_REQUIREMENTS, HACKING_REQUIREMENTS } from "../bin/self/aug/factions";
 import { THREADPOOL } from "../etc/config";
 
 /**
- * @typedef {'JOB_RAM' | 'AUG_SUITE' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL'} GoalType
+ * @typedef {'JOB_RAM' | 'AUG_SUITE' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'LOCATION' | 'MONEY' } GoalType
  */
 
 /**
@@ -43,7 +42,7 @@ export const getGoals = (ns) => {
   const { factions } = ns.getPlayer();
   const { factionRep, purchasedAugmentations } = getPlayerData(ns);
   const staticData = getStaticData(ns);
-  const { requiredJobRam } = staticData;
+  const { requiredJobRam, factionRequirements } = staticData;
   const goalsData = getGoalsData(ns);
   const effectiveFaction = getTargetFaction(ns);
   const originalFaction = goalsData.targetFaction ?? staticData.targetFaction;
@@ -58,18 +57,44 @@ export const getGoals = (ns) => {
     ];
   }
 
-  const combatReq = /** @type {Record<string,number>} */ (COMBAT_REQUIREMENTS)[originalFaction];
-  const hackReq = /** @type {Record<string,number>} */ (HACKING_REQUIREMENTS)[originalFaction];
-
+  const repTargets = getRepTargets(ns);
   const goals = [];
 
-  if (hackReq != null) {
-    goals.push(goal("HACKING_LEVEL", `Hacking ≥ ${hackReq}`,
-      () => ns.getPlayer().skills.hacking >= hackReq, hackReq));
-  }
-  if (combatReq != null) {
-    goals.push(goal("COMBAT_LEVELS", `Combat stats ≥ ${combatReq}`,
-      () => COMBAT_STATS.every(stat => ns.getPlayer().skills[stat] >= combatReq), combatReq));
+  const hasNonGangTarget = repTargets.length > 1;
+  if (hasNonGangTarget) {
+    const requirements = factionRequirements?.[originalFaction]??[];
+    const skillReqs = Object.assign({}, ...(requirements)
+      .filter((req) => req.type === 'skills')
+      .map((req) => req.skills));
+    const moneyTarget = requirements.find((req) => req.type === 'money')?.money;
+    const combatReq = skillReqs.strength;
+    const hackReq = skillReqs.hacking;
+    const locationReqs = [
+      ...requirements.filter((req) => req.type === 'city'),
+      ...requirements.filter((req) => req.type === 'someCondition')
+        .flatMap((req) => req.conditions).filter((req) => req.type === 'city')
+    ].map((req) => req.city);
+    console.log(locationReqs);
+
+    if (hackReq != null) {
+      goals.push(goal("HACKING_LEVEL", `Hacking ≥ ${hackReq}`,
+        () => ns.getPlayer().skills.hacking >= hackReq, hackReq));
+    }
+    if (combatReq != null) {
+      goals.push(goal("COMBAT_LEVELS", `Combat stats ≥ ${combatReq}`,
+        () => COMBAT_STATS.every(stat => ns.getPlayer().skills[stat] >= combatReq), combatReq));
+    }
+    if (moneyTarget) {
+      goals.push(
+        goal("MONEY", "Have $" + ns.formatNumber(moneyTarget, 1), () => ns.getPlayer().money >= moneyTarget, moneyTarget),
+      );
+    }
+    if (!factions.includes(effectiveFaction)) {
+      const [location] = locationReqs;
+      goals.push(
+        goal("LOCATION", "Visit " + location, () => ns.getPlayer().location === location, location),
+      );
+    }
   }
 
   goals.push(

@@ -14,13 +14,14 @@ export async function main(ns) {
   await rmi(ns, retry)("/bin/self/aug/load-aug-reps.js");
   await rmi(ns, retry)("/bin/self/aug/load-aug-prereqs.js");
   await rmi(ns, retry)("/bin/self/aug/load-aug-stats.js");
+  await rmi(ns, retry)("/bin/self/aug/load-faction-reqs.js");
 
   await analyzeAugData(ns);
 
   while (true) {
-    await rmi(ns, retry)("/bin/self/aug/join-factions.js");
+    await rmi(ns)("/bin/self/aug/join-factions.js");
     if (getStaticData(ns).targetFaction != null || getPlayerData(ns).gang)
-      await rmi(ns, retry)("/bin/self/aug/purchase-augs.js");
+      await rmi(ns)("/bin/self/aug/purchase-augs.js");
     await ns.sleep(100);
   }
 }
