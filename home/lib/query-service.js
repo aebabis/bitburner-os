@@ -81,6 +81,33 @@ export const getRepTargets = (ns) => {
 };
 
 /** @param {NS} ns */
+const getMoneyTime = (ns) => {
+  const repTargets = getRepTargets(ns);
+  const nonGangTarget = repTargets.find((target) => !target.isGang);
+  if (nonGangTarget) {
+    const { factionRequirements } = getStaticData(ns);
+    const requirements = factionRequirements?.[nonGangTarget.faction];
+    const moneyTarget = requirements?.find((req) => req.type === 'money')?.money;
+    if (moneyTarget) {
+      const { money, referenceIncome } = getMoneyData(ns);
+      const moneyStillNeeded = moneyTarget - money;
+      return Math.max(0, moneyStillNeeded / referenceIncome);
+    }
+  }
+  const {
+    money,
+    referenceIncome,
+    costToAug,
+    estimatedStockValue: stock = 0,
+  } = getMoneyData(ns);
+  if (costToAug == null) {
+    return DAY;
+  }
+  const moneyStillNeeded = costToAug - money - stock;
+  return Math.max(0, moneyStillNeeded / referenceIncome);
+};
+
+/** @param {NS} ns */
 const getRepTime = (ns) => {
   const { factionRep, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
   const targets = getRepTargets(ns);
@@ -96,19 +123,10 @@ const getRepTime = (ns) => {
 
 const DAY = 60 * 60 * 24;
 /** @param {NS} ns */
-export const getTimeEstimates = (ns) => {
-  const {
-    money,
-    referenceIncome,
-    costToAug,
-    estimatedStockValue: stock = 0,
-  } = getMoneyData(ns);
-
-  const moneyTime = Math.max(0, costToAug != null ?
-    (costToAug - money - stock) / referenceIncome : DAY);
-
-  return { moneyTime, repTime: getRepTime(ns) };
-};
+export const getTimeEstimates = (ns) => ({
+  moneyTime: getMoneyTime(ns),
+  repTime: getRepTime(ns),
+});
 
 /** @param {NS} ns */
 const estimateTimeToAug = (ns) => {
