@@ -104,8 +104,8 @@ export const getTimeEstimates = (ns) => {
     estimatedStockValue: stock = 0,
   } = getMoneyData(ns);
 
-  const moneyTime =
-    costToAug != null ? (costToAug - money - stock) / referenceIncome : DAY;
+  const moneyTime = Math.max(0, costToAug != null ?
+    (costToAug - money - stock) / referenceIncome : DAY);
 
   return { moneyTime, repTime: getRepTime(ns) };
 };
