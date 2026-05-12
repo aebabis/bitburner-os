@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node make-download.js",
     "bundle:d3": "node scripts/bundle-d3.js",
+    "check-data-deps": "node scripts/check-data-deps.js",
     "knip": "knip",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
