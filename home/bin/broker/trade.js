@@ -1,7 +1,7 @@
 import { by } from "../../lib/util";
 import { ERROR } from "../../lib/colors";
 import { putMoneyData } from "../../lib/data-store";
-import getConfig from "../../lib/config";
+import { getConfig } from "../../lib/config";
 import { getStocks, optimizeShares, getHoldings, getTableString } from "./api";
 import { getServices } from "../../lib/service-api";
 

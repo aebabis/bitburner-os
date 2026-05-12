@@ -1,5 +1,5 @@
 import { SHARE } from "../etc/filenames";
-import getConfig from "../lib/config";
+import { getConfig } from "../lib/config";
 import { getStaticData, getRamData, getHostnames } from "../lib/data-store";
 import { delegateAny } from "../lib/scheduler-delegate";
 

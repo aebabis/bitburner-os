@@ -2,7 +2,7 @@ import { getPlayerData, getGoalsData } from "../../lib/data-store";
 import { isMoneyBound } from "../../lib/query-service";
 import { getGoals } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
-import getConfig from "../../lib/config";
+import { getConfig } from "../../lib/config";
 
 /**
  * Returns the faction with the largest remaining rep gap that the player

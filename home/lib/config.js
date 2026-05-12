@@ -66,5 +66,3 @@ export const getConfig = (ns) => {
     getRows,
   };
 };
-
-export default getConfig;

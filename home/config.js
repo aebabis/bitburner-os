@@ -1,4 +1,4 @@
-import getConfig from "./lib/config";
+import { getConfig } from "./lib/config";
 import { table } from "./lib/table";
 import { by } from "./lib/util";
 
