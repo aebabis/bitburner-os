@@ -39,28 +39,3 @@ export const LOG = NORMAL;
 export const ERROR = C(124); // 160
 export const WARN = C(214);
 export const INFO = C(63);
-
-/** @param {NS} ns */
-export async function main(ns) {
-  // ns.tprint(ns.getScriptRam('/bin/access.js', 'home'));
-  ns.tprint([61, 62, 63].map((i) => `${C(i)}${i} `).join(""));
-  ns.tprint([52, 53, 54, 55].map((i) => `${C(i)}${i} `).join(""));
-  ns.tprint(
-    [89, 90, 91, 92, 93, 97, 98, 99].map((i) => `${C(i)}${i} `).join(""),
-  );
-  ns.tprint(
-    [125, 126, 127, 128, 129, 133, 134, 135]
-      .map((i) => `${C(i)}${i} `)
-      .join(""),
-  );
-  ns.tprint([164, 165, 170, 171].map((i) => `${C(i)}${i} `).join(""));
-  ns.tprint(`${STR.BOLD}TITLE`);
-  ns.tprint(`${STR}Subtitle`);
-  ns.tprint(`${NORMAL.BOLD}SECTION`);
-  ns.tprint(`${NORMAL}Attempting to ${KEYWORD}restart`);
-  ns.tprint(`${ERROR}Something went wrong`);
-  ns.tprint(`${GRAY}Don't look at me!`);
-  ns.tprint(
-    [53, 54, 55, 56, 57, 56, 55, 54, 53].map((n) => `${BG(n)} `).join(""),
-  );
-}

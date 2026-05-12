@@ -25,7 +25,7 @@ const UTILITIES = {
     desc: "View stored by various services",
   },
   dispatch: {
-    command: "./lib/scheduler-delegate.js",
+    command: "./delegate.js",
     desc: "Tell scheduler to run a program",
   },
   liquidate: {

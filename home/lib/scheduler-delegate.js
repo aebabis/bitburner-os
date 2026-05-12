@@ -122,9 +122,3 @@ export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ tic
 
   port.write({ ticket, pid, hostname, threads, timestamp });
 };
-
-/** @param {NS} ns **/
-export async function main(ns) {
-  const [script, ...args] = ns.args;
-  delegateAny(ns)(/** @type {string} */ (script), 1, ...args);
-}

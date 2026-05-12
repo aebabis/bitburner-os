@@ -184,17 +184,3 @@ export const hasBitNode = (ns, bn) => {
   return inBN || beatBN;
 };
 
-/** @param {NS} ns **/
-const queryService = (ns) => {
-  return {
-    estimateTimeToAug: () => estimateTimeToAug(ns),
-  };
-};
-
-/** @param {NS} ns **/
-export async function main(ns) {
-  const [func] = ns.args;
-  ns.tprint(queryService(ns)[/** @type {keyof ReturnType<typeof queryService>} */ (func)]());
-}
-
-export default queryService;

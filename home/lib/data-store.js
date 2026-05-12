@@ -80,29 +80,3 @@ export const putContractData = (ns, data) =>
 export const getGoalsData = (ns) => readData(ns, PORT_GOALS_DATA) || {};
 /** @param {NS} ns */
 export const putGoalsData = (ns, data) => putData(ns, PORT_GOALS_DATA, data);
-
-/** @param {NS} ns **/
-export async function main(ns) {
-  const ports = {
-    hostnames: PORT_HOSTNAMES,
-    static: PORT_STATIC_DATA,
-    gang: PORT_GANG_DATA,
-    dashboard: PORT_DASHBOARD_DATA,
-    scheduler: PORT_SCH_RAM_DATA,
-    player: PORT_PLAYER_DATA,
-    money: PORT_MONEY_DATA,
-  };
-  const [command, data] = ns.args;
-  if (command === "peek") {
-    const [portname, ...props] = (/** @type {string} */ (data)).split(".");
-    const portId = ports[/** @type {keyof typeof ports} */ (portname)];
-    let content = Ports(ns).getPortHandle(portId).peek();
-    for (const prop of props) content = content[prop];
-    ns.tprint(JSON.stringify(content, null, 2));
-  }
-  if (command === "keys") {
-    const portId = ports[/** @type {keyof typeof ports} */ (data)];
-    let content = Ports(ns).getPortHandle(portId).peek();
-    ns.tprint("\n" + Object.keys(content).join("\n"));
-  }
-}

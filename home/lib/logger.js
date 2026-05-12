@@ -43,12 +43,3 @@ export const logger = (ns, /** @type {{debug?: boolean}} */ options = {}) => {
     warn: async (...args) => print(WARN, args),
   };
 };
-
-/** @param {NS} ns **/
-export async function main(ns) {
-  const console = logger(ns, { debug: true });
-  console.log("This is a test of the logger.log function");
-  console.error("If it was a real log it would probably be the error color");
-  console.info("This has a been a test of the logger functionality");
-  console.warn("You may now resume your previous activity");
-}
