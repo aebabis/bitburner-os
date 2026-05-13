@@ -39,6 +39,11 @@ export const checkPort = async (ns, queue) => {
   }
 };
 
+/** @type {Record<string, number>} */
+export const lastRuns = {};
+/** @type {Record<string, number>} */
+export const lastCancellations = {};
+
 /** @param {NS} ns @param {TicketEntry} process @param {{hostname: string, ramAvailableTo: (process: TicketEntry) => number}} server **/
 export const fulfill = async (ns, process, server) => {
   const { hostname, ramAvailableTo } = server;
@@ -63,11 +68,13 @@ export const fulfill = async (ns, process, server) => {
       "Unable to start process: " + process.toString(hostname),
     );
   }
+  lastRuns[script] = Date.now();
   if (ticket != null) await closeTicket(ns)(ticket, pid, hostname, threads);
 };
 
 /** @param {NS} ns @param {TicketEntry} process **/
 export const reject = async (ns, process, /** @type {string | undefined} */ reason = undefined) => {
+  lastCancellations[process.script] = Date.now();
   if (reason != null) ns.tprint(ERROR + reason);
   if (process.ticket != null) await closeTicket(ns)(process.ticket, 0, null, 0);
 };

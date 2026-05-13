@@ -1,6 +1,12 @@
 import { THREADPOOL } from "../etc/config";
 import { getPath } from "../lib/backdoor.js";
-import { getStaticData, getMoneyData, getPlayerData, getGoalsData } from "../lib/data-store";
+import {
+  getStaticData,
+  getMoneyData,
+  getPlayerData,
+  getGoalsData,
+  getSchedulerReportData,
+} from "../lib/data-store";
 import { getGoals } from "../lib/goals";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
@@ -12,6 +18,7 @@ import {
   getGoalCost,
   hasBitNode,
 } from "../lib/query-service";
+import { by } from '../lib/util';
 
 const H = BRIGHT.BOLD;
 
@@ -198,26 +205,43 @@ const getWork = (ns) => {
   return ` ${WORK} ${type} ${location} `;
 };
 
+/** @param {NS} ns */
+const getExecutionTable = (ns) => {
+  const { lastRuns = {}, lastCancellations = {} } = getSchedulerReportData(ns);
+  const rows = Object.entries(lastCancellations)
+    .filter(([script, cancelTime]) => lastRuns[script] < cancelTime)
+    .map(([script]) => [script, lastRuns[script] ?? Infinity])
+    .sort(by(([, lastRun]) => lastRun))
+    .map(([script, lastRun]) => [script, (Date.now() - lastRun) / 1000])
+    .filter(([, lastRun]) => +lastRun >= 10)
+    .map(([script, timeSince]) => [script.replace(/^\/bin\//, ''), formatTime(timeSince)]);
+  return ` ${H("DELAYS")} \n` + table(ns, null, rows);
+};
+
+/** @param {NS} ns */
+const getServiceTable = (ns) => {
+  return table(
+    ns,
+    ['SERVICES', '', ''],
+    getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
+      [name, status, '  ' + MEDIUM(ram.toFixed(2)+'GB')]),
+    { colors: true },
+  );
+};
+
 /** @param {NS} ns **/
 export async function main(ns) {
   ns.disableLog("ALL");
   ns.ui.openTail();
   const windows = [
     new GrowingWindow(() => getRunStats(ns), true),
+    new GrowingWindow(() => getServiceTable(ns)),
+    new GrowingWindow(() => moneyTable(ns)),
+    new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => getPlayerLevels(ns)),
-    new GrowingWindow(() =>
-      table(
-        ns,
-        ['SERVICES', '', ''],
-        getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-          [name, status, '  ' + MEDIUM(ram.toFixed(2)+'GB')]),
-        { colors: true },
-      ),
-    ),
     !hasBitNode(ns, 4) && new GrowingWindow(() => backdoorPath(ns)),
     new GrowingWindow(() => threadpoolTable(ns)),
-    new GrowingWindow(() => goalsTable(ns)),
-    new GrowingWindow(() => moneyTable(ns)),
+    new GrowingWindow(() => getExecutionTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1200;

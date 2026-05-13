@@ -85,7 +85,9 @@ const Service =
     const toData = () => ({
       id,
       name: shortname,
+      script,
       status: statusCode(),
+      isRunning: isRunning(),
       pid,
       desc,
       ram,

@@ -1,7 +1,7 @@
 import { THREADPOOL } from "../etc/config";
 import { by } from "../lib/util";
-import { checkPort, fulfill, reject } from "../lib/scheduler-api";
-import { getStaticData, putRamData, getHostnames } from "../lib/data-store";
+import { checkPort, fulfill, reject, lastRuns, lastCancellations } from "../lib/scheduler-api";
+import { getStaticData, putRamData, getHostnames, putSchedulerReportData } from "../lib/data-store";
 import { logger } from "../lib/logger";
 
 const SCHEDULER_HOME = "home";
@@ -162,6 +162,7 @@ export async function main(ns) {
             logger(ns).warn("Failed to find RAM for: " + process.toString());
         }
       }
+      putSchedulerReportData(ns, { lastRuns, lastCancellations });
       ns.print(`${queue.length} items queued`);
       queue.forEach((item) => ns.print(item.toString()));
     } catch (error) {

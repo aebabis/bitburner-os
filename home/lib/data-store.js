@@ -4,6 +4,7 @@ import {
   PORT_STATIC_DATA,
   PORT_GANG_DATA,
   PORT_SCH_RAM_DATA,
+  PORT_SCH_REPORTING,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
   PORT_CONTRACT_DATA,
@@ -36,6 +37,11 @@ export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
  *  @param {string[]} hostnames */
 export const putHostnames = (ns, hostnames) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
+
+/** @param {NS} ns */
+export const getSchedulerReportData = (ns) => readData(ns, PORT_SCH_REPORTING) || {};
+/** @param {NS} ns */
+export const putSchedulerReportData = (ns, data) => putData(ns, PORT_SCH_REPORTING, data);
 
 /** @param {NS} ns */
 export const getStaticData = (ns) => readData(ns, PORT_STATIC_DATA) || {};
