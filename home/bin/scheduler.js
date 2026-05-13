@@ -148,12 +148,14 @@ export async function main(ns) {
 
           const isServerValid = (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
             server?.ramAvailableTo(process) >= ramRequired;
+          const isServerUsable = (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
+            server?.ramAvailableTo(process) >= scriptRam;
 
           const server = eligibleServers.find(isServerValid);
-          const settleServer = eligibleServers[0];
+          const settleServer = eligibleServers.find(isServerUsable);
 
           if (server != null) await fulfill(ns, queue.splice(i--, 1)[0], server);
-          else if (settleServer?.ramAvailableTo(process) >= scriptRam)
+          else if (settleServer != null)
             await fulfill(ns, queue.splice(i--, 1)[0], settleServer);
           else if (
             !process.isWorker &&

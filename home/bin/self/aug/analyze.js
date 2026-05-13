@@ -36,7 +36,6 @@ const getAugmentGoals = (
     if (isCityFaction && cityFaction != null && cityFaction !== faction)
       return false;
     return true;
-    // return hasAllPreEnd || COMBAT_REQUIREMENTS[faction] == null;
   });
   const getNeededAugs = (/** @type {string} */ faction) =>
     factionAugmentations[faction].filter(stillNeeds).filter(notNeuroFlux);
@@ -49,7 +48,7 @@ const getAugmentGoals = (
       for (const prereq of prereqs) order.add(prereq);
       order.add(aug);
     }
-    return [...order].splice(0, MAX_AUGS);
+    return [...order].slice(0, MAX_AUGS);
   };
 
   for (const faction of ["Netburners", "CyberSec"]) {
@@ -60,6 +59,18 @@ const getAugmentGoals = (
         augmentations: getPurchaseOrder(needed),
       };
   }
+
+  const niteSecAugs = getNeededAugs('NiteSec');
+  if (niteSecAugs.includes('DataJack')) {
+    const purchaseOrder = getPurchaseOrder(niteSecAugs);
+    const dataJackIndex = purchaseOrder.indexOf('DataJack');
+    return {
+      faction: 'NiteSec',
+      augmentations: purchaseOrder.slice(dataJackIndex),
+    };
+  }
+
+  if (!factions.length) return { faction: null, augmentations: [] };
 
   const unownedAugmentations = augmentations
     .filter((/** @type {string} */ aug) => !ownedAugmentations.includes(aug) && notNeuroFlux(aug))
@@ -88,7 +99,7 @@ const getAugmentGoals = (
 };
 
 /** @param {NS} ns */
-export const analyzeAugData = async (ns) => {
+export const analyzeAugData = (ns) => {
   const augData = getStaticData(ns);
   const cityFaction = ns
     .getPlayer()

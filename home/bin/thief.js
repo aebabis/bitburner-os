@@ -60,7 +60,11 @@ export async function main(ns) {
         .map((/** @type {Thief} */ thief) => thief.getReservedThreads())
         .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 
-      let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
+      // let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
+      let ramAvailable = (ramData.rootServers ?? [])
+        .map((server) => server.ramUnused)
+        .filter((ram) => ram >= 1.75)
+        .reduce((a,b) => a+b, 0) - reservedThreads;
 
       // God mode: when one hack thread can steal 50%+ of the best server,
       // batches are trivially cheap and spreading across all servers is better.

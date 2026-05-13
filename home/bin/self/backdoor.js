@@ -2,6 +2,7 @@ import { stop } from "../../stop";
 
 /** @param {NS} ns */
 export async function main(ns) {
+  ns.disableLog('ALL');
   const path = ns.args.slice();
 
   // Kill all scripts before backdooring
