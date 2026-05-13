@@ -37,7 +37,7 @@ export const getPath = (ns) => {
     .filter((server) => server.hasAdminRights)
     .filter((server) => !server.purchasedByPlayer)
     .filter((server) => !server.backdoorInstalled)
-    .filter((server) => server.requiredHackingSkill ?? 0 <= skill);
+    .filter((server) => (server.requiredHackingSkill ?? Infinity) <= skill);
 
   if (backdoorableServers.length === 0) return null;
 

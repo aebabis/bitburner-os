@@ -92,10 +92,9 @@ const backdoorPath = (/** @type {NS} */ ns) => {
  *  @param {Server} server
  */
 const threadpoolRow = (ns, server) => {
-  const { hostname, ramUsed, maxRam } = server;
-  const n = hostname.split("-")[1] || "?";
+  const { ramUsed, maxRam } = server;
   const ram = `${ns.formatRam(ramUsed, 0).padStart(5)}/${ns.formatRam(maxRam, 0).padEnd(5)}`;
-  return [n, ram];
+  return [ram];
 };
 
 /** @param {NS} ns **/
@@ -128,7 +127,7 @@ const threadpoolTable = (ns) => {
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
-  const rows = left.map((list, i) => [...list, ...(middle[i] || ["", ""]), ...(right[i] || ["", ""])]);
+  const rows = left.map((list, i) => [...list, ...(middle[i] || [""]), ...(right[i] || [""])]);
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
