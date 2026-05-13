@@ -107,10 +107,12 @@ export const getGoals = (ns) => {
         joinPrereqs.push(moneyGoal);
       }
       const [location] = locationReqs;
-      const locationGoal = goal("LOCATION", "Visit " + location,
-        () => ns.getPlayer().location === location, location);
-      goals.push(locationGoal);
-      joinPrereqs.push(locationGoal);
+      if (location) {
+        const locationGoal = goal("LOCATION", "Visit " + location,
+          () => ns.getPlayer().location === location, location);
+        goals.push(locationGoal);
+        joinPrereqs.push(locationGoal);
+      }
     }
   }
 
