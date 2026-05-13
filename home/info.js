@@ -52,7 +52,7 @@ const getCrimeTable = (ns) => {
         dec(difficulty),
         dec(karma),
         time / 1000,
-        ns.formatNumber(money),
+        ns.format.number(money),
         ~~(chance * 100),
         expectedValue.toFixed(2),
         dec(hacking_exp),

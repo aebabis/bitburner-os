@@ -18,9 +18,9 @@ const is4SViable = (/** @type {NS} */ ns) => {
 };
 
 const getTixApiAccess = async (/** @type {NS} */ ns) => {
-  while (!ns.stock.hasTIXAPIAccess()) {
+  while (!ns.stock.hasTixApiAccess()) {
     while (!isTixViable(ns)) await ns.sleep(1000);
-    if (!ns.stock.hasWSEAccount())
+    if (!ns.stock.hasWseAccount())
       await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseWseAccount");
     await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseTixApi");
   }
@@ -38,9 +38,9 @@ export async function main(ns) {
   ns.disableLog("ALL");
 
   const isTrendTrader = (/** @type {NS} */ ns) =>
-    ns.stock.hasTIXAPIAccess() && !ns.stock.has4SDataTIXAPI();
+    ns.stock.hasTixApiAccess() && !ns.stock.has4SDataTixApi();
   const isFourSTrader = (/** @type {NS} */ ns) =>
-    ns.stock.hasTIXAPIAccess() && ns.stock.has4SDataTIXAPI();
+    ns.stock.hasTixApiAccess() && ns.stock.has4SDataTixApi();
 
   const trendTraderSubservice = AnyHostService(
     ns,
@@ -56,7 +56,7 @@ export async function main(ns) {
   await loadStaticStockData(ns);
 
   while (true) {
-    if (!ns.stock.has4SDataTIXAPI()) await attempt4SApiAccess(ns);
+    if (!ns.stock.has4SDataTixApi()) await attempt4SApiAccess(ns);
 
     for (const service of services) await service.check();
 

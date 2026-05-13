@@ -14,7 +14,7 @@ export const liquidate = async (ns) => {
   await ns.sleep(1000);
 
   // Sell stocks
-  if (ns.stock.hasTIXAPIAccess()) await rmi(ns)("/bin/broker/dump.js");
+  if (ns.stock.hasTixApiAccess()) await rmi(ns)("/bin/broker/dump.js");
 };
 
 /** @param {NS} ns */

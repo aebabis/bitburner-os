@@ -10,12 +10,7 @@ export const access = (ns) => async (/** @type string */ target) => {
   if (ns.fileExists("HTTPWorm.exe", "home")) ns.httpworm(target);
   if (ns.fileExists("SQLInject.exe", "home")) ns.sqlinject(target);
 
-  try {
-    ns.nuke(target);
-    return true;
-  } catch {
-    return false;
-  }
+  return ns.nuke(target);
 };
 
 /** @param {NS} ns **/

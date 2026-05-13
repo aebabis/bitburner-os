@@ -9,10 +9,10 @@ export async function main(ns) {
   tprint(ns)(STR.BOLD + "GENERATING STATIC DATA");
 
   tprint(ns)(STR + "  Precalculating static server costs");
-  const purchasedServerMaxRam = ns.getPurchasedServerMaxRam();
+  const purchasedServerMaxRam = ns.cloud.getRamLimit();
   const purchasedServerCosts = /** @type {Record<number, number>} */ ({});
   for (let ram = purchasedServerMaxRam; ram >= 2; ram /= 2)
-    purchasedServerCosts[ram] = ns.getPurchasedServerCost(ram);
+    purchasedServerCosts[ram] = ns.cloud.getServerCost(ram);
 
   tprint(ns)(STR + "  Storing script RAM costs");
   const scriptRam = /** @type {Record<string, number>} */ ({});
@@ -28,7 +28,7 @@ export async function main(ns) {
     resetInfo,
     ownedSourceFiles: [], // To be overwritten in next step, RAM permitting
     scriptRam,
-    purchasedServerLimit: ns.getPurchasedServerLimit(),
+    purchasedServerLimit: ns.cloud.getServerLimit(),
     purchasedServerMaxRam,
     purchasedServerCosts,
   });

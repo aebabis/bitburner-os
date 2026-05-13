@@ -30,7 +30,7 @@ const go = async (ns) => {
   const canPurchaseServers = () =>
     ns.getPlayer().money >= purchasedServerCosts[4];
   const couldTrade = () =>
-    ns.stock.hasTIXAPIAccess() || ns.getPlayer().money >= 5.2e9;
+    ns.stock.hasTixApiAccess() || ns.getPlayer().money >= 5.2e9;
   const canAutopilot = () =>
     hasSingularity && requiredJobRam <= mostRootRam(ns);
   const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);

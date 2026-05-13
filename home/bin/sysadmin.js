@@ -50,13 +50,13 @@ const atCapacity = (ns) => {
 /** @param {NS} ns @param {string} hostname */
 const deleteServer = (ns, hostname) => {
   ns.killall(hostname, true);
-  ns.deleteServer(hostname);
+  ns.cloud.deleteServer(hostname);
 };
 
 /** @param {NS} ns @param {string} hostname @param {number} minRam @param {number} maxRam */
 const purchaseServer = (ns, hostname, minRam, maxRam) => {
   let ram = maxRam;
-  while (!ns.purchaseServer(hostname, ram)) {
+  while (!ns.cloud.purchaseServer(hostname, ram)) {
     ram /= 2;
     if (ram < minRam) return false;
   }
@@ -98,7 +98,7 @@ export async function main(ns) {
       return;
     }
 
-    const cost = ns.formatNumber(ns.getPurchasedServerCost(ram), 3);
+    const cost = ns.format.number(ns.cloud.getServerCost(ram), 3);
 
     if (isUpgrade) ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);
     else ns.print(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);

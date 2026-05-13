@@ -6,9 +6,9 @@ const mayPurchase = (ns, funcName) => {
   if (funcName === 'purchaseWseAccount') {
     return true;
   } else if (funcName.includes('urchaseTixApi')) {
-    return ns.stock.hasWSEAccount();
+    return ns.stock.hasWseAccount();
   } else {
-    return ns.stock.hasTIXAPIAccess();
+    return ns.stock.hasTixApiAccess();
   }
 };
 

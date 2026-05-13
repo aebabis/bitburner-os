@@ -76,7 +76,7 @@ export async function main(ns) {
       const secStr = (/** @type {string} */ hostname) =>
         `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
       const moneyStr = (/** @type {string} */ hostname) =>
-        `${ns.formatNumber(ns.getServerMoneyAvailable(hostname), 2)}/${ns.formatNumber(ns.getServerMaxMoney(hostname), 2)}`;
+        `${ns.format.number(ns.getServerMoneyAvailable(hostname), 2)}/${ns.format.number(ns.getServerMaxMoney(hostname), 2)}`;
       const rows = viableThieves
         .filter(
           (/** @type {Thief} */ thief) =>

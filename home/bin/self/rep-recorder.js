@@ -31,7 +31,7 @@ export async function main(ns) {
       }
     }
 
-    const n = (/** @type {number} */ num) => ns.formatNumber(num || 0, 1);
+    const n = (/** @type {number} */ num) => ns.format.number(num || 0, 1);
     const tableData = FACTIONS.slice()
       .sort()
       .map((faction) => [

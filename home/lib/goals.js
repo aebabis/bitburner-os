@@ -101,7 +101,7 @@ export const getGoals = (ns) => {
     // save space in the user's dashboard.
     if (!factions.includes(nonGangTarget.faction)) {
       if (moneyTarget) {
-        const moneyGoal = goal("MONEY", "Have $" + ns.formatNumber(moneyTarget, 1),
+        const moneyGoal = goal("MONEY", "Have $" + ns.format.number(moneyTarget, 1),
           () => ns.getPlayer().money >= moneyTarget, moneyTarget);
         goals.push(moneyGoal);
         joinPrereqs.push(moneyGoal);
@@ -139,7 +139,7 @@ export const getGoals = (ns) => {
   const { estimatedStockValue = 0, costToAug } = getMoneyData(ns);
   const augMoneyGoal = goal(
     "AUG_MONEY",
-    "Save " + (costToAug != null ? "$" + ns.formatNumber(costToAug, 1) : "?") + " for augmentations",
+    "Save " + (costToAug != null ? "$" + ns.format.number(costToAug, 1) : "?") + " for augmentations",
     () => costToAug != null && ns.getPlayer().money + 0.9 * estimatedStockValue >= costToAug,
   );
   goals.push(augMoneyGoal);

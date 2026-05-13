@@ -48,7 +48,7 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
       name,
       baseRespect,
       baseWanted,
-      "$" + ns.formatNumber(baseMoney, 2),
+      "$" + ns.format.number(baseMoney, 2),
       difficulty,
       stat(hackWeight),
       stat(strWeight),

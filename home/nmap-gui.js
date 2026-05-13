@@ -211,8 +211,8 @@ async function showChart(ns, element, nodes, links) {
       } = server;
       d.isFullyAccessed =
         d.name === "home" || purchasedByPlayer || backdoorInstalled;
-      d.nMoneyAvailable = "$" + ns.formatNumber(server.moneyAvailable, 3);
-      d.nMoneyMax = "$" + ns.formatNumber(server.moneyMax, 3);
+      d.nMoneyAvailable = "$" + ns.format.number(server.moneyAvailable, 3);
+      d.nMoneyMax = "$" + ns.format.number(server.moneyMax, 3);
       if (d.isFullyAccessed)
         return theme.primary; //palette.text;
       else if (

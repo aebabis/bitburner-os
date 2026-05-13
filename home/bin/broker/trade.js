@@ -61,8 +61,8 @@ const tick = (/** @type {NS} */ ns, /** @type {{record: (data: {sym: string, pri
     .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
   putMoneyData(ns, { estimatedStockValue });
 
-  ns.print("EARMARKED FUNDS: $" + ns.formatNumber(moneyToSpend, 3));
-  ns.print("ESTIMATED VALUE: $" + ns.formatNumber(estimatedStockValue, 3));
+  ns.print("EARMARKED FUNDS: $" + ns.format.number(moneyToSpend, 3));
+  ns.print("ESTIMATED VALUE: $" + ns.format.number(estimatedStockValue, 3));
 
   ns.print(getTableString(ns, stocks));
   return stocks;

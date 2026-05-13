@@ -11,7 +11,7 @@ export const getNodes = (ns) => {
 /** @param {NS} ns **/
 const getNodeData = (ns) => {
   const formulas = getHacknetNodeFormulas(ns);
-  const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.formatNumber(n, 0);
+  const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.format.number(n, 0);
   return getNodes(ns).map((stats, i) => {
     const lp = formulas.levelUpgradeProfit(stats.level, stats.ram, stats.cores);
     const rp = formulas.ramUpgradeProfit(stats.level, stats.ram, stats.cores);

@@ -41,13 +41,13 @@ const getRunStats = (ns) => {
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${ns.getResetInfo().currentNode}`;
   const time = formatTime(onlineRunningTime);
-  const stock = ns.formatNumber(estimatedStockValue, 1);
+  const stock = ns.format.number(estimatedStockValue, 1);
   return [
     ' ' + H(BN),
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH') + C(217)(` $${ns.formatNumber(money, 1)}`),
+    H('CASH') + C(217)(` $${ns.format.number(money, 1)}`),
     H('PORTFOLIO') + C(217)(` $${stock}`),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
@@ -100,13 +100,13 @@ const backdoorPath = (/** @type {NS} */ ns) => {
  */
 const threadpoolRow = (ns, server) => {
   const { ramUsed, maxRam } = server;
-  const ram = `${ns.formatRam(ramUsed, 0).padStart(5)}/${ns.formatRam(maxRam, 0).padEnd(5)}`;
+  const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
   return [ram];
 };
 
 /** @param {NS} ns **/
 const threadpools = (ns) => {
-  const names = Array(ns.getPurchasedServerLimit())
+  const names = Array(ns.cloud.getServerLimit())
     .fill(null)
     .map((_, i) => (i + 1).toString().padStart(2, "0"))
     .map((num) => `${THREADPOOL}-${num}`);
@@ -166,13 +166,13 @@ const moneyTable = (/** @type {NS} */ ns) => {
     referenceIncome = 0,
   } = moneyData;
   const rows = [
-    ["Theft", `$${ns.formatNumber(theftIncome, 1)}/s`],
+    ["Theft", `$${ns.format.number(theftIncome, 1)}/s`],
     ['', formatTime(thiefReferenceWindow)],
-    ["Hacknet", `$${ns.formatNumber(hacknetIncome, 1)}/s`],
-    ["Gang", `$${ns.formatNumber(gangIncome, 1)}/s`],
-    ["Total", `$${ns.formatNumber(referenceIncome, 1)}/s`],
+    ["Hacknet", `$${ns.format.number(hacknetIncome, 1)}/s`],
+    ["Gang", `$${ns.format.number(gangIncome, 1)}/s`],
+    ["Total", `$${ns.format.number(referenceIncome, 1)}/s`],
     ['', ''],
-    ["Goal", ("$" + ns.formatNumber(goalCost || 0, 1)).padStart(8)],
+    ["Goal", ("$" + ns.format.number(goalCost || 0, 1)).padStart(8)],
     ["   $", formatTime(moneyTime != null ? moneyTime : 100 * 60 * 60).padStart(8)],
     ["   r", formatTime(repTime != null ? repTime : 100 * 60 * 60).padStart(8)],
   ];
