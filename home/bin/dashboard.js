@@ -7,7 +7,7 @@ import {
   getGoalsData,
   getSchedulerReportData,
 } from "../lib/data-store";
-import { getGoals } from "../lib/goals";
+import { getGoals, timeToComplete } from "../lib/goals";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
@@ -22,14 +22,28 @@ import { by } from '../lib/util';
 
 const H = BRIGHT.BOLD;
 
-/** @param {number} seconds */
+/** @param {number|null} seconds */
 const formatTime = (seconds) => {
+  if (seconds == null) {
+    return '?';
+  }
+  if (seconds === 0) {
+    return '';
+  }
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  /** @param {number} n */
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  const coalesce = (...nums) => {
+    if (nums.length === 0) {
+      return '';
+    }
+    const [first, ...rest] = nums;
+    if (first === 0) {
+      return coalesce(...rest);
+    }
+    return nums.map((n) => n.toString().padStart(2, '0')).join(':');
+  };
+  return coalesce(h, m, s);
 };
 
 /** @param {NS} ns */
@@ -145,8 +159,11 @@ const goalsTable = (/** @type {NS} */ ns) => {
   const goals = getGoals(ns);
   return table(
     ns,
-    ["GOALS"],
-    goals.map(goal => [goal.toString()]),
+    ["GOALS", {name: '', align: 'right'}],
+    goals.map(goal => [
+      goal.toString(),
+      MEDIUM(formatTime(timeToComplete(goal))),
+    ]),
     { colors: true },
   );
 };
