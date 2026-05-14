@@ -3,7 +3,6 @@ import { defer } from "./defer";
 import {
   putHostnames,
   putStaticData,
-  putMoneyData,
   putContractData,
 } from "../lib/data-store";
 import { tprint } from "./util";
@@ -50,9 +49,6 @@ export async function main(ns) {
     .flat();
 
   putContractData(ns, { contracts });
-
-  tprint(ns)(STR + "  Initializing money data");
-  putMoneyData(ns, {});
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);

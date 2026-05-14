@@ -15,6 +15,11 @@ export async function main(ns) {
     const moneyData = getMoneyData(ns);
     putMoneyData(ns, { ...moneyData, hacknetIncome });
 
+    if (moneyData.referenceIncome == null) {
+      await ns.sleep(1000);
+      continue;
+    }
+
     try {
       const purchase = await getBestPurchase(ns);
       const timeToGoal = estimateTimeToGoal(ns);

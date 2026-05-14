@@ -115,6 +115,7 @@ export async function main(ns) {
 
   const attemptPurchase = async (/** @type {NS} */ ns) => {
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
+    if (referenceIncome == null) return;
     const timeToGoal = estimateTimeToGoal(ns);
     const money = ns.getServerMoneyAvailable("home");
 
