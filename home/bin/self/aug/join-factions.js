@@ -16,5 +16,4 @@ export async function main(ns) {
     )
       ns.singularity.joinFaction(faction);
   }
-  putPlayerData(ns, { factions: ns.getPlayer().factions });
 }

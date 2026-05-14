@@ -5,14 +5,14 @@ import { rmi } from "../../lib/rmi";
 
 const isTixViable = (/** @type {NS} */ ns) => {
   const { costToAug } = getMoneyData(ns);
-  const { money } = ns.getPlayer();
+  const money = ns.getServerMoneyAvailable('home');
   if (costToAug == null || costToAug > 5e9) return money > 5e9;
   else return money - costToAug > 5e9;
 };
 
 const is4SViable = (/** @type {NS} */ ns) => {
   const { costToAug } = getMoneyData(ns);
-  const { money } = ns.getPlayer();
+  const money = ns.getServerMoneyAvailable('home');
   if (costToAug > 25e9) return money > 25e9;
   else return money - costToAug > 25e9;
 };

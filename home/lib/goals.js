@@ -172,8 +172,8 @@ export const getTimeToComplete = (ns) => {
 
 /** @param {NS} ns @returns {Goal[]} */
 export const getGoals = (ns) => {
-  const { factions, skills, money, location } = ns.getPlayer();
-  const { factionRep, purchasedAugmentations, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
+  const { player, factionRep, purchasedAugmentations, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
+  const { factions, skills, money, location } = player;
   const staticData = getStaticData(ns);
   const { requiredJobRam, factionRequirements, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0, costToAug, referenceIncome = 0 } = getMoneyData(ns);

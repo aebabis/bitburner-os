@@ -110,9 +110,9 @@ const getMoneyTime = (ns) => {
 
 /** @param {NS} ns */
 const getRepTime = (ns) => {
-  const { factions=[], factionRep, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
+  const { player, factionRep, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
   const targets = getRepTargets(ns).filter((target) => (
-    factions.includes(target.faction)
+    player.factions.includes(target.faction)
   ));
   if (targets.length === 0) return 0;
   // Because activeRepRate includes passiveRepRate implicitly with no

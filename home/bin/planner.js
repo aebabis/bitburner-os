@@ -1,5 +1,5 @@
 import { AnyHostService } from "../lib/service";
-import { getStaticData, getRamData } from "../lib/data-store";
+import { getStaticData, getRamData, putPlayerData } from "../lib/data-store";
 import { logger } from "../lib/logger";
 import { CRIMINAL_ORGANIZATIONS } from "./self/aug/factions";
 
@@ -17,6 +17,9 @@ const mostRootRam = (/** @type {NS} */ ns) => {
 };
 
 /** @param {NS} ns **/
+const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
+
+/** @param {NS} ns **/
 const go = async (ns) => {
   ns.disableLog("ALL");
   const { requiredJobRam, purchasedServerCosts, resetInfo, ownedSourceFiles } =
@@ -27,14 +30,11 @@ const go = async (ns) => {
   const gangsAvailable = resetInfo.currentNode > 1;
   const hasSingularity = resetInfo.currentNode === 4 || beatBN4;
 
-  const canPurchaseServers = () =>
-    ns.getPlayer().money >= purchasedServerCosts[4];
-  const couldTrade = () =>
-    ns.stock.hasTixApiAccess() || ns.getPlayer().money >= 5.2e9;
-  const canAutopilot = () =>
-    hasSingularity && requiredJobRam <= mostRootRam(ns);
+  const canPurchaseServers = () => player(ns).money >= purchasedServerCosts[4];
+  const couldTrade = () => ns.stock.hasTixApiAccess() || player(ns).money >= 5.2e9;
+  const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
   const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
-  const inCriminalFaction = () => ns.getPlayer().factions.some(isCriminal);
+  const inCriminalFaction = () => player(ns).factions.some(isCriminal);
 
   /* eslint-disable no-unexpected-multiline */
   const tasks = [
@@ -82,6 +82,7 @@ const go = async (ns) => {
   };
 
   while (true) {
+    putPlayerData(ns, { player: player(ns) });
     for (const task of tasks) {
       try {
         updateTasks();

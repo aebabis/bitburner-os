@@ -27,9 +27,8 @@ export async function main(ns) {
   await rmi(ns, true)("/bin/self/apply.js");
 
   while (true) {
-    const player = ns.getPlayer();
     const { targetFaction } = getGoalsData(ns);
-    const { isPlayerActive, factionRep = {} } = getPlayerData(ns);
+    const { player, isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
     const inTargetFaction = player.factions.includes(targetFaction);
     const isFactionGang =

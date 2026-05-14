@@ -48,7 +48,7 @@ const formatTime = (seconds) => {
 
 /** @param {NS} ns */
 const getRunStats = (ns) => {
-  const { city, hp, numPeopleKilled, money } = ns.getPlayer();
+  const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
   const { onlineRunningTime = 0 } = ns.getRunningScript("/bin/scheduler.js", "home") || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
@@ -72,7 +72,7 @@ const getRunStats = (ns) => {
 /** @param {NS} ns */
 const getPlayerLevels = (ns) => {
   const WIDTH = 10;
-  const { skills } = ns.getPlayer();
+  const { skills } = getPlayerData(ns).player;
   const row = (/** @type {string} */ left, /** @type {number} */ c2, /** @type {number} */ right) => {
     const val = right;
     const padding = WIDTH - left.length - val.toString().length;
@@ -199,7 +199,7 @@ const moneyTable = (/** @type {NS} */ ns) => {
 /** @param {NS} ns */
 const getWork = (ns) => {
   const { factionRep = {}, currentWork } = getPlayerData(ns);
-  const { location } = ns.getPlayer();
+  const { location } = getPlayerData(ns).player;
   const WORK = H("WORK");
   if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return ` ${WORK} ${MEDIUM("(idle)")} `;

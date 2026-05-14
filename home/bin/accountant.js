@@ -43,7 +43,7 @@ export async function main(ns) {
     const scheduler = ns.getRunningScript("/bin/scheduler.js", "home");
     if (scheduler == null) return;
     const timestamp = Date.now();
-    const { money } = ns.getPlayer();
+    const money = ns.getServerMoneyAvailable('home');
     const { thiefReferenceWindow = 60, hacknetIncome = 0, gangIncome = 0 } = getMoneyData(ns);
     const { onlineMoneyMade, offlineMoneyMade, onlineRunningTime, offlineRunningTime } = scheduler;
     const moneyMade = onlineMoneyMade + offlineMoneyMade;

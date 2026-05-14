@@ -3,11 +3,11 @@ import { getPlayerData, putPlayerData } from "../../lib/data-store";
 /** @typedef {{name: string, chance: number, time: number, expectedValue: number}} CrimeStat */
 
 const selectCrime = (/** @type {NS} */ ns) => {
-  const { crimeStats } = getPlayerData(ns);
+  const { player, crimeStats } = getPlayerData(ns);
   if (crimeStats == null) return "Shoplift";
 
   const homicide = crimeStats.find((/** @type {CrimeStat} */ c) => c.name === "Homicide");
-  if (homicide.chance > 0.5 && ns.getPlayer().numPeopleKilled < 30)
+  if (homicide.chance > 0.5 && player.numPeopleKilled < 30)
     return "Homicide";
 
   const PATIENCE = 90 * 1000;
