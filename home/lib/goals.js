@@ -131,6 +131,25 @@ const augmentationGoal = (aug, purchasedAugmentations, deps) =>
     () => purchasedAugmentations.includes(aug),
     { deps, ownTime: () => 0 });
 
+// --- DAG traversal ---
+
+/**
+ * @param {Goal} goal
+ * @param {Map<Goal, number | null>} [memo]
+ * @returns {number | null}
+ */
+export const timeToComplete = (goal, memo = new Map()) => {
+  if (goal.isDone()) return 0;
+  if (memo.has(goal)) return memo.get(goal);
+  const depsMax = goal.deps.length === 0 ? 0
+    : Math.max(...goal.deps.map(d => timeToComplete(d, memo) ?? Infinity));
+  const result = depsMax === Infinity || goal.ownTime() == null
+    ? null
+    : depsMax + goal.ownTime();
+  memo.set(goal, result);
+  return result;
+};
+
 // --- Orchestration ---
 
 /** @param {NS} ns @returns {Goal[]} */
