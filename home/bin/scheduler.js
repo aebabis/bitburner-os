@@ -2,6 +2,7 @@ import { THREADPOOL } from "../etc/config";
 import { by } from "../lib/util";
 import { checkPort, fulfill, reject, lastRuns, lastCancellations } from "../lib/scheduler-api";
 import { getStaticData, putRamData, getHostnames, putSchedulerReportData } from "../lib/data-store";
+import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
 import { logger } from "../lib/logger";
 
 const SCHEDULER_HOME = "home";
@@ -164,13 +165,19 @@ export async function main(ns) {
             logger(ns).warn("Failed to find RAM for: " + process.toString());
         }
       }
-      putSchedulerReportData(ns, { lastRuns, lastCancellations });
       ns.print(`${queue.length} items queued`);
       queue.forEach((item) => ns.print(item.toString()));
     } catch (error) {
       if (error?.name === 'ScriptDeath') throw error;
       logger(ns).error(error);
     } finally {
+      putSchedulerReportData(ns, {
+        lastRuns,
+        lastCancellations,
+        heartbeat: Date.now(),
+        inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
+        outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
+      });
       await ns.sleep(10);
     }
   }

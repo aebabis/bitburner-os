@@ -7,7 +7,6 @@ import {
   getGoalsData,
   getSchedulerReportData,
 } from "../lib/data-store";
-import { getSchedulerHealth } from '../lib/scheduler-delegate';
 import { getGoals, timeToComplete } from "../lib/goals";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
@@ -239,11 +238,14 @@ const getServiceTable = (ns) => {
 
 /** @param {NS} ns */
 const getSchedulerTable = (ns) => {
-  const { inputFull, outputFull } = getSchedulerHealth(ns);
+  const { inputFull, outputFull, heartbeat } = getSchedulerReportData(ns);
+  const age = heartbeat == null ? null : Date.now() - heartbeat;
+  const heartbeatStr = age == null ? ERROR('no data') : age > 5000 ? ERROR(`${(age / 1000).toFixed(1)}s ago`) : `${age}ms ago`;
   const rows = [
     ['SCHEDULER'],
-    ['Input  ' + (inputFull ? ERROR('full') : 'healthy')],
-    ['Output ' + (outputFull ? ERROR('full') : 'healthy')],
+    ['Heartbeat  ' + heartbeatStr],
+    ['Input      ' + (inputFull ? ERROR('full') : 'healthy')],
+    ['Output     ' + (outputFull ? ERROR('full') : 'healthy')],
   ];
   return table(ns, null, rows, {colors:true});
 };
