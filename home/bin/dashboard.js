@@ -12,7 +12,7 @@ import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
 import { getServices } from "../lib/service-api";
-import { C, MEDIUM, BRIGHT } from "../lib/colors";
+import { C, MEDIUM, BRIGHT, ERROR } from "../lib/colors";
 import { hasBitNode } from "../lib/query-service";
 import { by } from '../lib/util';
 
@@ -73,7 +73,7 @@ const getPlayerLevels = (ns) => {
     const val = right;
     const padding = WIDTH - left.length - val.toString().length;
     return ` ${H(left)}${' '.repeat(padding)}${C(c2)(val)} `;
-  }
+  };
   return [
     row('Hack', 72, skills.hacking),
     row('Str', 251, skills.strength),
@@ -231,7 +231,7 @@ const getServiceTable = (ns) => {
     ns,
     ['SERVICES', '', ''],
     getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-      [name, status, '  ' + MEDIUM(ram.toFixed(2)+'GB')]),
+      [name, status, '  ' + (ram ? MEDIUM(ram.toFixed(2)+'GB') : ERROR('error'))]),
     { colors: true },
   );
 };
