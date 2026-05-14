@@ -3,19 +3,17 @@ import { delegateAny } from "../lib/scheduler-delegate";
 import { getHostnames } from "../lib/data-store";
 
 /** @param {NS} ns **/
-export const access = (ns) => async (/** @type string */ target) => {
+export const access = (ns) => (/** @type string */ target) => {
   if (ns.fileExists("BruteSSH.exe", "home")) ns.brutessh(target);
   if (ns.fileExists("FTPCrack.exe", "home")) ns.ftpcrack(target);
   if (ns.fileExists("relaySMTP.exe", "home")) ns.relaysmtp(target);
   if (ns.fileExists("HTTPWorm.exe", "home")) ns.httpworm(target);
   if (ns.fileExists("SQLInject.exe", "home")) ns.sqlinject(target);
-
   return ns.nuke(target);
 };
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
   if (ns.args[0] != null) {
     return access(ns)(ns.args[0]);
   }
@@ -31,7 +29,7 @@ export async function main(ns) {
     let hostname;
     let success;
     while ((hostname = unvisited.shift()))
-      if (await access(ns)(hostname)) {
+      if (access(ns)(hostname)) {
         success = true;
         await delegateAny(ns)(INFECT, 1, hostname);
       } else {

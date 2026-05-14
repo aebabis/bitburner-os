@@ -5,8 +5,6 @@ import { getMoneyData, putMoneyData } from "../lib/data-store";
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
-
   const BUFFER_FACTOR = 1.2;
   let waitMessageShown = false;
   let lastMessageTime = 0;

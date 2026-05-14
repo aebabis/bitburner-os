@@ -42,7 +42,8 @@ export const delegate =
       ...args,
     );
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
-    await port.blockingWrite(job);
+    const written = await port.blockingWrite(job);
+    if (!written) throw new Error(`Scheduler port full; could not enqueue: ${script}`);
     if (response) {
       const start = Date.now();
       await ns.sleep(50);
@@ -109,7 +110,13 @@ export const getDelegatedTasks = async (ns) => {
 /** @param {NS} ns **/
 export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
+  const deadline = Date.now() + 5000;
   while (port.full()) {
+    if (Date.now() > deadline) {
+      console.warn("PORT_SCH_RETURN full; dropping ticket response");
+      logger(ns).warn("PORT_SCH_RETURN full; dropping ticket response");
+      return;
+    }
     await ns.sleep(50);
   }
 

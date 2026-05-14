@@ -89,6 +89,7 @@ const go = async (ns) => {
         showServices();
         await task.check(showServices);
       } catch (error) {
+        console.error(error);
         if (error?.name === 'ScriptDeath') throw error;
         await logger(ns).error(error);
       }
