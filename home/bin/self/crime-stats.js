@@ -2,16 +2,16 @@ import { putPlayerData } from "../../lib/data-store";
 
 const CRIMES = [
   "Shoplift",
-  "Rob store",
-  "Mug someone",
+  "Rob Store",
+  "Mug",
   "Larceny",
   "Deal Drugs",
   "Bond Forgery",
-  "Traffick illegal Arms",
+  "Traffick Arms",
   "Homicide",
-  "Grand theft Auto",
-  "Kidnap and Ransom",
-  "Assassinate",
+  "Grand Theft Auto",
+  "Kidnap",
+  "Assassination",
   "Heist",
 ];
 
