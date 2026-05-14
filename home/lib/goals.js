@@ -119,6 +119,7 @@ const augMoneyGoal = (ns, costToAug, currentMoney, estimatedStockValue, referenc
     "Save " + (costToAug != null ? "$" + ns.format.number(costToAug, 1) : "?") + " for augmentations",
     () => costToAug != null && effectiveMoney >= costToAug,
     {
+      requirement: costToAug,
       ownTime: () => costToAug != null && referenceIncome > 0
         ? Math.max(0, costToAug - effectiveMoney) / referenceIncome
         : null,

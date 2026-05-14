@@ -1,20 +1,20 @@
 import { AnyHostService } from "../../lib/service";
 import { getTableString } from "../../lib/service-api";
-import { getMoneyData } from "../../lib/data-store";
+import { getGoals } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 
 const isTixViable = (/** @type {NS} */ ns) => {
-  const { costToAug } = getMoneyData(ns);
   const money = ns.getServerMoneyAvailable('home');
-  if (costToAug == null || costToAug > 5e9) return money > 5e9;
-  else return money - costToAug > 5e9;
+  const amg = getGoals(ns).find(g => g.type === 'AUG_MONEY');
+  if (amg == null || amg.isDone()) return money > 5e9;
+  return money - (amg.requirement ?? 0) > 5e9;
 };
 
 const is4SViable = (/** @type {NS} */ ns) => {
-  const { costToAug } = getMoneyData(ns);
   const money = ns.getServerMoneyAvailable('home');
-  if (costToAug > 25e9) return money > 25e9;
-  else return money - costToAug > 25e9;
+  const amg = getGoals(ns).find(g => g.type === 'AUG_MONEY');
+  if (amg == null || amg.isDone()) return money > 25e9;
+  return money - (amg.requirement ?? 0) > 25e9;
 };
 
 const getTixApiAccess = async (/** @type {NS} */ ns) => {
