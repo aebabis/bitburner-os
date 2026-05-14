@@ -13,11 +13,7 @@ import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
 import { getServices } from "../lib/service-api";
 import { C, MEDIUM, BRIGHT } from "../lib/colors";
-import {
-  getTimeEstimates,
-  getGoalCost,
-  hasBitNode,
-} from "../lib/query-service";
+import { hasBitNode } from "../lib/query-service";
 import { by } from '../lib/util';
 
 const H = BRIGHT.BOLD;
@@ -173,8 +169,6 @@ const moneyTable = (/** @type {NS} */ ns) => {
   if (moneyData == null) {
     return ` ${H("INCOME")} \n ${MEDIUM(loading)} `;
   }
-  const { moneyTime, repTime } = getTimeEstimates(ns) || 0;
-  const goalCost = getGoalCost(ns);
   const {
     theftIncome = 0,
     thiefReferenceWindow = 0,
@@ -183,17 +177,13 @@ const moneyTable = (/** @type {NS} */ ns) => {
     referenceIncome = 0,
   } = moneyData;
   const rows = [
-    ["Theft", `$${ns.format.number(theftIncome, 1)}/s`],
+    [" Theft", `$${ns.format.number(theftIncome, 1)}/s`],
     ['', formatTime(thiefReferenceWindow)],
-    ["Hacknet", `$${ns.format.number(hacknetIncome, 1)}/s`],
-    ["Gang", `$${ns.format.number(gangIncome, 1)}/s`],
-    ["Total", `$${ns.format.number(referenceIncome, 1)}/s`],
-    ['', ''],
-    ["Goal", ("$" + ns.format.number(goalCost || 0, 1)).padStart(8)],
-    ["   $", formatTime(moneyTime != null ? moneyTime : 100 * 60 * 60).padStart(8)],
-    ["   r", formatTime(repTime != null ? repTime : 100 * 60 * 60).padStart(8)],
+    [" Hacknet", `$${ns.format.number(hacknetIncome, 1)}/s`],
+    [" Gang", `$${ns.format.number(gangIncome, 1)}/s`],
   ];
-  return ` ${H("INCOME")} \n` + table(ns, null, rows);
+  const top = H(' INCOME    ') + C(183)(`$${ns.format.number(referenceIncome, 1)}/s`);
+  return top + '\n' + table(ns, null, rows);
 };
 
 /** @param {NS} ns */

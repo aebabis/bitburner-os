@@ -126,7 +126,7 @@ const getRepTime = (ns) => {
 
 const DAY = 60 * 60 * 24;
 /** @param {NS} ns */
-export const getTimeEstimates = (ns) => ({
+const getTimeEstimates = (ns) => ({
   moneyTime: getMoneyTime(ns),
   repTime: getRepTime(ns),
 });
@@ -147,10 +147,6 @@ export const needsJobRam = (ns) => {
 
   return homeRam < requiredJobRam * 2 && jobRam < requiredJobRam;
 };
-
-/** @param {NS} ns */
-export const getGoalCost = (ns) =>
-  getMoneyData(ns).costToAug || getJobRamCost(ns);
 
 /** @param {NS} ns */
 const getRepNeeded = (ns) => {
