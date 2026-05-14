@@ -132,18 +132,6 @@ export const getTimeEstimates = (ns) => ({
 });
 
 /** @param {NS} ns */
-const estimateTimeToAug = (ns) => {
-  const { moneyTime, repTime } = getTimeEstimates(ns);
-  return Math.max(moneyTime, repTime);
-};
-
-/** @param {NS} ns */
-export const isMoneyBound = (ns) => {
-  const { moneyTime, repTime } = getTimeEstimates(ns);
-  return moneyTime > repTime;
-};
-
-/** @param {NS} ns */
 export const isRepBound = (ns) => {
   const { moneyTime, repTime } = getTimeEstimates(ns);
   return repTime > moneyTime;
@@ -158,17 +146,6 @@ export const needsJobRam = (ns) => {
   const jobRam = purchasedServers[0]?.maxRam || 0;
 
   return homeRam < requiredJobRam * 2 && jobRam < requiredJobRam;
-};
-
-/** @param {NS} ns */
-export const estimateTimeToGoal = (ns) => {
-  if (needsJobRam(ns)) {
-    const jobRamCost = getJobRamCost(ns);
-    const { money, referenceIncome } = getMoneyData(ns);
-    return (jobRamCost - money) / referenceIncome;
-  } else {
-    return estimateTimeToAug(ns);
-  }
 };
 
 /** @param {NS} ns */
