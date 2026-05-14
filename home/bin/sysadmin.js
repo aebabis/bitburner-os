@@ -49,7 +49,15 @@ const atCapacity = (ns) => {
 
 /** @param {NS} ns @param {string} hostname */
 const deleteServer = (ns, hostname) => {
-  ns.killall(hostname, true);
+  // ns.killall can throw ScriptDeath if a script finished just before killall
+  // runs but its process entry hasn't been cleaned up yet (Bitburner timing bug).
+  // Safe to swallow: if sysadmin itself is being killed, the next NS call will
+  // re-throw ScriptDeath.
+  try {
+    ns.killall(hostname, true);
+  } catch (e) {
+    if (e?.name !== 'ScriptDeath') throw e;
+  }
   ns.cloud.deleteServer(hostname);
 };
 
