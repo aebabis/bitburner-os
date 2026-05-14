@@ -10,9 +10,9 @@ export const getStocks = (ns) =>
     maxShares,
     position: ns.stock.getPosition(sym),
     price: ns.stock.getPrice(sym),
-    getPurchaseCost: (/** @type {number} */ shares) => ns.stock.getPurchaseCost(sym, shares, "Long"),
+    getPurchaseCost: (/** @type {number} */ shares) => ns.stock.getPurchaseCost(sym, shares, "L"),
     getSaleGain: (/** @type {number} */ shares = ns.stock.getPosition(sym)[0]) =>
-      ns.stock.getSaleGain(sym, shares, "Long"),
+      ns.stock.getSaleGain(sym, shares, "L"),
     buy: (/** @type {number} */ shares) => ns.stock.buyStock(sym, shares),
     sell: (/** @type {number} */ shares) => ns.stock.sellStock(sym, shares),
   }));
