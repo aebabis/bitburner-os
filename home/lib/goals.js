@@ -16,6 +16,7 @@ import { THREADPOOL } from "../etc/config";
  *   requirement: number | undefined,
  *   faction: string | undefined,
  *   deps: Goal[],
+ *   ownTime: () => number | null,
  * }} Goal
  */
 
@@ -25,81 +26,120 @@ export const COMBAT_STATS = /** @type {(keyof Skills)[]} */ (["strength", "defen
  * @param {GoalType} type
  * @param {string} desc
  * @param {() => boolean} isDone
- * @param {number} [requirement]
- * @param {string} [faction]
- * @param {Goal[]} [deps]
+ * @param {{ requirement?: number, faction?: string, deps?: Goal[], ownTime?: () => number | null }} [opts]
  * @returns {Goal}
  */
-const goal = (type, desc, isDone, requirement = undefined, faction = undefined, deps = []) => ({
+const goal = (type, desc, isDone, { requirement, faction, deps = [], ownTime = () => null } = {}) => ({
   type,
   desc,
   isDone,
   requirement,
   faction,
   deps,
+  ownTime,
   toString: () => isDone() ? desc : MEDIUM(desc),
 });
 
 // --- Per-type factories ---
 
-/** @param {string} poolServer @param {number} currentRam @param {number} requiredJobRam @returns {Goal} */
-const jobRamGoal = (poolServer, currentRam, requiredJobRam) =>
+/** @param {string} poolServer @param {number} currentRam @param {number} requiredJobRam @param {number} jobRamCost @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
+const jobRamGoal = (poolServer, currentRam, requiredJobRam, jobRamCost, currentMoney, referenceIncome) =>
   goal("JOB_RAM", `${requiredJobRam}GB on ${poolServer}`,
-    () => currentRam >= requiredJobRam);
+    () => currentRam >= requiredJobRam,
+    {
+      requirement: requiredJobRam,
+      ownTime: () => referenceIncome > 0
+        ? Math.max(0, jobRamCost - currentMoney) / referenceIncome
+        : null,
+    });
 
 /** @param {Goal} dep @returns {Goal} */
 const augSuiteGoal = (dep) =>
-  goal("AUG_SUITE", "Run augmentation suite", () => false, undefined, undefined, [dep]);
+  goal("AUG_SUITE", "Run augmentation suite", () => false, { deps: [dep] });
 
 /** @param {number} hackReq @param {number} currentHacking @returns {Goal} */
 const hackingLevelGoal = (hackReq, currentHacking) =>
   goal("HACKING_LEVEL", `Hacking ≥ ${hackReq}`,
-    () => currentHacking >= hackReq, hackReq);
+    () => currentHacking >= hackReq,
+    { requirement: hackReq });
 
 /** @param {number} combatReq @param {Skills} currentSkills @returns {Goal} */
 const combatLevelsGoal = (combatReq, currentSkills) =>
   goal("COMBAT_LEVELS", `Combat stats ≥ ${combatReq}`,
-    () => COMBAT_STATS.every(stat => currentSkills[stat] >= combatReq), combatReq);
+    () => COMBAT_STATS.every(stat => currentSkills[stat] >= combatReq),
+    { requirement: combatReq });
 
-/** @param {NS} ns @param {number} moneyTarget @param {number} currentMoney @returns {Goal} */
-const moneyPrereqGoal = (ns, moneyTarget, currentMoney) =>
+/** @param {NS} ns @param {number} moneyTarget @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
+const moneyPrereqGoal = (ns, moneyTarget, currentMoney, referenceIncome) =>
   goal("MONEY", "Have $" + ns.format.number(moneyTarget, 1),
-    () => currentMoney >= moneyTarget, moneyTarget);
+    () => currentMoney >= moneyTarget,
+    {
+      requirement: moneyTarget,
+      ownTime: () => referenceIncome > 0
+        ? Math.max(0, moneyTarget - currentMoney) / referenceIncome
+        : null,
+    });
 
 /** @param {string} location @param {string} currentLocation @returns {Goal} */
 const locationGoal = (location, currentLocation) =>
   goal("LOCATION", "Visit " + location,
-    () => currentLocation === location, location);
+    () => currentLocation === location,
+    { requirement: /** @type {any} */ (location), ownTime: () => 0 });
 
 /** @param {string} faction @param {string[]} factions @param {Goal[]} [deps] @returns {Goal} */
 const factionJoinGoal = (faction, factions, deps = []) =>
   goal("FACTION_JOIN", "Join " + faction,
-    () => factions.includes(faction), undefined, undefined, deps);
+    () => factions.includes(faction),
+    { deps, ownTime: () => 0 });
 
-/** @param {string} faction @param {number} requirement @param {Record<string,number>} factionRep @param {Goal} dep @returns {Goal} */
-const factionRepGoal = (faction, requirement, factionRep, dep) =>
-  goal("FACTION_REP", `Gain ${requirement} rep (${faction})`,
-    () => (factionRep?.[faction] ?? 0) >= requirement, requirement, faction, [dep]);
+/**
+ * @param {string} faction
+ * @param {number} requirement
+ * @param {Record<string,number>} factionRep
+ * @param {Goal} dep
+ * @param {Record<string,number>} activeRepRate
+ * @param {Record<string,number>} passiveRepRate
+ * @returns {Goal}
+ */
+const factionRepGoal = (faction, requirement, factionRep, dep, activeRepRate, passiveRepRate) => {
+  const currentRep = factionRep?.[faction] ?? 0;
+  const rate = activeRepRate[faction] || passiveRepRate[faction] || 0;
+  return goal("FACTION_REP", `Gain ${requirement} rep (${faction})`,
+    () => currentRep >= requirement,
+    {
+      requirement, faction, deps: [dep],
+      ownTime: () => rate > 0 ? Math.max(0, requirement - currentRep) / rate : null,
+    });
+};
 
-/** @param {NS} ns @param {number | undefined} costToAug @param {number} currentMoney @param {number} estimatedStockValue @returns {Goal} */
-const augMoneyGoal = (ns, costToAug, currentMoney, estimatedStockValue) =>
-  goal("AUG_MONEY",
+/** @param {NS} ns @param {number | undefined} costToAug @param {number} currentMoney @param {number} estimatedStockValue @param {number} referenceIncome @returns {Goal} */
+const augMoneyGoal = (ns, costToAug, currentMoney, estimatedStockValue, referenceIncome) => {
+  const effectiveMoney = currentMoney + 0.9 * estimatedStockValue;
+  return goal("AUG_MONEY",
     "Save " + (costToAug != null ? "$" + ns.format.number(costToAug, 1) : "?") + " for augmentations",
-    () => costToAug != null && currentMoney + 0.9 * estimatedStockValue >= costToAug);
+    () => costToAug != null && effectiveMoney >= costToAug,
+    {
+      ownTime: () => costToAug != null && referenceIncome > 0
+        ? Math.max(0, costToAug - effectiveMoney) / referenceIncome
+        : null,
+    });
+};
 
 /** @param {string} aug @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal} */
 const augmentationGoal = (aug, purchasedAugmentations, deps) =>
   goal("AUGMENTATION", aug,
-    () => purchasedAugmentations.includes(aug), undefined, undefined, deps);
+    () => purchasedAugmentations.includes(aug),
+    { deps, ownTime: () => 0 });
 
 // --- Orchestration ---
 
 /** @param {NS} ns @returns {Goal[]} */
 export const getGoals = (ns) => {
   const { factions, skills, money, location } = ns.getPlayer();
-  const { factionRep, purchasedAugmentations } = getPlayerData(ns);
+  const { factionRep, purchasedAugmentations, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
   const staticData = getStaticData(ns);
-  const { requiredJobRam, factionRequirements } = staticData;
+  const { requiredJobRam, factionRequirements, purchasedServerCosts } = staticData;
+  const { estimatedStockValue = 0, costToAug, referenceIncome = 0 } = getMoneyData(ns);
   const goalsData = getGoalsData(ns);
   const effectiveFaction = getTargetFaction(ns);
   const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
@@ -107,7 +147,8 @@ export const getGoals = (ns) => {
   if (targetAugmentations == null) {
     const POOL1 = `${THREADPOOL}-01`;
     const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
-    const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam);
+    const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
+    const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome);
     return [jrg, augSuiteGoal(jrg)];
   }
 
@@ -148,7 +189,7 @@ export const getGoals = (ns) => {
     // save space in the user's dashboard.
     if (!factions.includes(nonGangTarget.faction)) {
       if (moneyTarget) {
-        const g = moneyPrereqGoal(ns, moneyTarget, money);
+        const g = moneyPrereqGoal(ns, moneyTarget, money, referenceIncome);
         goals.push(g);
         joinPrereqs.push(g);
       }
@@ -173,13 +214,12 @@ export const getGoals = (ns) => {
       joinGoal = factionJoinGoal(faction, factions, factionPrereqs);
       goals.push(joinGoal);
     }
-    const rg = factionRepGoal(faction, requirement, factionRep, joinGoal);
+    const rg = factionRepGoal(faction, requirement, factionRep, joinGoal, activeRepRate, passiveRepRate);
     goals.push(rg);
     repGoals.push(rg);
   }
 
-  const { estimatedStockValue = 0, costToAug } = getMoneyData(ns);
-  const amg = augMoneyGoal(ns, costToAug, money, estimatedStockValue);
+  const amg = augMoneyGoal(ns, costToAug, money, estimatedStockValue, referenceIncome);
   goals.push(amg);
 
   goals.push(
