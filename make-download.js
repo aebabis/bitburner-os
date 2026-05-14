@@ -47,7 +47,7 @@ ${files.join("\n")}
   }
   ns.tprint('Download complete');
 }`;
-  await writeFile("download.js", program);
+  await writeFile("home/download.js", program);
 
   eventEmitter.emit("done");
 }
