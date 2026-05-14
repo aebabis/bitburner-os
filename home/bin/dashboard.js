@@ -12,7 +12,7 @@ import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
 import { getServices } from "../lib/service-api";
-import { C, MEDIUM, BRIGHT, ERROR } from "../lib/colors";
+import { C, WARN, MEDIUM, BRIGHT, ERROR } from "../lib/colors";
 import { hasBitNode } from "../lib/query-service";
 import { by } from '../lib/util';
 
@@ -238,14 +238,17 @@ const getServiceTable = (ns) => {
 
 /** @param {NS} ns */
 const getSchedulerTable = (ns) => {
-  const { inputFull, outputFull, heartbeat } = getSchedulerReportData(ns);
+  const { inputFull, outputFull, heartbeat, maxWaitTime = 0 } = getSchedulerReportData(ns);
   const age = heartbeat == null ? null : Date.now() - heartbeat;
   const heartbeatStr = age == null ? ERROR('no data') : age > 5000 ? ERROR(`${(age / 1000).toFixed(1)}s ago`) : `${age}ms ago`;
+  const waitSec = (maxWaitTime / 1000).toFixed(1);
+  const waitStr = maxWaitTime > 45000 ? ERROR(`${waitSec}s`) : maxWaitTime > 20000 ? WARN(`${waitSec}s`) : `${waitSec}s`;
   const rows = [
     ['SCHEDULER'],
     ['Heartbeat  ' + heartbeatStr],
-    ['Input      ' + (inputFull ? ERROR('full') : 'healthy')],
-    ['Output     ' + (outputFull ? ERROR('full') : 'healthy')],
+    ['Max wait   ' + waitStr],
+    ['Input      ' + (inputFull ? ERROR('full') : 'open')],
+    ['Output     ' + (outputFull ? ERROR('full') : 'open')],
   ];
   return table(ns, null, rows, {colors:true});
 };

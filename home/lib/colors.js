@@ -37,5 +37,5 @@ export const RESET = "\u001b[0m";
 
 export const LOG = NORMAL;
 export const ERROR = C(124); // 160
-export const WARN = C(214);
+export const WARN = C(215);
 export const INFO = C(63);
