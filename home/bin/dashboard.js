@@ -7,6 +7,7 @@ import {
   getGoalsData,
   getSchedulerReportData,
 } from "../lib/data-store";
+import { getSchedulerHealth } from '../lib/scheduler-delegate';
 import { getGoals, timeToComplete } from "../lib/goals";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
@@ -236,6 +237,17 @@ const getServiceTable = (ns) => {
   );
 };
 
+/** @param {NS} ns */
+const getSchedulerTable = (ns) => {
+  const { inputFull, outputFull } = getSchedulerHealth(ns);
+  const rows = [
+    ['SCHEDULER'],
+    ['Input  ' + (inputFull ? ERROR('full') : 'healthy')],
+    ['Output ' + (outputFull ? ERROR('full') : 'healthy')],
+  ];
+  return table(ns, null, rows, {colors:true});
+};
+
 /** @param {NS} ns **/
 export async function main(ns) {
   ns.disableLog("ALL");
@@ -243,6 +255,7 @@ export async function main(ns) {
   const windows = [
     new GrowingWindow(() => getRunStats(ns), true),
     new GrowingWindow(() => getServiceTable(ns)),
+    new GrowingWindow(() => getSchedulerTable(ns)),
     new GrowingWindow(() => moneyTable(ns)),
     new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => getPlayerLevels(ns)),

@@ -108,6 +108,12 @@ export const getDelegatedTasks = async (ns) => {
 };
 
 /** @param {NS} ns **/
+export const getSchedulerHealth = (ns) => ({
+  inputFull: Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
+  outputFull: Ports(ns).getPortHandle(PORT_SCH_RETURN).full(),
+});
+
+/** @param {NS} ns **/
 export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
   const deadline = Date.now() + 5000;
