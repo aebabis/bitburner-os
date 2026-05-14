@@ -150,6 +150,24 @@ export const timeToComplete = (goal, memo = new Map()) => {
   return result;
 };
 
+/**
+ * Time to complete the overall plan: max timeToComplete across all terminal goals
+ * (AUGMENTATION goals if any exist, AUG_SUITE otherwise).
+ * Returns null if any terminal goal's time is unknown.
+ * @param {NS} ns
+ * @returns {number | null}
+ */
+export const getTimeToComplete = (ns) => {
+  const goals = getGoals(ns);
+  const augGoals = goals.filter(g => g.type === 'AUGMENTATION');
+  const roots = augGoals.length > 0 ? augGoals : goals.filter(g => g.type === 'AUG_SUITE');
+  if (roots.length === 0) return null;
+  const memo = new Map();
+  const times = roots.map(g => timeToComplete(g, memo));
+  if (times.some(t => t == null)) return null;
+  return Math.max(.../** @type {number[]} */ (times));
+};
+
 // --- Orchestration ---
 
 /** @param {NS} ns @returns {Goal[]} */

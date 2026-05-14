@@ -8,10 +8,10 @@ import {
 } from "../lib/data-store";
 import { disableService } from "../lib/service-api";
 import {
-  estimateTimeToGoal,
   needsJobRam,
   getJobRamCost,
 } from "../lib/query-service";
+import { getTimeToComplete } from "../lib/goals";
 import { infect, fullInfect } from "./infect";
 
 /** @param {number} maxServers */
@@ -116,7 +116,7 @@ export async function main(ns) {
   const attemptPurchase = async (/** @type {NS} */ ns) => {
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     if (referenceIncome == null) return;
-    const timeToGoal = estimateTimeToGoal(ns);
+    const timeToGoal = getTimeToComplete(ns) ?? Infinity;
     const money = ns.getServerMoneyAvailable("home");
 
     const servers = getPurchasedServerRams(ns, purchasedServerLimit);
