@@ -4,7 +4,7 @@ import { getStaticData, getPlayerData } from "../../../lib/data-store";
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.tprint('?');
   const retry = true;
 
   await rmi(ns, retry)("/bin/self/aug/load-faction-favor.js");

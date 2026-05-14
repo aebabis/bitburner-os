@@ -60,7 +60,7 @@ const go = async (ns) => {
       AnyHostService(ns, canAutopilot)("/bin/self/work.js"),
       AnyHostService(ns, canAutopilot)("/bin/self/control.js"),
       AnyHostService(ns, canAutopilot)("/bin/self/tor.js"),
-      AnyHostService(ns, canAutopilot)("/bin/self/rep-recorder.js"),
+      AnyHostService(ns, canAutopilot)("/bin/self/liaison.js"),
     );
   else tasks.push(AnyHostService(ns)("/bin/hinter.js"));
 
