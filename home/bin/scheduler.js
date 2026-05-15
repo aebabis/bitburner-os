@@ -1,6 +1,6 @@
 import { THREADPOOL } from "../etc/config";
 import { by } from "../lib/util";
-import { checkPort, fulfill, reject, lastRuns, lastCancellations } from "../lib/scheduler-api";
+import { checkPort, fulfill, reject, lastRuns, lastCancellations, droppedTickets } from "../lib/scheduler-api";
 import { getStaticData, putRamData, getHostnames, putSchedulerReportData } from "../lib/data-store";
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
 import { logger } from "../lib/logger";
@@ -177,6 +177,8 @@ export async function main(ns) {
         heartbeat: Date.now(),
         inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
         outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
+        maxWaitTime: queue.reduce((max, item) => Math.max(max, item.waitTime()), 0),
+        droppedTickets,
       });
       await ns.sleep(10);
     }

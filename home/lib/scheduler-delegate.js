@@ -1,6 +1,7 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
 import Ports from "./ports";
 import { logger } from "./logger";
+import { getSchedulerReportData, putSchedulerReportData } from "./data-store";
 
 const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
   `${script} ${host || "*"} ${numThreads} ${args.join(" ")}`;
@@ -43,7 +44,11 @@ export const delegate =
     );
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     const written = await port.blockingWrite(job);
-    if (!written) throw new Error(`Scheduler port full; could not enqueue: ${script}`);
+    if (!written) {
+      const { enqueueFails = 0 } = getSchedulerReportData(ns);
+      putSchedulerReportData(ns, { enqueueFails: enqueueFails + 1 });
+      throw new Error(`Scheduler port full; could not enqueue: ${script}`);
+    }
     if (response) {
       const start = Date.now();
       await ns.sleep(50);
@@ -113,9 +118,8 @@ export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ tic
   const deadline = Date.now() + 5000;
   while (port.full()) {
     if (Date.now() > deadline) {
-      console.warn("PORT_SCH_RETURN full; dropping ticket response");
       logger(ns).warn("PORT_SCH_RETURN full; dropping ticket response");
-      return;
+      return false;
     }
     await ns.sleep(50);
   }

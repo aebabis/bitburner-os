@@ -34,7 +34,7 @@ export const checkPort = async (ns, queue) => {
       logger(ns).error(
         `Scheduler received task for non-existant script: ${script}`,
       );
-      await closeTicket(ns)(ticket);
+      if (await closeTicket(ns)(ticket) === false) droppedTickets++;
     } else queue.push(TicketItem(taskData));
   }
 };
@@ -43,6 +43,7 @@ export const checkPort = async (ns, queue) => {
 export const lastRuns = {};
 /** @type {Record<string, number>} */
 export const lastCancellations = {};
+export let droppedTickets = 0;
 
 /** @param {NS} ns @param {TicketEntry} process @param {{hostname: string, ramAvailableTo: (process: TicketEntry) => number}} server **/
 export const fulfill = async (ns, process, server) => {
@@ -69,12 +70,12 @@ export const fulfill = async (ns, process, server) => {
     );
   }
   lastRuns[script] = Date.now();
-  if (ticket != null) await closeTicket(ns)(ticket, pid, hostname, threads);
+  if (ticket != null && await closeTicket(ns)(ticket, pid, hostname, threads) === false) droppedTickets++;
 };
 
 /** @param {NS} ns @param {TicketEntry} process **/
 export const reject = async (ns, process, /** @type {string | undefined} */ reason = undefined) => {
   lastCancellations[process.script] = Date.now();
   if (reason != null) ns.tprint(ERROR + reason);
-  if (process.ticket != null) await closeTicket(ns)(process.ticket, 0, null, 0);
+  if (process.ticket != null && await closeTicket(ns)(process.ticket, 0, null, 0) === false) droppedTickets++;
 };

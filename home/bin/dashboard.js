@@ -238,17 +238,21 @@ const getServiceTable = (ns) => {
 
 /** @param {NS} ns */
 const getSchedulerTable = (ns) => {
-  const { inputFull, outputFull, heartbeat, maxWaitTime = 0 } = getSchedulerReportData(ns);
+  const { inputFull, outputFull, heartbeat, maxWaitTime = 0, enqueueFails = 0, droppedTickets = 0 } = getSchedulerReportData(ns);
   const age = heartbeat == null ? null : Date.now() - heartbeat;
   const heartbeatStr = age == null ? ERROR('no data') : age > 5000 ? ERROR(`${(age / 1000).toFixed(1)}s ago`) : `${age}ms ago`;
   const waitSec = (maxWaitTime / 1000).toFixed(1);
   const waitStr = maxWaitTime > 45000 ? ERROR(`${waitSec}s`) : maxWaitTime > 20000 ? WARN(`${waitSec}s`) : `${waitSec}s`;
+  const queue = enqueueFails + ' fails';
+  const tickets = droppedTickets + ' dropped';
   const rows = [
     ['SCHEDULER'],
     ['Heartbeat  ' + heartbeatStr],
     ['Max wait   ' + waitStr],
     ['Input      ' + (inputFull ? ERROR('full') : 'open')],
     ['Output     ' + (outputFull ? ERROR('full') : 'open')],
+    ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
+    ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
   ];
   return table(ns, null, rows, {colors:true});
 };
