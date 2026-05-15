@@ -47,7 +47,7 @@ export async function getTailModal(ns, retry = true) {
 }
 
 /** @param {NS} ns **/
-const charWidth = (ns) => 9.65 * ns.ui.getStyles().fontSize / 16;
+const charWidth = (ns) => 9.65 * ns.ui.getStyles().tailFontSize / 16;
 
 /** @param {NS} ns **/
 export async function getModalColumnCount(ns) {
