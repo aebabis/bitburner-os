@@ -150,6 +150,37 @@ test('returns null faction when no accessible faction has any augs', () => {
   assert.deepEqual(augmentations, []);
 });
 
+test('faction with significant current rep is preferred over higher raw utility', () => {
+  // BitRunners: one cheap aug (good batch utility alone) + one expensive high-value aug
+  // (the expensive aug inflates the binding rep constraint and tanks batch utility)
+  // The Black Hand: two modest augs, player already has 90% of the rep
+  const BR_CHEAP = hackAug(1.10,   100_000,   5_000); // value=1.0
+  const BR_AUG   = hackAug(1.50, 1_000_000, 100_000); // value=5.0
+  const TBH_A    = hackAug(1.20, 1_000_000,  50_000); // value=2.0
+  const TBH_B    = hackAug(1.10, 1_000_000,  20_000); // value=1.0
+
+  // Without rep progress:
+  // BitRunners best batch = {BR_CHEAP} alone: cost=max(5000,25)=5000, utility=1.0/5000=0.0002
+  // (adding BR_AUG: cost=100000, utility=6.0/100000=0.00006 — worse, so BR_CHEAP alone wins)
+  // TBH best batch = {TBH_A,TBH_B}: cost=max(50000,500)=50000, utility=3.0/50000=0.00006
+  // BitRunners wins (0.0002 > 0.00006) — BR_CHEAP is the sole target
+
+  const data = makeStaticData({
+    'BitRunners':    [BR_AUG, BR_CHEAP],
+    'The Black Hand': [TBH_A, TBH_B],
+  });
+
+  const { faction: cold } = selectAugmentations([], data, undefined);
+  assert.equal(cold, 'BitRunners');
+
+  // With 45k rep in The Black Hand:
+  // TBH_B: remaining=0, cost=max(0,250)=250, batch {TBH_B} utility=1.0/250=0.004
+  // TBH batch {TBH_A,TBH_B}: bindingRep=5000, utility=3.0/5000=0.0006
+  // Best TBH batch: {TBH_B} alone at utility=0.004 >> BitRunners 0.0002
+  const { faction: withRep } = selectAugmentations([], data, undefined, { 'The Black Hand': 45_000 });
+  assert.equal(withRep, 'The Black Hand');
+});
+
 // ---------------------------------------------------------------------------
 // Deferred / backlog
 // ---------------------------------------------------------------------------

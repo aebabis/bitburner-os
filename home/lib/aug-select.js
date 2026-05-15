@@ -83,9 +83,10 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  *   bitNodeMultipliers?: {FactionWorkRepGain?: number},
  * }} staticData
  * @param {string | undefined} cityFaction
+ * @param {Record<string, number>} [factionRep]
  * @returns {{ faction: string | null, augmentations: string[] }}
  */
-export const selectAugmentations = (ownedAugmentations, staticData, cityFaction) => {
+export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -117,28 +118,58 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction)
   const getNeededAugs = (/** @type {string} */ faction) =>
     (factionAugmentations[faction] ?? []).filter(stillNeeds).filter(notNeuroFlux);
 
-  const augUtility = (/** @type {string} */ aug) => {
+  const augValue = (/** @type {string} */ aug) => {
     const stats = augmentationStats[aug];
-    const price = augmentationPrices[aug] ?? 0;
-    const repReq = augmentationRepReqs[aug] ?? 0;
-    const value = stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
-    const cost = augEffectiveCost(price, repReq, moneyPerRep);
-    return cost > 0 ? value / cost : 0;
+    return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
   };
 
-  const factionUtility = (/** @type {string} */ faction) =>
-    getNeededAugs(faction)
-      .map(augUtility)
-      .sort((a, b) => b - a)
-      .slice(0, MAX_AUGS)
-      .reduce((sum, u) => sum + u, 0);
+  /**
+   * Find the optimal batch of up to MAX_AUGS augs from a faction.
+   * Batch utility = totalValue / effectiveCost, where effectiveCost is driven by
+   * the single highest remaining-rep requirement in the batch (the binding constraint).
+   * Tries every aug as the binding constraint — O(n²) — and returns the best.
+   * @param {string} faction
+   * @returns {{ utility: number, batch: string[] }}
+   */
+  const findOptimalBatch = (faction) => {
+    const currentRep = factionRep[faction] ?? 0;
+    const augs = getNeededAugs(faction)
+      .map((aug) => ({
+        name: aug,
+        value: augValue(aug),
+        price: augmentationPrices[aug] ?? 0,
+        remainingRep: Math.max(0, (augmentationRepReqs[aug] ?? 0) - currentRep),
+      }))
+      .sort((a, b) => a.remainingRep - b.remainingRep);
+
+    let best = { utility: 0, batch: /** @type {string[]} */ ([]) };
+
+    for (let i = 0; i < augs.length; i++) {
+      // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.
+      // Pick top MAX_AUGS by value from this affordable prefix.
+      // .slice() gives a copy, so sorting it doesn't disturb the rep-ascending order of augs[]
+      const affordable = augs.slice(0, i + 1)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, MAX_AUGS);
+
+      const totalValue = affordable.reduce((s, a) => s + a.value, 0);
+      const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
+      const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
+      const cost = augEffectiveCost(totalPrice, bindingRep, moneyPerRep);
+      const utility = cost > 0 ? totalValue / cost : (totalValue > 0 ? totalValue * 1e9 : 0);
+
+      if (utility > best.utility)
+        best = { utility, batch: affordable.map((a) => a.name) };
+    }
+
+    return best;
+  };
 
   const bestFaction = accessibleFactions.reduce(
     (best, faction) => {
-      const neededAugs = getNeededAugs(faction);
-      if (neededAugs.length === 0) return best;
-      const u = factionUtility(faction);
-      return u > best.utility ? { faction, utility: u } : best;
+      if (getNeededAugs(faction).length === 0) return best;
+      const { utility } = findOptimalBatch(faction);
+      return utility > best.utility ? { faction, utility } : best;
     },
     { faction: /** @type {string | null} */ (null), utility: -Infinity },
   ).faction;
@@ -156,9 +187,7 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction)
     return [...order].slice(0, MAX_AUGS);
   };
 
-  const bestAugs = getNeededAugs(bestFaction)
-    .sort((a, b) => augUtility(b) - augUtility(a))
-    .slice(0, MAX_AUGS);
+  const { batch: bestAugs } = findOptimalBatch(bestFaction);
 
   return { faction: bestFaction, augmentations: getPurchaseOrder(bestAugs) };
 };

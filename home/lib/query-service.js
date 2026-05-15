@@ -151,12 +151,28 @@ export const needsJobRam = (ns) => {
 /** @param {NS} ns */
 const getRepNeeded = (ns) => {
   const staticData = getStaticData(ns);
-  const { augmentationRepReqs } = staticData;
+  const { augmentationRepReqs, factionAugmentations = {} } = staticData;
   const goalsData = getGoalsData(ns);
   const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
   if (targetAugmentations == null) return null;
-  const repCosts = targetAugmentations.map((/** @type {string} */ aug) => augmentationRepReqs[aug]);
-  return Math.max(...repCosts, 0);
+
+  const effectiveFaction = getTargetFaction(ns);
+  const { factionRep = {}, player } = getPlayerData(ns);
+  const joinedFactions = player?.factions ?? [];
+
+  const isAlreadySourceable = (/** @type {string} */ aug) => {
+    const repReq = augmentationRepReqs[aug] ?? 0;
+    return joinedFactions.some((/** @type {string} */ f) =>
+      f !== effectiveFaction &&
+      (factionAugmentations[f] ?? []).includes(aug) &&
+      (factionRep[f] ?? 0) >= repReq
+    );
+  };
+
+  const repCosts = targetAugmentations
+    .filter((/** @type {string} */ aug) => !isAlreadySourceable(aug))
+    .map((/** @type {string} */ aug) => augmentationRepReqs[aug] ?? 0);
+  return repCosts.length > 0 ? Math.max(...repCosts, 0) : 0;
 };
 
 /** @param {NS} ns */

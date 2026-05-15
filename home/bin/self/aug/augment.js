@@ -16,11 +16,10 @@ export async function main(ns) {
   await rmi(ns, retry)("/bin/self/aug/load-aug-stats.js");
   await rmi(ns, retry)("/bin/self/aug/load-faction-reqs.js");
 
-  analyzeAugData(ns);
-
   while (true) {
     await rmi(ns)("/bin/self/aug/load-faction-favor-gain.js");
     await rmi(ns)("/bin/self/aug/join-factions.js");
+    analyzeAugData(ns);
     if (getStaticData(ns).targetFaction != null || getPlayerData(ns).gang)
       await rmi(ns)("/bin/self/aug/purchase-augs.js");
     await ns.sleep(100);
