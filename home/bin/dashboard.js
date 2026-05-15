@@ -1,5 +1,4 @@
 import { THREADPOOL } from "../etc/config";
-import { getPath } from "../lib/backdoor.js";
 import {
   getStaticData,
   getMoneyData,
@@ -82,27 +81,6 @@ const getPlayerLevels = (ns) => {
     row('Agi', 251, skills.agility),
     row('Cha', 251, skills.charisma),
   ].join('\n');
-};
-
-const backdoorPath = (/** @type {NS} */ ns) => {
-  const SPACES = " ".repeat(" connect powerhouse-fitness ".length) + "\n";
-  const HEAD = ` ${BRIGHT.BOLD("BACKDOOR HELPER")} \n`;
-  const path = getPath(ns);
-  if (path == null) {
-    return HEAD + " (no available servers) " + SPACES.repeat(2) + "\n\n\n\n";
-  } else {
-    const rows = [
-      ...path.map((/** @type {string} */ s) => (s === "home" ? " home" : ` connect ${s} `)),
-      " backdoor",
-    ];
-    if (rows.length >= 6) {
-      rows.length = 5;
-      rows.push(" ...");
-    } else {
-      for (let i = 0; i < rows.length - 6; i++) rows.push(" ");
-    }
-    return HEAD + rows.join("\n");
-  }
 };
 
 /** @param {NS} ns
@@ -268,7 +246,6 @@ export async function main(ns) {
     new GrowingWindow(() => moneyTable(ns)),
     new GrowingWindow(() => goalsTable(ns)),
     new GrowingWindow(() => getPlayerLevels(ns)),
-    !hasBitNode(ns, 4) && new GrowingWindow(() => backdoorPath(ns)),
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => getExecutionTable(ns)),
   ].filter(Boolean);
@@ -289,8 +266,6 @@ export async function main(ns) {
         ns.clearLog();
         textField.split("\n").forEach((/** @type {string} */ line) => ns.print(line));
         await ns.sleep(1);
-
-        // colorize(modal.bottom);
       }
     } catch (error) {
       if (error?.name === 'ScriptDeath') throw error;

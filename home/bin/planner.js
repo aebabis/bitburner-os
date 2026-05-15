@@ -54,7 +54,7 @@ const go = async (ns) => {
   if (gangsAvailable)
     tasks.push(AnyHostService(ns, inCriminalFaction)("/bin/gang/mob-boss.js"));
 
-  if (hasSingularity)
+  if (hasSingularity) {
     tasks.push(
       AnyHostService(ns, canAutopilot)("/bin/self/aug/augment.js"),
       AnyHostService(ns, canAutopilot)("/bin/self/work.js"),
@@ -62,7 +62,12 @@ const go = async (ns) => {
       AnyHostService(ns, canAutopilot)("/bin/self/tor.js"),
       AnyHostService(ns, canAutopilot)("/bin/self/liaison.js"),
     );
-  else tasks.push(AnyHostService(ns)("/bin/hinter.js"));
+  } else {
+    tasks.push(
+      AnyHostService(ns)("/bin/hinter.js"),
+      AnyHostService(ns)("/bin/trailblazer.js"),
+    );
+  }
 
   const showServices = () => {
     ns.clearLog();

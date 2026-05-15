@@ -47,30 +47,6 @@ const atCapacity = (ns) => {
   return totalRamUsed + ramQueued > totalMaxRam * 0.8;
 };
 
-/** @param {NS} ns @param {string} hostname */
-const deleteServer = (ns, hostname) => {
-  // ns.killall can throw ScriptDeath if a script finished just before killall
-  // runs but its process entry hasn't been cleaned up yet (Bitburner timing bug).
-  // Safe to swallow: if sysadmin itself is being killed, the next NS call will
-  // re-throw ScriptDeath.
-  try {
-    ns.killall(hostname, true);
-  } catch (e) {
-    if (e?.name !== 'ScriptDeath') throw e;
-  }
-  ns.cloud.deleteServer(hostname);
-};
-
-/** @param {NS} ns @param {string} hostname @param {number} minRam @param {number} maxRam */
-const purchaseServer = (ns, hostname, minRam, maxRam) => {
-  let ram = maxRam;
-  while (!ns.cloud.purchaseServer(hostname, ram)) {
-    ram /= 2;
-    if (ram < minRam) return false;
-  }
-  return ram;
-};
-
 /** @param {NS} ns **/
 export async function main(ns) {
   ns.disableLog("ALL");
@@ -91,28 +67,36 @@ export async function main(ns) {
 
     const isUpgrade = ns.serverExists(hostname);
     const isJobServer = JOB_SERVERS.includes(hostname);
+    const savings = isUpgrade ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname)) : 0;
 
-    if (isUpgrade) deleteServer(ns, hostname);
+    const purchase = isUpgrade ?
+      /** @param {string} hostname @param {number} ram */
+      (hostname, ram) => ns.cloud.upgradeServer(hostname, ram) :
+      /** @param {string} hostname @param {number} ram */
+      (hostname, ram) => ns.cloud.purchaseServer(hostname, ram);
 
-    const ram = purchaseServer(ns, hostname, minRam, maxRam);
+    let ram = maxRam;
+    while (!purchase(hostname, ram)) {
+      ram /= 2;
+      if (ram < minRam) {
+        // Rare. Seems to happen if a duplicate purchase is made,
+        // messing up the server names.
+        ns.print(`ERROR - Failed to purchase ${minRam}GB ram on ${hostname}`);
+        return;
+      }
+    }
+
     const oldHostnames = getHostnames(ns);
     const newHostnames = new Set(oldHostnames).add(hostname);
     putHostnames(ns, [...newHostnames]);
 
-    if (!ram) {
-      // Rare. Seems to happen if a duplicate purchase is made,
-      // messing up the server names.
-      ns.print(`ERROR - Failed to purchase ${minRam}GB ram on ${hostname}`);
-      return;
-    }
-
-    const cost = ns.format.number(ns.cloud.getServerCost(ram), 3);
+    const cost = ns.format.number(ns.cloud.getServerCost(ram) - savings, 3);
 
     if (isUpgrade) ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);
     else ns.print(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);
 
-    if (isJobServer) await fullInfect(ns, hostname);
-    else await infect(ns, hostname);
+    if (isJobServer) fullInfect(ns, hostname);
+    else infect(ns, hostname);
   };
 
   const getSmallestServer = (/** @type {{hostname: string, ram: number}[]} */ servers) => {
