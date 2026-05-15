@@ -1,3 +1,7 @@
+- Goals Phase 6: replace `isRepBound` in `gang/assign-members.js` with `timeToComplete`-based binding-constraint check (needs gang save to test)
+- Goals: structural null handling — when `getTimeToComplete` returns null in sysadmin/hacknet after data is ready, inspect which goal type is blocking (HACKING_LEVEL/COMBAT_LEVELS = early game, buy freely; other = unknown, hold)
+- Goals: track training rates for HACKING_LEVEL/COMBAT_LEVELS so `ownTime()` returns an estimate instead of null
+- Goals: implement `buildGoals(data)` entry point for goal searching (test hypothetical parameters, e.g. which faction work assignment minimizes timeToComplete)
 - Remind player to manually make Brute.SSH
 - Figure out if reset.js needs to store contracts anymore. Seems like dead code
 - Implement service restarts
