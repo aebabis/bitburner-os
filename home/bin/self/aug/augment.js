@@ -19,6 +19,7 @@ export async function main(ns) {
   analyzeAugData(ns);
 
   while (true) {
+    await rmi(ns)("/bin/self/aug/load-faction-favor-gain.js");
     await rmi(ns)("/bin/self/aug/join-factions.js");
     if (getStaticData(ns).targetFaction != null || getPlayerData(ns).gang)
       await rmi(ns)("/bin/self/aug/purchase-augs.js");

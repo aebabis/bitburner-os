@@ -55,6 +55,12 @@ export const scoreAug = (stats, weights) => {
 };
 
 /**
+ * @param {number} [factionWorkRepGain] - BitNodeMultipliers.FactionWorkRepGain; defaults to 1
+ * @returns {number}
+ */
+export const getMoneyPerRep = (factionWorkRepGain = 1) => 4000 / factionWorkRepGain;
+
+/**
  * @param {number} price
  * @param {number} repReq
  * @param {number} moneyPerRep

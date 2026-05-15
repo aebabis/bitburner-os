@@ -6,7 +6,7 @@ import {
   getPlayerData,
 } from "../lib/data-store";
 import { table } from "../lib/table";
-import { scoreAug, augEffectiveCost, DEFAULT_AUG_WEIGHTS } from "../lib/aug-select";
+import { scoreAug, augEffectiveCost, getMoneyPerRep, DEFAULT_AUG_WEIGHTS } from "../lib/aug-select";
 
 const NEUROFLUX = "NeuroFlux Governor";
 
@@ -19,10 +19,9 @@ const getAugsForFaction = (ns, faction) => {
     augmentationRepReqs = {},
   } = getStaticData(ns);
   const { purchasedAugmentations = [] } = getPlayerData(ns);
-  const MONEY_PER_REP = 4000;
   const alreadyHave = new Set([...ownedAugmentations, ...purchasedAugmentations]);
   const weightedCost = (/** @type {string} */ aug) =>
-    Math.max((augmentationPrices[aug] || 0) / MONEY_PER_REP, augmentationRepReqs[aug] || 0);
+    augEffectiveCost(augmentationPrices[aug] || 0, augmentationRepReqs[aug] || 0, getMoneyPerRep());
   const remaining = (factionAugmentations[faction] || [])
     .filter((/** @type {string} */ aug) => !alreadyHave.has(aug) && aug !== NEUROFLUX)
     .sort((/** @type {string} */ a, /** @type {string} */ b) => weightedCost(a) - weightedCost(b));
@@ -110,7 +109,8 @@ export async function main(ns) {
       }
 
       const NEUROFLUX = 'NeuroFlux Governor';
-      const MONEY_PER_REP = 4000;
+      const { bitNodeMultipliers = {} } = getStaticData(ns);
+      const moneyPerRep = getMoneyPerRep(bitNodeMultipliers?.FactionWorkRepGain);
 
       const augFactions = /** @type {Record<string, string[]>} */ ({});
       for (const [faction, augs] of Object.entries(factionAugmentations))
@@ -124,7 +124,7 @@ export async function main(ns) {
           const price = augmentationPrices[aug] ?? 0;
           const repReq = augmentationRepReqs[aug] ?? 0;
           const value = stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
-          const cost = augEffectiveCost(price, repReq, MONEY_PER_REP);
+          const cost = augEffectiveCost(price, repReq, moneyPerRep);
           const utility = cost > 0 ? value / cost : 0;
           return { aug, value, cost, utility, factions: augFactions[aug] ?? [] };
         })
