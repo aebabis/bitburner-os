@@ -5,6 +5,7 @@ import { BRIGHT } from "../lib/colors";
 export async function main(ns) {
   ns.disableLog('ALL');
   ns.ui.openTail();
+  ns.ui.resizeTail(300, 300);
 
   while (true) {
     ns.clearLog();
@@ -17,7 +18,7 @@ export async function main(ns) {
         ...path.map((/** @type {string} */ s) => (s === "home" ? " home" : ` connect ${s} `)),
         " backdoor",
       ];
-      while (rows.length > 12) {
+      while (rows.length < 15) {
         rows.push('');
       }
       ns.print(rows.join("\n"));
