@@ -20,7 +20,7 @@ import { THREADPOOL } from "../etc/config";
  * }} Goal
  */
 
-export const COMBAT_STATS = /** @type {(keyof Skills)[]} */ (["strength", "defense", "dexterity", "agility"]);
+export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "defense", "dexterity", "agility"]);
 
 /**
  * @param {GoalType} type

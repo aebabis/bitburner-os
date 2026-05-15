@@ -9,7 +9,7 @@ export async function main(ns) {
   const statToTrain = COMBAT_STATS.find(s => ns.getPlayer().skills[s] < levelReq);
   if (statToTrain) {
     const focus = shouldWorkHaveFocus(ns);
-    ns.singularity.gymWorkout("Powerhouse Gym", statToTrain, focus);
+    ns.singularity.gymWorkout("Powerhouse Gym", ns.enums.GymType[statToTrain], focus);
     putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
     const cutoff = Date.now() + 10000;
     while (ns.getPlayer().skills[statToTrain] < levelReq && Date.now() < cutoff) await ns.sleep(50);
