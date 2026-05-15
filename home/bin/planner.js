@@ -1,7 +1,7 @@
 import { AnyHostService } from "../lib/service";
 import { getStaticData, getRamData, putPlayerData } from "../lib/data-store";
 import { logger } from "../lib/logger";
-import { CRIMINAL_ORGANIZATIONS } from "./self/aug/factions";
+import { CRIMINAL_ORGANIZATIONS } from "../lib/factions";
 
 import {
   ENABLE,

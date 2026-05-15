@@ -1,5 +1,5 @@
 import { putStaticData } from "../../../lib/data-store";
-import { FACTIONS } from "./factions";
+import { FACTIONS } from "../../../lib/factions";
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -9,7 +9,7 @@ export async function main(ns) {
   for (const faction of FACTIONS)
     factionFavorGain[faction] = ns.singularity.getFactionFavorGain(faction);
 
-  const favorToDonate = ns.singularity.getFavorToDonate();
+  const favorToDonate = ns.getFavorToDonate();
 
   putStaticData(ns, { factionFavorGain, favorToDonate });
 }

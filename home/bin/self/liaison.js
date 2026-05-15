@@ -1,5 +1,5 @@
 import { getPlayerData, putPlayerData } from "../../lib/data-store";
-import { FACTIONS } from "./aug/factions";
+import { FACTIONS } from "../../lib/factions";
 import { Timeline } from "../../lib/timeline";
 import { table } from "../../lib/table";
 

@@ -1,5 +1,5 @@
-import { getStaticData, getGangData, putPlayerData } from "../../../lib/data-store";
-import { CITY_FACTIONS } from "./factions";
+import { getStaticData, getGangData } from "../../../lib/data-store";
+import { CITY_FACTIONS } from "../../../lib/factions";
 
 /** @param {NS} ns */
 export async function main(ns) {
