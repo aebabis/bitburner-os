@@ -8,7 +8,7 @@
     "bundle:d3": "node scripts/bundle-d3.js",
     "check-data-deps": "node scripts/check-data-deps.js",
     "knip": "knip",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test scripts/test-*.js"
   },
   "repository": {
     "type": "git",

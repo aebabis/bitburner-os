@@ -16,6 +16,10 @@ const SHORTHAND = {
 };
 
 const UTILITIES = {
+  "aug-table": {
+    command: "dispatch ./bin/goals.js aug-table",
+    desc: "Show augmentation scoring table",
+  },
   config: {
     command: "./config.js",
     desc: "Global config variables",

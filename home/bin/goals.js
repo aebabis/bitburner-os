@@ -5,6 +5,8 @@ import {
   putGoalsData,
   getPlayerData,
 } from "../lib/data-store";
+import { table } from "../lib/table";
+import { scoreAug, augEffectiveCost, DEFAULT_AUG_WEIGHTS } from "../lib/aug-select";
 
 const NEUROFLUX = "NeuroFlux Governor";
 
@@ -87,7 +89,66 @@ export async function main(ns) {
       putGoalsData(ns, { manualOverride: false });
       ns.tprint("Goals reset to automatic");
       break;
+    case 'aug-table': {
+      const [sortKey = 'utility'] = rest;
+      const {
+        augmentations = /** @type {string[]} */ ([]),
+        augmentationStats = /** @type {Record<string, Multipliers>} */ ({}),
+        augmentationPrices = /** @type {Record<string, number>} */ ({}),
+        augmentationRepReqs = /** @type {Record<string, number>} */ ({}),
+        factionAugmentations = /** @type {Record<string, string[]>} */ ({}),
+        ownedAugmentations = /** @type {string[]} */ ([]),
+      } = getStaticData(ns);
+
+      if (Object.keys(augmentationStats).length === 0) {
+        ns.tprint("ERROR aug-table: augmentationStats not loaded — run the augment suite first");
+        break;
+      }
+      if (Object.keys(augmentationPrices).length === 0) {
+        ns.tprint("ERROR aug-table: augmentationPrices not loaded — run the augment suite first");
+        break;
+      }
+
+      const NEUROFLUX = 'NeuroFlux Governor';
+      const MONEY_PER_REP = 4000;
+
+      const augFactions = /** @type {Record<string, string[]>} */ ({});
+      for (const [faction, augs] of Object.entries(factionAugmentations))
+        for (const aug of augs)
+          (augFactions[aug] ??= []).push(faction);
+
+      const scored = augmentations
+        .filter(aug => aug !== NEUROFLUX && !ownedAugmentations.includes(aug))
+        .map(aug => {
+          const stats = augmentationStats[aug];
+          const price = augmentationPrices[aug] ?? 0;
+          const repReq = augmentationRepReqs[aug] ?? 0;
+          const value = stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
+          const cost = augEffectiveCost(price, repReq, MONEY_PER_REP);
+          const utility = cost > 0 ? value / cost : 0;
+          return { aug, value, cost, utility, factions: augFactions[aug] ?? [] };
+        })
+        .sort((a, b) =>
+          sortKey === 'value' ? b.value - a.value :
+          sortKey === 'cost'  ? b.cost  - a.cost  :
+          b.utility - a.utility
+        );
+
+      const fmt = /** @param {string | number} x */ (x) =>
+        ns.format.number(/** @type {number} */ (x), 3);
+      ns.tprint('\n' + table(ns, [
+        'Augmentation',
+        { name: 'Value',      align: 'right', process: fmt },
+        { name: 'Eff. Cost',  align: 'right', process: fmt },
+        { name: 'Utility×1M', align: 'right', process: /** @param {string | number} x */ (x) =>
+          fmt(/** @type {number} */ (x) * 1e6) },
+        'Factions',
+      ], scored.map(({ aug, value, cost, utility, factions }) =>
+        [aug, value, cost, utility, factions.join(', ')]
+      )));
+      break;
+    }
     default:
-      ns.tprint("Commands: disable | enable | faction <name> | reset");
+      ns.tprint("Commands: disable | enable | faction <name> | reset | aug-table [utility|value|cost]");
   }
 }
