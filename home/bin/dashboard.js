@@ -66,21 +66,30 @@ const getRunStats = (ns) => {
 
 /** @param {NS} ns */
 const getPlayerLevels = (ns) => {
-  const WIDTH = 10;
   const { skills } = getPlayerData(ns).player;
-  const row = (/** @type {string} */ left, /** @type {number} */ c2, /** @type {number} */ right) => {
-    const val = right;
-    const padding = WIDTH - left.length - val.toString().length;
-    return ` ${H(left)}${' '.repeat(padding)}${C(c2)(val)} `;
+  const { ownedAugmentations = [], augmentationStats = {} } = getStaticData(ns);
+
+  const stat = (/** @type {string} */ stat) => {
+    let p = 1;
+    for (const aug of ownedAugmentations)
+      p *= augmentationStats[aug]?.[/** @type {keyof Multipliers} */ (stat)] ?? 1;
+    return p;
   };
-  return [
-    row('Hack', 72, skills.hacking),
-    row('Str', 251, skills.strength),
-    row('Def', 251, skills.defense),
-    row('Dex', 251, skills.dexterity),
-    row('Agi', 251, skills.agility),
-    row('Cha', 251, skills.charisma),
-  ].join('\n');
+  
+  const G = C(72);
+  const W = C(251);
+  const M = MEDIUM;
+
+  const fmt = (/** @type {number} */ v) => M('x' + v.toFixed(3));
+  return table(ns, null, [
+    ['', 'lvl', 'mult', 'exp'],
+    [G('Hack'), G(skills.hacking), fmt(stat('hacking')), fmt(stat('hacking_exp'))],
+    [W('Str'), W(skills.strength), fmt(stat('strength')), fmt(stat('strength_exp'))],
+    [W('Def'), W(skills.defense), fmt(stat('defense')), fmt(stat('defense_exp'))],
+    [W('Dex'), W(skills.dexterity), fmt(stat('dexterity')), fmt(stat('dexterity_exp'))],
+    [W('Agi'), W(skills.agility), fmt(stat('agility')), fmt(stat('agility_exp'))],
+    [W('Cha'), W(skills.charisma), fmt(stat('charisma')), fmt(stat('charisma_exp'))],
+  ]);
 };
 
 /** @param {NS} ns
