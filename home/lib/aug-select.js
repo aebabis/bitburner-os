@@ -80,6 +80,7 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  *   augmentationStats?: Record<string,Multipliers>,
  *   factionAugmentations: Record<string,string[]>,
  *   factionRequirements?: Record<string,any[]>,
+ *   ownedAugmentations?: string[],
  *   bitNodeMultipliers?: {FactionWorkRepGain?: number},
  * }} staticData
  * @param {string | undefined} cityFaction
@@ -104,14 +105,46 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const notNeuroFlux = (/** @type {string} */ aug) => aug !== NEUROFLUX;
 
+  // Product of a multiplier key across installed augmentations.
+  // Installed augs determine the player's stat multipliers for this run.
+  // Cached since the same stat is queried for every skill-gated faction.
+  const installedAugs = staticData.ownedAugmentations ?? [];
+  const statProductCache = /** @type {Map<string, number>} */ (new Map());
+  const getStatProduct = (/** @type {string} */ stat) => {
+    if (statProductCache.has(stat)) return /** @type {number} */ (statProductCache.get(stat));
+    let product = 1;
+    for (const aug of installedAugs) {
+      const mult = augmentationStats[aug]?.[/** @type {keyof Multipliers} */ (stat)];
+      if (mult != null) product *= mult;
+    }
+    statProductCache.set(stat, product);
+    return product;
+  };
+
+  // Derived from the game's log-scale XP→level formula:
+  //   level ≈ statMult × log(expMult × xp)
+  //   ∴ statProduct × log(STAT_BASE × expProduct) > req × K
+  // STAT_BASE encodes natural XP accumulation without aug boosts — keeps the
+  // function continuous and makes low requirements (e.g. CSEC) accessible
+  // without installed augs. K and STAT_BASE are empirically determined.
+  const STAT_BASE = 100;
+  const STAT_ATTAINABILITY_K = 0.03;
+
   const accessibleFactions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
+    const reqs = factionRequirements[faction] ?? [];
     const requiredAugCount =
-      factionRequirements[faction]?.find(
-        (/** @type {any} */ req) => req.type === "numAugmentations",
-      )?.numAugmentations ?? 0;
+      reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
     if (CITY_FACTIONS.includes(faction) && cityFaction != null && cityFaction !== faction)
       return false;
+    const skillReqs = Object.assign(
+      {},
+      ...reqs.filter((/** @type {any} */ r) => r.type === 'skills').map((/** @type {any} */ r) => r.skills),
+    );
+    for (const [stat, required] of Object.entries(skillReqs)) {
+      const score = getStatProduct(stat) * Math.log(STAT_BASE * getStatProduct(`${stat}_exp`));
+      if (score <= /** @type {number} */ (required) * STAT_ATTAINABILITY_K) return false;
+    }
     return true;
   });
 
