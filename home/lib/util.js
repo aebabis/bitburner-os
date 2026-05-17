@@ -23,7 +23,7 @@ export const by = (prop) => {
 };
 
 /** @param {string} str */
-export const length = (str) => str.replaceAll(COLOR_REGEX, "").length;
+export const length = (str) => str.toString().replaceAll(COLOR_REGEX, "").length;
 
 /** @param {string | number} number */
 export const small = (number) =>

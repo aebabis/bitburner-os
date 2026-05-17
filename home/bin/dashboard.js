@@ -82,7 +82,7 @@ const getPlayerLevels = (ns) => {
 
   const fmt = (/** @type {number} */ v) => M('x' + v.toFixed(3));
   return table(ns, null, [
-    ['', 'lvl', 'mult', 'exp'],
+    ['', '', M('mult'), M('exp')],
     [G('Hack'), G(skills.hacking), fmt(stat('hacking')), fmt(stat('hacking_exp'))],
     [W('Str'), W(skills.strength), fmt(stat('strength')), fmt(stat('strength_exp'))],
     [W('Def'), W(skills.defense), fmt(stat('defense')), fmt(stat('defense_exp'))],
