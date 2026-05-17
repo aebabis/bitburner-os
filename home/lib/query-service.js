@@ -53,11 +53,11 @@ export const getRepTargets = (ns) => {
   const staticData = getStaticData(ns);
   const { factionAugmentations = {}, augmentationRepReqs = {} } = staticData;
   const goalsData = getGoalsData(ns);
-  const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
+  const targetAugmentations = goalsData.targetAugmentations;
   if (targetAugmentations == null) return [];
 
   const effectiveFaction = getTargetFaction(ns);
-  const originalFaction = goalsData.targetFaction ?? staticData.targetFaction;
+  const originalFaction = goalsData.targetFaction;
   const gangFaction = getGangData(ns)?.gangInfo?.faction;
   const isGangTarget = effectiveFaction === gangFaction && gangFaction !== originalFaction;
 
@@ -153,7 +153,7 @@ const getRepNeeded = (ns) => {
   const staticData = getStaticData(ns);
   const { augmentationRepReqs, factionAugmentations = {} } = staticData;
   const goalsData = getGoalsData(ns);
-  const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
+  const targetAugmentations = goalsData.targetAugmentations;
   if (targetAugmentations == null) return null;
 
   const effectiveFaction = getTargetFaction(ns);

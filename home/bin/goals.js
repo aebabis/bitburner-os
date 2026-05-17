@@ -1,6 +1,5 @@
 import {
   getStaticData,
-  putStaticData,
   getGoalsData,
   putGoalsData,
   getPlayerData,
@@ -67,7 +66,6 @@ export async function main(ns) {
       }
       const targetAugmentations = getAugsForFaction(ns, faction);
       putGoalsData(ns, { targetFaction: faction, targetAugmentations, manualOverride: true });
-      putStaticData(ns, { targetFaction: faction, targetAugmentations });
       ns.tprint(`Target faction set to ${faction} (${targetAugmentations.length} augmentations queued)`);
       break;
     }

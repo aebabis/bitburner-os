@@ -4,6 +4,7 @@ import {
   getPlayerData,
   putPlayerData,
   getStaticData,
+  getGoalsData,
 } from "../../../lib/data-store";
 import { rmi } from "../../../lib/rmi";
 import { by } from "../../../lib/util";
@@ -21,9 +22,8 @@ export async function main(ns) {
     augmentationRepReqs,
     ownedAugmentations,
     augmentationPrereqs,
-    targetFaction,
-    targetAugmentations,
   } = getStaticData(ns);
+  const { targetFaction, targetAugmentations } = getGoalsData(ns);
   const { purchasedAugmentations, factionRep = {} } = getPlayerData(ns);
   const { estimatedStockValue = 0, costToAug: augCost = Infinity } =
     getMoneyData(ns);

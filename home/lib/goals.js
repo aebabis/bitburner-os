@@ -1,4 +1,4 @@
-import { getStaticData, getGoalsData, getPlayerData, getMoneyData, putGoalsData, putStaticData } from "./data-store";
+import { getStaticData, getGoalsData, getPlayerData, getMoneyData, putGoalsData } from "./data-store";
 import { getRepTargets } from "./query-service";
 import { DARK } from "./colors";
 import { THREADPOOL } from "../etc/config";
@@ -199,7 +199,6 @@ export const getGoals = (ns) => {
       { moneyRate: referenceIncome || Infinity, repRate }
     ));
     putGoalsData(ns, { targetFaction, targetAugmentations });
-    putStaticData(ns, { targetFaction, targetAugmentations });
   }
 
   if (targetAugmentations == null) {
