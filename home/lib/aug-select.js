@@ -167,6 +167,10 @@ export const selectAugmentations = (
     if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company])) {
       return false;
     }
+    if (reqs.some((req) => req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'))) {
+      // TODO: Actually evaluate difficulty of obtaining job
+      return false;
+    }
     return true;
   });
 
