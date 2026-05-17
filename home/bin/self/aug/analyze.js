@@ -21,6 +21,7 @@ export const analyzeAugData = (ns) => {
     cityFaction,
     factionRep,
     { moneyRate, repRate },
+    ns.getPlayer().skills,
   );
   putStaticData(ns, { targetFaction: faction, targetAugmentations: augmentations });
 };

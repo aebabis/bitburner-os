@@ -42,6 +42,15 @@ export const DEFAULT_AUG_WEIGHTS = {
   bladeburner_success_chance: 0,
 };
 
+const calculateExp = (/** @type {NS|undefined} */ ns = undefined) => {
+  if (ns && ns.fileExists('Formulas.exe', 'home')) {
+    return ns.formulas.skills.calculateExp;
+  } else {
+    /** @param {number} skill */
+    return (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6;
+  }
+};
+
 /**
  * @param {Multipliers} stats
  * @param {Record<keyof Multipliers, number>} weights
@@ -88,9 +97,10 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  * @param {string | undefined} cityFaction
  * @param {Record<string, number>} [factionRep]
  * @param {{ moneyRate?: number, repRate?: number }} [rates]
+ * @param {Skills} [skills]
  * @returns {{ faction: string | null, augmentations: string[] }}
  */
-export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate } = {}) => {
+export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate } = {}, skills = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -129,13 +139,15 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
   // function continuous and makes low requirements (e.g. CSEC) accessible
   // without installed augs. K and STAT_BASE are empirically determined.
   const STAT_BASE = 100;
-  const STAT_ATTAINABILITY_K = 0.03;
 
   // Rep rate scales with hacking capability. When not supplied by the caller
   // (e.g. in tests or early in a run), derive it from installed aug multipliers
   // using the same formula as the attainability check.
   const effectiveRepRate = repRate ?? getStatProduct('hacking') * Math.log(STAT_BASE * getStatProduct('hacking_exp'));
 
+  // Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
+  // Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
+  // so that harder-to-join factions are penalised but never completely excluded.
   const accessibleFactions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
     const reqs = factionRequirements[faction] ?? [];
     const requiredAugCount =
@@ -143,16 +155,27 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     if (ownedAugmentations.length < requiredAugCount) return false;
     if (CITY_FACTIONS.includes(faction) && cityFaction != null && cityFaction !== faction)
       return false;
-    const skillReqs = Object.assign(
-      {},
-      ...reqs.filter((/** @type {any} */ r) => r.type === 'skills').map((/** @type {any} */ r) => r.skills),
-    );
-    for (const [stat, required] of Object.entries(skillReqs)) {
-      const score = getStatProduct(stat) * Math.log(STAT_BASE * getStatProduct(`${stat}_exp`));
-      if (score <= /** @type {number} */ (required) * STAT_ATTAINABILITY_K) return false;
-    }
     return true;
   });
+
+  // Estimates time to meet training requirements of faction
+  const getFactionTrainingTime = (/** @type {string} */ faction) => {
+    const reqs = factionRequirements[faction] ?? [];
+    const skillReqs = Object.assign({}, ...reqs
+      .filter((r) => r.type === 'skills').map((r) => r.skills),
+    );
+    const expReqs = Object.fromEntries(Object.entries(skillReqs).map(([stat, requirement]) => {
+      const levelMult = getStatProduct(stat);
+      const expMult = getStatProduct(`${stat}_exp`);
+      const currentExp = calculateExp()(skills[stat]??1, levelMult);
+      const expReq = calculateExp()(requirement, levelMult); 
+      const expNeeded = Math.max(0, expReq - currentExp);
+      const expToEarn = expNeeded / expMult;
+      return [stat, expToEarn];
+    }));
+    const EXP_PER_SECOND = 10;
+    return Object.values(expReqs).reduce((a,b)=>a+b, 0) / EXP_PER_SECOND;
+  };
 
   const getNeededAugs = (/** @type {string} */ faction) =>
     (factionAugmentations[faction] ?? []).filter(stillNeeds).filter(notNeuroFlux);
@@ -167,13 +190,14 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
 
   /**
    * Find the optimal batch of up to MAX_AUGS augs from a faction.
-   * Cost is time (seconds): max(moneyTime, marginalRepTime) + resetOverhead.
+   * Cost is time (seconds): (max(moneyTime, marginalRepTime) + resetOverhead + trainingTime)
    * Marginal rep excludes the cheapest aug's rep since that cost is committed once
    * the faction is targeted. Tries every aug as the binding rep tier — O(n²).
    * @param {string} faction
    * @returns {{ utility: number, batch: string[] }}
    */
   const findOptimalBatch = (faction) => {
+    const trainingTime = getFactionTrainingTime(faction);
     const currentRep = factionRep[faction] ?? 0;
     const augs = getNeededAugs(faction)
       .map((aug) => ({
@@ -201,7 +225,7 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
 
       const timeForMoney = totalPrice / moneyRate;
       const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
-      const cost = Math.max(timeForMoney, timeForRep) + resetOverhead;
+      const cost = (Math.max(timeForMoney, timeForRep) + resetOverhead + trainingTime);
       const utility = totalValue / cost;
 
       if (utility > best.utility)
