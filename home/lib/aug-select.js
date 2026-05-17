@@ -25,10 +25,10 @@ export const DEFAULT_AUG_WEIGHTS = {
 
   // Low — hacknet (cost stats use negative weights: lower value = better)
   hacknet_node_money:         1,
-  hacknet_node_purchase_cost: -0.5,
-  hacknet_node_ram_cost:      -0.5,
-  hacknet_node_core_cost:     -0.5,
-  hacknet_node_level_cost:    -0.5,
+  hacknet_node_purchase_cost: .5,
+  hacknet_node_ram_cost:      .5,
+  hacknet_node_core_cost:     .5,
+  hacknet_node_level_cost:    .5,
 
   // Zero — not relevant for automated play
   charisma:                  0,
@@ -47,12 +47,12 @@ export const DEFAULT_AUG_WEIGHTS = {
  * @param {Record<keyof Multipliers, number>} weights
  * @returns {number}
  */
-export const scoreAug = (stats, weights) => {
-  let sum = 0;
-  for (const key of /** @type {(keyof Multipliers)[]} */ (Object.keys(weights)))
-    sum += ((stats[key] ?? 1) - 1) * weights[key];
-  return sum;
-};
+export const scoreAug = (stats, weights) => Object.entries(stats)
+  .map(([key, stat = 1]) => {
+    const mult = stat >= 1 ? stat : (1 / stat);
+    return (mult - 1) * weights[key];
+  })
+  .reduce((a, b) => a+b, 0);
 
 /**
  * @param {number} [factionWorkRepGain] - BitNodeMultipliers.FactionWorkRepGain; defaults to 1
@@ -90,7 +90,7 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  * @param {{ moneyRate?: number, repRate?: number }} [rates]
  * @returns {{ faction: string | null, augmentations: string[] }}
  */
-export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate = 1 } = {}) => {
+export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate } = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -130,6 +130,11 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
   // without installed augs. K and STAT_BASE are empirically determined.
   const STAT_BASE = 100;
   const STAT_ATTAINABILITY_K = 0.03;
+
+  // Rep rate scales with hacking capability. When not supplied by the caller
+  // (e.g. in tests or early in a run), derive it from installed aug multipliers
+  // using the same formula as the attainability check.
+  const effectiveRepRate = repRate ?? getStatProduct('hacking') * Math.log(STAT_BASE * getStatProduct('hacking_exp'));
 
   const accessibleFactions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
     const reqs = factionRequirements[faction] ?? [];
@@ -195,7 +200,7 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
       const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
       const timeForMoney = totalPrice / moneyRate;
-      const timeForRep = (bindingRep - minRemainingRep) / repRate;
+      const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
       const cost = Math.max(timeForMoney, timeForRep) + resetOverhead;
       const utility = totalValue / cost;
 
