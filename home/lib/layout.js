@@ -77,7 +77,8 @@ export const renderWindows = (windows, WIDTH) => {
         let iter = placed.slice().reverse();
         let prev = iter.shift();
         for (const curr of iter) {
-          if (prev != null && Math.abs(curr.height - prev.height) <= 2) {
+          if (prev == null || curr.y !== prev.y) break;
+          if (Math.abs(curr.height - prev.height) <= 2) {
             curr.height = prev.height = Math.max(prev.height, curr.height);
           }
           prev = curr;
