@@ -32,7 +32,7 @@ export const STR = C(165);
 export const BRIGHT = C(104);
 export const NORMAL = C(98);
 export const MEDIUM = C(61);
-export const DARK = C(55);
+export const DARK = C(54);
 export const BORDER = C(17);
 export const RESET = "\u001b[0m";
 
