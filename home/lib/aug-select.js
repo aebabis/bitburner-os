@@ -69,6 +69,9 @@ export const getMoneyPerRep = (factionWorkRepGain = 1) => 4000 / factionWorkRepG
 export const augEffectiveCost = (price, repReq, moneyPerRep) =>
   Math.max(price / moneyPerRep, repReq);
 
+// Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
+const OVERHEAD_BASE = 1800;
+
 import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
 
 /**
@@ -81,13 +84,13 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  *   factionAugmentations: Record<string,string[]>,
  *   factionRequirements?: Record<string,any[]>,
  *   ownedAugmentations?: string[],
- *   bitNodeMultipliers?: {FactionWorkRepGain?: number},
  * }} staticData
  * @param {string | undefined} cityFaction
  * @param {Record<string, number>} [factionRep]
+ * @param {{ moneyRate?: number, repRate?: number }} [rates]
  * @returns {{ faction: string | null, augmentations: string[] }}
  */
-export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}) => {
+export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate = 1 } = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -95,12 +98,10 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     augmentationStats = /** @type {Record<string,Multipliers>} */ ({}),
     factionAugmentations,
     factionRequirements = {},
-    bitNodeMultipliers = {},
   } = staticData;
 
   const MAX_AUGS = 6;
   const NEUROFLUX = "NeuroFlux Governor";
-  const moneyPerRep = getMoneyPerRep(bitNodeMultipliers.FactionWorkRepGain);
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const notNeuroFlux = (/** @type {string} */ aug) => aug !== NEUROFLUX;
@@ -156,11 +157,14 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
   };
 
+  // Reset overhead in seconds; decreases as the player has more installed augs.
+  const resetOverhead = OVERHEAD_BASE / (1 + installedAugs.length);
+
   /**
    * Find the optimal batch of up to MAX_AUGS augs from a faction.
-   * Batch utility = totalValue / effectiveCost, where effectiveCost is driven by
-   * the single highest remaining-rep requirement in the batch (the binding constraint).
-   * Tries every aug as the binding constraint — O(n²) — and returns the best.
+   * Cost is time (seconds): max(moneyTime, marginalRepTime) + resetOverhead.
+   * Marginal rep excludes the cheapest aug's rep since that cost is committed once
+   * the faction is targeted. Tries every aug as the binding rep tier — O(n²).
    * @param {string} faction
    * @returns {{ utility: number, batch: string[] }}
    */
@@ -188,8 +192,12 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
       const totalValue = affordable.reduce((s, a) => s + a.value, 0);
       const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
       const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
-      const cost = augEffectiveCost(totalPrice, bindingRep, moneyPerRep);
-      const utility = cost > 0 ? totalValue / cost : (totalValue > 0 ? totalValue * 1e9 : 0);
+      const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
+
+      const timeForMoney = totalPrice / moneyRate;
+      const timeForRep = (bindingRep - minRemainingRep) / repRate;
+      const cost = Math.max(timeForMoney, timeForRep) + resetOverhead;
+      const utility = totalValue / cost;
 
       if (utility > best.utility)
         best = { utility, batch: affordable.map((a) => a.name) };
