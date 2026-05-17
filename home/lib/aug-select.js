@@ -79,7 +79,7 @@ export const augEffectiveCost = (price, repReq, moneyPerRep) =>
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
 
-import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
+import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
 
 /**
  * @param {string[]} ownedAugmentations
@@ -156,12 +156,12 @@ export const selectAugmentations = (
   // Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
   // Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
   // so that harder-to-join factions are penalised but never completely excluded.
-  const accessibleFactions = [...STORY_FACTIONS, ...CITY_FACTIONS].filter((faction) => {
+  const accessibleFactions = [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
     const reqs = factionRequirements[faction] ?? [];
     const requiredAugCount =
       reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
-    if (CITY_FACTIONS.includes(faction) && player.factions.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
+    if (CITY_FACTIONS.includes(faction) && player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
       return false;
     return true;
   });
@@ -175,8 +175,8 @@ export const selectAugmentations = (
     const expReqs = Object.fromEntries(Object.entries(skillReqs).map(([stat, requirement]) => {
       const levelMult = getStatProduct(stat);
       const expMult = getStatProduct(`${stat}_exp`);
-      const currentExp = calcExp(player.skills[stat]??1, levelMult);
-      const expReq = calcExp(requirement, levelMult); 
+      const currentExp = calcExp(player.skills?.[stat] ?? 1, levelMult);
+      const expReq = calcExp(requirement, levelMult);
       const expNeeded = Math.max(0, expReq - currentExp);
       const expToEarn = expNeeded / expMult;
       return [stat, expToEarn];
@@ -219,7 +219,7 @@ export const selectAugmentations = (
       }))
       .sort((a, b) => a.remainingRep - b.remainingRep);
 
-    let best = { utility: 0, batch: /** @type {string[]} */ ([]) };
+    let best = { utility: -Infinity, batch: /** @type {string[]} */ ([]) };
 
     for (let i = 0; i < augs.length; i++) {
       // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.

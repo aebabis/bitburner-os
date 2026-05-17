@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { staticData } from './data/BN4-mock.js';
 import { selectAugmentations } from '../home/lib/aug-select.js';
 
 // ---------------------------------------------------------------------------
@@ -174,6 +175,76 @@ test('faction with significant current rep is preferred over higher raw utility'
   // BitRunners: cost=overhead only, utility=4.0/7200≈0.000556 — TBH wins.
   const { faction: withRep } = selectAugmentations([], data, PLAYER, undefined, { 'The Black Hand': 45_000 });
   assert.equal(withRep, 'The Black Hand');
+});
+
+test('select The Syndicate over The Covenant when combat augs are still needed', () => {
+  const ownedAugs = [
+    "Hacknet Node Core Direct-Neural Interface",
+    "Hacknet Node CPU Architecture Neural-Upload",
+    "Hacknet Node NIC Architecture Neural-Upload",
+    "Hacknet Node Kernel Direct-Neural Interface",
+    "Hacknet Node Cache Architecture Neural-Upload",
+    "Cranial Signal Processors - Gen I",
+    "Cranial Signal Processors - Gen II",
+    "Synaptic Enhancement Implant",
+    "BitWire",
+    "Neurotrainer I",
+    "NeuroFlux Governor",
+    "DataJack",
+    "Embedded Netburner Module",
+    "Artificial Synaptic Potentiation",
+    "Neural-Retention Enhancement",
+    "CRTX42-AA Gene Modification",
+    "Neurotrainer II",
+    "Neural Wit Amplifier",
+    "LuminCloaking-V1 Skin Implant",
+    "Wired Reflexes",
+    "Neuroreceptor Management Implant",
+    "Speech Processor Implant",
+    "ADR-V1 Pheromone Gene",
+    "Nanofiber Weave",
+    "Speech Enhancement",
+    "Nuoptimal Nootropic Injector Implant",
+    "Social Negotiation Assistant (S.N.A)",
+    "INFRARET Enhancement",
+    "Augmented Targeting I",
+    "Combat Rib I",
+    "Combat Rib II",
+    "DermaForce Particle Barrier",
+    "CashRoot Starter Kit",
+    "Augmented Targeting II",
+    "Cranial Signal Processors - Gen III",
+    "Magnetism Amplifier",
+    "NutriGen Implant",
+    "Neuregen Gene Modification",
+    "Embedded Netburner Module Core Implant",
+    "Neural Accelerator",
+    "Cranial Signal Processors - Gen IV",
+    "Cranial Signal Processors - Gen V",
+    "Neuralstimulator",
+    "Enhanced Myelin Sheathing",
+    "The Black Hand",
+    "Artificial Bio-neural Network Implant",
+    "Embedded Netburner Module Core V2 Upgrade",
+    "BitRunners Neurolink",
+    "PCMatrix",
+    "LuminCloaking-V2 Skin Implant",
+    "Synfibril Muscle",
+    "SmartSonar Implant",
+    "Embedded Netburner Module Core V3 Upgrade",
+    "Embedded Netburner Module Direct Memory Access Upgrade",
+    "NEMEAN Subdermal Weave",
+    "Embedded Netburner Module Analyze Engine",
+    "Synthetic Heart",
+    "The Red Pill"
+  ];
+  // Player at level 500 meets Syndicate requirements (≥200) but not Covenant's (≥850).
+  // The exact winning faction depends on which criminal org has the best remaining batch,
+  // but the key regression: The Covenant must NOT win (87M seconds training makes it uncompetitive).
+  const player = { skills: { hacking: 500, strength: 500, defense: 500, dexterity: 500, agility: 500 }, factions: [] };
+  const { faction } = selectAugmentations(ownedAugs, staticData, player, undefined);
+  assert(faction !== null, 'a faction should be selected');
+  assert(faction !== 'The Covenant', 'The Covenant should not win when accessible factions remain');
 });
 
 // ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ import { THREADPOOL } from "../etc/config";
 import { selectAugmentations } from "./aug-select";
 
 /**
- * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
+ * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'KILLS' | 'KARMA' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
  */
 
 /**
@@ -68,6 +68,18 @@ const combatLevelsGoal = (combatReq, currentSkills) =>
   goal("COMBAT_LEVELS", `Combat stats ≥ ${combatReq}`,
     () => COMBAT_STATS.every(stat => currentSkills[stat] >= combatReq),
     { requirement: combatReq });
+
+/** @param {number} killsRequired @param {number} numPeopleKilled @returns {Goal} */
+const killsGoal = (killsRequired, numPeopleKilled) =>
+  goal("KILLS", `Kill ${killsRequired} people`,
+    () => numPeopleKilled >= killsRequired,
+    { requirement: numPeopleKilled, ownTime: () => (killsRequired - numPeopleKilled)/3 });
+
+/** @param {number} karmaRequired @param {number} karma @returns {Goal} */
+const karmaGoal = (karmaRequired, karma) =>
+  goal("KARMA", `Have ${karmaRequired} karma`,
+    () => karmaRequired >= karma,
+    { requirement: karmaRequired, ownTime: () => (karmaRequired - karma)/-1 });
 
 /** @param {NS} ns @param {number} moneyTarget @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
 const moneyPrereqGoal = (ns, moneyTarget, currentMoney, referenceIncome) =>
@@ -261,6 +273,8 @@ export const getGoals = (ns) => {
     const skillReqs = Object.assign({}, ...requirements
       .filter((req) => req.type === 'skills')
       .map((req) => req.skills));
+    const karmaReq = requirements.find((req) => req.type === 'karma')?.karma ?? 0;
+    const killsReq = requirements.find((req) => req.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
     const moneyTarget = requirements.find((req) => req.type === 'money')?.money;
     const combatReq = skillReqs.strength;
     const hackReq = skillReqs.hacking;
@@ -277,6 +291,16 @@ export const getGoals = (ns) => {
     }
     if (combatReq != null) {
       const g = combatLevelsGoal(combatReq, skills);
+      goals.push(g);
+      joinPrereqs.push(g);
+    }
+    if (killsReq) {
+      const g = killsGoal(killsReq, player.numPeopleKilled ?? 0);
+      goals.push(g);
+      joinPrereqs.push(g);
+    }
+    if (karmaReq) {
+      const g = karmaGoal(karmaReq, ns.heart.break());
       goals.push(g);
       joinPrereqs.push(g);
     }
