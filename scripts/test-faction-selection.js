@@ -247,6 +247,19 @@ test('select The Syndicate over The Covenant when combat augs are still needed',
   assert(faction !== 'The Covenant', 'The Covenant should not win when accessible factions remain');
 });
 
+test('cannot select faction when player is excluded by their employment', () => {
+  const data = {
+    ...staticData,
+    factionAugmentations: {
+      'Speakers for the Dead': ['DataJack']
+    },
+  };
+
+  const player = {...PLAYER, jobs:{'Central Intelligence Agency': 'a job'}};
+  const { faction } = selectAugmentations([], data, player);
+  assert.equal(faction, null);
+});
+
 // ---------------------------------------------------------------------------
 // Deferred / backlog
 // ---------------------------------------------------------------------------

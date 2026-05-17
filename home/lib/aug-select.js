@@ -158,11 +158,15 @@ export const selectAugmentations = (
   // so that harder-to-join factions are penalised but never completely excluded.
   const accessibleFactions = [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
     const reqs = factionRequirements[faction] ?? [];
+    const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
     const requiredAugCount =
       reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
     if (CITY_FACTIONS.includes(faction) && player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
       return false;
+    if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company])) {
+      return false;
+    }
     return true;
   });
 
