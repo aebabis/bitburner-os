@@ -50,7 +50,7 @@ export const renderWindows = (windows, WIDTH) => {
         return /** @type {RenderResult} */ ({ text: " ".repeat(WIDTH), width: WIDTH, height: 1 });
       }
     })
-    .sort((/** @type {RenderResult} */ a, /** @type {RenderResult} */ b) => a.text.length - b.text.length);
+    .sort((/** @type {RenderResult} */ a, /** @type {RenderResult} */ b) => a.height - b.height);
 
   const placed = /** @type {PlacedItem[]} */ ([]);
   let x = 0;
