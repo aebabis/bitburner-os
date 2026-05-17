@@ -155,7 +155,7 @@ export const timeToComplete = (goal, memo = new Map()) => {
 
 /**
  * Time to complete the overall plan: max timeToComplete across all terminal goals
- * (AUGMENTATION goals if any exist, AUG_SUITE otherwise).
+ * (AUGMENTATION goals if any exist, INSTALL otherwise).
  * Returns null if any terminal goal's time is unknown.
  * @param {NS} ns
  * @returns {number | null}

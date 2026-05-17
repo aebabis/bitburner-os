@@ -33,7 +33,7 @@ export const getJobRamCost = cache((ns) => {
 });
 
 /** @param {NS} ns */
-export const getTargetFaction = (ns) => {
+const getTargetFaction = (ns) => {
   const { targetFaction, manualOverride } = getGoalsData(ns);
   if (manualOverride) return targetFaction;
   const { factionRep } = getPlayerData(ns);

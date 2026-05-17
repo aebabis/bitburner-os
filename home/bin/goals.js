@@ -17,11 +17,13 @@ const getAugsForFaction = (ns, faction) => {
     ownedAugmentations = [],
     augmentationPrices = {},
     augmentationRepReqs = {},
+    bitNodeMultipliers = /** @type {any} */ ({}),
   } = getStaticData(ns);
   const { purchasedAugmentations = [] } = getPlayerData(ns);
   const alreadyHave = new Set([...ownedAugmentations, ...purchasedAugmentations]);
+  const moneyPerRep = getMoneyPerRep(bitNodeMultipliers?.FactionWorkRepGain);
   const weightedCost = (/** @type {string} */ aug) =>
-    augEffectiveCost(augmentationPrices[aug] || 0, augmentationRepReqs[aug] || 0, getMoneyPerRep());
+    augEffectiveCost(augmentationPrices[aug] || 0, augmentationRepReqs[aug] || 0, moneyPerRep);
   const remaining = (factionAugmentations[faction] || [])
     .filter((/** @type {string} */ aug) => !alreadyHave.has(aug) && aug !== NEUROFLUX)
     .sort((/** @type {string} */ a, /** @type {string} */ b) => weightedCost(a) - weightedCost(b));

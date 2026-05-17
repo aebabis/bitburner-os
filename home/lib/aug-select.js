@@ -23,7 +23,7 @@ export const DEFAULT_AUG_WEIGHTS = {
   dexterity_exp: 0.5,
   agility_exp:   0.5,
 
-  // Low — hacknet (cost stats use negative weights: lower value = better)
+  // Low — hacknet (cost stats use reciprocal: lower value = better, treated as equivalent boost)
   hacknet_node_money:         1,
   hacknet_node_purchase_cost: .5,
   hacknet_node_ram_cost:      .5,
