@@ -42,6 +42,13 @@ export const DEFAULT_AUG_WEIGHTS = {
   bladeburner_success_chance: 0,
 };
 
+// Augs with no stats have hard-coded evaluations
+const UNITY_AUGS = {
+  'CashRoot Starter Kit': .5,
+  'Neuroreceptor Management Implant': .1,
+  'The Red Pill': 10,
+};
+
 const calculateExp = (/** @type {NS|undefined} */ ns = undefined) => {
   if (ns && ns.fileExists('Formulas.exe', 'home')) {
     return ns.formulas.skills.calculateExp;
@@ -181,6 +188,9 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     (factionAugmentations[faction] ?? []).filter(stillNeeds).filter(notNeuroFlux);
 
   const augValue = (/** @type {string} */ aug) => {
+    if (Object.hasOwn(UNITY_AUGS, aug)) {
+      return UNITY_AUGS[aug];
+    }
     const stats = augmentationStats[aug];
     return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
   };

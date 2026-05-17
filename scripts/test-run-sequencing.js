@@ -32,13 +32,23 @@ describe('selectAugmentations', () => {
       });
     });
 
-    describe('Aug +', () => {
+    it('should end eventually', () => {
+      let run = 0;
       let augsObtained = [];
-      for (let i = 0; i < 10; i++) {
+      while (true) {
         const aug = select(augsObtained);
+        augsObtained = [...augsObtained, ...aug.augmentations];
+        run++;
+        if (aug.augmentations.length === 0) {
+          console.log('Finished in ' + run + ' runs');
+          assert(augsObtained.includes('QLink'));
+          assert(augsObtained.includes('The Red Pill'));
+          break;
+        } else if (run === 100) {
+          throw new Error('Took too long');
+        }
         console.log(aug.faction);
         console.log(aug.augmentations.join('\n')+'\n');
-        augsObtained = [...augsObtained, ...aug.augmentations];
       }
     });
   });
