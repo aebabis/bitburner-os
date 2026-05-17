@@ -6,6 +6,7 @@ import {
   getStaticData,
   getGoalsData,
 } from "../../../lib/data-store";
+import { getGoals, } from "../../../lib/goals";
 import { rmi } from "../../../lib/rmi";
 import { by } from "../../../lib/util";
 import { liquidate } from "../../liquidate";
@@ -23,7 +24,11 @@ export async function main(ns) {
     ownedAugmentations,
     augmentationPrereqs,
   } = getStaticData(ns);
-  const { targetFaction, targetAugmentations } = getGoalsData(ns);
+  const goals = getGoals(ns);
+  const targetAugmentations = goals
+    .filter((goal) => goal.type === 'AUGMENTATION')
+    .map((goal) => goal.desc);
+  const targetFaction = goals.find((goal) => goal.type === 'FACTION_JOIN')?.faction;
   const { purchasedAugmentations, factionRep = {} } = getPlayerData(ns);
   const { estimatedStockValue = 0, costToAug: augCost = Infinity } =
     getMoneyData(ns);

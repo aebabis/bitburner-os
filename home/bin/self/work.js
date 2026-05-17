@@ -1,4 +1,4 @@
-import { getPlayerData, getGoalsData } from "../../lib/data-store";
+import { getPlayerData } from "../../lib/data-store";
 import { getGoals, timeToComplete } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 import { getConfig } from "../../lib/config";
@@ -26,13 +26,7 @@ export async function main(ns) {
   await rmi(ns, true)("/bin/self/apply.js");
 
   while (true) {
-    const { targetFaction } = getGoalsData(ns);
     const { player, isPlayerActive, factionRep = {} } = getPlayerData(ns);
-
-    const inTargetFaction = player.factions.includes(targetFaction);
-    const isFactionGang =
-      ns.gang.inGang() &&
-      ns.gang.getGangInformation().faction === targetFaction;
 
     const makeMoney = async () => {
       if (isPlayerActive) {
@@ -66,15 +60,13 @@ export async function main(ns) {
       if (player.money > 5000)
         await rmi(ns)("/bin/self/improvement.js", 1, statForCrimeTraining, 5);
       else await rmi(ns)("/bin/self/job.js", 1);
-    } else if (!isRepBound() || isFactionGang) {
+    } else if (!isRepBound()) {
       await makeMoney();
     } else if (workFaction != null) {
       getConfig(ns).set("share", 0.1);
       await rmi(ns)("/bin/self/faction-work.js", 1, workFaction);
-    } else if (inTargetFaction) {
-      getConfig(ns).set("share", 0);
-      await makeMoney();
     } else {
+      getConfig(ns).set("share", 0);
       const combatGoal = goals.find(g => g.type === "COMBAT_LEVELS" && !g.isDone());
       const locationGoal = goals.find(g => g.type === "LOCATION" && !g.isDone())?.requirement;
       if (combatGoal != null)

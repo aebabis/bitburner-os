@@ -49,7 +49,7 @@ const getTargetFaction = (ns) => {
  * @param {NS} ns
  * @returns {{ faction: string, requirement: number, isGang: boolean }[]}
  */
-export const getRepTargets = (ns) => {
+const getRepTargets = (ns) => {
   const staticData = getStaticData(ns);
   const { factionAugmentations = {}, augmentationRepReqs = {} } = staticData;
   const goalsData = getGoalsData(ns);

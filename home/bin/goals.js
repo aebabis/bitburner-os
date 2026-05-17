@@ -31,33 +31,15 @@ const getAugsForFaction = (ns, faction) => {
 };
 
 /** @param {NS} ns */
-const runService = (ns) => {
-  ns.disableLog("ALL");
-
-  const existing = getGoalsData(ns);
-  if (existing.targetFaction === undefined) {
-    putGoalsData(ns, { enabled: true, manualOverride: false });
-  }
-};
-
-/** @param {NS} ns */
 export async function main(ns) {
   const [command, ...rest] = ns.args;
 
   if (command === undefined) {
-    runService(ns);
+    // TODO: Show help?
     return;
   }
 
   switch (command) {
-    case "disable":
-      putGoalsData(ns, { enabled: false });
-      ns.tprint("Goals disabled");
-      break;
-    case "enable":
-      putGoalsData(ns, { enabled: true });
-      ns.tprint("Goals enabled");
-      break;
     case "faction": {
       const faction = /** @type {string} */ (rest[0]);
       if (!faction) {
@@ -65,12 +47,12 @@ export async function main(ns) {
         return;
       }
       const targetAugmentations = getAugsForFaction(ns, faction);
-      putGoalsData(ns, { targetFaction: faction, targetAugmentations, manualOverride: true });
+      putGoalsData(ns, { manualOverride: targetAugmentations });
       ns.tprint(`Target faction set to ${faction} (${targetAugmentations.length} augmentations queued)`);
       break;
     }
     case "reset":
-      putGoalsData(ns, { manualOverride: false });
+      putGoalsData(ns, { manualOverride: null });
       ns.tprint("Goals reset to automatic");
       break;
     case 'aug-table': {
