@@ -8,7 +8,7 @@ import { selectAugmentations } from '../home/lib/aug-select.js';
 const RATES = { moneyRate: 10e3, repRate: 3 };
 
 const select = (owned, factionRep = {}) =>
-  selectAugmentations(owned, staticData, undefined, factionRep, RATES);
+  selectAugmentations(owned, staticData, {skills:{}, factions:[]}, undefined, factionRep, RATES);
 
 describe('selectAugmentations', () => {
   describe('BN4 run', () => {

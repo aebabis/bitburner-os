@@ -187,13 +187,16 @@ export const getGoals = (ns) => {
     targetFaction = goalsData.targetFaction;
     targetAugmentations = goalsData.targetAugmentations;
   } else if (augmentationPrices != null) {
-    const cityFaction = factions.find(f => CITY_FACTIONS.includes(f));
     const repRates = Object.values(activeRepRate);
     const repRate = repRates.length > 0 ? Math.max(...repRates) : undefined;
+    const ownedAugs = [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations];
     ({ faction: targetFaction, augmentations: targetAugmentations } = selectAugmentations(
-      [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations],
-      staticData, cityFaction, factionRep ?? {},
-      { moneyRate: referenceIncome || Infinity, repRate }, skills,
+      ownedAugs,
+      staticData,
+      player,
+      ns.fileExists('Formulas.exe', 'home') ? ns.formulas.skills.calculateExp : undefined,
+      factionRep ?? {},
+      { moneyRate: referenceIncome || Infinity, repRate }
     ));
     putGoalsData(ns, { targetFaction, targetAugmentations });
     putStaticData(ns, { targetFaction, targetAugmentations });

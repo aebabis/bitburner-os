@@ -49,15 +49,6 @@ const UNITY_AUGS = {
   'The Red Pill': 10,
 };
 
-const calculateExp = (/** @type {NS|undefined} */ ns = undefined) => {
-  if (ns && ns.fileExists('Formulas.exe', 'home')) {
-    return ns.formulas.skills.calculateExp;
-  } else {
-    /** @param {number} skill */
-    return (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6;
-  }
-};
-
 /**
  * @param {Multipliers} stats
  * @param {Record<keyof Multipliers, number>} weights
@@ -101,22 +92,32 @@ import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
  *   factionRequirements?: Record<string,any[]>,
  *   ownedAugmentations?: string[],
  * }} staticData
- * @param {string | undefined} cityFaction
+ * @param {Player} player
+ * @param {((skill: number, mult: number|undefined) => number) | undefined} calcExp
  * @param {Record<string, number>} [factionRep]
  * @param {{ moneyRate?: number, repRate?: number }} [rates]
- * @param {Skills} [skills]
  * @returns {{ faction: string | null, augmentations: string[] }}
  */
-export const selectAugmentations = (ownedAugmentations, staticData, cityFaction, factionRep = {}, { moneyRate = Infinity, repRate } = {}, skills = {}) => {
+export const selectAugmentations = (
+  ownedAugmentations,
+  staticData,
+  player,
+  calcExp = (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6,
+  factionRep = {},
+  { moneyRate = Infinity, repRate } = {}
+) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
     augmentationPrereqs,
-    augmentationStats = /** @type {Record<string,Multipliers>} */ ({}),
+    augmentationStats,
     factionAugmentations,
-    factionRequirements = {},
+    factionRequirements,
   } = staticData;
-
+  if ([augmentationPrices, augmentationRepReqs, augmentationPrereqs, augmentationStats, factionAugmentations, factionRequirements]
+    .some((data) => data == null)) {
+    return { faction: null, augmentations: [] };
+  }
   const MAX_AUGS = 6;
   const NEUROFLUX = "NeuroFlux Governor";
 
@@ -160,7 +161,7 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     const requiredAugCount =
       reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
-    if (CITY_FACTIONS.includes(faction) && cityFaction != null && cityFaction !== faction)
+    if (CITY_FACTIONS.includes(faction) && player.factions.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
       return false;
     return true;
   });
@@ -174,8 +175,8 @@ export const selectAugmentations = (ownedAugmentations, staticData, cityFaction,
     const expReqs = Object.fromEntries(Object.entries(skillReqs).map(([stat, requirement]) => {
       const levelMult = getStatProduct(stat);
       const expMult = getStatProduct(`${stat}_exp`);
-      const currentExp = calculateExp()(skills[stat]??1, levelMult);
-      const expReq = calculateExp()(requirement, levelMult); 
+      const currentExp = calcExp(player.skills[stat]??1, levelMult);
+      const expReq = calcExp(requirement, levelMult); 
       const expNeeded = Math.max(0, expReq - currentExp);
       const expToEarn = expNeeded / expMult;
       return [stat, expToEarn];

@@ -1,5 +1,4 @@
 import { rmi } from "../../../lib/rmi";
-import { getStaticData, getPlayerData } from "../../../lib/data-store";
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -18,8 +17,7 @@ export async function main(ns) {
   while (true) {
     await rmi(ns)("/bin/self/aug/load-faction-favor-gain.js");
     await rmi(ns)("/bin/self/aug/join-factions.js");
-    if (getStaticData(ns).targetFaction != null || getPlayerData(ns).gang)
-      await rmi(ns)("/bin/self/aug/purchase-augs.js");
+    await rmi(ns)("/bin/self/aug/purchase-augs.js");
     await ns.sleep(100);
   }
 }

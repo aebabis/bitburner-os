@@ -75,6 +75,8 @@ const makeStaticData = (
   };
 };
 
+const PLAYER = {skills: {}, factions: []};
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -82,14 +84,14 @@ const makeStaticData = (
 test('fresh start → CyberSec (higher-value batch wins over more augs at lower value)', () => {
   // CyberSec batch utility=0.000921 > Netburners batch utility=0.00072
   const data = makeStaticData({ Netburners: [NB_A, NB_B, NB_C], CyberSec: [CS_A, CS_B] });
-  const { faction } = selectAugmentations([], data, undefined);
+  const { faction } = selectAugmentations([], data, PLAYER, undefined);
   assert.equal(faction, 'CyberSec');
 });
 
 test('Netburner augs owned → CyberSec becomes best', () => {
   const data = makeStaticData({ Netburners: [NB_A, NB_B, NB_C], CyberSec: [CS_A, CS_B] });
   const netburnerAugs = data.factionAugmentations['Netburners'];
-  const { faction } = selectAugmentations(netburnerAugs, data, undefined);
+  const { faction } = selectAugmentations(netburnerAugs, data, PLAYER, undefined);
   assert.equal(faction, 'CyberSec');
 });
 
@@ -103,7 +105,7 @@ test('Netburners + CyberSec owned → city faction with hacking augs wins', () =
     ...data.factionAugmentations['Netburners'],
     ...data.factionAugmentations['CyberSec'],
   ];
-  const { faction } = selectAugmentations(owned, data, undefined);
+  const { faction } = selectAugmentations(owned, data, PLAYER, undefined);
   assert.equal(faction, 'Sector-12');
 });
 
@@ -112,7 +114,7 @@ test('city exclusivity: player in Sector-12 cannot switch to Aevum', () => {
     'Sector-12': [S12_A],
     'Aevum': [hackAug(1.99, 1_000, 1)], // absurdly high utility, should be blocked
   });
-  const { faction } = selectAugmentations([], data, 'Sector-12');
+  const { faction } = selectAugmentations([], data, {skills: {}, factions: ['Sector-12']});
   assert.equal(faction, 'Sector-12');
 });
 
@@ -125,7 +127,7 @@ test('endgame faction gated by numAugmentations requirement', () => {
     { Daedalus: 30 }
   );
   // 0 owned augs — Daedalus requires 30
-  const { faction } = selectAugmentations([], data, undefined);
+  const { faction } = selectAugmentations([], data, PLAYER);
   assert.equal(faction, 'Netburners');
 });
 
@@ -138,13 +140,13 @@ test('endgame faction unlocks once numAugmentations threshold is met', () => {
     { Daedalus: 3 }
   );
   const fakeOwned = ['fake1', 'fake2', 'fake3']; // 3 owned augs
-  const { faction } = selectAugmentations(fakeOwned, data, undefined);
+  const { faction } = selectAugmentations(fakeOwned, data, PLAYER);
   assert.equal(faction, 'Daedalus');
 });
 
 test('returns null faction when no accessible faction has any augs', () => {
   const data = makeStaticData({});
-  const { faction, augmentations } = selectAugmentations([], data, undefined);
+  const { faction, augmentations } = selectAugmentations([], data, PLAYER);
   assert.equal(faction, null);
   assert.deepEqual(augmentations, []);
 });
@@ -164,13 +166,13 @@ test('faction with significant current rep is preferred over higher raw utility'
     'The Black Hand': [TBH_A, TBH_B],
   });
 
-  const { faction: cold } = selectAugmentations([], data, undefined);
+  const { faction: cold } = selectAugmentations([], data, PLAYER);
   assert.equal(cold, 'BitRunners');
 
   // With 45k rep in TBH: both TBH augs have remainingRep=0.
   // Batch [TBH_A, TBH_B]: marginalRep=0, cost=overhead only, utility=6.0/7200≈0.000833
   // BitRunners: cost=overhead only, utility=4.0/7200≈0.000556 — TBH wins.
-  const { faction: withRep } = selectAugmentations([], data, undefined, { 'The Black Hand': 45_000 });
+  const { faction: withRep } = selectAugmentations([], data, PLAYER, undefined, { 'The Black Hand': 45_000 });
   assert.equal(withRep, 'The Black Hand');
 });
 
