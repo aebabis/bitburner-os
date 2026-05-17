@@ -30,27 +30,12 @@ const getAugsForFaction = (ns, faction) => {
 };
 
 /** @param {NS} ns */
-const runService = async (ns) => {
+const runService = (ns) => {
   ns.disableLog("ALL");
 
   const existing = getGoalsData(ns);
   if (existing.targetFaction === undefined) {
-    const { targetFaction, targetAugmentations } = getStaticData(ns);
-    putGoalsData(ns, { enabled: true, targetFaction, targetAugmentations, manualOverride: false });
-  }
-
-  while (true) {
-    const { manualOverride, targetFaction, targetAugmentations } = getGoalsData(ns);
-    if (!manualOverride) {
-      const staticData = getStaticData(ns);
-      putGoalsData(ns, {
-        targetFaction: staticData.targetFaction,
-        targetAugmentations: staticData.targetAugmentations,
-      });
-    } else {
-      putStaticData(ns, { targetFaction, targetAugmentations });
-    }
-    await ns.sleep(5000);
+    putGoalsData(ns, { enabled: true, manualOverride: false });
   }
 };
 
@@ -59,7 +44,7 @@ export async function main(ns) {
   const [command, ...rest] = ns.args;
 
   if (command === undefined) {
-    await runService(ns);
+    runService(ns);
     return;
   }
 

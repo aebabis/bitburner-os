@@ -1,10 +1,12 @@
-import { getStaticData, getGoalsData, getPlayerData, getMoneyData } from "./data-store";
-import { getRepTargets, getTargetFaction } from "./query-service";
+import { getStaticData, getGoalsData, getPlayerData, getMoneyData, putGoalsData, putStaticData } from "./data-store";
+import { getRepTargets } from "./query-service";
 import { DARK } from "./colors";
 import { THREADPOOL } from "../etc/config";
+import { selectAugmentations } from "./aug-select";
+import { CITY_FACTIONS } from "./factions";
 
 /**
- * @typedef {'JOB_RAM' | 'AUG_SUITE' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
+ * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
  */
 
 /**
@@ -53,9 +55,9 @@ const jobRamGoal = (poolServer, currentRam, requiredJobRam, jobRamCost, currentM
         : null,
     });
 
-/** @param {Goal} dep @returns {Goal} */
-const augSuiteGoal = (dep) =>
-  goal("AUG_SUITE", "Run augmentation suite", () => false, { deps: [dep] });
+/** @param {Goal[]} deps @returns {Goal} */
+const installGoal = (deps) =>
+  goal("INSTALL", "Run augmentation suite", () => false, { deps, ownTime: () => 0 });
 
 /** @param {number} hackReq @param {number} currentHacking @returns {Goal} */
 const hackingLevelGoal = (hackReq, currentHacking) =>
@@ -161,7 +163,7 @@ export const timeToComplete = (goal, memo = new Map()) => {
 export const getTimeToComplete = (ns) => {
   const goals = getGoals(ns);
   const augGoals = goals.filter(g => g.type === 'AUGMENTATION');
-  const roots = augGoals.length > 0 ? augGoals : goals.filter(g => g.type === 'AUG_SUITE');
+  const roots = augGoals.length > 0 ? augGoals : goals.filter(g => g.type === 'INSTALL');
   if (roots.length === 0) return null;
   const memo = new Map();
   const times = roots.map(g => timeToComplete(g, memo));
@@ -176,18 +178,33 @@ export const getGoals = (ns) => {
   const { player, factionRep, purchasedAugmentations, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
   const { factions, skills, money, location } = player;
   const staticData = getStaticData(ns);
-  const { requiredJobRam, factionRequirements, purchasedServerCosts } = staticData;
+  const { requiredJobRam, factionRequirements, purchasedServerCosts, augmentationPrices } = staticData;
   const { estimatedStockValue = 0, costToAug, referenceIncome = 0 } = getMoneyData(ns);
   const goalsData = getGoalsData(ns);
-  const effectiveFaction = getTargetFaction(ns);
-  const targetAugmentations = goalsData.targetAugmentations ?? staticData.targetAugmentations;
+
+  let targetFaction, targetAugmentations;
+  if (goalsData.manualOverride) {
+    targetFaction = goalsData.targetFaction;
+    targetAugmentations = goalsData.targetAugmentations;
+  } else if (augmentationPrices != null) {
+    const cityFaction = factions.find(f => CITY_FACTIONS.includes(f));
+    const repRates = Object.values(activeRepRate);
+    const repRate = repRates.length > 0 ? Math.max(...repRates) : undefined;
+    ({ faction: targetFaction, augmentations: targetAugmentations } = selectAugmentations(
+      [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations],
+      staticData, cityFaction, factionRep ?? {},
+      { moneyRate: referenceIncome || Infinity, repRate }, skills,
+    ));
+    putGoalsData(ns, { targetFaction, targetAugmentations });
+    putStaticData(ns, { targetFaction, targetAugmentations });
+  }
 
   if (targetAugmentations == null) {
     const POOL1 = `${THREADPOOL}-01`;
     const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
     const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
     const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome);
-    return [jrg, augSuiteGoal(jrg)];
+    return [jrg, installGoal([jrg])];
   }
 
   const repTargets = getRepTargets(ns);
@@ -240,14 +257,14 @@ export const getGoals = (ns) => {
     }
   }
 
-  const effectiveFactionPrereqs = nonGangTarget?.faction === effectiveFaction ? joinPrereqs : [];
-  const effectiveJoinGoal = factionJoinGoal(effectiveFaction, factions, effectiveFactionPrereqs);
+  const effectiveFactionPrereqs = nonGangTarget?.faction === targetFaction ? joinPrereqs : [];
+  const effectiveJoinGoal = factionJoinGoal(targetFaction, factions, effectiveFactionPrereqs);
   goals.push(effectiveJoinGoal);
 
   const repGoals = [];
   for (const { faction, requirement } of getRepTargets(ns)) {
     let joinGoal = effectiveJoinGoal;
-    if (faction !== effectiveFaction) {
+    if (faction !== targetFaction) {
       const factionPrereqs = faction === nonGangTarget?.faction ? joinPrereqs : [];
       joinGoal = factionJoinGoal(faction, factions, factionPrereqs);
       goals.push(joinGoal);
