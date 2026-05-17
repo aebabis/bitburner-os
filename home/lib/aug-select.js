@@ -70,7 +70,7 @@ export const augEffectiveCost = (price, repReq, moneyPerRep) =>
   Math.max(price / moneyPerRep, repReq);
 
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
-const OVERHEAD_BASE = 1800;
+const OVERHEAD_BASE = 120 * 60;
 
 import { STORY_FACTIONS, CITY_FACTIONS } from "./factions.js";
 

@@ -31,6 +31,16 @@ describe('selectAugmentations', () => {
         assert(aug2.augmentations.length > 1, `${aug2.augmentations.length} augs selected`);
       });
     });
+
+    describe('Aug +', () => {
+      let augsObtained = [];
+      for (let i = 0; i < 10; i++) {
+        const aug = select(augsObtained);
+        console.log(aug.faction);
+        console.log(aug.augmentations.join('\n')+'\n');
+        augsObtained = [...augsObtained, ...aug.augmentations];
+      }
+    });
   });
 });
 

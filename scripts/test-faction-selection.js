@@ -150,13 +150,15 @@ test('returns null faction when no accessible faction has any augs', () => {
 });
 
 test('faction with significant current rep is preferred over higher raw utility', () => {
-  // BitRunners: high-value cheap aug that wins cold (val=2.0 > TBH_B val=1.0)
-  // The Black Hand: two augs both gated at ≥45k rep; once unlocked they dominate (val=6.0 total)
-  const BR_CHEAP = hackAug(1.20,    100_000,  5_000); // value=2.0
+  // BitRunners: high-value cheap aug that wins cold.
+  // The Black Hand: two augs both gated at ≥45k rep; once unlocked they dominate (val=6.0 total).
+  // BR_CHEAP needs val > 3.42 to win cold vs TBH[A+B] with OVERHEAD_BASE=7200:
+  //   BR_CHEAP cold utility = val/7200; TBH[A+B] cold utility = 6.0/(7200+25000/repRate)
+  const BR_CHEAP = hackAug(1.40,    100_000,  5_000); // value=4.0
   const TBH_A    = hackAug(1.50,     50_000, 45_000); // value=5.0 — gated at 45k rep
   const TBH_B    = hackAug(1.10,     50_000, 20_000); // value=1.0
 
-  // Cold: BR_CHEAP utility=2.0/1800=0.00111; TBH_B alone=1.0/1800=0.00056; BitRunners wins.
+  // Cold: BR_CHEAP utility≈0.000556; TBH[A+B]≈0.000475 (rep grind cost visible); BitRunners wins.
   const data = makeStaticData({
     'BitRunners':    [BR_CHEAP],
     'The Black Hand': [TBH_A, TBH_B],
@@ -166,8 +168,8 @@ test('faction with significant current rep is preferred over higher raw utility'
   assert.equal(cold, 'BitRunners');
 
   // With 45k rep in TBH: both TBH augs have remainingRep=0.
-  // Batch [TBH_A, TBH_B]: marginalRep=0, cost=overhead only, utility=6.0/1800=0.00333
-  // BitRunners: cost=overhead only, utility=2.0/1800=0.00111 — TBH wins.
+  // Batch [TBH_A, TBH_B]: marginalRep=0, cost=overhead only, utility=6.0/7200≈0.000833
+  // BitRunners: cost=overhead only, utility=4.0/7200≈0.000556 — TBH wins.
   const { faction: withRep } = selectAugmentations([], data, undefined, { 'The Black Hand': 45_000 });
   assert.equal(withRep, 'The Black Hand');
 });
