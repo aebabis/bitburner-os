@@ -1,6 +1,6 @@
 import { getStaticData, getGoalsData, getPlayerData, getMoneyData } from "./data-store";
 import { getRepTargets, getTargetFaction } from "./query-service";
-import { MEDIUM } from "./colors";
+import { DARK } from "./colors";
 import { THREADPOOL } from "../etc/config";
 
 /**
@@ -37,7 +37,7 @@ const goal = (type, desc, isDone, { requirement, faction, deps = [], ownTime = (
   faction,
   deps,
   ownTime,
-  toString: () => isDone() ? desc : MEDIUM(desc),
+  toString: () => isDone() ? desc : DARK(desc),
 });
 
 // --- Per-type factories ---

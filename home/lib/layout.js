@@ -1,4 +1,4 @@
-import { DARK } from "./colors";
+import { BORDER } from "./colors";
 
 /** @typedef {{ text: string | string[], width: number, height: number, getText?: (w: number, h: number) => string[] }} RenderResult */
 /** @typedef {RenderResult & { x: number, y: number }} PlacedItem */
@@ -113,27 +113,27 @@ export const renderWindows = (windows, WIDTH) => {
   const lastRow = grid.length - 1;
   const lastCol = grid[0].length - 1;
   for (let x = 0; x < WIDTH; x++) {
-    grid[0][x] = grid[lastRow][x] = DARK("━");
+    grid[0][x] = grid[lastRow][x] = BORDER("━");
   }
   for (let y = 0; y < HEIGHT; y++) {
-    grid[y][0] = grid[y][lastCol] = DARK("┃");
+    grid[y][0] = grid[y][lastCol] = BORDER("┃");
   }
-  grid[0][0] = DARK("┏");
-  grid[0][lastCol] = DARK("┓");
-  grid[lastRow][0] = DARK("┗");
-  grid[lastRow][lastCol] = DARK("┛");
+  grid[0][0] = BORDER("┏");
+  grid[0][lastCol] = BORDER("┓");
+  grid[lastRow][0] = BORDER("┗");
+  grid[lastRow][lastCol] = BORDER("┛");
 
   for (const box of placed) {
     const { x, y, width, height } = box;
     for (let xx = 0; xx < width; xx++) {
-      if (y !== 0) grid[y][x + xx + 1] = DARK("─");
+      if (y !== 0) grid[y][x + xx + 1] = BORDER("─");
       if (y + height + 1 !== HEIGHT - 1)
-        grid[y + height + 1][x + xx + 1] = DARK("─");
+        grid[y + height + 1][x + xx + 1] = BORDER("─");
     }
     for (let yy = 0; yy < height; yy++) {
-      if (x !== 0) grid[y + yy + 1][x] = DARK("│");
+      if (x !== 0) grid[y + yy + 1][x] = BORDER("│");
       if (x + width + 1 !== WIDTH - 1)
-        grid[y + yy + 1][x + width + 1] = DARK("│");
+        grid[y + yy + 1][x + width + 1] = BORDER("│");
     }
   }
   for (let i = 0; i < 2; i++)
@@ -146,13 +146,13 @@ export const renderWindows = (windows, WIDTH) => {
         const bottom = y === HEIGHT - 1;
 
         if (left && !top && !bottom) {
-          grid[y][x] = DARK("┠");
+          grid[y][x] = BORDER("┠");
         } else if (right && !top && !bottom) {
-          grid[y][x] = DARK("┨");
+          grid[y][x] = BORDER("┨");
         } else if (top && !left && !right) {
-          grid[y][x] = DARK("┯");
+          grid[y][x] = BORDER("┯");
         } else if (bottom && !left && !right) {
-          grid[y][x] = DARK("┷");
+          grid[y][x] = BORDER("┷");
         } else if (Number(top) + Number(bottom) + Number(left) + Number(right) < 2) {
           const topNeighbor = !top && grid[y - 1][x] !== " " ? 1 : 0;
           const rightNeighbor = !right && grid[y][x + 1] !== " " ? 2 : 0;
@@ -179,7 +179,7 @@ export const renderWindows = (windows, WIDTH) => {
             "┬",
             "┼",
           ];
-          grid[y][x] = DARK(lookup[bitMask]);
+          grid[y][x] = BORDER(lookup[bitMask]);
         }
       };
       drawCorner(x, y);

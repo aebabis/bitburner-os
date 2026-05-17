@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
 import { getServices } from "../lib/service-api";
-import { C, WARN, MEDIUM, BRIGHT, ERROR } from "../lib/colors";
+import { C, WARN, MEDIUM, DARK, BRIGHT, ERROR } from "../lib/colors";
 import { hasBitNode } from "../lib/query-service";
 import { by } from '../lib/util';
 
@@ -131,21 +131,21 @@ const threadpoolTable = (ns) => {
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
-  const rows = left.map((list, i) => [...list, ...(middle[i] || [""]), ...(right[i] || [""])]);
+  const rows = left.map((list, i) => [...list, ...(middle[i] || [""]), ...(right[i] || [""])].map(MEDIUM));
   return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
 };
 
 
 const goalsTable = (/** @type {NS} */ ns) => {
   const { enabled = true } = getGoalsData(ns);
-  if (!enabled) return ` ${H("GOALS")} \n ${MEDIUM("(disabled)")} `;
+  if (!enabled) return ` ${H("GOALS")} \n ${DARK("(disabled)")} `;
   const goals = getGoals(ns);
   return table(
     ns,
     ["GOALS", {name: '', align: 'right'}],
     goals.map(goal => [
       goal.toString(),
-      MEDIUM(formatTime(timeToComplete(goal))),
+      DARK(formatTime(timeToComplete(goal))),
     ]),
     { colors: true },
   );
@@ -218,7 +218,7 @@ const getServiceTable = (ns) => {
     ns,
     ['SERVICES', '', ''],
     getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-      [name, status, '  ' + (ram ? MEDIUM(ram.toFixed(2)+'GB') : ERROR('error'))]),
+      [name, status, '  ' + (ram ? DARK(ram.toFixed(2)+'GB') : ERROR('error'))]),
     { colors: true },
   );
 };
