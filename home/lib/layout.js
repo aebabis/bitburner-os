@@ -3,7 +3,7 @@ import { DARK } from "./colors";
 /** @typedef {{ text: string | string[], width: number, height: number, getText?: (w: number, h: number) => string[] }} RenderResult */
 /** @typedef {RenderResult & { x: number, y: number }} PlacedItem */
 
-const COLOR_CODES = /\[[0-9;]+m/g;
+const COLOR_CODES = /\x1b\[[0-9;]+m/g;
 
 export class GrowingWindow {
   constructor(/** @type {() => string} */ getContent, /** @type {boolean} */ stretch=false) {

@@ -6,7 +6,7 @@ const builder = (code) => {
   const func = (str) => {
     const result = code + str + RESET;
     return {
-      length: str,
+      length: str.toString().length,
       valueOf: () => result,
       toString: () => result,
       toJSON: () => result,
