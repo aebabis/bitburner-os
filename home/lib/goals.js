@@ -73,13 +73,13 @@ const combatLevelsGoal = (combatReq, currentSkills) =>
 const killsGoal = (killsRequired, numPeopleKilled) =>
   goal("KILLS", `Kill ${killsRequired} people`,
     () => numPeopleKilled >= killsRequired,
-    { requirement: numPeopleKilled, ownTime: () => (killsRequired - numPeopleKilled)/3 });
+    { requirement: numPeopleKilled, ownTime: () => (killsRequired - numPeopleKilled)*3 });
 
 /** @param {number} karmaRequired @param {number} karma @returns {Goal} */
 const karmaGoal = (karmaRequired, karma) =>
   goal("KARMA", `Have ${karmaRequired} karma`,
     () => karmaRequired >= karma,
-    { requirement: karmaRequired, ownTime: () => (karmaRequired - karma)/-1 });
+    { requirement: karmaRequired, ownTime: () => -(karmaRequired - karma) });
 
 /** @param {NS} ns @param {number} moneyTarget @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
 const moneyPrereqGoal = (ns, moneyTarget, currentMoney, referenceIncome) =>
