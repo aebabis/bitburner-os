@@ -2,7 +2,7 @@ import { by } from "../../lib/util";
 import { delegateAny } from "../../lib/scheduler-delegate";
 import { getGangData, putGangData, putMoneyData } from "../../lib/data-store";
 import { logger } from "../../lib/logger";
-import { isRepBound } from "../../lib/query-service";
+import { isRepBound } from "../../lib/goals";
 
 /** @param {NS} ns **/
 export async function main(ns) {

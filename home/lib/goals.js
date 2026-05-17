@@ -169,6 +169,20 @@ export const getTimeToComplete = (ns) => {
   return Math.max(.../** @type {number[]} */ (times));
 };
 
+/** @param {NS} ns @param {Goal[]} goals */
+export const isRepBound = (ns, goals = getGoals(ns)) => {
+  const unmetRepGoals = goals.filter(g => g.type === 'FACTION_REP' && !g.isDone());
+  if (unmetRepGoals.find((goal) => timeToComplete(goal) == null)) {
+    return true;
+  }
+  const maxRepTime = unmetRepGoals.length > 0
+    ? Math.max(...unmetRepGoals.map(g => timeToComplete(g) ?? 0))
+    : 0;
+  const amg = goals.find(g => g.type === 'AUG_MONEY');
+  const moneyTime = amg != null ? timeToComplete(amg) : null;
+  return moneyTime == null || moneyTime <= maxRepTime;
+};
+
 // --- Orchestration ---
 
 /** @param {NS} ns @returns {Goal[]} */

@@ -1,5 +1,5 @@
 import { getPlayerData } from "../../lib/data-store";
-import { getGoals, timeToComplete } from "../../lib/goals";
+import { getGoals, isRepBound } from "../../lib/goals";
 import { rmi } from "../../lib/rmi";
 import { getConfig } from "../../lib/config";
 
@@ -39,19 +39,6 @@ export async function main(ns) {
     };
 
     const goals = getGoals(ns);
-    const memo = new Map();
-    const unmetRepGoals = goals.filter(g => g.type === 'FACTION_REP' && !g.isDone());
-    const isRepBound = () => {
-      if (unmetRepGoals.find((goal) => timeToComplete(goal, memo) == null)) {
-        return true;
-      }
-      const maxRepTime = unmetRepGoals.length > 0
-        ? Math.max(...unmetRepGoals.map(g => timeToComplete(g, memo) ?? 0))
-        : 0;
-      const amg = goals.find(g => g.type === 'AUG_MONEY');
-      const moneyTime = amg != null ? timeToComplete(amg, memo) : null;
-      return moneyTime == null || moneyTime <= maxRepTime;
-    };
     const workFaction = getWorkFaction(goals, player.factions, factionRep);
     const statForCrimeTraining = (["strength", "defense", "dexterity", "agility"])
       .find((/** @type {string} */ stat) => player.skills[/** @type {keyof Skills} */ (stat)] < 5);
@@ -60,7 +47,7 @@ export async function main(ns) {
       if (player.money > 5000)
         await rmi(ns)("/bin/self/improvement.js", 1, statForCrimeTraining, 5);
       else await rmi(ns)("/bin/self/job.js", 1);
-    } else if (!isRepBound()) {
+    } else if (!isRepBound(ns, goals)) {
       await makeMoney();
     } else if (workFaction != null) {
       getConfig(ns).set("share", 0.1);
