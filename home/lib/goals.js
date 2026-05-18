@@ -1,7 +1,8 @@
 import { getStaticData, getGoalsData, getPlayerData, getMoneyData, getGangData } from "./data-store";
 import { DARK } from "./colors";
 import { THREADPOOL } from "../etc/config";
-import { selectAugmentations } from "./aug-select";
+import { selectAugmentations, findOptimalBatch, MAX_AUGS } from "./aug-select";
+import { getMockFormulas } from "./formulas";
 
 /**
  * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'KILLS' | 'KARMA' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
@@ -138,11 +139,11 @@ const augMoneyGoal = (ns, costToAug, currentMoney, estimatedStockValue, referenc
     });
 };
 
-/** @param {string} aug @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal} */
-const augmentationGoal = (aug, purchasedAugmentations, deps) =>
+/** @param {string} aug @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal} */
+const augmentationGoal = (aug, faction, purchasedAugmentations, deps) =>
   goal("AUGMENTATION", aug,
     () => purchasedAugmentations.includes(aug),
-    { deps, ownTime: () => 0 });
+    { faction, deps, ownTime: () => 0 });
 
 // --- DAG traversal ---
 
@@ -193,6 +194,104 @@ export const isRepBound = (ns, goals = getGoals(ns)) => {
   const amg = goals.find(g => g.type === 'AUG_MONEY');
   const moneyTime = amg != null ? timeToComplete(amg) : null;
   return moneyTime == null || moneyTime <= maxRepTime;
+};
+
+// --- Plan construction ---
+
+/**
+ * Build the complete goal chain for one candidate faction plan.
+ * Returns null if findOptimalBatch finds nothing worth pursuing.
+ * @param {string} faction
+ * @param {NS} ns
+ * @param {{
+ *   player: Player,
+ *   staticData: ReturnType<import("./data-store").getStaticData>,
+ *   factionRep: Record<string, number>,
+ *   purchasedAugmentations: string[],
+ *   ownedAugs: string[],
+ *   money: number,
+ *   estimatedStockValue: number,
+ *   referenceIncome: number,
+ *   activeRepRate: Record<string, number>,
+ *   passiveRepRate: Record<string, number>,
+ * }} data
+ * @returns {{ goals: Goal[], terminalGoals: Goal[] } | null}
+ */
+export const buildFactionGoalTree = (faction, ns, {
+  player, staticData, factionRep, purchasedAugmentations, ownedAugs,
+  money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
+}) => {
+  const { factions, skills, location } = player;
+  const { factionRequirements, augmentationRepReqs, augmentationPrices, augmentationPrereqs } = staticData;
+
+  const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(staticData);
+  const activeRates = Object.values(activeRepRate);
+  const repRate = activeRates.length > 0 ? Math.max(...activeRates) : undefined;
+  const moneyRate = referenceIncome || Infinity;
+
+  const { batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, { moneyRate, repRate });
+  if (batch.length === 0) return null;
+
+  const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);
+  const sortedByPriceDesc = (/** @type {string[]} */ augs) =>
+    [...augs].sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
+
+  const getPurchaseOrder = (/** @type {string[]} */ augs) => {
+    const order = new Set(/** @type {string[]} */ ([]));
+    for (const aug of sortedByPriceDesc(augs)) {
+      const prereqs = (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse();
+      for (const prereq of prereqs) order.add(prereq);
+      order.add(aug);
+    }
+    return [...order].slice(0, MAX_AUGS);
+  };
+
+  const augs = getPurchaseOrder(batch);
+
+  // Join prereqs
+  const joinPrereqs = [];
+  const requirements = factionRequirements?.[faction] ?? [];
+  const skillReqs = Object.assign({}, ...requirements.filter((r) => r.type === 'skills').map((r) => r.skills));
+  const karmaReq = requirements.find((r) => r.type === 'karma')?.karma ?? 0;
+  const killsReq = requirements.find((r) => r.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
+  const moneyTarget = requirements.find((r) => r.type === 'money')?.money;
+  const hackReq = skillReqs.hacking;
+  const combatReq = skillReqs.strength;
+  const locationReqs = [
+    ...requirements.filter((r) => r.type === 'city'),
+    ...requirements.filter((r) => r.type === 'someCondition').flatMap((r) => r.conditions).filter((r) => r.type === 'city'),
+  ].map((r) => r.city);
+
+  if (hackReq != null) joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking));
+  if (combatReq != null) joinPrereqs.push(combatLevelsGoal(combatReq, skills));
+  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
+  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, ns.heart.break()));
+  if (!factions.includes(faction)) {
+    if (moneyTarget) joinPrereqs.push(moneyPrereqGoal(ns, moneyTarget, money, referenceIncome));
+    const [loc] = locationReqs;
+    if (loc) joinPrereqs.push(locationGoal(loc, location));
+  }
+
+  const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
+
+  const repReq = Math.max(...augs.map((aug) => augmentationRepReqs[aug] ?? 0), 0);
+  const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, activeRepRate, passiveRepRate);
+
+  // Cost estimate accounts for already-queued augs (1.9× price multiplier per queued aug).
+  let multiplier = 1.9 ** purchasedAugmentations.length;
+  let costToAug = 0;
+  for (const aug of sortedByPriceDesc(augs)) {
+    costToAug += multiplier * (augmentationPrices[aug] ?? 0);
+    multiplier *= 1.9;
+  }
+
+  const moneyGoal = augMoneyGoal(ns, costToAug, money, estimatedStockValue, referenceIncome);
+  const augGoals = augs.map((aug) => augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
+
+  return {
+    goals: [...joinPrereqs, joinGoal, repGoal, moneyGoal, ...augGoals],
+    terminalGoals: augGoals,
+  };
 };
 
 // --- Orchestration ---
@@ -347,7 +446,7 @@ export const getGoals = (ns) => {
 
   goals.push(
     ...targetAugmentations.map((/** @type {string} */ aug) =>
-      augmentationGoal(aug, purchasedAugmentations, [...repGoals, amg])),
+      augmentationGoal(aug, effectiveFaction, purchasedAugmentations, [...repGoals, amg])),
   );
 
   return goals;
