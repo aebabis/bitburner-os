@@ -57,13 +57,16 @@ export async function main(ns) {
       const combatGoal = goals.find(g => g.type === "COMBAT_LEVELS" && !g.isDone());
       const locationGoal = goals.find(g => g.type === "LOCATION" && !g.isDone())?.requirement;
       const killsGoal = goals.find(g => g.type === "KILLS" && !g.isDone())?.requirement;
-      if (combatGoal != null)
+      if (combatGoal != null) {
+        await rmi(ns)("/bin/self/travel.js", 1, 'Sector-12');
         await rmi(ns)("/bin/self/improvement.js", 1);
-      else if (locationGoal)
+      } else if (locationGoal) {
         await rmi(ns)("/bin/self/travel.js", 1, locationGoal);
-      else if (killsGoal)
+      } else if (killsGoal) {
         await rmi(ns)("/bin/self/crime.js"); 
-      else await makeMoney();
+      } else {
+        await makeMoney();
+      }
     }
     await ns.sleep(100);
   }
