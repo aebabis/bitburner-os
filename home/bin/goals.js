@@ -1,6 +1,5 @@
 import {
   getStaticData,
-  getGoalsData,
   putGoalsData,
   getPlayerData,
 } from "../lib/data-store";

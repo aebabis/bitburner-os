@@ -218,7 +218,7 @@ export const getGoals = (ns) => {
       ownedAugs,
       staticData,
       player,
-      ns.fileExists('Formulas.exe', 'home') ? ns.formulas.skills.calculateExp : undefined,
+      ns.fileExists('Formulas.exe', 'home') ? ns.formulas : undefined,
       factionRep ?? {},
       { moneyRate: referenceIncome || Infinity, repRate }
     ));

@@ -37,7 +37,7 @@ describe('selectAugmentations', () => {
       let run = 0;
       let augsObtained = [];
       while (true) {
-        const moneyRate = 10 ** run;
+        const moneyRate = 10 * (10 ** run);
         const aug = select(augsObtained, {}, moneyRate);
         augsObtained = [...augsObtained, ...aug.augmentations];
         run++;

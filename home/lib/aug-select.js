@@ -81,6 +81,52 @@ const OVERHEAD_BASE = 120 * 60;
 
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
 
+const WORK_STATS = {
+  agiExp: 0,
+  chaExp: 0,
+  defExp: 0,
+  dexExp: 0,
+  hackExp: 0,
+  intExp: 0,
+  money: 0,
+  reputation: 0,
+  strExp: 0,
+};
+
+const favorMult = (favor = 0) => 1 + favor / 100;
+
+/** Simplified versions of real formulas that work
+ * until Formulas.exe is unlocked
+ */
+const CHEATY_FORMULAS = (staticData) => {
+  const getMult = (/** @type string */ mult) => {
+    const augs = staticData.ownedAugmentations ?? [];
+    return augs.map((aug) => staticData.augmentationStats?.[aug]?.[mult] ?? 1)
+      .reduce((a,b) => a*b, 1);
+  }
+  return ({
+    skills: {
+      /** @param {number} skill */
+      calculateExp: (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6,
+    },
+    work: {
+      /** @param {Person} player @param {FactionWorkType} workType @param {number} favor */
+      factionGains: (player, workType, favor) => {
+        const { skills } = player;
+        if (workType === 'hacking') {
+          return {
+            ...WORK_STATS,
+            hacking: 2,
+            reputation: ((skills?.hacking ?? 1) / 975) * getMult('faction_rep') * favorMult(favor),
+          };
+        } else {
+          throw new Error('Not yet implemented');
+        }
+      }
+    },
+  });
+};
+
 /**
  * @param {string[]} ownedAugmentations
  * @param {{
@@ -102,7 +148,7 @@ export const selectAugmentations = (
   ownedAugmentations,
   staticData,
   player,
-  calcExp = (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6,
+  formulas = CHEATY_FORMULAS(staticData),
   factionRep = {},
   { moneyRate = Infinity, repRate } = {}
 ) => {
@@ -113,6 +159,7 @@ export const selectAugmentations = (
     augmentationStats,
     factionAugmentations,
     factionRequirements,
+    factionFavor,
     serverBackdoorRequirements,
   } = staticData;
   if ([augmentationPrices, augmentationRepReqs, augmentationPrereqs, augmentationStats, factionAugmentations, factionRequirements]
@@ -140,19 +187,6 @@ export const selectAugmentations = (
     statProductCache.set(stat, product);
     return product;
   };
-
-  // Derived from the game's log-scale XP→level formula:
-  //   level ≈ statMult × log(expMult × xp)
-  //   ∴ statProduct × log(STAT_BASE × expProduct) > req × K
-  // STAT_BASE encodes natural XP accumulation without aug boosts — keeps the
-  // function continuous and makes low requirements (e.g. CSEC) accessible
-  // without installed augs. K and STAT_BASE are empirically determined.
-  const STAT_BASE = 100;
-
-  // Rep rate scales with hacking capability. When not supplied by the caller
-  // (e.g. in tests or early in a run), derive it from installed aug multipliers
-  // using the same formula as the attainability check.
-  const effectiveRepRate = repRate ?? getStatProduct('hacking') * Math.log(STAT_BASE * getStatProduct('hacking_exp'));
 
   // Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
   // Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
@@ -206,8 +240,8 @@ export const selectAugmentations = (
     const expReqs = Object.fromEntries(levelReqs.map(([stat, requirement]) => {
       const levelMult = getStatProduct(stat);
       const expMult = getStatProduct(`${stat}_exp`);
-      const currentExp = calcExp(player.skills?.[stat] ?? 1, levelMult);
-      const expReq = calcExp(requirement, levelMult);
+      const currentExp = formulas.skills.calculateExp(player.skills?.[stat] ?? 1, levelMult);
+      const expReq = formulas.skills.calculateExp(requirement, levelMult);
       const expNeeded = Math.max(0, expReq - currentExp);
       const expToEarn = expNeeded / expMult;
       return [stat, expToEarn];
@@ -239,6 +273,7 @@ export const selectAugmentations = (
    * @returns {{ utility: number, batch: string[] }}
    */
   const findOptimalBatch = (faction) => {
+    const effectiveRepRate = repRate ?? formulas.work.factionGains(player, 'hacking', factionFavor?.[faction]).reputation * 5;
     const trainingTime = getFactionTrainingTime(faction);
     const bdMoney = getBackdoorRequirements(faction).money;
     const currentRep = factionRep[faction] ?? 0;
