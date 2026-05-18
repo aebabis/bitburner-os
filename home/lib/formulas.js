@@ -24,9 +24,9 @@ const getHacknetNodeIncomeFormula = (ns) => {
   if (ns.fileExists("Formulas.exe", "home"))
     return ns.formulas.hacknetNodes.moneyGainRate;
   const { hacknetMultipliers, bitNodeMultipliers } = getStaticData(ns);
-  const prodMult =
+  const currentProdMult =
     hacknetMultipliers.production * bitNodeMultipliers.HacknetNodeMoney;
-  return (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
+  return (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores, prodMult = currentProdMult) =>
     prodMult * (level * 1.5) * 1.035 ** (ram - 1) * ((cores + 5) / 6);
 };
 
