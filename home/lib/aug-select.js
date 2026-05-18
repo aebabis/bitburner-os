@@ -242,6 +242,8 @@ export const selectAugmentations = (
     const trainingTime = getFactionTrainingTime(faction);
     const bdMoney = getBackdoorRequirements(faction).money;
     const currentRep = factionRep[faction] ?? 0;
+    const moneyReq = (factionRequirements?.[faction] ?? [])
+      .find((req) => req.type === 'money')?.money ?? 0;
     const augs = getNeededAugs(faction)
       .map((aug) => ({
         name: aug,
@@ -266,7 +268,7 @@ export const selectAugmentations = (
       const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
       const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
-      const timeForMoney = (bdMoney + totalPrice) / moneyRate;
+      const timeForMoney = (bdMoney + Math.max(moneyReq, totalPrice)) / moneyRate;
       const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
       const cost = (Math.max(timeForMoney, timeForRep) + resetOverhead + trainingTime);
       const utility = totalValue / cost;
