@@ -42,6 +42,483 @@ export const staticData = {
     "Aevum": 0,
     "Volhaven": 29.266581965582674
   },
+  "serverBackdoorRequirements": [
+    {
+      "hostname": "home",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "n00dles",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "foodnstuff",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "sigma-cosmetics",
+      "requiredHackingLevel": 5,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "joesguns",
+      "requiredHackingLevel": 10,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "hong-fang-tea",
+      "requiredHackingLevel": 30,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "harakiri-sushi",
+      "requiredHackingLevel": 40,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "iron-gym",
+      "requiredHackingLevel": 100,
+      "numPortsRequired": 1
+    },
+    {
+      "hostname": "THREADPOOL-01",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-02",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-03",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-04",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-05",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-06",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-07",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-08",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-09",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-10",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-11",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-12",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-13",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-14",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-15",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-16",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-17",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-18",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-19",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-20",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-21",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-22",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-23",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-24",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "THREADPOOL-25",
+      "requiredHackingLevel": 1,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "zer0",
+      "requiredHackingLevel": 75,
+      "numPortsRequired": 1
+    },
+    {
+      "hostname": "max-hardware",
+      "requiredHackingLevel": 80,
+      "numPortsRequired": 1
+    },
+    {
+      "hostname": "CSEC",
+      "requiredHackingLevel": 59,
+      "numPortsRequired": 1
+    },
+    {
+      "hostname": "nectar-net",
+      "requiredHackingLevel": 20,
+      "numPortsRequired": 0
+    },
+    {
+      "hostname": "silver-helix",
+      "requiredHackingLevel": 150,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "omega-net",
+      "requiredHackingLevel": 180,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "neo-net",
+      "requiredHackingLevel": 50,
+      "numPortsRequired": 1
+    },
+    {
+      "hostname": "phantasy",
+      "requiredHackingLevel": 100,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "the-hub",
+      "requiredHackingLevel": 300,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "johnson-ortho",
+      "requiredHackingLevel": 288,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "crush-fitness",
+      "requiredHackingLevel": 233,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "avmnite-02h",
+      "requiredHackingLevel": 210,
+      "numPortsRequired": 2
+    },
+    {
+      "hostname": "computek",
+      "requiredHackingLevel": 367,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "netlink",
+      "requiredHackingLevel": 396,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "zb-institute",
+      "requiredHackingLevel": 773,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "syscore",
+      "requiredHackingLevel": 562,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "summit-uni",
+      "requiredHackingLevel": 472,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "I.I.I.I",
+      "requiredHackingLevel": 364,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "rothman-uni",
+      "requiredHackingLevel": 388,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "catalyst",
+      "requiredHackingLevel": 433,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "lexo-corp",
+      "requiredHackingLevel": 716,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "millenium-fitness",
+      "requiredHackingLevel": 490,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "alpha-ent",
+      "requiredHackingLevel": 569,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "rho-construction",
+      "requiredHackingLevel": 523,
+      "numPortsRequired": 3
+    },
+    {
+      "hostname": "aevum-police",
+      "requiredHackingLevel": 422,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "galactic-cyber",
+      "requiredHackingLevel": 840,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "aerocorp",
+      "requiredHackingLevel": 910,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "global-pharm",
+      "requiredHackingLevel": 800,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "snap-fitness",
+      "requiredHackingLevel": 696,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "omnia",
+      "requiredHackingLevel": 921,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "deltaone",
+      "requiredHackingLevel": 878,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "unitalife",
+      "requiredHackingLevel": 825,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "icarus",
+      "requiredHackingLevel": 902,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "solaris",
+      "requiredHackingLevel": 788,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "zeus-med",
+      "requiredHackingLevel": 839,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "defcomm",
+      "requiredHackingLevel": 1003,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "univ-energy",
+      "requiredHackingLevel": 818,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "infocomm",
+      "requiredHackingLevel": 895,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "zb-def",
+      "requiredHackingLevel": 788,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "taiyang-digital",
+      "requiredHackingLevel": 863,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "nova-med",
+      "requiredHackingLevel": 815,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "titan-labs",
+      "requiredHackingLevel": 839,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "applied-energetics",
+      "requiredHackingLevel": 797,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "microdyne",
+      "requiredHackingLevel": 852,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "run4theh111z",
+      "requiredHackingLevel": 550,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "stormtech",
+      "requiredHackingLevel": 901,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "helios",
+      "requiredHackingLevel": 823,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "vitalife",
+      "requiredHackingLevel": 848,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "fulcrumtech",
+      "requiredHackingLevel": 1186,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "omnitek",
+      "requiredHackingLevel": 1054,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "4sigma",
+      "requiredHackingLevel": 908,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "kuai-gong",
+      "requiredHackingLevel": 1139,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": ".",
+      "requiredHackingLevel": 516,
+      "numPortsRequired": 4
+    },
+    {
+      "hostname": "nwo",
+      "requiredHackingLevel": 1128,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "powerhouse-fitness",
+      "requiredHackingLevel": 1012,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "b-and-a",
+      "requiredHackingLevel": 905,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "clarkinc",
+      "requiredHackingLevel": 1151,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "blade",
+      "requiredHackingLevel": 1080,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "The-Cave",
+      "requiredHackingLevel": 925,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "ecorp",
+      "requiredHackingLevel": 1341,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "fulcrumassets",
+      "requiredHackingLevel": 1523,
+      "numPortsRequired": 5
+    },
+    {
+      "hostname": "megacorp",
+      "requiredHackingLevel": 1138,
+      "numPortsRequired": 5
+    }
+  ],
   "factionAugmentations": {
     "CyberSec": [
       "NeuroFlux Governor",

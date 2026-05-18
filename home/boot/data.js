@@ -1,7 +1,7 @@
 import { putStaticData } from "../lib/data-store";
 import { defer } from "./defer";
 import { tprint } from "./util";
-import { saveHostnames } from "../lib/nmap";
+import { nmap, saveHostnames } from "../lib/nmap";
 import { STR } from "../lib/colors";
 
 /** @param {NS} ns */
@@ -24,10 +24,18 @@ export async function main(ns) {
 
   const resetInfo = ns.getResetInfo();
 
+  const serverBackdoorRequirements = nmap(ns)
+    .map((hostname) => ({
+      hostname,
+      requiredHackingLevel: ns.getServerRequiredHackingLevel(hostname),
+      numPortsRequired: ns.getServerNumPortsRequired(hostname),
+    }));
+
   putStaticData(ns, {
     resetInfo,
     ownedSourceFiles: [], // To be overwritten in next step, RAM permitting
     scriptRam,
+    serverBackdoorRequirements,
     purchasedServerLimit: ns.cloud.getServerLimit(),
     purchasedServerMaxRam,
     purchasedServerCosts,

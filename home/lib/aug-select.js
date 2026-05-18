@@ -113,6 +113,7 @@ export const selectAugmentations = (
     augmentationStats,
     factionAugmentations,
     factionRequirements,
+    serverBackdoorRequirements,
   } = staticData;
   if ([augmentationPrices, augmentationRepReqs, augmentationPrereqs, augmentationStats, factionAugmentations, factionRequirements]
     .some((data) => data == null)) {
@@ -174,13 +175,35 @@ export const selectAugmentations = (
     return true;
   });
 
+  const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
+  const getBackdoorRequirements = (faction) => {
+    const reqs = factionRequirements[faction] ?? [];
+    const bdReq = reqs.find((req) => req.type === 'backdoorInstalled');
+    if (!bdReq) {
+      return { money: 0, hacking: 0 };
+    }
+    const { server } = bdReq;
+    const { requiredHackingLevel: hacking, numPortsRequired } =
+      serverBackdoorRequirements.find(({ hostname }) => hostname === server);
+    // TODO: Exclude cost of programs player already has
+    //       Consider getting costs programmatically
+    const money = PORT_PROGRAM_COSTS.filter((_, i) => i < numPortsRequired)
+      .reduce((a, b) => a + b, 0);
+    return { money, hacking };
+  };
+
   // Estimates time to meet training requirements of faction
   const getFactionTrainingTime = (/** @type {string} */ faction) => {
     const reqs = factionRequirements[faction] ?? [];
     const skillReqs = Object.assign({}, ...reqs
       .filter((r) => r.type === 'skills').map((r) => r.skills),
     );
-    const expReqs = Object.fromEntries(Object.entries(skillReqs).map(([stat, requirement]) => {
+    const bdReqs = getBackdoorRequirements(faction);
+    const levelReqs = Object.entries(skillReqs);
+    if( bdReqs.hacking !== 0) {
+      levelReqs.push((['hacking', bdReqs.hacking]));
+    }
+    const expReqs = Object.fromEntries(levelReqs.map(([stat, requirement]) => {
       const levelMult = getStatProduct(stat);
       const expMult = getStatProduct(`${stat}_exp`);
       const currentExp = calcExp(player.skills?.[stat] ?? 1, levelMult);
@@ -217,6 +240,7 @@ export const selectAugmentations = (
    */
   const findOptimalBatch = (faction) => {
     const trainingTime = getFactionTrainingTime(faction);
+    const bdMoney = getBackdoorRequirements(faction).money;
     const currentRep = factionRep[faction] ?? 0;
     const augs = getNeededAugs(faction)
       .map((aug) => ({
@@ -227,7 +251,7 @@ export const selectAugmentations = (
       }))
       .sort((a, b) => a.remainingRep - b.remainingRep);
 
-    let best = { utility: -Infinity, batch: /** @type {string[]} */ ([]) };
+    let best = { utility: 0, batch: /** @type {string[]} */ ([]) };
 
     for (let i = 0; i < augs.length; i++) {
       // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.
@@ -242,7 +266,7 @@ export const selectAugmentations = (
       const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
       const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
-      const timeForMoney = totalPrice / moneyRate;
+      const timeForMoney = (bdMoney + totalPrice) / moneyRate;
       const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
       const cost = (Math.max(timeForMoney, timeForRep) + resetOverhead + trainingTime);
       const utility = totalValue / cost;

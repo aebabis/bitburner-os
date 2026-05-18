@@ -7,8 +7,9 @@ import { selectAugmentations } from '../home/lib/aug-select.js';
 // These are intentionally conservative so the test reflects a plausible worst-case.
 const RATES = { moneyRate: 10e3, repRate: 3 };
 
-const select = (owned, factionRep = {}) =>
-  selectAugmentations(owned, staticData, {skills:{}, factions:[]}, undefined, factionRep, RATES);
+const select = (owned, factionRep = {}, moneyRate = RATES.moneyRate) =>
+  selectAugmentations(owned, staticData, {skills:{}, factions:[]}, undefined, factionRep, 
+    { ... RATES, moneyRate });
 
 describe('selectAugmentations', () => {
   describe('BN4 run', () => {
@@ -36,7 +37,8 @@ describe('selectAugmentations', () => {
       let run = 0;
       let augsObtained = [];
       while (true) {
-        const aug = select(augsObtained);
+        const moneyRate = 10 ** run;
+        const aug = select(augsObtained, {}, moneyRate);
         augsObtained = [...augsObtained, ...aug.augmentations];
         run++;
         if (aug.augmentations.length === 0) {
