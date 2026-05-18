@@ -1,3 +1,6 @@
+import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
+import { getMockFormulas } from "./formulas.js";
+
 /** @type {Record<keyof Multipliers, number>} */
 export const DEFAULT_AUG_WEIGHTS = {
   // High — hacking effectiveness
@@ -79,54 +82,6 @@ export const augEffectiveCost = (price, repReq, moneyPerRep) =>
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
 
-import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
-
-const WORK_STATS = {
-  agiExp: 0,
-  chaExp: 0,
-  defExp: 0,
-  dexExp: 0,
-  hackExp: 0,
-  intExp: 0,
-  money: 0,
-  reputation: 0,
-  strExp: 0,
-};
-
-const favorMult = (favor = 0) => 1 + favor / 100;
-
-/** Simplified versions of real formulas that work
- * until Formulas.exe is unlocked
- */
-const CHEATY_FORMULAS = (staticData) => {
-  const getMult = (/** @type string */ mult) => {
-    const augs = staticData.ownedAugmentations ?? [];
-    return augs.map((aug) => staticData.augmentationStats?.[aug]?.[mult] ?? 1)
-      .reduce((a,b) => a*b, 1);
-  }
-  return ({
-    skills: {
-      /** @param {number} skill */
-      calculateExp: (skill, mult = 1) => Math.exp((skill / mult + 200) / 32) - 534.6,
-    },
-    work: {
-      /** @param {Person} player @param {FactionWorkType} workType @param {number} favor */
-      factionGains: (player, workType, favor) => {
-        const { skills } = player;
-        if (workType === 'hacking') {
-          return {
-            ...WORK_STATS,
-            hacking: 2,
-            reputation: ((skills?.hacking ?? 1) / 975) * getMult('faction_rep') * favorMult(favor),
-          };
-        } else {
-          throw new Error('Not yet implemented');
-        }
-      }
-    },
-  });
-};
-
 /**
  * @param {string[]} ownedAugmentations
  * @param {{
@@ -139,7 +94,7 @@ const CHEATY_FORMULAS = (staticData) => {
  *   ownedAugmentations?: string[],
  * }} staticData
  * @param {Player} player
- * @param {((skill: number, mult: number|undefined) => number) | undefined} calcExp
+ * @param {ReturnType<typeof getMockFormulas>} [formulas]
  * @param {Record<string, number>} [factionRep]
  * @param {{ moneyRate?: number, repRate?: number }} [rates]
  * @returns {{ faction: string | null, augmentations: string[] }}
@@ -148,7 +103,7 @@ export const selectAugmentations = (
   ownedAugmentations,
   staticData,
   player,
-  formulas = CHEATY_FORMULAS(staticData),
+  formulas = getMockFormulas(staticData),
   factionRep = {},
   { moneyRate = Infinity, repRate } = {}
 ) => {

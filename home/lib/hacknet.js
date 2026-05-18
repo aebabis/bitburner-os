@@ -1,4 +1,5 @@
-import { getHacknetNodeFormulas } from "./formulas";
+import { getMockFormulas } from "./formulas";
+import { getStaticData } from "./data-store";
 
 /** @param {NS} ns **/
 export const getNodes = (ns) => {
@@ -10,12 +11,20 @@ export const getNodes = (ns) => {
 
 /** @param {NS} ns **/
 const getNodeData = (ns) => {
-  const formulas = getHacknetNodeFormulas(ns);
+  const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(getStaticData(ns));
+  const { moneyGainRate } = formulas.hacknetNodes;
+  const levelUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
+    moneyGainRate(level + 1, ram, cores) - moneyGainRate(level, ram, cores);
+  const ramUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
+    moneyGainRate(level, ram + 1, cores) - moneyGainRate(level, ram, cores);
+  const coreUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
+    moneyGainRate(level, ram, cores + 1) - moneyGainRate(level, ram, cores);
+
   const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.format.number(n, 0);
   return getNodes(ns).map((stats, i) => {
-    const lp = formulas.levelUpgradeProfit(stats.level, stats.ram, stats.cores);
-    const rp = formulas.ramUpgradeProfit(stats.level, stats.ram, stats.cores);
-    const cp = formulas.coreUpgradeProfit(stats.level, stats.ram, stats.cores);
+    const lp = levelUpgradeProfit(stats.level, stats.ram, stats.cores);
+    const rp = ramUpgradeProfit(stats.level, stats.ram, stats.cores);
+    const cp = coreUpgradeProfit(stats.level, stats.ram, stats.cores);
     const lc = ns.hacknet.getLevelUpgradeCost(i, 1);
     const rc = ns.hacknet.getRamUpgradeCost(i, 1);
     const cc = ns.hacknet.getCoreUpgradeCost(i, 1);
@@ -55,7 +64,6 @@ const getNodeData = (ns) => {
           if (a.profitPerCost > b.profitPerCost) return a;
           return b;
         }),
-      // a.profitPerCost > b.profitPerCost ? a : b),
     };
     return { ...stats, upgrades };
   });
