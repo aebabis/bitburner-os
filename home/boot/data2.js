@@ -11,7 +11,12 @@ export async function main(ns) {
 
   tprint(ns)(STR + "  Adding source files to static data cache");
   // @ts-ignore
-  const ownedSourceFiles = ns.getOwnedSourceFiles?.() ?? [];
+  let ownedSourceFiles = [];
+  try {
+    ownedSourceFiles = ns.singularity.getOwnedSourceFiles();
+  } catch (error) {
+    ns.tprint('No singularity access');
+  }
 
   const canUseHackNodes =
     currentNode === 5 || ownedSourceFiles.some((/** @type {{n: number}} */ node) => node.n === 5);
