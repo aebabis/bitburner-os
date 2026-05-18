@@ -1,7 +1,7 @@
-import { getStaticData, getGoalsData, getPlayerData, getMoneyData, getGangData } from "./data-store";
+import { getStaticData, getGoalsData, getPlayerData, getMoneyData } from "./data-store";
 import { DARK } from "./colors";
 import { THREADPOOL } from "../etc/config";
-import { selectAugmentations, findOptimalBatch, MAX_AUGS } from "./aug-select";
+import { findOptimalBatch, MAX_AUGS, getAccessibleFactions } from "./aug-select";
 import { getMockFormulas } from "./formulas";
 
 /**
@@ -214,12 +214,14 @@ export const isRepBound = (ns, goals = getGoals(ns)) => {
  *   referenceIncome: number,
  *   activeRepRate: Record<string, number>,
  *   passiveRepRate: Record<string, number>,
+ *   augsOverride?: string[],
  * }} data
  * @returns {{ goals: Goal[], terminalGoals: Goal[] } | null}
  */
 export const buildFactionGoalTree = (faction, ns, {
   player, staticData, factionRep, purchasedAugmentations, ownedAugs,
   money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
+  augsOverride = undefined,
 }) => {
   const { factions, skills, location } = player;
   const { factionRequirements, augmentationRepReqs, augmentationPrices, augmentationPrereqs } = staticData;
@@ -229,7 +231,12 @@ export const buildFactionGoalTree = (faction, ns, {
   const repRate = activeRates.length > 0 ? Math.max(...activeRates) : undefined;
   const moneyRate = referenceIncome || Infinity;
 
-  const { batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, { moneyRate, repRate });
+  let batch;
+  if (augsOverride != null) {
+    batch = augsOverride;
+  } else {
+    ({ batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, { moneyRate, repRate }));
+  }
   if (batch.length === 0) return null;
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);
@@ -298,156 +305,43 @@ export const buildFactionGoalTree = (faction, ns, {
 
 /** @param {NS} ns @returns {Goal[]} */
 export const getGoals = (ns) => {
-  const { player, factionRep, purchasedAugmentations, activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
-  const { factions, skills, money, location } = player;
+  const { player, factionRep, purchasedAugmentations = [], activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
+  const { money } = player;
   const staticData = getStaticData(ns);
-  const { requiredJobRam, factionRequirements, purchasedServerCosts, augmentationPrices } = staticData;
-  const { estimatedStockValue = 0, costToAug, referenceIncome = 0 } = getMoneyData(ns);
+  const { requiredJobRam, purchasedServerCosts } = staticData;
+  const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
   const goalsData = getGoalsData(ns);
 
-  let targetFaction, targetAugmentations;
-  if (goalsData.manualOverride) {
-    targetFaction = goalsData.targetFaction;
-    targetAugmentations = goalsData.targetAugmentations;
-  } else if (augmentationPrices != null) {
-    const repRates = Object.values(activeRepRate);
-    const repRate = repRates.length > 0 ? Math.max(...repRates) : undefined;
-    const ownedAugs = [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations];
-    ({ faction: targetFaction, augmentations: targetAugmentations } = selectAugmentations(
-      ownedAugs,
-      staticData,
-      player,
-      ns.fileExists('Formulas.exe', 'home') ? ns.formulas : undefined,
-      factionRep ?? {},
-      { moneyRate: referenceIncome || Infinity, repRate }
-    ));
+  const ownedAugs = [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations];
+  const planData = {
+    player, staticData, factionRep: factionRep ?? {}, purchasedAugmentations, ownedAugs,
+    money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
+  };
+
+  /** @param {{ terminalGoals: Goal[] }} plan */
+  const planTime = (plan) => {
+    const times = plan.terminalGoals.map((g) => timeToComplete(g));
+    return times.some((t) => t == null) ? Infinity : Math.max(.../** @type {number[]} */ (times));
+  };
+
+  let bestPlan = null;
+  if (goalsData.manualOverride && goalsData.targetFaction) {
+    bestPlan = buildFactionGoalTree(goalsData.targetFaction, ns, {
+      ...planData, augsOverride: goalsData.targetAugmentations,
+    });
+  } else {
+    const plans = getAccessibleFactions(staticData, player, ownedAugs)
+      .map((f) => buildFactionGoalTree(f, ns, planData))
+      .filter(/** @type {<T>(x: T | null) => x is T} */ (Boolean));
+    if (plans.length > 0)
+      bestPlan = plans.reduce((a, b) => planTime(a) <= planTime(b) ? a : b);
   }
 
-  if (targetAugmentations == null) {
-    const POOL1 = `${THREADPOOL}-01`;
-    const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
-    const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
-    const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome);
-    return [jrg, installGoal([jrg])];
-  }
+  if (bestPlan) return bestPlan.goals;
 
-  const { factionAugmentations = {}, augmentationRepReqs = {} } = staticData;
-  const gangFaction = getGangData(ns)?.gangInfo?.faction;
-  const effectiveFaction = !goalsData.manualOverride && (factionRep?.[gangFaction] ?? 0) > (factionRep?.[targetFaction] ?? 0)
-    ? gangFaction
-    : targetFaction;
-
-  const maxRep = (/** @type {string[]} */ augs) => Math.max(...augs.map(aug => augmentationRepReqs[aug] ?? 0), 0);
-  const repTargets = effectiveFaction !== targetFaction
-    ? (() => {
-        const gangAugs = factionAugmentations[gangFaction] ?? [];
-        const gangTargetAugs = targetAugmentations.filter(aug => gangAugs.includes(aug));
-        const factionOnlyAugs = targetAugmentations.filter(aug => !gangAugs.includes(aug));
-        return [
-          ...(gangTargetAugs.length > 0 ? [{ faction: gangFaction, requirement: maxRep(gangTargetAugs), isGang: true }] : []),
-          ...(factionOnlyAugs.length > 0 ? [{ faction: targetFaction, requirement: maxRep(factionOnlyAugs), isGang: false }] : []),
-        ];
-      })()
-    : (() => {
-        const isAlreadySourceable = (/** @type {string} */ aug) => {
-          const repReq = augmentationRepReqs[aug] ?? 0;
-          return factions.some(f =>
-            f !== effectiveFaction &&
-            (factionAugmentations[f] ?? []).includes(aug) &&
-            (factionRep?.[f] ?? 0) >= repReq
-          );
-        };
-        const repCosts = targetAugmentations
-          .filter(aug => !isAlreadySourceable(aug))
-          .map(aug => augmentationRepReqs[aug] ?? 0);
-        return [{ faction: effectiveFaction, requirement: Math.max(...repCosts, 0), isGang: false }];
-      })();
-
-  const goals = [];
-
-  const joinPrereqs = [];
-  const nonGangTarget = repTargets.find((target) => !target.isGang);
-  if (nonGangTarget) {
-    const requirements = factionRequirements?.[nonGangTarget.faction] ?? [];
-    const skillReqs = Object.assign({}, ...requirements
-      .filter((req) => req.type === 'skills')
-      .map((req) => req.skills));
-    const karmaReq = requirements.find((req) => req.type === 'karma')?.karma ?? 0;
-    const killsReq = requirements.find((req) => req.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
-    const moneyTarget = requirements.find((req) => req.type === 'money')?.money;
-    const combatReq = skillReqs.strength;
-    const hackReq = skillReqs.hacking;
-    const locationReqs = [
-      ...requirements.filter((req) => req.type === 'city'),
-      ...requirements.filter((req) => req.type === 'someCondition')
-        .flatMap((req) => req.conditions).filter((req) => req.type === 'city')
-    ].map((req) => req.city);
-
-    if (hackReq != null) {
-      const g = hackingLevelGoal(hackReq, skills.hacking);
-      goals.push(g);
-      joinPrereqs.push(g);
-    }
-    if (combatReq != null) {
-      const g = combatLevelsGoal(combatReq, skills);
-      goals.push(g);
-      joinPrereqs.push(g);
-    }
-    if (killsReq) {
-      const g = killsGoal(killsReq, player.numPeopleKilled ?? 0);
-      goals.push(g);
-      joinPrereqs.push(g);
-    }
-    if (karmaReq) {
-      const g = karmaGoal(karmaReq, ns.heart.break());
-      goals.push(g);
-      joinPrereqs.push(g);
-    }
-    // Money and location sub-goals for joining a faction
-    // are no longer considered requirements once the
-    // faction is joined.
-    // The level goals above are kept because they can't
-    // be invalidated, but they could be nested here to
-    // save space in the user's dashboard.
-    if (!factions.includes(nonGangTarget.faction)) {
-      if (moneyTarget) {
-        const g = moneyPrereqGoal(ns, moneyTarget, money, referenceIncome);
-        goals.push(g);
-        joinPrereqs.push(g);
-      }
-      const [loc] = locationReqs;
-      if (loc) {
-        const g = locationGoal(loc, location);
-        goals.push(g);
-        joinPrereqs.push(g);
-      }
-    }
-  }
-
-  const effectiveFactionPrereqs = nonGangTarget?.faction === effectiveFaction ? joinPrereqs : [];
-  const effectiveJoinGoal = factionJoinGoal(effectiveFaction, factions, effectiveFactionPrereqs);
-  goals.push(effectiveJoinGoal);
-
-  const repGoals = [];
-  for (const { faction, requirement } of repTargets) {
-    let joinGoal = effectiveJoinGoal;
-    if (faction !== effectiveFaction) {
-      const factionPrereqs = faction === nonGangTarget?.faction ? joinPrereqs : [];
-      joinGoal = factionJoinGoal(faction, factions, factionPrereqs);
-      goals.push(joinGoal);
-    }
-    const rg = factionRepGoal(faction, requirement, factionRep, joinGoal, activeRepRate, passiveRepRate);
-    goals.push(rg);
-    repGoals.push(rg);
-  }
-
-  const amg = augMoneyGoal(ns, costToAug, money, estimatedStockValue, referenceIncome);
-  goals.push(amg);
-
-  goals.push(
-    ...targetAugmentations.map((/** @type {string} */ aug) =>
-      augmentationGoal(aug, effectiveFaction, purchasedAugmentations, [...repGoals, amg])),
-  );
-
-  return goals;
+  const POOL1 = `${THREADPOOL}-01`;
+  const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
+  const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
+  const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome);
+  return [jrg, installGoal([jrg])];
 };

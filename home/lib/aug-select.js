@@ -218,6 +218,34 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 };
 
 /**
+ * Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
+ * Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
+ * so that harder-to-join factions are penalised but never completely excluded.
+ * @param {{ factionRequirements: Record<string,any[]> }} staticData
+ * @param {Player} player
+ * @param {string[]} ownedAugmentations
+ * @returns {string[]}
+ */
+export const getAccessibleFactions = (staticData, player, ownedAugmentations) => {
+  const { factionRequirements } = staticData;
+  return [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
+    const reqs = factionRequirements[faction] ?? [];
+    const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
+    const requiredAugCount =
+      reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
+    if (ownedAugmentations.length < requiredAugCount) return false;
+    if (CITY_FACTIONS.includes(faction) && player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
+      return false;
+    if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company])) return false;
+    if (reqs.some((req) => req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'))) {
+      // TODO: Actually evaluate difficulty of obtaining job
+      return false;
+    }
+    return true;
+  });
+};
+
+/**
  * @param {string[]} ownedAugmentations
  * @param {{
  *   augmentationPrices: Record<string,number>,
@@ -256,25 +284,7 @@ export const selectAugmentations = (
   }
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
-
-  // Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
-  // Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
-  // so that harder-to-join factions are penalised but never completely excluded.
-  const accessibleFactions = [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
-    const reqs = factionRequirements[faction] ?? [];
-    const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
-    const requiredAugCount =
-      reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
-    if (ownedAugmentations.length < requiredAugCount) return false;
-    if (CITY_FACTIONS.includes(faction) && player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
-      return false;
-    if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company])) return false;
-    if (reqs.some((req) => req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'))) {
-      // TODO: Actually evaluate difficulty of obtaining job
-      return false;
-    }
-    return true;
-  });
+  const accessibleFactions = getAccessibleFactions(staticData, player, ownedAugmentations);
 
   const getNeededAugs = (/** @type {string} */ faction) =>
     (factionAugmentations[faction] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
