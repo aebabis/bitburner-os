@@ -87,6 +87,17 @@ export const MAX_AUGS = 6;
 const NEUROFLUX = "NeuroFlux Governor";
 
 /**
+ * @param {string} aug
+ * @param {Record<string, Multipliers> | undefined} augmentationStats
+ * @returns {number}
+ */
+export const augValueFromStats = (aug, augmentationStats) => {
+  if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
+  const stats = augmentationStats?.[aug];
+  return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
+};
+
+/**
  * Find the optimal batch of up to MAX_AUGS augs from a faction.
  * Cost is time (seconds): (max(moneyTime, marginalRepTime) + resetOverhead + trainingTime)
  * Marginal rep excludes the cheapest aug's rep since that cost is committed once
@@ -125,11 +136,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   const getNeededAugs = (/** @type {string} */ fac) =>
     (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (/** @type {string} */ aug) => {
-    if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
-    const stats = augmentationStats?.[aug];
-    return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
-  };
+  const augValue = (/** @type {string} */ aug) => augValueFromStats(aug, augmentationStats);
 
   const resetOverhead = OVERHEAD_BASE / (1 + installedAugs.length);
   const currentRep = factionRep[faction] ?? 0;
@@ -144,14 +151,15 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   // Each successive NF purchase raises the queue multiplier by 1.9 (like all augs) AND
   // raises NF's own base price/rep by 1.14 (NF-level scaling, separate from queue).
   const numQueued = ownedAugmentations.length - installedAugs.length;
+  const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
   const nfBase = augmentationPrices?.[NEUROFLUX] ?? 0;
   const nfBaseRep = augmentationRepReqs?.[NEUROFLUX] ?? 0;
   const nfEntries = (factionAugmentations?.[faction] ?? []).includes(NEUROFLUX)
     ? Array.from({ length: MAX_AUGS }, (_, i) => ({
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
-        price: nfBase * (1.9 ** (numQueued + i)) * (1.14 ** i),
-        remainingRep: Math.max(0, nfBaseRep * (1.14 ** i) - currentRep),
+        price: nfBase * (1.9 ** (numQueued + i)) * (1.14 ** (installedNFCount + i)),
+        remainingRep: Math.max(0, nfBaseRep * (1.14 ** (installedNFCount + i)) - currentRep),
       }))
     : [];
 

@@ -4,7 +4,7 @@ import {
   getPlayerData,
 } from "../lib/data-store";
 import { table } from "../lib/table";
-import { scoreAug, augEffectiveCost, getMoneyPerRep, DEFAULT_AUG_WEIGHTS } from "../lib/aug-select";
+import { augValueFromStats, augEffectiveCost, getMoneyPerRep } from "../lib/aug-select";
 
 const NEUROFLUX = "NeuroFlux Governor";
 
@@ -63,6 +63,8 @@ export async function main(ns) {
         augmentationRepReqs = /** @type {Record<string, number>} */ ({}),
         factionAugmentations = /** @type {Record<string, string[]>} */ ({}),
         ownedAugmentations = /** @type {string[]} */ ([]),
+        resetInfo = /** @type {any} */ ({}),
+        bitNodeMultipliers = /** @type {any} */ ({}),
       } = getStaticData(ns);
 
       if (Object.keys(augmentationStats).length === 0) {
@@ -74,8 +76,8 @@ export async function main(ns) {
         break;
       }
 
-      const { bitNodeMultipliers = {} } = getStaticData(ns);
       const moneyPerRep = getMoneyPerRep(bitNodeMultipliers?.FactionWorkRepGain);
+      const installedNFCount = resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
 
       const augFactions = /** @type {Record<string, string[]>} */ ({});
       for (const [faction, augs] of Object.entries(factionAugmentations))
@@ -85,10 +87,10 @@ export async function main(ns) {
       const scored = augmentations
         .filter(aug => aug === NEUROFLUX || !ownedAugmentations.includes(aug))
         .map(aug => {
-          const stats = augmentationStats[aug];
-          const price = augmentationPrices[aug] ?? 0;
-          const repReq = augmentationRepReqs[aug] ?? 0;
-          const value = stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
+          const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
+          const price = (augmentationPrices[aug] ?? 0) * nfMult;
+          const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
+          const value = augValueFromStats(aug, augmentationStats);
           const cost = augEffectiveCost(price, repReq, moneyPerRep);
           const utility = cost > 0 ? value / cost : 0;
           return { aug, value, cost, utility, factions: augFactions[aug] ?? [] };
