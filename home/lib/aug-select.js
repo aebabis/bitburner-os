@@ -94,11 +94,11 @@ const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
  * the faction is targeted. Tries every aug as the binding rep tier — O(n²).
  * @param {string} faction
  * @param {{
- *   augmentationPrices: Record<string,number>,
- *   augmentationRepReqs: Record<string,number>,
- *   augmentationStats: Record<string,Multipliers>,
- *   factionAugmentations: Record<string,string[]>,
- *   factionRequirements: Record<string,any[]>,
+ *   augmentationPrices?: Record<string,number>,
+ *   augmentationRepReqs?: Record<string,number>,
+ *   augmentationStats?: Record<string,Multipliers>,
+ *   factionAugmentations?: Record<string,string[]>,
+ *   factionRequirements?: Record<string,any[]>,
  *   factionFavor?: Record<string,number>,
  *   serverBackdoorRequirements: any[],
  *   ownedAugmentations?: string[],
@@ -128,7 +128,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     if (statProductCache.has(stat)) return /** @type {number} */ (statProductCache.get(stat));
     let product = 1;
     for (const aug of installedAugs) {
-      const mult = augmentationStats[aug]?.[/** @type {keyof Multipliers} */ (stat)];
+      const mult = augmentationStats?.[aug]?.[/** @type {keyof Multipliers} */ (stat)];
       if (mult != null) product *= mult;
     }
     statProductCache.set(stat, product);
@@ -166,11 +166,11 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const getNeededAugs = (/** @type {string} */ fac) =>
-    (factionAugmentations[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
+    (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
   const augValue = (/** @type {string} */ aug) => {
     if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
-    const stats = augmentationStats[aug];
+    const stats = augmentationStats?.[aug];
     return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
   };
 
@@ -185,8 +185,8 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     .map((aug) => ({
       name: aug,
       value: augValue(aug),
-      price: augmentationPrices[aug] ?? 0,
-      remainingRep: Math.max(0, (augmentationRepReqs[aug] ?? 0) - currentRep),
+      price: augmentationPrices?.[aug] ?? 0,
+      remainingRep: Math.max(0, (augmentationRepReqs?.[aug] ?? 0) - currentRep),
     }))
     .sort((a, b) => a.remainingRep - b.remainingRep);
 

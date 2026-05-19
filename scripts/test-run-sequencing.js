@@ -67,3 +67,7 @@ describe('selectAugmentations', () => {
 //
 // TODO: All augs from a faction are owned — verify that faction's utility is 0
 //       and the next-best faction is selected.
+//
+// TODO: timeToComplete should be a method on each Goal rather than a standalone
+//       recursive function — move it into the goal factory so each node owns its
+//       own memoized traversal.

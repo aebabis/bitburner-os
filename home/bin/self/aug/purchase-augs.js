@@ -1,6 +1,5 @@
 import {
   getMoneyData,
-  putMoneyData,
   getPlayerData,
   putPlayerData,
   getStaticData,
@@ -20,7 +19,6 @@ export async function main(ns) {
     augmentations,
     augmentationPrices,
     augmentationRepReqs,
-    ownedAugmentations,
     augmentationPrereqs,
   } = getStaticData(ns);
   const goals = getGoals(ns);
@@ -28,9 +26,9 @@ export async function main(ns) {
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
   const targetFaction = goals.find((goal) => goal.type === 'FACTION_JOIN')?.faction;
+  const augCost = goals.find((goal) => goal.type === 'AUG_MONEY')?.requirement ?? Infinity;
   const { purchasedAugmentations, factionRep = {} } = getPlayerData(ns);
-  const { estimatedStockValue = 0, costToAug: augCost = Infinity } =
-    getMoneyData(ns);
+  const { estimatedStockValue = 0 } = getMoneyData(ns);
 
   const gang = getPlayerData(ns).gangInfo?.faction;
   const gangRep = gang && factionRep[gang];
@@ -69,17 +67,6 @@ export async function main(ns) {
       }
     }
   }
-
-  const queuedAugmentations = purchasedAugmentations.filter(
-    (/** @type {string} */ aug) => !ownedAugmentations.includes(aug),
-  );
-  let multiplier = 1.9 ** queuedAugmentations.length;
-  let costToAug = 0;
-  for (const augmentation of remainingAugs) {
-    costToAug += multiplier * augmentationPrices[augmentation];
-    multiplier *= 1.9;
-  }
-  putMoneyData(ns, { costToAug });
 
   if (remainingAugs.every((/** @type {string} */ aug) => purchasedAugmentations.includes(aug))) {
     // Sell stocks and prevent spending
