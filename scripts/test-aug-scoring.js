@@ -31,7 +31,8 @@ test('scoreAug handles sparse stats (missing keys default to 1.0)', () => {
 test('scoreAug returns exact expected value for known multiplier', () => {
   // hacking_money weight = 10; (1.25 - 1) * 10 = 2.5
   const stats = /** @type {Multipliers} */ ({ hacking_money: 1.25 });
-  assert.strictEqual(scoreAug(stats, DEFAULT_AUG_WEIGHTS), 2.5);
+  const mult = DEFAULT_AUG_WEIGHTS.hacking_money;
+  assert.strictEqual(scoreAug(stats, DEFAULT_AUG_WEIGHTS), .25 * mult);
 });
 
 test('scoreAug produces correct score for full Multipliers object with one non-trivial stat', () => {
