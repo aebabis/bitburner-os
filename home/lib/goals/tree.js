@@ -34,6 +34,51 @@ export const isRepBound = (goals) => {
 };
 
 /**
+ * @param {string} faction
+ * @param {{
+ *   player: Player,
+ *   staticData: ReturnType<import('../data-store.js').getStaticData>,
+ *   factionRep: Record<string, number>,
+ *   money: number,
+ *   referenceIncome: number,
+ *   karma: number,
+ * }} data
+ * @returns {{ joinPrereqs: import('./nodes.js').Goal[], joinGoal: import('./nodes.js').Goal }}
+ */
+const buildJoinSubtree = (faction, {
+  player, staticData, money, referenceIncome, karma,
+}) => {
+  const { factions, skills, location } = player;
+  const { factionRequirements } = staticData;
+
+  const joinPrereqs = [];
+  const requirements = factionRequirements?.[faction] ?? [];
+  const skillReqs = Object.assign({}, ...requirements.filter(r => r.type === 'skills').map(r => r.skills));
+  const karmaReq = requirements.find(r => r.type === 'karma')?.karma ?? 0;
+  const killsReq = requirements.find(r => r.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
+  const moneyTarget = requirements.find(r => r.type === 'money')?.money;
+  const hackReq = skillReqs.hacking;
+  const combatReq = skillReqs.strength;
+  const locationReqs = [
+    ...requirements.filter(r => r.type === 'city'),
+    ...requirements.filter(r => r.type === 'someCondition').flatMap(r => r.conditions).filter(r => r.type === 'city'),
+  ].map(r => r.city);
+
+  if (hackReq != null) joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking));
+  if (combatReq != null) joinPrereqs.push(combatLevelsGoal(combatReq, skills));
+  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
+  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
+  if (!factions.includes(faction)) {
+    if (moneyTarget) joinPrereqs.push(moneyPrereqGoal(moneyTarget, money, referenceIncome));
+    const [loc] = locationReqs;
+    if (loc) joinPrereqs.push(locationGoal(loc, location));
+  }
+
+  const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
+  return { joinPrereqs, joinGoal };
+};
+
+/**
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
  * @param {string} faction
@@ -44,7 +89,6 @@ export const isRepBound = (goals) => {
  *   purchasedAugmentations: string[],
  *   ownedAugs: string[],
  *   money: number,
- *   estimatedStockValue: number,
  *   referenceIncome: number,
  *   activeRepRate: Record<string, number>,
  *   passiveRepRate: Record<string, number>,
@@ -59,8 +103,7 @@ export const buildFactionGoalTree = (faction, {
   money, referenceIncome, activeRepRate, passiveRepRate,
   formulas, karma, augsOverride = undefined,
 }) => {
-  const { factions, skills, location } = player;
-  const { factionRequirements, augmentationRepReqs, augmentationPrices, augmentationPrereqs } = staticData;
+  const { augmentationRepReqs, augmentationPrices, augmentationPrereqs } = staticData;
 
   const activeRates = Object.values(activeRepRate);
   const repRate = activeRates.length > 0 ? Math.max(...activeRates) : undefined;
@@ -90,31 +133,10 @@ export const buildFactionGoalTree = (faction, {
 
   const augs = getPurchaseOrder(batch);
 
-  const joinPrereqs = [];
-  const requirements = factionRequirements?.[faction] ?? [];
-  const skillReqs = Object.assign({}, ...requirements.filter(r => r.type === 'skills').map(r => r.skills));
-  const karmaReq = requirements.find(r => r.type === 'karma')?.karma ?? 0;
-  const killsReq = requirements.find(r => r.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
-  const moneyTarget = requirements.find(r => r.type === 'money')?.money;
-  const hackReq = skillReqs.hacking;
-  const combatReq = skillReqs.strength;
-  const locationReqs = [
-    ...requirements.filter(r => r.type === 'city'),
-    ...requirements.filter(r => r.type === 'someCondition').flatMap(r => r.conditions).filter(r => r.type === 'city'),
-  ].map(r => r.city);
-
-  if (hackReq != null) joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking));
-  if (combatReq != null) joinPrereqs.push(combatLevelsGoal(combatReq, skills));
-  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
-  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
-  if (!factions.includes(faction)) {
-    if (moneyTarget) joinPrereqs.push(moneyPrereqGoal(moneyTarget, money, referenceIncome));
-    const [loc] = locationReqs;
-    if (loc) joinPrereqs.push(locationGoal(loc, location));
-  }
-
-  const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
   const repReq = Math.max(...augs.map(aug => augmentationRepReqs[aug] ?? 0), 0);
+  const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
+    player, staticData, factionRep, money, referenceIncome, karma,
+  });
   const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, activeRepRate, passiveRepRate);
 
   const installedSet = new Set(staticData.ownedAugmentations ?? []);
