@@ -56,7 +56,7 @@ export const isRepBound = (goals) => {
  */
 export const buildFactionGoalTree = (faction, {
   player, staticData, factionRep, purchasedAugmentations, ownedAugs,
-  money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
+  money, referenceIncome, activeRepRate, passiveRepRate,
   formulas, karma, augsOverride = undefined,
 }) => {
   const { factions, skills, location } = player;
@@ -126,7 +126,7 @@ export const buildFactionGoalTree = (faction, {
     multiplier *= 1.9;
   }
 
-  const moneyGoal = augMoneyGoal(costToAug, money, estimatedStockValue, referenceIncome);
+  const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
   const augGoals = augs.map(aug => augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
 
   return {

@@ -19,7 +19,7 @@ export const getGoals = (ns) => {
   const ownedAugs = [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations];
   const planData = {
     player, staticData, factionRep: factionRep ?? {}, purchasedAugmentations, ownedAugs,
-    money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
+    money, referenceIncome, activeRepRate, passiveRepRate,
     formulas, karma,
   };
 

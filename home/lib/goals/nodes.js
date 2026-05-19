@@ -108,19 +108,17 @@ export const factionRepGoal = (faction, requirement, factionRep, dep, activeRepR
     });
 };
 
-/** @param {number | undefined} costToAug @param {number} currentMoney @param {number} estimatedStockValue @param {number} referenceIncome @returns {Goal} */
-export const augMoneyGoal = (costToAug, currentMoney, estimatedStockValue, referenceIncome) => {
-  const effectiveMoney = currentMoney + 0.9 * estimatedStockValue;
-  return goal("AUG_MONEY",
+/** @param {number | undefined} costToAug @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
+export const augMoneyGoal = (costToAug, currentMoney, referenceIncome) =>
+  goal("AUG_MONEY",
     "Save " + (costToAug != null ? fmtMoney(costToAug) : "?") + " for augmentations",
-    () => costToAug != null && effectiveMoney >= costToAug,
+    () => costToAug != null && currentMoney >= costToAug,
     {
       requirement: costToAug,
       ownTime: () => costToAug != null && referenceIncome > 0
-        ? Math.max(0, costToAug - effectiveMoney) / referenceIncome
+        ? Math.max(0, costToAug - currentMoney) / referenceIncome
         : null,
     });
-};
 
 /** @param {string} aug @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal} */
 export const augmentationGoal = (aug, faction, purchasedAugmentations, deps) =>

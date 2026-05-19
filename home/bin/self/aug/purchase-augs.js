@@ -27,10 +27,10 @@ export async function main(ns) {
     .map((goal) => goal.desc);
   const targetFaction = goals.find((goal) => goal.type === 'FACTION_JOIN')?.faction;
   const augCost = goals.find((goal) => goal.type === 'AUG_MONEY')?.requirement ?? Infinity;
-  const { purchasedAugmentations, factionRep = {} } = getPlayerData(ns);
+  const { purchasedAugmentations, factionRep = {}, gangInfo } = getPlayerData(ns);
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
-  const gang = getPlayerData(ns).gangInfo?.faction;
+  const gang = gangInfo?.faction;
   const gangRep = gang && factionRep[gang];
   const usedFaction = gangRep > factionRep[targetFaction] ? gang : targetFaction;
   const rep = factionRep[usedFaction] || 0;
