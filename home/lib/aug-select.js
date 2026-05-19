@@ -4,18 +4,18 @@ import { buildJoinSubtree } from "./goals/nodes.js";
 
 /** @type {Record<keyof Multipliers, number>} */
 export const DEFAULT_AUG_WEIGHTS = {
-  // High — hacking effectiveness
+  // High — stats that increase reputation gain
   hacking:        10,
-  hacking_money:  10,
-  hacking_chance:  8,
-  hacking_speed:   8,
-  hacking_grow:    8,
-  hacking_exp:     4,
+  hacking_chance: 10,
+  hacking_speed:  10,
+  hacking_exp:    10,
+  faction_rep:    10,
 
   // Low-medium — rep/income acceleration
-  faction_rep:  3,
-  company_rep:  2,
-  work_money:   2,
+  hacking_money:   2,
+  hacking_grow:    2,
+  company_rep:  1,
+  work_money:   1,
 
   // Low — combat stats
   strength:      1,
@@ -34,7 +34,7 @@ export const DEFAULT_AUG_WEIGHTS = {
   hacknet_node_core_cost:     .5,
   hacknet_node_level_cost:    .5,
 
-  // Zero — not relevant for automated play
+  // Zero — not relevant for automated play in tested bitnodes
   charisma:                  0,
   charisma_exp:              0,
   crime_money:               0,
@@ -141,15 +141,17 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 
   // Neuroflux is always available regardless of owned count — you can always buy more.
   // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.
+  // Each successive NF purchase raises the queue multiplier by 1.9 (like all augs) AND
+  // raises NF's own base price/rep by 1.14 (NF-level scaling, separate from queue).
   const numQueued = ownedAugmentations.length - installedAugs.length;
   const nfBase = augmentationPrices?.[NEUROFLUX] ?? 0;
-  const nfRep = Math.max(0, (augmentationRepReqs?.[NEUROFLUX] ?? 0) - currentRep);
+  const nfBaseRep = augmentationRepReqs?.[NEUROFLUX] ?? 0;
   const nfEntries = (factionAugmentations?.[faction] ?? []).includes(NEUROFLUX)
     ? Array.from({ length: MAX_AUGS }, (_, i) => ({
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
-        price: nfBase * (1.9 ** (numQueued + i)),
-        remainingRep: nfRep,
+        price: nfBase * (1.9 ** (numQueued + i)) * (1.14 ** i),
+        remainingRep: Math.max(0, nfBaseRep * (1.14 ** i) - currentRep),
       }))
     : [];
 
