@@ -1,5 +1,6 @@
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
 import { getMockFormulas } from "./formulas.js";
+import { buildJoinSubtree } from "./goals/nodes.js";
 
 /** @type {Record<keyof Multipliers, number>} */
 export const DEFAULT_AUG_WEIGHTS = {
@@ -84,8 +85,6 @@ const OVERHEAD_BASE = 120 * 60;
 
 export const MAX_AUGS = 6;
 const NEUROFLUX = "NeuroFlux Governor";
-// TODO: Exclude cost of programs player already has; consider getting costs programmatically
-const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
 
 /**
  * Find the optimal batch of up to MAX_AUGS augs from a faction.
@@ -107,62 +106,20 @@ const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
  * @param {ReturnType<typeof getMockFormulas>} formulas
  * @param {Record<string, number>} factionRep
  * @param {string[]} ownedAugmentations - installed + purchased (for stillNeeds filter)
- * @param {{ moneyRate?: number, repRate?: number }} [opts]
+ * @param {{ moneyRate?: number, repRate?: number, activeRepRate?: Record<string,number>, passiveRepRate?: Record<string,number> }} [opts]
  * @returns {{ utility: number, batch: string[] }}
  */
-export const findOptimalBatch = (faction, staticData, player, formulas, factionRep, ownedAugmentations, { moneyRate = Infinity, repRate } = {}) => {
+export const findOptimalBatch = (faction, staticData, player, formulas, factionRep, ownedAugmentations, { moneyRate = Infinity, repRate, activeRepRate, passiveRepRate } = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
     augmentationStats,
     factionAugmentations,
-    factionRequirements,
     factionFavor,
-    serverBackdoorRequirements,
   } = staticData;
 
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
   const installedAugs = staticData.ownedAugmentations ?? [];
-  const statProductCache = /** @type {Map<string, number>} */ (new Map());
-  const getStatProduct = (/** @type {string} */ stat) => {
-    if (statProductCache.has(stat)) return /** @type {number} */ (statProductCache.get(stat));
-    let product = 1;
-    for (const aug of installedAugs) {
-      const mult = augmentationStats?.[aug]?.[/** @type {keyof Multipliers} */ (stat)];
-      if (mult != null) product *= mult;
-    }
-    statProductCache.set(stat, product);
-    return product;
-  };
-
-  const getBackdoorRequirements = (/** @type {string} */ fac) => {
-    const reqs = factionRequirements?.[fac] ?? [];
-    const bdReq = reqs.find((req) => req.type === 'backdoorInstalled');
-    if (!bdReq) return { money: 0, hacking: 0 };
-    const { server } = bdReq;
-    const { requiredHackingLevel: hacking, numPortsRequired } =
-      serverBackdoorRequirements.find(({ hostname }) => hostname === server);
-    const money = PORT_PROGRAM_COSTS.filter((_, i) => i < numPortsRequired).reduce((a, b) => a + b, 0);
-    return { money, hacking };
-  };
-
-  const getFactionTrainingTime = (/** @type {string} */ fac) => {
-    const reqs = factionRequirements?.[fac] ?? [];
-    const skillReqs = Object.assign({}, ...reqs.filter((r) => r.type === 'skills').map((r) => r.skills));
-    const bdReqs = getBackdoorRequirements(fac);
-    const levelReqs = /** @type {[string, number][]} */ (Object.entries(skillReqs));
-    if (bdReqs.hacking !== 0) levelReqs.push(['hacking', bdReqs.hacking]);
-    const expReqs = Object.fromEntries(levelReqs.map(([stat, requirement]) => {
-      const levelMult = getStatProduct(stat);
-      const expMult = getStatProduct(`${stat}_exp`);
-      const currentExp = formulas.skills.calculateExp(player.skills?.[stat] ?? 1, levelMult);
-      const expReq = formulas.skills.calculateExp(requirement, levelMult);
-      const expNeeded = Math.max(0, expReq - currentExp);
-      return [stat, expNeeded / expMult];
-    }));
-    const EXP_PER_SECOND = 10;
-    return Object.values(expReqs).reduce((a, b) => a + b, 0) / EXP_PER_SECOND;
-  };
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const getNeededAugs = (/** @type {string} */ fac) =>
@@ -176,10 +133,11 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 
   const resetOverhead = OVERHEAD_BASE / (1 + installedAugs.length);
   const currentRep = factionRep[faction] ?? 0;
-  const effectiveRepRate = repRate ?? formulas.work.factionGains(player, 'hacking', factionFavor?.[faction]).reputation * 5;
-  const trainingTime = getFactionTrainingTime(faction);
-  const bdMoney = getBackdoorRequirements(faction).money;
-  const moneyReq = (factionRequirements?.[faction] ?? []).find((req) => req.type === 'money')?.money ?? 0;
+  const effectiveRepRate = activeRepRate?.[faction] ?? passiveRepRate?.[faction] ?? repRate ?? formulas.work.factionGains(player, 'hacking', factionFavor?.[faction]).reputation * 5;
+  const { joinGoal } = buildJoinSubtree(faction, {
+    player, staticData, money: player.money ?? 0, referenceIncome: moneyRate, karma: player.karma ?? 0, formulas,
+  });
+  const joinTime = joinGoal.timeToComplete() ?? 0;
 
   // Neuroflux is always available regardless of owned count — you can always buy more.
   // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.
@@ -220,9 +178,9 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
     const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
-    const timeForMoney = (bdMoney + Math.max(moneyReq, totalPrice)) / moneyRate;
+    const timeForMoney = totalPrice / moneyRate;
     const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
-    const cost = Math.max(timeForMoney, timeForRep) + resetOverhead + trainingTime;
+    const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
 
     if (utility > best.utility)
