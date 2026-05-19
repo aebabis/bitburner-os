@@ -19,11 +19,11 @@ describe('Goal node factories', () => {
     const join = factionJoinGoal('F', ['F']);
 
     it('ownTime() is null when rate is 0', () => {
-      assert.equal(factionRepGoal('F', 1000, {}, join, {}, {}).ownTime(), null);
+      assert.equal(factionRepGoal('F', 1000, {}, join, 0).ownTime(), null);
     });
 
     it('ownTime() is 0 when rep is already met', () => {
-      assert.equal(factionRepGoal('F', 1000, { F: 1000 }, join, { F: 1 }, {}).ownTime(), 0);
+      assert.equal(factionRepGoal('F', 1000, { F: 1000 }, join, 1).ownTime(), 0);
     });
   });
 
@@ -45,7 +45,7 @@ describe('timeToComplete', () => {
   it('returns null when any dep has null ownTime', () => {
     // factionRepGoal with rate=0 has null ownTime
     const joinGoal = factionJoinGoal('F', ['F']);
-    const rep = factionRepGoal('F', 1000, {}, joinGoal, {}, {});
+    const rep = factionRepGoal('F', 1000, {}, joinGoal, 0);
     const aug = augmentationGoal('A', 'F', [], [rep]);
     assert.equal(aug.timeToComplete(), null);
   });
@@ -53,7 +53,7 @@ describe('timeToComplete', () => {
   it('sums depsMax + ownTime for a two-goal chain', () => {
     // rep: 100 rep at 1/s → 100s; aug: 0 own time → total 100s
     const joinGoal = factionJoinGoal('F', ['F']);
-    const rep = factionRepGoal('F', 100, {}, joinGoal, { F: 1 }, {});
+    const rep = factionRepGoal('F', 100, {}, joinGoal, 1);
     const aug = augmentationGoal('A', 'F', [], [rep]);
     assert.equal(aug.timeToComplete(), 100);
   });
@@ -61,7 +61,7 @@ describe('timeToComplete', () => {
   it('returns the max across parallel deps', () => {
     // rep needs 200s, money needs 50s → aug waits for rep (200s)
     const joinGoal = factionJoinGoal('F', ['F']);
-    const rep = factionRepGoal('F', 200, {}, joinGoal, { F: 1 }, {});
+    const rep = factionRepGoal('F', 200, {}, joinGoal, 1);
     const money = augMoneyGoal(50, 0, 1);
     const aug = augmentationGoal('A', 'F', [], [rep, money]);
     assert.equal(aug.timeToComplete(), 200);
@@ -210,7 +210,7 @@ describe('isRepBound', () => {
 
   it('returns true when rep rate is unknown (null ownTime on rep goal)', () => {
     // rate=0 → ownTime() returns null → timeToComplete returns null
-    const repGoal = factionRepGoal('TestFaction', 1000, {}, joinGoal, {}, {});
+    const repGoal = factionRepGoal('TestFaction', 1000, {}, joinGoal, 0);
     const moneyGoal = augMoneyGoal(1000, 0, 1);
     assert.equal(isRepBound([repGoal, moneyGoal]), true);
   });
@@ -218,7 +218,7 @@ describe('isRepBound', () => {
   it('returns true when rep time >= money time', () => {
     // rep: 1000 rep needed at 1/s → 1000s
     // money: $1000 needed at $2/s → 500s
-    const repGoal = factionRepGoal('TestFaction', 1000, {}, joinGoal, { TestFaction: 1 }, {});
+    const repGoal = factionRepGoal('TestFaction', 1000, {}, joinGoal, 1);
     const moneyGoal = augMoneyGoal(1000, 0, 2);
     assert.equal(isRepBound([repGoal, moneyGoal]), true);
   });
@@ -226,7 +226,7 @@ describe('isRepBound', () => {
   it('returns false when money time > rep time', () => {
     // rep: 500 rep needed at 1/s → 500s
     // money: $1000 needed at $0.5/s → 2000s
-    const repGoal = factionRepGoal('TestFaction', 500, {}, joinGoal, { TestFaction: 1 }, {});
+    const repGoal = factionRepGoal('TestFaction', 500, {}, joinGoal, 1);
     const moneyGoal = augMoneyGoal(1000, 0, 0.5);
     assert.equal(isRepBound([repGoal, moneyGoal]), false);
   });

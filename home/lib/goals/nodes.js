@@ -106,18 +106,16 @@ export const factionJoinGoal = (faction, factions, deps = []) =>
  * @param {number} requirement
  * @param {Record<string,number>} factionRep
  * @param {Goal} dep
- * @param {Record<string,number>} activeRepRate
- * @param {Record<string,number>} passiveRepRate
+ * @param {number|undefined} repRate
  * @returns {Goal}
  */
-export const factionRepGoal = (faction, requirement, factionRep, dep, activeRepRate, passiveRepRate) => {
+export const factionRepGoal = (faction, requirement, factionRep, dep, repRate) => {
   const currentRep = factionRep?.[faction] ?? 0;
-  const rate = activeRepRate[faction] || passiveRepRate[faction] || 0;
   return goal("FACTION_REP", `Gain ${requirement} rep (${faction})`,
     () => currentRep >= requirement,
     {
       requirement, faction, deps: [dep],
-      ownTime: () => rate > 0 ? Math.max(0, requirement - currentRep) / rate : null,
+      ownTime: () => repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null,
     });
 };
 

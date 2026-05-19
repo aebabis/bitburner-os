@@ -1,5 +1,5 @@
 import {
-  factionJoinGoal, factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
+  factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
   NEUROFLUX, buildJoinSubtree,
 } from "./nodes.js";
 import { findOptimalBatch, MAX_AUGS } from "../aug-select.js";
@@ -55,13 +55,13 @@ export const buildFactionGoalTree = (faction, {
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);
   const sortedByPriceDesc = (/** @type {string[]} */ augs) =>
-    [...augs].sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
+    [...augs].sort((a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0));
 
   const getPurchaseOrder = (/** @type {string[]} */ augs) => {
     const nfCount = augs.filter(a => a === NEUROFLUX).length;
     const order = new Set(/** @type {string[]} */ ([]));
     for (const aug of sortedByPriceDesc(augs.filter(a => a !== NEUROFLUX))) {
-      const prereqs = (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse();
+      const prereqs = (augmentationPrereqs?.[aug] ?? []).filter(stillNeeds).reverse();
       for (const prereq of prereqs) order.add(prereq);
       order.add(aug);
     }
@@ -71,18 +71,21 @@ export const buildFactionGoalTree = (faction, {
 
   const augs = getPurchaseOrder(batch);
 
-  const repReq = Math.max(...augs.map(aug => augmentationRepReqs[aug] ?? 0), 0);
+  const repReq = Math.max(...augs.map(aug => augmentationRepReqs?.[aug] ?? 0), 0);
   const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
     player, staticData, money, referenceIncome, karma, formulas,
   });
-  const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, activeRepRate, passiveRepRate);
+  const repRate = activeRepRate[faction]
+    || passiveRepRate[faction]
+    || formulas?.work.factionGains(player, 'hacking', staticData.factionFavor?.[faction])?.reputation * 5;
+  const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, repRate);
 
   const installedSet = new Set(staticData.ownedAugmentations ?? []);
   const numQueued = purchasedAugmentations.filter(aug => !installedSet.has(aug)).length;
   let multiplier = 1.9 ** numQueued;
   let costToAug = 0;
   for (const aug of sortedByPriceDesc(augs)) {
-    costToAug += multiplier * (augmentationPrices[aug] ?? 0);
+    costToAug += multiplier * (augmentationPrices?.[aug] ?? 0);
     multiplier *= 1.9;
   }
 

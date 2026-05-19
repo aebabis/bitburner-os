@@ -15,3 +15,4 @@
 - Finish tests in test-goal-tree.js
 - Make gang runs try to buy Neuroflux
 - Use `ns.getResetInfo` instead of singularity API where possible
+- Rewrite purchase-augs.js
