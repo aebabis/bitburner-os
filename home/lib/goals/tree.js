@@ -84,8 +84,10 @@ export const buildFactionGoalTree = (faction, {
   const numQueued = purchasedAugmentations.filter(aug => !installedSet.has(aug)).length;
   let multiplier = 1.9 ** numQueued;
   let costToAug = 0;
+  let nfLevelOffset = 0;
   for (const aug of sortedByPriceDesc(augs)) {
-    costToAug += multiplier * (augmentationPrices?.[aug] ?? 0);
+    const nfLevelMult = aug === NEUROFLUX ? 1.14 ** nfLevelOffset++ : 1;
+    costToAug += multiplier * (augmentationPrices?.[aug] ?? 0) * nfLevelMult;
     multiplier *= 1.9;
   }
 
