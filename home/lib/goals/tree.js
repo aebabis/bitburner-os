@@ -51,6 +51,10 @@ const buildJoinSubtree = (faction, {
   const { factions, skills, location } = player;
   const { factionRequirements } = staticData;
 
+  if (factions.includes(faction)) {
+    return { joinPrereqs: [], joinGoal: factionJoinGoal(faction, factions, []) };
+  }
+
   const joinPrereqs = [];
   const requirements = factionRequirements?.[faction] ?? [];
   const skillReqs = Object.assign({}, ...requirements.filter(r => r.type === 'skills').map(r => r.skills));
