@@ -12,7 +12,7 @@ import { getConfig } from "../../lib/config";
  * @returns {string | null}
  */
 const getWorkFaction = (goals, factions, factionRep) => {
-  const gap = (/** @type {import("../../lib/goals").Goal} */ g) =>
+  const gap = (/** @type {import("../../lib/goals/nodes").Goal} */ g) =>
     (g.requirement ?? 0) - (factionRep[/** @type {string} */ (g.faction)] ?? 0);
   return goals
     .filter(g => g.type === "FACTION_REP" && g.faction != null && !g.isDone() && factions.includes(/** @type {string} */ (g.faction)))
@@ -42,11 +42,17 @@ export async function main(ns) {
     const workFaction = getWorkFaction(goals, player.factions, factionRep);
     const statForCrimeTraining = (["strength", "defense", "dexterity", "agility"])
       .find((/** @type {string} */ stat) => player.skills[/** @type {keyof Skills} */ (stat)] < 5);
+    const hackLevelGoal = goals.find((goal) => goal.type === 'HACKING_LEVEL')?.requirement ?? 0;
 
     if (statForCrimeTraining != null) {
       if (player.money > 5000)
         await rmi(ns)("/bin/self/improvement.js", 1, statForCrimeTraining, 5);
       else await rmi(ns)("/bin/self/job.js", 1);
+    } else if (player.money < 0) {
+      await makeMoney();
+    } else if (player.skills.hacking < hackLevelGoal) {
+      await rmi(ns)("/bin/self/travel.js", 1, 'Sector-12');
+      await rmi(ns)("/bin/self/school.js", 1);
     } else if (!isRepBound(ns, goals)) {
       await makeMoney();
     } else if (workFaction != null) {

@@ -99,7 +99,7 @@ export const locationGoal = (location, currentLocation) =>
 
 /** @param {string} faction @param {string[]} factions @param {Goal[]} [deps] @returns {Goal} */
 export const factionJoinGoal = (faction, factions, deps = []) =>
-  goal("FACTION_JOIN", "Join " + faction, () => factions.includes(faction), { deps, ownTime: () => 0 });
+  goal("FACTION_JOIN", "Join " + faction, () => factions.includes(faction), { faction, deps, ownTime: () => 0 });
 
 /**
  * @param {string} faction

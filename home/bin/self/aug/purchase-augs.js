@@ -1,9 +1,4 @@
-import {
-  getMoneyData,
-  getPlayerData,
-  putPlayerData,
-  getStaticData,
-} from "../../../lib/data-store";
+import { getMoneyData, getStaticData } from "../../../lib/data-store";
 import { getGoals, } from "../../../lib/goals/goals";
 import { rmi } from "../../../lib/rmi";
 import { by } from "../../../lib/util";
@@ -25,15 +20,12 @@ export async function main(ns) {
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
-  const targetFaction = goals.find((goal) => goal.type === 'FACTION_JOIN')?.faction;
+  const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
+  const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
   const augCost = goals.find((goal) => goal.type === 'AUG_MONEY')?.requirement ?? Infinity;
-  const { purchasedAugmentations, factionRep = {}, gangInfo } = getPlayerData(ns);
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
-  const gang = gangInfo?.faction;
-  const gangRep = gang && factionRep[gang];
-  const usedFaction = gangRep > factionRep[targetFaction] ? gang : targetFaction;
-  const rep = factionRep[usedFaction] || 0;
+  const purchasedAugmentations = ns.singularity.getOwnedAugmentations(true);
 
   // Multiset difference: each purchased aug removes one occurrence from the target list.
   // This correctly handles Neuroflux, which can appear multiple times.
@@ -51,35 +43,27 @@ export async function main(ns) {
       purchasedAugmentations.includes(prereq),
     );
 
-  const hasEnoughRep = remainingAugs.every(
-    (/** @type {string} */ aug) => rep >= augmentationRepReqs[aug],
-  );
+  const inTargetFactions = factionJoinGoals.every((goal) => goal.isDone());
+  const hasEnoughRep = factionRepGoals.every((goal) => goal.isDone());
   const hasEnoughMoney = 0.9 * estimatedStockValue + money > augCost;
   // If our networth is enough to finish the run, do it.
-  if (hasEnoughRep && hasEnoughMoney) await liquidate(ns);
-
-  for (const augmentation of remainingAugs) {
-    const soldTheAug = (/** @type {string} */ faction) =>
-      ns.singularity.purchaseAugmentation(faction, augmentation);
-    if (purchasable(augmentation)) {
-      // Attempt to buy the next augmentation from any faction.
-      // Only count the ones for which the prereqs are met.
-      if (factions.some(soldTheAug)) {
-        purchasedAugmentations.push(augmentation);
-        remainingAugs.splice(remainingAugs.indexOf(augmentation), 1);
-      } else {
-        // If we can't buy the next augmentation, stop.
-        break;
-      }
-    }
-  }
-
-  if (remainingAugs.every((/** @type {string} */ aug) => purchasedAugmentations.includes(aug))) {
-    // Sell stocks and prevent spending
+  if (inTargetFactions && hasEnoughRep && hasEnoughMoney) {
     await liquidate(ns);
 
     // Wait for a little more money to come in
-    await ns.sleep(10000);
+    await ns.sleep(1000);
+
+    for (const augmentation of remainingAugs) {
+      const soldTheAug = (/** @type {FactionName} */ faction) =>
+        ns.singularity.purchaseAugmentation(faction, augmentation);
+      if (purchasable(augmentation)) {
+        // Attempt to buy the next augmentation from any faction.
+        // Only count the ones for which the prereqs are met.
+        if (factions.some(soldTheAug)) {
+          purchasedAugmentations.push(augmentation);
+        }
+      }
+    }
 
     // Attempt to buy as many faction augmentations
     // as possible, starting with the most expensive
@@ -109,6 +93,4 @@ export async function main(ns) {
     // Start all over
     await rmi(ns)("/bin/self/aug/install.js", 1, "init.js");
   }
-
-  putPlayerData(ns, { purchasedAugmentations });
 }
