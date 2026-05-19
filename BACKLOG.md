@@ -9,5 +9,7 @@
 - Port inspector
 - Find all places where leading / being removed from file names in game is causing bugs
 - See if you can use an editable iterator type to make the scheduler queue less bug prone. Refactor scheduler
-- Make goals interact with stocks. e.g. sell stocks to join Daedalus then buy back.
+- Make accountant sell stocks to meet goals.
 - Make augData required in singularity goals. Have a separate non-singularity goal process be called before augData loads
+- Figure out why this contract failed: `twoColor([9,[[0,5],[1,7],[1,4],[1,2],[3,4],[3,7],[3,4],[4,8],[4,5],[6,8],[7,8]]]) => []`
+- Finish tests in test-goal-tree.js
