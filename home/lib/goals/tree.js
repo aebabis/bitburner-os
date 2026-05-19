@@ -1,6 +1,6 @@
 import {
   hackingLevelGoal, combatLevelsGoal, killsGoal, karmaGoal, moneyPrereqGoal,
-  locationGoal, factionJoinGoal, factionRepGoal, augMoneyGoal, augmentationGoal,
+  locationGoal, factionJoinGoal, factionRepGoal, augMoneyGoal, augmentationGoal, installGoal,
 } from "./nodes.js";
 import { findOptimalBatch, MAX_AUGS } from "../aug-select.js";
 
@@ -127,6 +127,26 @@ export const buildFactionGoalTree = (faction, {
   }
 
   const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
+
+  // With queued augs the multiplier is already inflated. If we still need money,
+  // installing now resets it to 1 — always cheaper for the remaining augs.
+  // Rep persists through installs, so the main overhead is re-leveling after reset.
+  // TODO: use formulas to estimate re-leveling time and replace the constant.
+  const INSTALL_OVERHEAD_SEC = 60;
+  const timeToMoneyGoal = referenceIncome > 0
+    ? Math.max(0, costToAug - money) / referenceIncome
+    : Infinity;
+  if (numQueued > 0 && augs.length > 0 && timeToMoneyGoal > INSTALL_OVERHEAD_SEC) {
+    const queuedAugs = purchasedAugmentations.filter(aug => !installedSet.has(aug));
+    const queuedAugGoals = queuedAugs.map(aug =>
+      augmentationGoal(aug, faction, purchasedAugmentations, []));
+    const earlyInstall = installGoal(queuedAugGoals);
+    return {
+      goals: [...joinPrereqs, joinGoal, repGoal, ...queuedAugGoals, earlyInstall],
+      terminalGoals: [earlyInstall],
+    };
+  }
+
   const augGoals = augs.map(aug => augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
 
   return {

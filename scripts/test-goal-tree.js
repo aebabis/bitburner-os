@@ -30,6 +30,9 @@ describe('buildFactionGoalTree', () => {
   it.skip('returns null when batch is empty');
   it('price multiplier starts at 1.9^numQueued not 1.9^numOwned (regression)', () => {
     const AUG_PRICE = 1_000_000;
+    // money = 2×AUG_PRICE covers the correct cost (1.9×) but not the buggy cost (1.9²×),
+    // so moneyGoal.isDone() distinguishes the two. It also keeps money >= resetCost so
+    // the early-install path doesn't trigger, letting us inspect the moneyGoal directly.
     const tree = buildFactionGoalTree('TestFaction', {
       player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
       staticData: {
@@ -42,7 +45,7 @@ describe('buildFactionGoalTree', () => {
       factionRep: { TestFaction: 0 },
       purchasedAugmentations: ['InstalledAug', 'QueuedAug'],  // 1 installed + 1 queued
       ownedAugs: ['InstalledAug', 'QueuedAug'],
-      money: 0,
+      money: AUG_PRICE * 2,
       referenceIncome: 1,
       activeRepRate: {},
       passiveRepRate: {},
@@ -52,8 +55,9 @@ describe('buildFactionGoalTree', () => {
     });
 
     const moneyGoal = tree.goals.find(g => g.type === 'AUG_MONEY');
-    // 1 queued aug → multiplier = 1.9^1; bug used purchasedAugmentations.length = 2 → 1.9^2
-    assert.equal(moneyGoal.requirement, AUG_PRICE * 1.9);
+    // correct: requirement = 1.9^1 × price = 1.9M ≤ money (2M) → isDone
+    // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
+    assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
   });
   it.skip('augsOverride skips findOptimalBatch');
   it.skip('join prereqs appear as deps of the join goal');
