@@ -74,7 +74,6 @@ export async function main(ns) {
         break;
       }
 
-      const NEUROFLUX = 'NeuroFlux Governor';
       const { bitNodeMultipliers = {} } = getStaticData(ns);
       const moneyPerRep = getMoneyPerRep(bitNodeMultipliers?.FactionWorkRepGain);
 
@@ -84,7 +83,7 @@ export async function main(ns) {
           (augFactions[aug] ??= []).push(faction);
 
       const scored = augmentations
-        .filter(aug => aug !== NEUROFLUX && !ownedAugmentations.includes(aug))
+        .filter(aug => aug === NEUROFLUX || !ownedAugmentations.includes(aug))
         .map(aug => {
           const stats = augmentationStats[aug];
           const price = augmentationPrices[aug] ?? 0;
