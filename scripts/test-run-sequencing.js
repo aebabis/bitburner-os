@@ -7,9 +7,14 @@ import { selectAugmentations } from '../home/lib/aug-select.js';
 // These are intentionally conservative so the test reflects a plausible worst-case.
 const RATES = { moneyRate: 10e3, repRate: 3 };
 
-const select = (owned, factionRep = {}, moneyRate = RATES.moneyRate) =>
-  selectAugmentations(owned, staticData, {skills:{}, factions:[]}, undefined, factionRep,
+const select = (owned, factionRep = {}, moneyRate = RATES.moneyRate) => {
+  const numNeuroflux = owned.filter((aug) => aug === 'NeuroFlux Governor').length;
+  const data = structuredClone(staticData);
+  data.augmentationRepReqs['NeuroFlux Governor'] *= (1.14 ** numNeuroflux);
+  data.augmentationPrices['NeuroFlux Governor'] *= (1.14 ** numNeuroflux);
+  return selectAugmentations(owned, data, {skills:{}, factions:[]}, undefined, factionRep,
     { ...RATES, moneyRate });
+}
 
 describe('selectAugmentations', () => {
   describe('BN4 run', () => {
@@ -33,17 +38,19 @@ describe('selectAugmentations', () => {
       });
     });
 
-    it('should end eventually', () => {
+    it('should eventually buy DataJack', () => {
       let run = 0;
       let augsObtained = [];
       while (true) {
         const moneyRate = 10 * (10 ** run);
         const aug = select(augsObtained, {}, moneyRate);
+        console.log(aug.faction);
+        console.log(aug.augmentations.join('\n')+'\n');
         augsObtained = [...augsObtained, ...aug.augmentations];
         run++;
-        const uniqueLeft = aug.augmentations.filter(a => a !== 'NeuroFlux Governor');
-        if (uniqueLeft.length === 0) {
-          console.log('Finished unique augs in ' + run + ' runs');
+        if (aug.augmentations.includes('DataJack')) {
+          const uniqueLeft = staticData.augmentations.filter(a => a !== 'NeuroFlux Governor');
+          console.log('Got to DataJack with ' + uniqueLeft.length + ' augs to buy');
           // QLink and The Red Pill require endgame factions whose cost is dominated by
           // training overhead when player skills are empty. A realistic test needs a
           // player whose stats grow with each run.
@@ -52,8 +59,6 @@ describe('selectAugmentations', () => {
         } else if (run === 100) {
           throw new Error('Took too long');
         }
-        console.log(aug.faction);
-        console.log(aug.augmentations.join('\n')+'\n');
       }
     });
   });
