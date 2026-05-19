@@ -22,6 +22,7 @@ const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
  */
 
 export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "defense", "dexterity", "agility"]);
+export const NEUROFLUX = 'NeuroFlux Governor';
 
 /**
  * @param {GoalType} type
@@ -135,4 +136,14 @@ export const augMoneyGoal = (costToAug, currentMoney, referenceIncome) =>
 export const augmentationGoal = (aug, faction, purchasedAugmentations, deps) =>
   goal("AUGMENTATION", aug,
     () => purchasedAugmentations.includes(aug),
+    { faction, deps, ownTime: () => 0 });
+
+/**
+ * One level of Neuroflux Governor. isDone when the player has purchased at least
+ * `ordinal` levels total (counting from 1).
+ * @param {number} ordinal @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal}
+ */
+export const neurofluxGoal = (ordinal, faction, purchasedAugmentations, deps) =>
+  goal("AUGMENTATION", NEUROFLUX,
+    () => purchasedAugmentations.filter(a => a === NEUROFLUX).length >= ordinal,
     { faction, deps, ownTime: () => 0 });

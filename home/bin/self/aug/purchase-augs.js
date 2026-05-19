@@ -35,8 +35,14 @@ export async function main(ns) {
   const usedFaction = gangRep > factionRep[targetFaction] ? gang : targetFaction;
   const rep = factionRep[usedFaction] || 0;
 
-  const remainingAugs = targetAugmentations
-    .filter((/** @type {string} */ aug) => !purchasedAugmentations.includes(aug))
+  // Multiset difference: each purchased aug removes one occurrence from the target list.
+  // This correctly handles Neuroflux, which can appear multiple times.
+  const remaining = /** @type {string[]} */ ([...targetAugmentations]);
+  for (const aug of purchasedAugmentations) {
+    const idx = remaining.indexOf(aug);
+    if (idx >= 0) remaining.splice(idx, 1);
+  }
+  const remainingAugs = remaining
     .sort(by((/** @type {string} */ aug) => -augmentationRepReqs[aug]))
     .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
 

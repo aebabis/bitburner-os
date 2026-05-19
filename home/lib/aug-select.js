@@ -181,14 +181,29 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   const bdMoney = getBackdoorRequirements(faction).money;
   const moneyReq = (factionRequirements?.[faction] ?? []).find((req) => req.type === 'money')?.money ?? 0;
 
-  const augs = getNeededAugs(faction)
-    .map((aug) => ({
+  // Neuroflux is always available regardless of owned count — you can always buy more.
+  // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.
+  const numQueued = ownedAugmentations.length - installedAugs.length;
+  const nfBase = augmentationPrices?.[NEUROFLUX] ?? 0;
+  const nfRep = Math.max(0, (augmentationRepReqs?.[NEUROFLUX] ?? 0) - currentRep);
+  const nfEntries = (factionAugmentations?.[faction] ?? []).includes(NEUROFLUX)
+    ? Array.from({ length: MAX_AUGS }, (_, i) => ({
+        name: NEUROFLUX,
+        value: augValue(NEUROFLUX),
+        price: nfBase * (1.9 ** (numQueued + i)),
+        remainingRep: nfRep,
+      }))
+    : [];
+
+  const augs = [
+    ...getNeededAugs(faction).map((aug) => ({
       name: aug,
       value: augValue(aug),
       price: augmentationPrices?.[aug] ?? 0,
       remainingRep: Math.max(0, (augmentationRepReqs?.[aug] ?? 0) - currentRep),
-    }))
-    .sort((a, b) => a.remainingRep - b.remainingRep);
+    })),
+    ...nfEntries,
+  ].sort((a, b) => a.remainingRep - b.remainingRep);
 
   let best = { utility: 0, batch: /** @type {string[]} */ ([]) };
 
@@ -286,8 +301,11 @@ export const selectAugmentations = (
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const accessibleFactions = getAccessibleFactions(staticData, player, ownedAugmentations);
 
-  const getNeededAugs = (/** @type {string} */ faction) =>
-    (factionAugmentations[faction] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
+  const getNeededAugs = (/** @type {string} */ faction) => {
+    const unique = (factionAugmentations[faction] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
+    // A faction that sells Neuroflux always has something to offer
+    return (factionAugmentations[faction] ?? []).includes(NEUROFLUX) ? [...unique, NEUROFLUX] : unique;
+  };
 
   const batchOpts = { moneyRate, repRate };
   const bestFaction = accessibleFactions.reduce(
@@ -302,14 +320,17 @@ export const selectAugmentations = (
   if (!bestFaction) return { faction: null, augmentations: [] };
 
   const getPurchaseOrder = (/** @type {string[]} */ augs) => {
+    const nfCount = augs.filter(a => a === NEUROFLUX).length;
+    const unique = augs.filter(a => a !== NEUROFLUX)
+      .sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
     const order = new Set(/** @type {string[]} */ ([]));
-    augs.sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
-    for (const aug of augs) {
+    for (const aug of unique) {
       const prereqs = (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse();
       for (const prereq of prereqs) order.add(prereq);
       order.add(aug);
     }
-    return [...order].slice(0, MAX_AUGS);
+    // Neuroflux goes last (cheap, always available) and may appear multiple times
+    return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
   };
 
   const { batch: bestAugs } = findOptimalBatch(bestFaction, staticData, player, formulas, factionRep, ownedAugmentations, batchOpts);

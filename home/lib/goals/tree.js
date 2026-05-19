@@ -1,6 +1,7 @@
 import {
   hackingLevelGoal, combatLevelsGoal, killsGoal, karmaGoal, moneyPrereqGoal,
-  locationGoal, factionJoinGoal, factionRepGoal, augMoneyGoal, augmentationGoal, installGoal,
+  locationGoal, factionJoinGoal, factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
+  NEUROFLUX,
 } from "./nodes.js";
 import { findOptimalBatch, MAX_AUGS } from "../aug-select.js";
 
@@ -109,13 +110,15 @@ export const buildFactionGoalTree = (faction, {
     [...augs].sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
 
   const getPurchaseOrder = (/** @type {string[]} */ augs) => {
+    const nfCount = augs.filter(a => a === NEUROFLUX).length;
     const order = new Set(/** @type {string[]} */ ([]));
-    for (const aug of sortedByPriceDesc(augs)) {
+    for (const aug of sortedByPriceDesc(augs.filter(a => a !== NEUROFLUX))) {
       const prereqs = (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse();
       for (const prereq of prereqs) order.add(prereq);
       order.add(aug);
     }
-    return [...order].slice(0, MAX_AUGS);
+    // Neuroflux goes last (cheap, always available) and may appear multiple times
+    return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
   };
 
   const augs = getPurchaseOrder(batch);
@@ -156,7 +159,12 @@ export const buildFactionGoalTree = (faction, {
     };
   }
 
-  const augGoals = augs.map(aug => augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
+  const nfBaseOrdinal = purchasedAugmentations.filter(a => a === NEUROFLUX).length + 1;
+  let nfOrdinal = nfBaseOrdinal;
+  const augGoals = augs.map(aug =>
+    aug === NEUROFLUX
+      ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal])
+      : augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
 
   return {
     goals: [...joinPrereqs, joinGoal, repGoal, moneyGoal, ...augGoals],

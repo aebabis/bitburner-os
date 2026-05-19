@@ -6,17 +6,33 @@ import { augmentationGoal } from '../home/lib/goals/nodes.js';
 
 describe('Goal node factories', () => {
   describe('augMoneyGoal', () => {
-    it.skip('isDone() is true when money >= cost');
-    it.skip('ownTime() is null when referenceIncome is 0');
+    it('isDone() is true when money >= cost', () => {
+      assert.equal(augMoneyGoal(1000, 1000, 1).isDone(), true);
+    });
+
+    it('ownTime() is null when referenceIncome is 0', () => {
+      assert.equal(augMoneyGoal(1000, 0, 0).ownTime(), null);
+    });
   });
 
   describe('factionRepGoal', () => {
-    it.skip('ownTime() is null when rate is 0');
-    it.skip('ownTime() is 0 when rep is already met');
+    const join = factionJoinGoal('F', ['F']);
+
+    it('ownTime() is null when rate is 0', () => {
+      assert.equal(factionRepGoal('F', 1000, {}, join, {}, {}).ownTime(), null);
+    });
+
+    it('ownTime() is 0 when rep is already met', () => {
+      assert.equal(factionRepGoal('F', 1000, { F: 1000 }, join, { F: 1 }, {}).ownTime(), 0);
+    });
   });
 
   describe('karmaGoal', () => {
-    it.skip('isDone() is true when karma <= karmaRequired');
+    it('isDone() is true when karma <= karmaRequired', () => {
+      // karma is negative in Bitburner; -100 satisfies a -54 requirement
+      assert.equal(karmaGoal(-54, -100).isDone(), true);
+      assert.equal(karmaGoal(-54, -20).isDone(), false);
+    });
   });
 });
 
@@ -53,7 +69,32 @@ describe('timeToComplete', () => {
 });
 
 describe('buildFactionGoalTree', () => {
-  it.skip('returns null when batch is empty');
+  it('returns null when batch is empty', () => {
+    // All augs already owned → findOptimalBatch returns [] → buildFactionGoalTree returns null.
+    // activeRepRate provides repRate so formulas.work.factionGains is never called.
+    const tree = buildFactionGoalTree('TestFaction', {
+      player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
+      staticData: {
+        factionRequirements: { TestFaction: [] },
+        factionAugmentations: { TestFaction: ['OwnedAug'] },
+        augmentationRepReqs: { OwnedAug: 0 },
+        augmentationPrices: { OwnedAug: 0 },
+        augmentationPrereqs: {},
+        factionFavor: {},
+        ownedAugmentations: ['OwnedAug'],
+      },
+      factionRep: {},
+      purchasedAugmentations: ['OwnedAug'],
+      ownedAugs: ['OwnedAug'],
+      money: 0,
+      referenceIncome: 0,
+      activeRepRate: { TestFaction: 1 },
+      passiveRepRate: {},
+      formulas: null,
+      karma: 0,
+    });
+    assert.equal(tree, null);
+  });
   it('price multiplier starts at 1.9^numQueued not 1.9^numOwned (regression)', () => {
     const AUG_PRICE = 1_000_000;
     // money = 2×AUG_PRICE covers the correct cost (1.9×) but not the buggy cost (1.9²×),
@@ -85,9 +126,82 @@ describe('buildFactionGoalTree', () => {
     // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
     assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
   });
-  it.skip('augsOverride skips findOptimalBatch');
-  it.skip('join prereqs appear as deps of the join goal');
-  it.skip('rep goal requirement equals max rep requirement across batch');
+  it('augsOverride skips findOptimalBatch', () => {
+    // SpecificAug is not in factionAugmentations — findOptimalBatch would never select it.
+    // augsOverride forces the batch to contain it, proving findOptimalBatch was bypassed.
+    const tree = buildFactionGoalTree('TestFaction', {
+      player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
+      staticData: {
+        factionRequirements: {},
+        factionAugmentations: { TestFaction: ['OtherAug'] },
+        augmentationRepReqs: { SpecificAug: 0 },
+        augmentationPrices: { SpecificAug: 0 },
+        augmentationPrereqs: {},
+        ownedAugmentations: [],
+      },
+      factionRep: {},
+      purchasedAugmentations: [],
+      ownedAugs: [],
+      money: 0,
+      referenceIncome: 0,
+      activeRepRate: {},
+      passiveRepRate: {},
+      formulas: null,
+      karma: 0,
+      augsOverride: ['SpecificAug'],
+    });
+    const augGoals = tree.goals.filter(g => g.type === 'AUGMENTATION');
+    assert.deepEqual(augGoals.map(g => g.desc), ['SpecificAug']);
+  });
+  it('join prereqs appear as deps of the join goal', () => {
+    const tree = buildFactionGoalTree('TestFaction', {
+      player: { factions: [], skills: { hacking: 1 }, location: 'Sector-12' },
+      staticData: {
+        factionRequirements: { TestFaction: [{ type: 'skills', skills: { hacking: 100 } }] },
+        augmentationRepReqs: { TestAug: 0 },
+        augmentationPrices: { TestAug: 0 },
+        augmentationPrereqs: {},
+        ownedAugmentations: [],
+      },
+      factionRep: {},
+      purchasedAugmentations: [],
+      ownedAugs: [],
+      money: 0,
+      referenceIncome: 0,
+      activeRepRate: {},
+      passiveRepRate: {},
+      formulas: null,
+      karma: 0,
+      augsOverride: ['TestAug'],
+    });
+    const joinGoal = tree.goals.find(g => g.type === 'FACTION_JOIN');
+    assert.ok(joinGoal, 'join goal should exist');
+    assert.ok(joinGoal.deps.some(d => d.type === 'HACKING_LEVEL'), 'join goal should have a HACKING_LEVEL dep');
+  });
+  it('rep goal requirement equals max rep requirement across batch', () => {
+    const tree = buildFactionGoalTree('TestFaction', {
+      player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
+      staticData: {
+        factionRequirements: {},
+        augmentationRepReqs: { AugA: 10000, AugB: 25000, AugC: 5000 },
+        augmentationPrices: { AugA: 0, AugB: 0, AugC: 0 },
+        augmentationPrereqs: {},
+        ownedAugmentations: [],
+      },
+      factionRep: {},
+      purchasedAugmentations: [],
+      ownedAugs: [],
+      money: 0,
+      referenceIncome: 0,
+      activeRepRate: {},
+      passiveRepRate: {},
+      formulas: null,
+      karma: 0,
+      augsOverride: ['AugA', 'AugB', 'AugC'],
+    });
+    const repGoal = tree.goals.find(g => g.type === 'FACTION_REP');
+    assert.equal(repGoal.requirement, 25000);
+  });
 });
 
 describe('isRepBound', () => {
