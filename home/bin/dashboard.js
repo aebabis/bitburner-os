@@ -7,7 +7,6 @@ import {
   getSchedulerReportData,
 } from "../lib/data-store";
 import { getGoals } from "../lib/goals/goals";
-import { timeToComplete } from "../lib/goals/tree";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";
@@ -146,7 +145,7 @@ const goalsTable = (/** @type {NS} */ ns) => {
     ["GOALS", {name: '', align: 'right'}],
     goals.map(goal => [
       goal.toString(),
-      DARK(formatTime(timeToComplete(goal))),
+      DARK(formatTime(goal.timeToComplete())),
     ]),
     { colors: true },
   );

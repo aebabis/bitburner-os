@@ -1,7 +1,7 @@
 import { getStaticData, getGoalsData, getPlayerData, getMoneyData } from "../data-store.js";
 import { THREADPOOL } from "../../etc/config.js";
 import { jobRamGoal, installGoal } from "./nodes.js";
-import { buildFactionGoalTree, timeToComplete, isRepBound as isRepBoundPure } from "./tree.js";
+import { buildFactionGoalTree, isRepBound as isRepBoundPure } from "./tree.js";
 import { getAccessibleFactions } from "../aug-select.js";
 import { getMockFormulas } from "../formulas.js";
 
@@ -25,7 +25,7 @@ export const getGoals = (ns) => {
 
   /** @param {{ terminalGoals: import('./nodes.js').Goal[] }} plan */
   const planTime = (plan) => {
-    const times = plan.terminalGoals.map(g => timeToComplete(g));
+    const times = plan.terminalGoals.map(g => g.timeToComplete());
     return times.some(t => t == null) ? Infinity : Math.max(.../** @type {number[]} */ (times));
   };
 
@@ -57,8 +57,7 @@ export const getTimeToComplete = (ns) => {
   const augGoals = goals.filter(g => g.type === 'AUGMENTATION');
   const roots = augGoals.length > 0 ? augGoals : goals.filter(g => g.type === 'INSTALL');
   if (roots.length === 0) return null;
-  const memo = new Map();
-  const times = roots.map(g => timeToComplete(g, memo));
+  const times = roots.map(g => g.timeToComplete());
   if (times.some(t => t == null)) return null;
   return Math.max(.../** @type {number[]} */ (times));
 };

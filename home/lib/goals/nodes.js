@@ -17,6 +17,7 @@ const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
  *   faction: string | undefined,
  *   deps: Goal[],
  *   ownTime: () => number | null,
+ *   timeToComplete: () => number | null,
  * }} Goal
  */
 
@@ -29,10 +30,20 @@ export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "
  * @param {{ requirement?: number, faction?: string, deps?: Goal[], ownTime?: () => number | null }} [opts]
  * @returns {Goal}
  */
-const goal = (type, desc, isDone, { requirement, faction, deps = [], ownTime = () => null } = {}) => ({
-  type, desc, isDone, requirement, faction, deps, ownTime,
-  toString: () => isDone() ? desc : DARK(desc),
-});
+const goal = (type, desc, isDone, { requirement, faction, deps = [], ownTime = () => null } = {}) => {
+  let _ttc;
+  return {
+    type, desc, isDone, requirement, faction, deps, ownTime,
+    toString: () => isDone() ? desc : DARK(desc),
+    timeToComplete() {
+      if (_ttc !== undefined) return _ttc;
+      if (isDone()) return (_ttc = 0);
+      const depsMax = deps.length === 0 ? 0
+        : Math.max(...deps.map(d => d.timeToComplete() ?? Infinity));
+      return (_ttc = depsMax === Infinity || ownTime() == null ? null : depsMax + ownTime());
+    },
+  };
+};
 
 /** @param {string} poolServer @param {number} currentRam @param {number} requiredJobRam @param {number} jobRamCost @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
 export const jobRamGoal = (poolServer, currentRam, requiredJobRam, jobRamCost, currentMoney, referenceIncome) =>

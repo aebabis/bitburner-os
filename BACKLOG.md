@@ -13,3 +13,5 @@
 - Make augData required in singularity goals. Have a separate non-singularity goal process be called before augData loads
 - Figure out why this contract failed: `twoColor([9,[[0,5],[1,7],[1,4],[1,2],[3,4],[3,7],[3,4],[4,8],[4,5],[6,8],[7,8]]]) => []`
 - Finish tests in test-goal-tree.js
+- Make gang runs try to buy Neuroflux
+- Use `ns.getResetInfo` instead of singularity API where possible

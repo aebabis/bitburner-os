@@ -4,32 +4,15 @@ import {
 } from "./nodes.js";
 import { findOptimalBatch, MAX_AUGS } from "../aug-select.js";
 
-/**
- * @param {import('./nodes.js').Goal} goal
- * @param {Map<import('./nodes.js').Goal, number | null>} [memo]
- * @returns {number | null}
- */
-export const timeToComplete = (goal, memo = new Map()) => {
-  if (goal.isDone()) return 0;
-  if (memo.has(goal)) return memo.get(goal);
-  const depsMax = goal.deps.length === 0 ? 0
-    : Math.max(...goal.deps.map(d => timeToComplete(d, memo) ?? Infinity));
-  const result = depsMax === Infinity || goal.ownTime() == null
-    ? null
-    : depsMax + goal.ownTime();
-  memo.set(goal, result);
-  return result;
-};
-
 /** @param {import('./nodes.js').Goal[]} goals @returns {boolean} */
 export const isRepBound = (goals) => {
   const unmetRepGoals = goals.filter(g => g.type === 'FACTION_REP' && !g.isDone());
-  if (unmetRepGoals.find(g => timeToComplete(g) == null)) return true;
+  if (unmetRepGoals.find(g => g.timeToComplete() == null)) return true;
   const maxRepTime = unmetRepGoals.length > 0
-    ? Math.max(...unmetRepGoals.map(g => timeToComplete(g) ?? 0))
+    ? Math.max(...unmetRepGoals.map(g => g.timeToComplete() ?? 0))
     : 0;
   const amg = goals.find(g => g.type === 'AUG_MONEY');
-  const moneyTime = amg != null ? timeToComplete(amg) : null;
+  const moneyTime = amg != null ? amg.timeToComplete() : null;
   return moneyTime == null || moneyTime <= maxRepTime;
 };
 

@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { augMoneyGoal, factionJoinGoal, factionRepGoal, karmaGoal } from '../home/lib/goals/nodes.js';
-import { timeToComplete, isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
+import { isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
+import { augmentationGoal } from '../home/lib/goals/nodes.js';
 
 describe('Goal node factories', () => {
   describe('augMoneyGoal', () => {
@@ -20,10 +21,35 @@ describe('Goal node factories', () => {
 });
 
 describe('timeToComplete', () => {
-  it.skip('returns 0 when goal is already done');
-  it.skip('returns null when any dep has null ownTime');
-  it.skip('sums depsMax + ownTime for a two-goal chain');
-  it.skip('returns the max across parallel deps');
+  it('returns 0 when goal is already done', () => {
+    const done = augmentationGoal('TestAug', 'TestFaction', ['TestAug'], []);
+    assert.equal(done.timeToComplete(), 0);
+  });
+
+  it('returns null when any dep has null ownTime', () => {
+    // factionRepGoal with rate=0 has null ownTime
+    const joinGoal = factionJoinGoal('F', ['F']);
+    const rep = factionRepGoal('F', 1000, {}, joinGoal, {}, {});
+    const aug = augmentationGoal('A', 'F', [], [rep]);
+    assert.equal(aug.timeToComplete(), null);
+  });
+
+  it('sums depsMax + ownTime for a two-goal chain', () => {
+    // rep: 100 rep at 1/s → 100s; aug: 0 own time → total 100s
+    const joinGoal = factionJoinGoal('F', ['F']);
+    const rep = factionRepGoal('F', 100, {}, joinGoal, { F: 1 }, {});
+    const aug = augmentationGoal('A', 'F', [], [rep]);
+    assert.equal(aug.timeToComplete(), 100);
+  });
+
+  it('returns the max across parallel deps', () => {
+    // rep needs 200s, money needs 50s → aug waits for rep (200s)
+    const joinGoal = factionJoinGoal('F', ['F']);
+    const rep = factionRepGoal('F', 200, {}, joinGoal, { F: 1 }, {});
+    const money = augMoneyGoal(50, 0, 1);
+    const aug = augmentationGoal('A', 'F', [], [rep, money]);
+    assert.equal(aug.timeToComplete(), 200);
+  });
 });
 
 describe('buildFactionGoalTree', () => {
