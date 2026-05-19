@@ -136,7 +136,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   };
 
   const getBackdoorRequirements = (/** @type {string} */ fac) => {
-    const reqs = factionRequirements[fac] ?? [];
+    const reqs = factionRequirements?.[fac] ?? [];
     const bdReq = reqs.find((req) => req.type === 'backdoorInstalled');
     if (!bdReq) return { money: 0, hacking: 0 };
     const { server } = bdReq;
@@ -147,7 +147,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   };
 
   const getFactionTrainingTime = (/** @type {string} */ fac) => {
-    const reqs = factionRequirements[fac] ?? [];
+    const reqs = factionRequirements?.[fac] ?? [];
     const skillReqs = Object.assign({}, ...reqs.filter((r) => r.type === 'skills').map((r) => r.skills));
     const bdReqs = getBackdoorRequirements(fac);
     const levelReqs = /** @type {[string, number][]} */ (Object.entries(skillReqs));
@@ -229,7 +229,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 export const getAccessibleFactions = (staticData, player, ownedAugmentations) => {
   const { factionRequirements } = staticData;
   return [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
-    const reqs = factionRequirements[faction] ?? [];
+    const reqs = factionRequirements?.[faction] ?? [];
     const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
     const requiredAugCount =
       reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;

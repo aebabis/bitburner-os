@@ -1,6 +1,6 @@
 import { getNodes, getBestPurchase } from "../lib/hacknet";
 import { logger } from "../lib/logger";
-import { getTimeToComplete } from "../lib/goals";
+import { getTimeToComplete } from "../lib/goals/goals";
 import { getMoneyData, putMoneyData } from "../lib/data-store";
 
 /** @param {NS} ns **/

@@ -4,9 +4,8 @@ import {
   getPlayerData,
   putPlayerData,
   getStaticData,
-  getGoalsData,
 } from "../../../lib/data-store";
-import { getGoals, } from "../../../lib/goals";
+import { getGoals, } from "../../../lib/goals/goals";
 import { rmi } from "../../../lib/rmi";
 import { by } from "../../../lib/util";
 import { liquidate } from "../../liquidate";

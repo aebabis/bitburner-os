@@ -11,7 +11,7 @@ import {
   needsJobRam,
   getJobRamCost,
 } from "../lib/query-service";
-import { getTimeToComplete } from "../lib/goals";
+import { getTimeToComplete } from "../lib/goals/goals";
 import { infect, fullInfect } from "./infect";
 
 /** @param {number} maxServers */

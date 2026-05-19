@@ -1,5 +1,5 @@
 import { getPlayerData } from "../../lib/data-store";
-import { getGoals, isRepBound } from "../../lib/goals";
+import { getGoals, isRepBound } from "../../lib/goals/goals";
 import { rmi } from "../../lib/rmi";
 import { getConfig } from "../../lib/config";
 

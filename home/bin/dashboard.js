@@ -6,7 +6,8 @@ import {
   getGoalsData,
   getSchedulerReportData,
 } from "../lib/data-store";
-import { getGoals, timeToComplete } from "../lib/goals";
+import { getGoals } from "../lib/goals/goals";
+import { timeToComplete } from "../lib/goals/tree";
 import { GrowingWindow, renderWindows } from "../lib/layout";
 import { getTailModal, getModalColumnCount } from "../lib/modal";
 import { table } from "../lib/table";

@@ -85,14 +85,14 @@ const PLAYER = {skills: {}, factions: []};
 test('fresh start → CyberSec (higher-value batch wins over more augs at lower value)', () => {
   // CyberSec batch utility=0.000921 > Netburners batch utility=0.00072
   const data = makeStaticData({ Netburners: [NB_A, NB_B, NB_C], CyberSec: [CS_A, CS_B] });
-  const { faction } = selectAugmentations([], data, PLAYER, undefined);
+  const { faction } = selectAugmentations([], data, PLAYER);
   assert.equal(faction, 'CyberSec');
 });
 
 test('Netburner augs owned → CyberSec becomes best', () => {
   const data = makeStaticData({ Netburners: [NB_A, NB_B, NB_C], CyberSec: [CS_A, CS_B] });
   const netburnerAugs = data.factionAugmentations['Netburners'];
-  const { faction } = selectAugmentations(netburnerAugs, data, PLAYER, undefined);
+  const { faction } = selectAugmentations(netburnerAugs, data, PLAYER);
   assert.equal(faction, 'CyberSec');
 });
 
@@ -106,7 +106,7 @@ test('Netburners + CyberSec owned → city faction with hacking augs wins', () =
     ...data.factionAugmentations['Netburners'],
     ...data.factionAugmentations['CyberSec'],
   ];
-  const { faction } = selectAugmentations(owned, data, PLAYER, undefined);
+  const { faction } = selectAugmentations(owned, data, PLAYER);
   assert.equal(faction, 'Sector-12');
 });
 
@@ -242,7 +242,7 @@ test('select The Syndicate over The Covenant when combat augs are still needed',
   // The exact winning faction depends on which criminal org has the best remaining batch,
   // but the key regression: The Covenant must NOT win (87M seconds training makes it uncompetitive).
   const player = { skills: { hacking: 500, strength: 500, defense: 500, dexterity: 500, agility: 500 }, factions: [] };
-  const { faction } = selectAugmentations(ownedAugs, staticData, player, undefined);
+  const { faction } = selectAugmentations(ownedAugs, staticData, player);
   assert(faction !== null, 'a faction should be selected');
   assert(faction !== 'The Covenant', 'The Covenant should not win when accessible factions remain');
 });

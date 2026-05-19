@@ -1,6 +1,8 @@
-import { getGoals, COMBAT_STATS } from "../../lib/goals";
+import { getGoals } from "../../lib/goals/goals";
 import { shouldWorkHaveFocus } from "../../lib/query-service";
 import { putPlayerData } from "../../lib/data-store";
+
+const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "defense", "dexterity", "agility"]);
 
 /** @param {NS} ns @param {number} levelReq */
 const getStatToTrain = (ns, levelReq) => {

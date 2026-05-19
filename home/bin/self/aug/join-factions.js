@@ -1,5 +1,5 @@
 import { getGangData } from "../../../lib/data-store";
-import { getGoals } from "../../../lib/goals";
+import { getGoals } from "../../../lib/goals/goals";
 import { CITY_FACTIONS } from "../../../lib/factions";
 
 /** @param {NS} ns */

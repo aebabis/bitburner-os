@@ -1,6 +1,6 @@
 import { AnyHostService } from "../../lib/service";
 import { getTableString } from "../../lib/service-api";
-import { getGoals } from "../../lib/goals";
+import { getGoals } from "../../lib/goals/goals";
 import { rmi } from "../../lib/rmi";
 
 const isTixViable = (/** @type {NS} */ ns) => {
