@@ -65,21 +65,6 @@ export const scoreAug = (stats, weights) => Object.entries(stats)
   })
   .reduce((a, b) => a+b, 0);
 
-/**
- * @param {number} [factionWorkRepGain] - BitNodeMultipliers.FactionWorkRepGain; defaults to 1
- * @returns {number}
- */
-export const getMoneyPerRep = (factionWorkRepGain = 1) => 4000 / factionWorkRepGain;
-
-/**
- * @param {number} price
- * @param {number} repReq
- * @param {number} moneyPerRep
- * @returns {number}
- */
-export const augEffectiveCost = (price, repReq, moneyPerRep) =>
-  Math.max(price / moneyPerRep, repReq);
-
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
 
