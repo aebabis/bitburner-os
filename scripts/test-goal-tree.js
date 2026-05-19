@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { augMoneyGoal, factionJoinGoal, factionRepGoal, karmaGoal } from '../home/lib/goals/nodes.js';
 import { isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
 import { augmentationGoal } from '../home/lib/goals/nodes.js';
+import { computeRepReq, computeAugCost } from '../home/lib/aug-select.js';
 
 describe('Goal node factories', () => {
   describe('augMoneyGoal', () => {
@@ -201,6 +202,61 @@ describe('buildFactionGoalTree', () => {
     });
     const repGoal = tree.goals.find(g => g.type === 'FACTION_REP');
     assert.equal(repGoal.requirement, 25000);
+  });
+});
+
+describe('computeRepReq', () => {
+  it('returns 0 for an empty batch', () => {
+    assert.equal(computeRepReq([], { augmentationRepReqs: {} }), 0);
+  });
+
+  it('returns the max rep requirement across all augs', () => {
+    const staticData = { augmentationRepReqs: { A: 1000, B: 5000, C: 500 } };
+    assert.equal(computeRepReq(['A', 'B', 'C'], staticData), 5000);
+  });
+
+  it('treats missing rep reqs as 0', () => {
+    assert.equal(computeRepReq(['Unknown'], { augmentationRepReqs: {} }), 0);
+  });
+});
+
+describe('computeAugCost', () => {
+  const NF = 'NeuroFlux Governor';
+
+  it('costs a single aug with no queue multiplier', () => {
+    const staticData = { augmentationPrices: { A: 1_000_000 } };
+    assert.equal(computeAugCost(['A'], staticData, 0), 1_000_000);
+  });
+
+  it('applies the 1.9^numQueued multiplier to the first aug', () => {
+    const staticData = { augmentationPrices: { A: 1_000_000 } };
+    assert.equal(computeAugCost(['A'], staticData, 2), 1_000_000 * 1.9 ** 2);
+  });
+
+  it('compounds the queue multiplier across multiple augs (most expensive first)', () => {
+    const staticData = { augmentationPrices: { Cheap: 100, Expensive: 1000 } };
+    // sorted desc: Expensive (×1.9^0), Cheap (×1.9^1)
+    const expected = 1000 * 1 + 100 * 1.9;
+    assert.equal(computeAugCost(['Cheap', 'Expensive'], staticData, 0), expected);
+  });
+
+  it('applies the 1.14^installedNFCount base offset to NF price', () => {
+    const installedNFCount = 3;
+    const nfBase = 750_000;
+    const staticData = {
+      augmentationPrices: { [NF]: nfBase },
+      resetInfo: { ownedAugs: new Map([[NF, installedNFCount]]) },
+    };
+    const expected = nfBase * 1.14 ** installedNFCount; // numQueued=0, first NF level offset=3
+    assert.equal(computeAugCost([NF], staticData, 0), expected);
+  });
+
+  it('increments the NF level offset for each successive NF in the batch', () => {
+    const nfBase = 750_000;
+    const staticData = { augmentationPrices: { [NF]: nfBase } };
+    // two NF, no installed, no queued: first at 1.14^0, second at 1.9 × 1.14^1
+    const expected = nfBase * 1.14 ** 0 + nfBase * 1.9 * 1.14 ** 1;
+    assert.equal(computeAugCost([NF, NF], staticData, 0), expected);
   });
 });
 

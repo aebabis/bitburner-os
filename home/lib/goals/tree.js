@@ -2,7 +2,7 @@ import {
   factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
   NEUROFLUX, buildJoinSubtree,
 } from "./nodes.js";
-import { findOptimalBatch, MAX_AUGS } from "../aug-select.js";
+import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost } from "../aug-select.js";
 
 /** @param {import('./nodes.js').Goal[]} goals @returns {boolean} */
 export const isRepBound = (goals) => {
@@ -41,7 +41,7 @@ export const buildFactionGoalTree = (faction, {
   money, referenceIncome, activeRepRate, passiveRepRate,
   formulas, karma, augsOverride = undefined,
 }) => {
-  const { augmentationRepReqs, augmentationPrices, augmentationPrereqs } = staticData;
+  const { augmentationPrices, augmentationPrereqs } = staticData;
 
   const moneyRate = referenceIncome || Infinity;
 
@@ -71,7 +71,7 @@ export const buildFactionGoalTree = (faction, {
 
   const augs = getPurchaseOrder(batch);
 
-  const repReq = Math.max(...augs.map(aug => augmentationRepReqs?.[aug] ?? 0), 0);
+  const repReq = computeRepReq(augs, staticData);
   const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
     player, staticData, money, referenceIncome, karma, formulas,
   });
@@ -82,14 +82,7 @@ export const buildFactionGoalTree = (faction, {
 
   const installedSet = new Set(staticData.ownedAugmentations ?? []);
   const numQueued = purchasedAugmentations.filter(aug => !installedSet.has(aug)).length;
-  let multiplier = 1.9 ** numQueued;
-  let costToAug = 0;
-  let nfLevelOffset = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
-  for (const aug of sortedByPriceDesc(augs)) {
-    const nfLevelMult = aug === NEUROFLUX ? 1.14 ** nfLevelOffset++ : 1;
-    costToAug += multiplier * (augmentationPrices?.[aug] ?? 0) * nfLevelMult;
-    multiplier *= 1.9;
-  }
+  const costToAug = computeAugCost(augs, staticData, numQueued);
 
   const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
 

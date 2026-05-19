@@ -98,6 +98,38 @@ export const augValueFromStats = (aug, augmentationStats) => {
 };
 
 /**
+ * @param {string[]} augs
+ * @param {{ augmentationRepReqs?: Record<string,number> }} staticData
+ * @returns {number}
+ */
+export const computeRepReq = (augs, staticData) =>
+  Math.max(...augs.map(aug => staticData.augmentationRepReqs?.[aug] ?? 0), 0);
+
+/**
+ * Total cost to purchase all augs in the batch, accounting for the 1.9× queue
+ * multiplier (from already-queued augs) and the 1.14× per-level NF base scaling.
+ * Augs are costed most-expensive-first so the queue multiplier compounds correctly.
+ * @param {string[]} augs - purchase-ordered batch (NF may appear multiple times)
+ * @param {{ augmentationPrices?: Record<string,number>, resetInfo?: any }} staticData
+ * @param {number} numQueued - augs already purchased but not yet installed
+ * @returns {number}
+ */
+export const computeAugCost = (augs, staticData, numQueued) => {
+  const { augmentationPrices } = staticData;
+  const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
+  const sorted = [...augs].sort((a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0));
+  let multiplier = 1.9 ** numQueued;
+  let nfLevelOffset = installedNFCount;
+  let cost = 0;
+  for (const aug of sorted) {
+    const nfLevelMult = aug === NEUROFLUX ? 1.14 ** nfLevelOffset++ : 1;
+    cost += multiplier * (augmentationPrices?.[aug] ?? 0) * nfLevelMult;
+    multiplier *= 1.9;
+  }
+  return cost;
+};
+
+/**
  * Find the optimal batch of up to MAX_AUGS augs from a faction.
  * Cost is time (seconds): (max(moneyTime, marginalRepTime) + resetOverhead + trainingTime)
  * Marginal rep excludes the cheapest aug's rep since that cost is committed once
