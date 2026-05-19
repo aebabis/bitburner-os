@@ -15,4 +15,5 @@
 - Finish tests in test-goal-tree.js
 - Make gang runs try to buy Neuroflux
 - Use `ns.getResetInfo` instead of singularity API where possible
+- Explore removing `staticData.ownedAugmentations` in favour of deriving it from `staticData.resetInfo.ownedAugs` at call sites
 - Rewrite purchase-augs.js

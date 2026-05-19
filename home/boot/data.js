@@ -33,6 +33,7 @@ export async function main(ns) {
 
   putStaticData(ns, {
     resetInfo,
+    ownedAugmentations: [...resetInfo.ownedAugs.keys()],
     scriptRam,
     serverBackdoorRequirements,
     purchasedServerLimit: ns.cloud.getServerLimit(),
