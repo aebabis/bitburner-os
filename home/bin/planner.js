@@ -22,13 +22,12 @@ const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
 /** @param {NS} ns **/
 const go = async (ns) => {
   ns.disableLog("ALL");
-  const { requiredJobRam, purchasedServerCosts, resetInfo, ownedSourceFiles } =
+  const { requiredJobRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);
 
-  const beatBN4 = ownedSourceFiles.find((/** @type {{n: number}} */ file) => file.n === 4);
-
+  console.log(resetInfo);
   const gangsAvailable = resetInfo.currentNode > 1;
-  const hasSingularity = resetInfo.currentNode === 4 || beatBN4;
+  const hasSingularity = resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4);
 
   const canPurchaseServers = () => player(ns).money >= purchasedServerCosts[4];
   const couldTrade = () => ns.stock.hasTixApiAccess() || player(ns).money >= 5.2e9;

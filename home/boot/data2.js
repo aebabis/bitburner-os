@@ -6,20 +6,10 @@ import { STR } from "../lib/colors";
 
 /** @param {NS} ns */
 export async function main(ns) {
-  const { currentNode } = getStaticData(ns).resetInfo;
+  const { currentNode, ownedSF } = getStaticData(ns).resetInfo;
   tprint(ns)(STR.BOLD + "ADDING MULTIPLIERS TO CACHE");
 
-  tprint(ns)(STR + "  Adding source files to static data cache");
-  // @ts-ignore
-  let ownedSourceFiles = [];
-  try {
-    ownedSourceFiles = ns.singularity.getOwnedSourceFiles();
-  } catch (error) {
-    ns.tprint('No singularity access');
-  }
-
-  const canUseHackNodes =
-    currentNode === 5 || ownedSourceFiles.some((/** @type {{n: number}} */ node) => node.n === 5);
+  const canUseHackNodes = currentNode === 5 || ownedSF.has(5);
   let bitNodeMultipliers = null;
 
   if (canUseHackNodes) {
@@ -30,7 +20,6 @@ export async function main(ns) {
   }
 
   putStaticData(ns, {
-    ownedSourceFiles,
     bitNodeMultipliers,
     hacknetMultipliers: ns.getHacknetMultipliers(),
   });

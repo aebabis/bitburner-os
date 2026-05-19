@@ -1,12 +1,32 @@
 const NULL = "NULL PORT DATA";
 
+function replacer(key, value) {
+  if(value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
+  } else {
+    return value;
+  }
+}
+
+function reviver(key, value) {
+  if(typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value);
+    }
+  }
+  return value;
+}
+
 const s = (data) => {
   if (data === null)
     throw new Error('Cannot write null. This interface uses null for "empty"');
-  return JSON.stringify({ data });
+  return JSON.stringify({ data }, replacer);
 };
 /** @param {string} packet */
-const p = (packet) => JSON.parse(packet).data;
+const p = (packet) => JSON.parse(packet, reviver).data;
 
 /** @param {NS} ns **/
 export default (ns) => {

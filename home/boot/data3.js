@@ -7,13 +7,11 @@ import { STR } from '../lib/colors';
 export async function main(ns) {
   tprint(ns)(STR.BOLD + "Determining required job RAM");
 
-  const { resetInfo, ownedSourceFiles, scriptRam } = getStaticData(ns);
-
-  const hasSourceFile4 = ownedSourceFiles.some((/** @type {{n: number}} */ file) => file.n === 4);
+  const { resetInfo, scriptRam } = getStaticData(ns);
 
   // Compute RAM required on job server
   let requiredJobRam = 32;
-  if (resetInfo.currentNode === 4 || hasSourceFile4) {
+  if (resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4)) {
     const maxScriptSize =
       scriptRam['/bin/self/aug/purchase-augs.js'] +
       scriptRam['/bin/self/job.js'] +

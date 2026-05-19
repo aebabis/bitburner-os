@@ -66,9 +66,7 @@ export const shouldWorkHaveFocus = (ns) => {
 /** @param {NS} ns
  *  @param {number} bn */
 export const hasBitNode = (ns, bn) => {
-  const { resetInfo, ownedSourceFiles } = getStaticData(ns);
-  const inBN = resetInfo.currentNode === bn;
-  const beatBN = ownedSourceFiles.find((/** @type {{n: number}} */ file) => file.n === bn);
-  return inBN || beatBN;
+  const { resetInfo } = getStaticData(ns);
+  return resetInfo.currentNode === bn || resetInfo.ownedSF.has(bn);
 };
 

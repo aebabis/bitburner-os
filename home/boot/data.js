@@ -33,7 +33,6 @@ export async function main(ns) {
 
   putStaticData(ns, {
     resetInfo,
-    ownedSourceFiles: [], // To be overwritten in next step, RAM permitting
     scriptRam,
     serverBackdoorRequirements,
     purchasedServerLimit: ns.cloud.getServerLimit(),
