@@ -20,7 +20,7 @@ const calculateExp = (skill, mult = 1) =>
  * Mock of the ns.formulas namespace for use when Formulas.exe is not available.
  * Pass ns.formulas directly when it is available; use this otherwise.
  * @param {{
- *   ownedAugmentations?: string[],
+ *   installedAugmentations: string[],
  *   augmentationStats?: Record<string, Multipliers>,
  *   hacknetMultipliers?: { production: number },
  *   bitNodeMultipliers?: { HacknetNodeMoney: number },
@@ -28,7 +28,7 @@ const calculateExp = (skill, mult = 1) =>
  */
 export const getMockFormulas = (staticData) => {
   const getAugMult = (/** @type {string} */ stat) =>
-    (staticData.ownedAugmentations ?? [])
+    staticData.installedAugmentations
       .map(aug => staticData.augmentationStats?.[aug]?.[/** @type {keyof Multipliers} */ (stat)] ?? 1)
       .reduce((a, b) => a * b, 1);
 

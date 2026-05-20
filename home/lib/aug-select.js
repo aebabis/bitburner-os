@@ -72,12 +72,12 @@ const OVERHEAD_BASE = 120 * 60;
  * Estimate reset overhead (seconds) for plan comparison — how long the next run will take to
  * reach this productive state. Uses actual run elapsed time as proxy (reproducible runs),
  * with a conservative floor for early-run estimates.
- * @param {{ resetInfo?: any, ownedAugmentations?: string[] }} staticData
+ * @param {{ resetInfo: any, installedAugmentations: string[] }} staticData
  * @returns {number}
  */
 export const computeResetOverhead = (staticData) => {
-  const installedAugs = staticData.ownedAugmentations ?? [];
-  const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
+  const installedAugs = staticData.installedAugmentations ?? [];
+  const lastAugReset = staticData.resetInfo.lastAugReset ?? 0;
   const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
   return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
 };
@@ -142,7 +142,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  *   factionRequirements?: Record<string,any[]>,
  *   factionFavor?: Record<string,number>,
  *   serverBackdoorRequirements: any[],
- *   ownedAugmentations?: string[],
+ *   installedAugmentations: string[],
  * }} staticData
  * @param {Player} player
  * @param {ReturnType<typeof getMockFormulas>} formulas
@@ -161,7 +161,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   } = staticData;
 
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
-  const installedAugs = staticData.ownedAugmentations ?? [];
+  const installedAugs = staticData.installedAugmentations ?? [];
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
   const getNeededAugs = (/** @type {string} */ fac) =>

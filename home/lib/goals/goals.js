@@ -16,7 +16,7 @@ export const getGoals = (ns) => {
 
   const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(staticData);
   const karma = ns.heart.break();
-  const ownedAugs = [...(staticData.ownedAugmentations ?? []), ...purchasedAugmentations];
+  const ownedAugs = [...staticData.installedAugmentations, ...purchasedAugmentations];
   const planData = {
     player, staticData, factionRep: factionRep ?? {}, purchasedAugmentations, ownedAugs,
     money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,

@@ -194,7 +194,7 @@ export const buildJoinSubtree = (faction, {
   player, staticData, money, referenceIncome, karma, formulas = null,
 }) => {
   const { factions, skills, location } = player;
-  const { factionRequirements, ownedAugmentations: installedAugs = [], augmentationStats, serverBackdoorRequirements } = staticData;
+  const { factionRequirements, installedAugmentations, augmentationStats, serverBackdoorRequirements } = staticData;
 
   if (factions.includes(faction)) {
     return { joinPrereqs: [], joinGoal: factionJoinGoal(faction, factions, []) };
@@ -228,12 +228,12 @@ export const buildJoinSubtree = (faction, {
   const combatReq = skillReqs.strength ?? null;
 
   if (hackReq != null) {
-    const t = skillTrainingTime(hackReq, skills.hacking ?? 1, 'hacking', installedAugs, augmentationStats, formulas);
+    const t = skillTrainingTime(hackReq, skills.hacking ?? 1, 'hacking', installedAugmentations, augmentationStats, formulas);
     joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
     const times = formulas
-      ? COMBAT_STATS.map(stat => skillTrainingTime(combatReq, skills[stat] ?? 1, stat, installedAugs, augmentationStats, formulas) ?? 0)
+      ? COMBAT_STATS.map(stat => skillTrainingTime(combatReq, skills[stat] ?? 1, stat, installedAugmentations, augmentationStats, formulas) ?? 0)
       : null;
     const t = times ? Math.max(...times) : null;
     joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));

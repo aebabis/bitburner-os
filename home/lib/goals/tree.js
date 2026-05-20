@@ -81,7 +81,7 @@ export const buildFactionGoalTree = (faction, {
     || formulas?.work.factionGains(player, 'hacking', staticData.factionFavor?.[faction])?.reputation * 5;
   const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, repRate);
 
-  const installedSet = new Set(staticData.ownedAugmentations ?? []);
+  const installedSet = new Set(staticData.installedAugmentations);
   const numQueued = purchasedAugmentations.filter(aug => !installedSet.has(aug)).length;
   const costToAug = computeAugCost(augs, staticData, numQueued);
 

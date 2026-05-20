@@ -56,9 +56,8 @@ export const needsJobRam = (ns) => {
 /** @param {NS} ns */
 export const shouldWorkHaveFocus = (ns) => {
   const { isPlayerActive } = getPlayerData(ns);
-  const { ownedAugmentations } = getStaticData(ns);
-  if (ownedAugmentations == null) return !isPlayerActive;
-  if (ownedAugmentations.includes("Neuroreceptor Management Implant"))
+  const { installedAugmentations } = getStaticData(ns);
+  if (installedAugmentations.includes("Neuroreceptor Management Implant"))
     return false;
   return !isPlayerActive;
 };
