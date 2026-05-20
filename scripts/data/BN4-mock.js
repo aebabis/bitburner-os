@@ -1,4 +1,5 @@
 export const staticData = {
+  "installedAugmentations": [],
   "bitNodeMultipliers": {
     "HacknetNodeMoney": 0.05
   },

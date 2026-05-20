@@ -1,7 +1,40 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import { selectAugmentations } from '../home/lib/aug-select.js';
+import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
+import { getMockFormulas } from '../home/lib/formulas.js';
+
+const NEUROFLUX = 'NeuroFlux Governor';
+
+/** @type {typeof import('../home/lib/aug-select.js').selectAugmentations} */
+const selectAugmentations = (ownedAugs, staticData, player, formulas, factionRep = {}, { moneyRate = Infinity, repRate } = {}) => {
+  formulas ??= getMockFormulas(staticData);
+  const { augmentationPrices, augmentationPrereqs, augmentationRepReqs, augmentationStats, factionAugmentations, factionRequirements } = staticData;
+  if ([augmentationPrices, augmentationRepReqs, augmentationPrereqs, augmentationStats, factionAugmentations, factionRequirements].some(d => d == null))
+    return { faction: null, augmentations: [] };
+
+  const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);
+  const batchOpts = { moneyRate, repRate };
+
+  let bestFaction = /** @type {string|null} */ (null), bestUtility = -Infinity;
+  for (const faction of getAccessibleFactions(staticData, player, ownedAugs)) {
+    const faugs = factionAugmentations[faction] ?? [];
+    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0) continue;
+    const { utility } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, batchOpts);
+    if (utility > bestUtility) { bestFaction = faction; bestUtility = utility; }
+  }
+  if (!bestFaction) return { faction: null, augmentations: [] };
+
+  const { batch } = findOptimalBatch(bestFaction, staticData, player, formulas, factionRep, ownedAugs, batchOpts);
+  const nfCount = batch.filter(a => a === NEUROFLUX).length;
+  const unique = batch.filter(a => a !== NEUROFLUX).sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
+  const order = new Set(/** @type {string[]} */ ([]));
+  for (const aug of unique) {
+    for (const prereq of (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse()) order.add(prereq);
+    order.add(aug);
+  }
+  return { faction: bestFaction, augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS) };
+};
 
 // ---------------------------------------------------------------------------
 // Shared test data helpers
@@ -74,6 +107,7 @@ const makeStaticData = (
     augmentationPrereqs,
     factionAugmentations,
     factionRequirements,
+    installedAugmentations: [],
     bitNodeMultipliers: {},
   };
 };

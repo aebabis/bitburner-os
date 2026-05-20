@@ -1,20 +1,45 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import { selectAugmentations } from '../home/lib/aug-select.js';
+import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
+import { getMockFormulas } from '../home/lib/formulas.js';
 
 // Realistic early BN4 rates: modest hacking income, typical faction work rep gain.
 // These are intentionally conservative so the test reflects a plausible worst-case.
 const RATES = { moneyRate: 10e3, repRate: 3 };
+const NEUROFLUX = 'NeuroFlux Governor';
 
 const select = (owned, factionRep = {}, moneyRate = RATES.moneyRate) => {
-  const numNeuroflux = owned.filter((aug) => aug === 'NeuroFlux Governor').length;
+  const numNeuroflux = owned.filter((aug) => aug === NEUROFLUX).length;
   const data = structuredClone(staticData);
-  data.augmentationRepReqs['NeuroFlux Governor'] *= (1.14 ** numNeuroflux);
-  data.augmentationPrices['NeuroFlux Governor'] *= (1.14 ** numNeuroflux);
-  return selectAugmentations(owned, data, {skills:{}, factions:[]}, undefined, factionRep,
-    { ...RATES, moneyRate });
-}
+  data.augmentationRepReqs[NEUROFLUX] *= (1.14 ** numNeuroflux);
+  data.augmentationPrices[NEUROFLUX] *= (1.14 ** numNeuroflux);
+
+  const player = {skills: {}, factions: []};
+  const formulas = getMockFormulas(data);
+  const batchOpts = { moneyRate, repRate: RATES.repRate };
+  const stillNeeds = (/** @type {string} */ aug) => !owned.includes(aug);
+
+  let bestFaction = /** @type {string|null} */ (null), bestUtility = -Infinity;
+  for (const faction of getAccessibleFactions(data, player, owned)) {
+    const faugs = data.factionAugmentations[faction] ?? [];
+    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0) continue;
+    const { utility } = findOptimalBatch(faction, data, player, formulas, factionRep, owned, batchOpts);
+    if (utility > bestUtility) { bestFaction = faction; bestUtility = utility; }
+  }
+  if (!bestFaction) return { faction: null, augmentations: [] };
+
+  const { batch } = findOptimalBatch(bestFaction, data, player, formulas, factionRep, owned, batchOpts);
+  const { augmentationPrices, augmentationPrereqs } = data;
+  const nfCount = batch.filter(a => a === NEUROFLUX).length;
+  const unique = batch.filter(a => a !== NEUROFLUX).sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
+  const order = new Set(/** @type {string[]} */ ([]));
+  for (const aug of unique) {
+    for (const prereq of (augmentationPrereqs[aug] ?? []).filter(stillNeeds).reverse()) order.add(prereq);
+    order.add(aug);
+  }
+  return { faction: bestFaction, augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS) };
+};
 
 describe('selectAugmentations', () => {
   describe('BN4 run', () => {
