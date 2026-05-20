@@ -155,9 +155,17 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
 
   const augValue = (/** @type {string} */ aug) => augValueFromStats(aug, augmentationStats);
 
-  const resetOverhead = OVERHEAD_BASE / (1 + installedAugs.length);
   const currentRep = factionRep[faction] ?? 0;
-  const effectiveRepRate = activeRepRate?.[faction] ?? passiveRepRate?.[faction] ?? repRate ?? formulas.work.factionGains(player, 'hacking', factionFavor?.[faction]).reputation * 5;
+  const gainRate = formulas?.work.factionGains(player, 'hacking', factionFavor?.[faction]);
+  const effectiveRepRate = activeRepRate?.[faction] ?? passiveRepRate?.[faction] ?? repRate ?? gainRate?.reputation * 5;
+
+  // Overhead = how long the next run will take to reach this productive state.
+  // Best proxy: how long this run has taken (runs are roughly reproducible).
+  // Floor at OVERHEAD_BASE/(1+installed) so early-run estimates stay conservative.
+  const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
+  const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+  const resetOverhead = Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
+
   const { joinGoal } = buildJoinSubtree(faction, {
     player, staticData, money: player.money ?? 0, referenceIncome: moneyRate, karma: player.karma ?? 0, formulas,
   });

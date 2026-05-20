@@ -9,7 +9,8 @@ import { selectAugmentations } from '../home/lib/aug-select.js';
 
 // utility = totalValue / (max(timeForMoney, marginalRepTime) + resetOverhead)
 // All test augs use only the hacking multiplier for predictable math.
-// Default rates: moneyRate=Infinity (money is free), repRate=1 (rep/s), overhead=1800s.
+// PLAYER has hacking=100 → overhead≈5628s (calculateExp(100)/mockHackExpPerSec),
+// repRate≈0.513/s (mock factionGains at hacking=100), moneyRate=Infinity.
 
 /** @param {number} hacking @param {number} price @param {number} repReq */
 const hackAug = (hacking, price, repReq) => ({
@@ -19,14 +20,15 @@ const hackAug = (hacking, price, repReq) => ({
 });
 
 // Netburners pool — cheap, low-rep, modest hacking multipliers
-// All prices negligible (moneyRate=∞), so cost = marginalRep + 1800s.
-// Best batch = all 3: totalValue=1.8, marginalRep=700, cost=2500, utility=0.00072
+// Best batch = all 3: totalValue=1.8, marginalRep=700, timeForRep≈1365s,
+//   cost≈6993s, utility≈0.000257
 const NB_A = hackAug(1.10, 1_000_000,  1_000); // value=1.0
 const NB_B = hackAug(1.05,   500_000,    500); // value=0.5
 const NB_C = hackAug(1.03,   300_000,    300); // value=0.3
 
 // CyberSec pool — higher multipliers, higher rep
-// Best batch = both: totalValue=3.5, marginalRep=2000, cost=3800, utility=0.000921
+// Best batch = both: totalValue=3.5, marginalRep=2000, timeForRep≈3901s,
+//   cost≈9529s, utility≈0.000367 (beats NB when overhead is large)
 const CS_A = hackAug(1.20, 5_000_000,  5_000); // value=2.0
 const CS_B = hackAug(1.15, 3_000_000,  3_000); // value=1.5
 
@@ -76,7 +78,7 @@ const makeStaticData = (
   };
 };
 
-const PLAYER = {skills: {}, factions: []};
+const PLAYER = {skills: {hacking: 100}, factions: []};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -155,13 +157,13 @@ test('returns null faction when no accessible faction has any augs', () => {
 test('faction with significant current rep is preferred over higher raw utility', () => {
   // BitRunners: high-value cheap aug that wins cold.
   // The Black Hand: two augs both gated at ≥45k rep; once unlocked they dominate (val=6.0 total).
-  // BR_CHEAP needs val > 3.42 to win cold vs TBH[A+B] with OVERHEAD_BASE=7200:
-  //   BR_CHEAP cold utility = val/7200; TBH[A+B] cold utility = 6.0/(7200+25000/repRate)
+  // Cold: BR_CHEAP utility≈4/5628≈0.000711; TBH[A+B] grind≈48757s+5628=54385, utility≈0.000110
+  // BitRunners wins cold; once TBH has 45k rep both remainingRep=0, TBH utility=6/5628≈0.001066.
   const BR_CHEAP = hackAug(1.40,    100_000,  5_000); // value=4.0
   const TBH_A    = hackAug(1.50,     50_000, 45_000); // value=5.0 — gated at 45k rep
   const TBH_B    = hackAug(1.10,     50_000, 20_000); // value=1.0
 
-  // Cold: BR_CHEAP utility≈0.000556; TBH[A+B]≈0.000475 (rep grind cost visible); BitRunners wins.
+  // Cold: BR_CHEAP utility≈0.000711; TBH[A+B]≈0.000110 (rep grind cost visible); BitRunners wins.
   const data = makeStaticData({
     'BitRunners':    [BR_CHEAP],
     'The Black Hand': [TBH_A, TBH_B],

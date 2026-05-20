@@ -2,7 +2,8 @@ import { THREADPOOL } from "../etc/config";
 import { logger } from "../lib/logger";
 import { by } from "../lib/util";
 import { table } from "../lib/table";
-import { getHostnames, getRamData, getMoneyData, putMoneyData } from "../lib/data-store";
+import { getHostnames, getRamData, getMoneyData, putMoneyData, putPlayerData, getStaticData } from "../lib/data-store";
+import { getMockFormulas } from "../lib/formulas";
 
 import Thief, { HORIZON_MS } from "../lib/thief";
 import { initProfiler } from "../lib/profiler";
@@ -69,6 +70,23 @@ export async function main(ns) {
       // God mode: when one hack thread can steal 50%+ of the best server,
       // batches are trivially cheap and spreading across all servers is better.
       const [topThief] = viableThieves;
+      if (topThief != null) {
+        const target = topThief.getHostname();
+        const player = ns.getPlayer();
+        const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(getStaticData(ns));
+        const server = {
+          hackDifficulty: ns.getServerMinSecurityLevel(target),
+          requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
+        };
+        const hackExpPerThread = formulas.hacking.hackExp(server, player);
+        const weakenTime = topThief.getWeakenTime() / 1000; // s
+        const [hackThreads = 1, weaken1Threads = 0, growThreads = 0, weaken2Threads = 0] =
+          topThief.currentBatch?.frame ?? [];
+        const hackChance = ns.hackAnalyzeChance(target);
+        const xpPerCycle = hackExpPerThread *
+          (weaken1Threads + weaken2Threads + growThreads + hackThreads * hackChance);
+        putPlayerData(ns, { hackingXpRate: xpPerCycle / weakenTime });
+      }
       const godMode =
         topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
 
@@ -126,7 +144,7 @@ export async function main(ns) {
         .filter((thief) => thief.isPipelining())
         .map((thief) => thief.getWeakenTime() / 1000);
       if (weakenTimes.length > 0) {
-        const thiefReferenceWindow = 2 * Math.max(...weakenTimes);
+        const thiefReferenceWindow = 4 * Math.max(...weakenTimes);
         const moneyData = getMoneyData(ns);
         putMoneyData(ns, {
           ...moneyData,

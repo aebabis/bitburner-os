@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreAug, augEffectiveCost, DEFAULT_AUG_WEIGHTS } from '../home/lib/aug-select.js';
+import { scoreAug, DEFAULT_AUG_WEIGHTS } from '../home/lib/aug-select.js';
 
 const neutralStats = /** @type {Multipliers} */ (
   Object.fromEntries(Object.keys(DEFAULT_AUG_WEIGHTS).map(k => [k, 1]))
@@ -62,15 +62,13 @@ test('hacknet cost multiplier below 1.0 produces positive score', () => {
 });
 
 test('utility ordering is stable across multiple sorts', () => {
-  const MONEY_PER_REP = 4000;
   const entries = [
-    { name: 'a', stats: { ...neutralStats, hacking: 1.10 }, price: 25e6,  repReq:  5_000 },
-    { name: 'b', stats: { ...neutralStats, hacking: 1.25 }, price: 80e6,  repReq: 15_000 },
-    { name: 'c', stats: { ...neutralStats, strength: 1.5 }, price: 25e6,  repReq:  5_000 },
+    { name: 'a', stats: { ...neutralStats, hacking: 1.10 }, time: 500 },
+    { name: 'b', stats: { ...neutralStats, hacking: 1.25 }, time: 1500 },
+    { name: 'c', stats: { ...neutralStats, strength: 1.5 }, time: 500 },
   ].map(e => {
     const value = scoreAug(e.stats, DEFAULT_AUG_WEIGHTS);
-    const cost  = augEffectiveCost(e.price, e.repReq, MONEY_PER_REP);
-    return { name: e.name, utility: cost > 0 ? value / cost : 0 };
+    return { name: e.name, utility: e.time > 0 ? value / e.time : 0 };
   });
 
   const sort = () => [...entries].sort((a, b) => b.utility - a.utility).map(e => e.name);

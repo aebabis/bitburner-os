@@ -1,3 +1,5 @@
+import { getStaticData } from './data-store.js';
+
 const WORK_STATS = {
   agiExp: 0, chaExp: 0, defExp: 0, dexExp: 0,
   hackExp: 0, intExp: 0, money: 0, reputation: 0, strExp: 0,
@@ -36,13 +38,21 @@ export const getMockFormulas = (staticData) => {
 
   return {
     skills: { calculateExp, calculateSkill },
+    hacking: {
+      /** @param {{requiredHackingSkill?: number}} server @param {Person} _player */
+      hackExp: (server, _player) =>
+        Math.max(1, (server.requiredHackingSkill ?? 1) / 30) * getAugMult('hacking_exp'),
+      /** @param {{hackDifficulty?: number}} server @param {Person} player */
+      hackTime: (server, player) =>
+        5 * (server.hackDifficulty ?? 1) / ((player.skills?.hacking ?? 1) * getAugMult('hacking_speed')) * 1000,
+    },
     work: {
       /** @param {Person} player @param {FactionWorkType} workType @param {number} [favor] */
       factionGains: (player, workType, favor) => {
         if (workType === 'hacking') {
           return {
             ...WORK_STATS,
-            hacking: 2,
+            hackExp: 2 / 5 * getAugMult('hacking_exp'),
             reputation: ((player.skills?.hacking ?? 1) / 975) * getAugMult('faction_rep') * favorMult(favor),
           };
         }
@@ -55,4 +65,13 @@ export const getMockFormulas = (staticData) => {
         prodMult * (level * 1.5) * 1.035 ** (ram - 1) * ((cores + 5) / 6),
     },
   };
+};
+
+/** @param {NS} ns */
+export const formulas = (ns) => {
+  if (ns.fileExists('Formulas.exe', 'home')) {
+    return ns.formulas;
+  } else {
+    return getMockFormulas(getStaticData(ns));
+  }
 };
