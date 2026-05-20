@@ -22,7 +22,7 @@ const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
  * }} Goal
  */
 
-export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "defense", "dexterity", "agility"]);
+const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ (["strength", "defense", "dexterity", "agility"]);
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 /**
