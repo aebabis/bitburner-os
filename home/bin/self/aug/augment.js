@@ -2,7 +2,7 @@ import { rmi } from "../../../lib/rmi";
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.tprint('?');
+  ns.disableLog('ALL');
   const retry = true;
 
   await rmi(ns, retry)("/bin/self/aug/load-faction-favor.js");
@@ -15,9 +15,13 @@ export async function main(ns) {
 
   while (true) {
     await rmi(ns, retry)("/bin/self/aug/load-owned-augs.js");
+    ns.print('Loaded augs');
     await rmi(ns, retry)("/bin/self/aug/load-faction-favor-gain.js");
+    ns.print('Loaded favor');
     await rmi(ns)("/bin/self/aug/join-factions.js");
+    ns.print('Loaded factions');
     await rmi(ns)("/bin/self/aug/purchase-augs.js");
+    ns.print('Checked augs');
     await ns.sleep(100);
   }
 }
