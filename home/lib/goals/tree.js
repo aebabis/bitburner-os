@@ -2,7 +2,7 @@ import {
   factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
   NEUROFLUX, buildJoinSubtree,
 } from "./nodes.js";
-import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost } from "../aug-select.js";
+import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost, augValueFromStats } from "../aug-select.js";
 
 /** @param {import('./nodes.js').Goal[]} goals @returns {boolean} */
 export const isRepBound = (goals) => {
@@ -34,14 +34,15 @@ export const isRepBound = (goals) => {
  *   karma: number,
  *   augsOverride?: string[],
  * }} data
- * @returns {{ goals: import('./nodes.js').Goal[], terminalGoals: import('./nodes.js').Goal[] } | null}
+ * @returns {{ goals: import('./nodes.js').Goal[], terminalGoals: import('./nodes.js').Goal[], value: number, utility: (overhead: number) => number } | null}
  */
 export const buildFactionGoalTree = (faction, {
   player, staticData, factionRep, purchasedAugmentations, ownedAugs,
   money, referenceIncome, activeRepRate, passiveRepRate,
   formulas, karma, augsOverride = undefined,
 }) => {
-  const { augmentationPrices, augmentationPrereqs } = staticData;
+  const { augmentationPrices, augmentationPrereqs, augmentationStats } = staticData;
+  const augValue = (/** @type {string} */ aug) => augValueFromStats(aug, augmentationStats);
 
   const moneyRate = referenceIncome || Infinity;
 
@@ -97,11 +98,17 @@ export const buildFactionGoalTree = (faction, {
   if (numQueued > 0 && augs.length > 0 && timeToMoneyGoal > INSTALL_OVERHEAD_SEC) {
     const queuedAugs = purchasedAugmentations.filter(aug => !installedSet.has(aug));
     const queuedAugGoals = queuedAugs.map(aug =>
-      augmentationGoal(aug, faction, purchasedAugmentations, []));
+      augmentationGoal(aug, faction, purchasedAugmentations, [], augValue(aug)));
     const earlyInstall = installGoal(queuedAugGoals);
+    const earlyValue = earlyInstall.value;
     return {
       goals: [...joinPrereqs, joinGoal, repGoal, ...queuedAugGoals, earlyInstall],
       terminalGoals: [earlyInstall],
+      value: earlyValue,
+      utility(overhead) {
+        const t = earlyInstall.timeToComplete();
+        return t != null && earlyValue > 0 ? earlyValue / (t + overhead) : 0;
+      },
     };
   }
 
@@ -109,11 +116,18 @@ export const buildFactionGoalTree = (faction, {
   let nfOrdinal = nfBaseOrdinal;
   const augGoals = augs.map(aug =>
     aug === NEUROFLUX
-      ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal])
-      : augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal]));
+      ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug))
+      : augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug)));
 
+  const treeValue = augGoals.reduce((s, g) => s + g.value, 0);
   return {
     goals: [...joinPrereqs, joinGoal, repGoal, moneyGoal, ...augGoals],
     terminalGoals: augGoals,
+    value: treeValue,
+    utility(overhead) {
+      const times = augGoals.map(g => g.timeToComplete());
+      if (times.some(t => t == null) || treeValue === 0) return 0;
+      return treeValue / (Math.max(.../** @type {number[]} */ (times)) + overhead);
+    },
   };
 };

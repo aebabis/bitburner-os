@@ -16,6 +16,7 @@ const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
  *   requirement: number | undefined,
  *   faction: string | undefined,
  *   deps: Goal[],
+ *   value: number,
  *   ownTime: () => number | null,
  *   timeToComplete: () => number | null,
  * }} Goal
@@ -28,13 +29,13 @@ export const NEUROFLUX = 'NeuroFlux Governor';
  * @param {GoalType} type
  * @param {string} desc
  * @param {() => boolean} isDone
- * @param {{ requirement?: number, faction?: string, deps?: Goal[], ownTime?: () => number | null }} [opts]
+ * @param {{ requirement?: number, faction?: string, deps?: Goal[], value?: number, ownTime?: () => number | null }} [opts]
  * @returns {Goal}
  */
-const goal = (type, desc, isDone, { requirement, faction, deps = [], ownTime = () => null } = {}) => {
+const goal = (type, desc, isDone, { requirement, faction, deps = [], value = 0, ownTime = () => null } = {}) => {
   let _ttc;
   return {
-    type, desc, isDone, requirement, faction, deps, ownTime,
+    type, desc, isDone, requirement, faction, deps, value, ownTime,
     toString: () => isDone() ? desc : DARK(desc),
     timeToComplete() {
       if (_ttc !== undefined) return _ttc;
@@ -57,7 +58,8 @@ export const jobRamGoal = (poolServer, currentRam, requiredJobRam, jobRamCost, c
 
 /** @param {import('./nodes.js').Goal[]} deps @returns {Goal} */
 export const installGoal = (deps) =>
-  goal("INSTALL", "Run augmentation suite", () => false, { deps, ownTime: () => 0 });
+  goal("INSTALL", "Run augmentation suite", () => false,
+    { deps, value: deps.reduce((s, d) => s + d.value, 0), ownTime: () => 0 });
 
 /** @param {number} hackReq @param {number} currentHacking @param {number|null} [trainingTime] @returns {Goal} */
 export const hackingLevelGoal = (hackReq, currentHacking, trainingTime = null) =>
@@ -131,21 +133,21 @@ export const augMoneyGoal = (costToAug, currentMoney, referenceIncome) =>
         : null,
     });
 
-/** @param {string} aug @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal} */
-export const augmentationGoal = (aug, faction, purchasedAugmentations, deps) =>
+/** @param {string} aug @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @param {number} [value] @returns {Goal} */
+export const augmentationGoal = (aug, faction, purchasedAugmentations, deps, value = 0) =>
   goal("AUGMENTATION", aug,
     () => purchasedAugmentations.includes(aug),
-    { faction, deps, ownTime: () => 0 });
+    { faction, deps, value, ownTime: () => 0 });
 
 /**
  * One level of Neuroflux Governor. isDone when the player has purchased at least
  * `ordinal` levels total (counting from 1).
- * @param {number} ordinal @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @returns {Goal}
+ * @param {number} ordinal @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @param {number} [value] @returns {Goal}
  */
-export const neurofluxGoal = (ordinal, faction, purchasedAugmentations, deps) =>
+export const neurofluxGoal = (ordinal, faction, purchasedAugmentations, deps, value = 0) =>
   goal("AUGMENTATION", NEUROFLUX,
     () => purchasedAugmentations.filter(a => a === NEUROFLUX).length >= ordinal,
-    { faction, deps, ownTime: () => 0 });
+    { faction, deps, value, ownTime: () => 0 });
 
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.

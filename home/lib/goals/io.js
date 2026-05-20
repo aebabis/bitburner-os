@@ -2,7 +2,7 @@ import { getStaticData, getGoalsData, getPlayerData, getMoneyData } from "../dat
 import { THREADPOOL } from "../../etc/config.js";
 import { jobRamGoal, installGoal } from "./nodes.js";
 import { buildFactionGoalTree, isRepBound as isRepBoundPure } from "./tree.js";
-import { getAccessibleFactions } from "../aug-select.js";
+import { getAccessibleFactions, computeResetOverhead } from "../aug-select.js";
 import { getMockFormulas } from "../formulas.js";
 
 /** @param {NS} ns @returns {import('./nodes.js').Goal[]} */
@@ -23,11 +23,7 @@ export const getGoals = (ns) => {
     formulas, karma,
   };
 
-  /** @param {{ terminalGoals: import('./nodes.js').Goal[] }} plan */
-  const planTime = (plan) => {
-    const times = plan.terminalGoals.map(g => g.timeToComplete());
-    return times.some(t => t == null) ? Infinity : Math.max(.../** @type {number[]} */ (times));
-  };
+  const overhead = computeResetOverhead(staticData);
 
   let bestPlan = null;
   if (goalsData.manualOverride && goalsData.targetFaction) {
@@ -39,7 +35,7 @@ export const getGoals = (ns) => {
       .map(f => buildFactionGoalTree(f, planData))
       .filter(/** @type {<T>(x: T | null) => x is T} */ (Boolean));
     if (plans.length > 0)
-      bestPlan = plans.reduce((a, b) => planTime(a) <= planTime(b) ? a : b);
+      bestPlan = plans.reduce((a, b) => a.utility(overhead) >= b.utility(overhead) ? a : b);
   }
 
   if (bestPlan) return bestPlan.goals;

@@ -1,8 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { augMoneyGoal, factionJoinGoal, factionRepGoal, karmaGoal } from '../home/lib/goals/nodes.js';
+import { augMoneyGoal, factionJoinGoal, factionRepGoal, karmaGoal, augmentationGoal, installGoal } from '../home/lib/goals/nodes.js';
 import { isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
-import { augmentationGoal } from '../home/lib/goals/nodes.js';
 import { computeRepReq, computeAugCost } from '../home/lib/aug-select.js';
 
 describe('Goal node factories', () => {
@@ -34,6 +33,34 @@ describe('Goal node factories', () => {
       assert.equal(karmaGoal(-54, -100).isDone(), true);
       assert.equal(karmaGoal(-54, -20).isDone(), false);
     });
+  });
+});
+
+describe('value', () => {
+  it('augmentationGoal carries its value', () => {
+    const aug = augmentationGoal('A', 'F', [], [], 3.5);
+    assert.equal(aug.value, 3.5);
+  });
+
+  it('augmentationGoal defaults to 0 when value omitted', () => {
+    const aug = augmentationGoal('A', 'F', [], []);
+    assert.equal(aug.value, 0);
+  });
+
+  it('installGoal sums deps values', () => {
+    const a = augmentationGoal('A', 'F', [], [], 2.0);
+    const b = augmentationGoal('B', 'F', [], [], 1.5);
+    const install = installGoal([a, b]);
+    assert.equal(install.value, 3.5);
+  });
+
+  it('prerequisite goals (rep, money, join) have value 0', () => {
+    const join = factionJoinGoal('F', ['F']);
+    const rep = factionRepGoal('F', 1000, {}, join, 1);
+    const money = augMoneyGoal(1e6, 0, 1);
+    assert.equal(join.value, 0);
+    assert.equal(rep.value, 0);
+    assert.equal(money.value, 0);
   });
 });
 
@@ -202,6 +229,51 @@ describe('buildFactionGoalTree', () => {
     });
     const repGoal = tree.goals.find(g => g.type === 'FACTION_REP');
     assert.equal(repGoal.requirement, 25000);
+  });
+
+  // Shared setup for utility/value tests: aug A with hacking:1.5 → value=(1.5-1)*10=5.0
+  const valueTestData = (repRate) => ({
+    player: { factions: ['F'], skills: {}, location: 'Sector-12' },
+    staticData: {
+      factionRequirements: {},
+      augmentationRepReqs: { A: 100 },
+      augmentationPrices: { A: 0 },
+      augmentationPrereqs: {},
+      ownedAugmentations: [],
+      augmentationStats: { A: { hacking: 1.5 } },
+    },
+    factionRep: {},
+    purchasedAugmentations: [],
+    ownedAugs: [],
+    money: 0,
+    referenceIncome: 0,
+    activeRepRate: repRate > 0 ? { F: repRate } : {},
+    passiveRepRate: {},
+    formulas: null,
+    karma: 0,
+    augsOverride: ['A'],
+  });
+
+  it('tree.value equals sum of terminal aug values', () => {
+    const tree = buildFactionGoalTree('F', valueTestData(1));
+    assert.equal(tree.value, 5.0); // (1.5-1)*10 = 5.0
+  });
+
+  it('utility returns 0 when rep rate is unknown (null timeToComplete)', () => {
+    const tree = buildFactionGoalTree('F', valueTestData(0));
+    assert.equal(tree.utility(0), 0);
+  });
+
+  it('utility returns value / (eta + overhead)', () => {
+    const tree = buildFactionGoalTree('F', valueTestData(1));
+    // repReq=100, repRate=1 → eta=100s; value=5.0; overhead=50
+    assert.equal(tree.utility(50), 5.0 / (100 + 50));
+  });
+
+  it('utility is higher for a faster plan (same value, shorter eta)', () => {
+    const fast = buildFactionGoalTree('F', valueTestData(2)); // eta=50s
+    const slow = buildFactionGoalTree('F', valueTestData(1)); // eta=100s
+    assert.ok(fast.utility(0) > slow.utility(0));
   });
 });
 

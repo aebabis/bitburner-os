@@ -68,6 +68,20 @@ export const scoreAug = (stats, weights) => Object.entries(stats)
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
 
+/**
+ * Estimate reset overhead (seconds) for plan comparison — how long the next run will take to
+ * reach this productive state. Uses actual run elapsed time as proxy (reproducible runs),
+ * with a conservative floor for early-run estimates.
+ * @param {{ resetInfo?: any, ownedAugmentations?: string[] }} staticData
+ * @returns {number}
+ */
+export const computeResetOverhead = (staticData) => {
+  const installedAugs = staticData.ownedAugmentations ?? [];
+  const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
+  const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+  return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
+};
+
 export const MAX_AUGS = 6;
 const NEUROFLUX = "NeuroFlux Governor";
 
