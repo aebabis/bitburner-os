@@ -22,6 +22,8 @@
  * Customise `formatStatus` below to change what appears in Neovim.
  */
 
+import { getStaticData } from '../lib/data-store';
+
 const OUTPUT_FILE = "/.bitburner/info.json";
 const CMD_FILE = "/.bitburner/cmd.json";
 const INTERVAL_MS = 2000;
@@ -47,7 +49,6 @@ function formatMoney(n) {
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
   let lastCmdId = -1;
   while (true) {
     const data = /** @type {NvimData} */ ({ v: 1, ts: Date.now() });
@@ -64,7 +65,7 @@ export async function main(ns) {
       args: proc.args,
     }));
     data.status = formatStatus(data);
-    const r = ns.getResetInfo();
+    const r = getStaticData(ns).resetInfo;
     data.reset = { bitnode: r.currentNode, playtime: p.totalPlaytime };
     const cmdRaw = ns.read(CMD_FILE);
     if (cmdRaw) {

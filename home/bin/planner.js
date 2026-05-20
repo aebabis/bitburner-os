@@ -11,6 +11,14 @@ import {
   getTableString,
 } from "../lib/service-api";
 
+const isRemoteApiConnected = () => {
+  const elem = eval('doc' + 'ument').querySelector('svg[aria-label^="Remote API"]');
+  if (elem) {
+    const label = elem.getAttribute('aria-label');
+    return label?.match('Online');
+  }
+};
+
 const mostRootRam = (/** @type {NS} */ ns) => {
   const { rootServers = [] } = getRamData(ns);
   return Math.max(0, ...rootServers.map((/** @type {{maxRam: number}} */ server) => server.maxRam));
@@ -48,6 +56,7 @@ const go = async (ns) => {
     AnyHostService(ns)("/bin/share.js"),
     AnyHostService(ns)("/bin/stalker.js"),
     AnyHostService(ns, couldTrade)("/bin/broker/broker.js"),
+    AnyHostService(ns, isRemoteApiConnected)("/bin/nvim.js"),
   ];
 
   if (gangsAvailable)
