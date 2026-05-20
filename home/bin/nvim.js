@@ -23,6 +23,7 @@
  */
 
 import { getStaticData } from '../lib/data-store';
+import { fullInfect } from './infect';
 
 const OUTPUT_FILE = "/.bitburner/info.json";
 const CMD_FILE = "/.bitburner/cmd.json";
@@ -83,6 +84,7 @@ export async function main(ns) {
             }
           }
           if (cmd.run) ns.run(cmd.run);
+          fullInfect(ns);
         }
       } catch {}
     }
