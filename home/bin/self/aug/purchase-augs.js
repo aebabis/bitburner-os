@@ -1,8 +1,7 @@
-import { getMoneyData, getStaticData } from "../../../lib/data-store";
+import { putPlayerData, getStaticData } from "../../../lib/data-store";
 import { getGoals, } from "../../../lib/goals/goals";
-import { rmi } from "../../../lib/rmi";
 import { by } from "../../../lib/util";
-import { liquidate } from "../../liquidate";
+import { nmap } from "../../../lib/nmap";
 
 const NEUROFLUX = "NeuroFlux Governor";
 
@@ -10,59 +9,38 @@ const NEUROFLUX = "NeuroFlux Governor";
 export async function main(ns) {
   ns.disableLog("ALL");
   const { factions, money } = ns.getPlayer();
-  const {
-    augmentations,
-    augmentationPrices,
-    augmentationRepReqs,
-    augmentationPrereqs,
-  } = getStaticData(ns);
-  const goals = getGoals(ns);
-  const targetAugmentations = goals
-    .filter((goal) => goal.type === 'AUGMENTATION')
-    .map((goal) => goal.desc);
-  const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
-  const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
-  const augCost = goals.find((goal) => goal.type === 'AUG_MONEY')?.requirement ?? Infinity;
-  const { estimatedStockValue = 0 } = getMoneyData(ns);
+  const { augmentations, augmentationPrices } = getStaticData(ns);
 
   const purchasedAugmentations = ns.singularity.getOwnedAugmentations(true);
 
-  // Multiset difference: each purchased aug removes one occurrence from the target list.
-  // This correctly handles Neuroflux, which can appear multiple times.
-  const remaining = /** @type {string[]} */ ([...targetAugmentations]);
-  for (const aug of purchasedAugmentations) {
-    const idx = remaining.indexOf(aug);
-    if (idx >= 0) remaining.splice(idx, 1);
-  }
-  const remainingAugs = remaining
-    .sort(by((/** @type {string} */ aug) => -augmentationRepReqs[aug]))
-    .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
+  putPlayerData(ns, { purchasedAugmentations });
 
-  const purchasable = (/** @type {string} */ aug) =>
-    (augmentationPrereqs[aug] || []).every((/** @type {string} */ prereq) =>
-      purchasedAugmentations.includes(prereq),
-    );
+  const goals = getGoals(ns);
+  const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
+  const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
+  const moneyGoal = goals.find((goal) => goal.type === 'AUG_MONEY');
+  
+  const targetAugmentations = goals
+    .filter((goal) => goal.type === 'AUGMENTATION')
+    .map((goal) => goal.desc);
 
   const inTargetFactions = factionJoinGoals.every((goal) => goal.isDone());
+  const hasEnoughMoney = moneyGoal?.isDone();
   const hasEnoughRep = factionRepGoals.every((goal) => goal.isDone());
-  const hasEnoughMoney = 0.9 * estimatedStockValue + money > augCost;
-  // If our networth is enough to finish the run, do it.
-  if (inTargetFactions && hasEnoughRep && hasEnoughMoney) {
-    await liquidate(ns);
 
-    // Wait for a little more money to come in
-    await ns.sleep(1000);
-
-    for (const augmentation of remainingAugs) {
-      const soldTheAug = (/** @type {FactionName} */ faction) =>
-        ns.singularity.purchaseAugmentation(faction, augmentation);
-      if (purchasable(augmentation)) {
-        // Attempt to buy the next augmentation from any faction.
-        // Only count the ones for which the prereqs are met.
-        if (factions.some(soldTheAug)) {
-          purchasedAugmentations.push(augmentation);
+  if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {
+    for (const hostname of nmap(ns))
+      for (const { pid } of ns.ps(hostname))
+        if (pid !== ns.pid) {
+          ns.ui.closeTail(pid);
+          ns.kill(pid);
         }
-      }
+
+    ns.tprint(`Attempting to purchase ${targetAugmentations.length} augmentations`);
+
+    for (const augmentation of targetAugmentations) {
+      const bought = factions.some((faction) => ns.singularity.purchaseAugmentation(faction, augmentation));
+      ns.tprint(`  Purchase ${augmentation}?: ${bought}`);
     }
 
     // Attempt to buy as many faction augmentations
@@ -70,27 +48,61 @@ export async function main(ns) {
     const byPrice = augmentations
       .slice()
       .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
+    ns.tprint(`Attempting to purchase other augmentations`);
     for (const augmentation of byPrice)
       for (const faction of factions)
         ns.singularity.purchaseAugmentation(faction, augmentation);
 
     // Spend what's left on Neuroflux
+    let nfCount = 0;
     while (
       factions.some((faction) =>
         ns.singularity.purchaseAugmentation(faction, NEUROFLUX),
       )
-    );
+    ) nfCount++;
+    ns.tprint(`  bought ${nfCount} Neuroflux`);
+
+    ns.tprint(`I'm the scheduler now!`);
+    const finisher = ['home', 'THREADPOOL-01'].sort(by((hostname) => {
+      return -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname));
+    }))[0];
+    ns.tprint(`Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`);
+
+    /** @param {string} script
+     *  @param {number} threads
+     *  @param { ...ScriptArg} args*/
+    const run = async (script, threads, ...args) => {
+      ns.tprint(`${script} ${args.join(' ')}`);
+      const pid = ns.exec(script, finisher, threads, ...args);
+      ns.tprint(pid);
+      if (pid === 0) {
+        ns.tprint(' failed to run');
+      } else {
+        while (ns.isRunning(pid)) await ns.sleep(50);
+        ns.tprint(' done');
+      }
+    };
 
     // Buy RAM if we can
-    await rmi(ns)("/bin/self/buy-ram.js", 1);
+    await run("/bin/self/buy-ram.js", 1);
 
     // Try to start next aug with market access
-    await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseWseAccount");
-    await rmi(ns)("/bin/broker/purchase.js", 1, "purchaseTixApi");
-    await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
-    await rmi(ns)("/bin/broker/purchase.js", 1, "purchase4SMarketData");
+    await run("/bin/broker/purchase.js", 1, "purchaseWseAccount");
+    await run("/bin/broker/purchase.js", 1, "purchaseTixApi");
+    await run("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
+    await run("/bin/broker/purchase.js", 1, "purchase4SMarketData");
 
     // Start all over
-    await rmi(ns)("/bin/self/aug/install.js", 1, "init.js");
+    await run("/bin/self/aug/install.js", 1);
+  } else {
+    const lines = [
+      `purchase-augs: no trigger @ ${new Date().toISOString()}`,
+      `  inTargetFactions=${inTargetFactions}  factionJoinGoals=[${factionJoinGoals.map(g => `${g.faction}:${g.isDone()}`).join(', ')}]`,
+      `  hasEnoughRep=${hasEnoughRep}  factionRepGoals=[${factionRepGoals.map(g => `${g.faction}:${g.isDone()}(req=${g.requirement})`).join(', ')}]`,
+      `  hasEnoughMoney=${hasEnoughMoney}  money=${ns.format.number(money,3)}`,
+      `  targetAugmentations=${JSON.stringify(targetAugmentations)}`,
+      `  goalTypes=${JSON.stringify(goals.map(g => g.type))}`,
+    ].join('\n');
+    ns.write('/tmp/purchase-augs-debug.txt', lines, 'w');
   }
 }

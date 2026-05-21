@@ -17,3 +17,4 @@
 - Use `ns.getResetInfo` instead of singularity API where possible
 - Explore removing `staticData.ownedAugmentations` in favour of deriving it from `staticData.resetInfo.ownedAugs` at call sites
 - Rewrite purchase-augs.js
+- Make accountant sell when close to install time

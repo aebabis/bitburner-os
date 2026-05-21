@@ -53,21 +53,14 @@ export const delegate =
       const start = Date.now();
       await ns.sleep(50);
       const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
-      let prevProcess;
       while (true) {
-        const process = port.peek();
-        if (process != null) {
-          if (process.ticket === job.ticket) return port.read();
-          // If same process in port two consecutive
-          // passes, assume parent died.
-          if (process.pid === prevProcess?.pid) port.read();
-        } else if (Date.now() - start >= 70000)
-          // Unnecessary if all parents listen
+        const responses = port.peek();
+        if (responses?.[job.ticket] != null) return responses[job.ticket];
+        if (Date.now() - start >= 70000)
           throw new Error(
             `Timed-out: ${script} ${host || "*"} ${numThreads} ${args.join(" ")}`,
           );
         await ns.sleep(10);
-        prevProcess = process;
       }
     }
   };
@@ -112,21 +105,17 @@ export const getDelegatedTasks = async (ns) => {
   return tasks;
 };
 
+const TICKET_TTL = 30_000;
+
 /** @param {NS} ns **/
-export const closeTicket = (ns) => async (/** @type {{startTime: number}} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
+export const closeTicket = (ns) => async (/** @type {string} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
-  const deadline = Date.now() + 5000;
-  while (port.full()) {
-    if (Date.now() > deadline) {
-      logger(ns).warn("PORT_SCH_RETURN full; dropping ticket response");
-      return false;
-    }
-    await ns.sleep(50);
-  }
-
   const timestamp = Date.now();
-  const waitTime = timestamp - ticket.startTime;
-  if (waitTime > 40) logger(ns).warn("process delayed by " + waitTime + "ms");
-
-  port.write({ ticket, pid, hostname, threads, timestamp });
+  const responses = port.peek() || {};
+  for (const [k, v] of Object.entries(responses))
+    if (timestamp - v.timestamp > TICKET_TTL) delete responses[k];
+  responses[ticket] = { pid, hostname, threads, timestamp };
+  port.clear();
+  port.write(responses);
+  return true;
 };
