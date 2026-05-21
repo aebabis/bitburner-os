@@ -1,7 +1,8 @@
-import { putPlayerData, getStaticData } from "../../../lib/data-store";
-import { getGoals, } from "../../../lib/goals/goals";
+import { putPlayerData } from "../../../lib/data-store";
+import { getGoals } from "../../../lib/goals/goals";
 import { by } from "../../../lib/util";
 import { nmap } from "../../../lib/nmap";
+import { dump } from '../../../bin/broker/dump';
 
 const NEUROFLUX = "NeuroFlux Governor";
 
@@ -9,8 +10,6 @@ const NEUROFLUX = "NeuroFlux Governor";
 export async function main(ns) {
   ns.disableLog("ALL");
   const { factions, money } = ns.getPlayer();
-  const { augmentations, augmentationPrices } = getStaticData(ns);
-
   const purchasedAugmentations = ns.singularity.getOwnedAugmentations(true);
 
   putPlayerData(ns, { purchasedAugmentations });
@@ -36,22 +35,15 @@ export async function main(ns) {
           ns.kill(pid);
         }
 
+    // Sell all stocks
+    dump(ns);
+
     ns.tprint(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
     for (const augmentation of targetAugmentations) {
       const bought = factions.some((faction) => ns.singularity.purchaseAugmentation(faction, augmentation));
       ns.tprint(`  Purchase ${augmentation}?: ${bought}`);
     }
-
-    // Attempt to buy as many faction augmentations
-    // as possible, starting with the most expensive
-    const byPrice = augmentations
-      .slice()
-      .sort(by((/** @type {string} */ aug) => -augmentationPrices[aug]));
-    ns.tprint(`Attempting to purchase other augmentations`);
-    for (const augmentation of byPrice)
-      for (const faction of factions)
-        ns.singularity.purchaseAugmentation(faction, augmentation);
 
     // Spend what's left on Neuroflux
     let nfCount = 0;
