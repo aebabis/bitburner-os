@@ -1,4 +1,4 @@
-import { DivisionNames } from './constants';
+import { DivisionNames } from '../constants';
 
 /** @param {NS} ns */
 export async function main(ns) {

@@ -6,7 +6,7 @@ export async function main(ns) {
   ns.disableLog("ALL");
 
   if (!ns.corporation.hasCorporation()) {
-    await rmi(ns)('/bin/corporation/create.js', 1, false);
+    await rmi(ns)('/bin/corporation/create/corporation.js', 1, false);
     return;
   }
 
@@ -16,6 +16,6 @@ export async function main(ns) {
     await rmi(ns)('/bin/corporation/orders/load-industry-data.js');
 
   await rmi(ns)('/bin/corporation/unlock.js');
-  await rmi(ns)('/bin/corporation/industries.js');
+  await rmi(ns)('/bin/corporation/create/industries.js');
   await rmi(ns)('/bin/corporation/manage.js');
 }
