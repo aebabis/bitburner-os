@@ -1,4 +1,5 @@
 import { rmi } from '../../lib/rmi';
+import { getStaticData } from '../../lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -8,6 +9,13 @@ export async function main(ns) {
     await rmi(ns)('/bin/corporation/create.js', 1, false);
     return;
   }
-  await rmi(ns)('/bin/corporation/unlock.js', 1);
-  await rmi(ns)('/bin/corporation/industries.js', 1);
+
+  while (getStaticData(ns).materialData == null)
+    await rmi(ns)('/bin/corporation/orders/load-material-data.js');
+  while (getStaticData(ns).industryData == null)
+    await rmi(ns)('/bin/corporation/orders/load-industry-data.js');
+
+  await rmi(ns)('/bin/corporation/unlock.js');
+  await rmi(ns)('/bin/corporation/industries.js');
+  await rmi(ns)('/bin/corporation/manage.js');
 }
