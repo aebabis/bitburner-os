@@ -42,6 +42,11 @@ const go = async (ns) => {
   const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
   const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
   const inCriminalFaction = () => player(ns).factions.some(isCriminal);
+  const canCorp = () => {
+    const selfFund = resetInfo.currentNode !== 3;
+    return ns.corporation.hasCorporation() ||
+      ns.corporation.canCreateCorporation(selfFund) === 'Success';
+  };
 
   /* eslint-disable no-unexpected-multiline */
   const tasks = [
@@ -56,6 +61,7 @@ const go = async (ns) => {
     AnyHostService(ns)("/bin/share.js"),
     AnyHostService(ns)("/bin/stalker.js"),
     AnyHostService(ns, couldTrade)("/bin/broker/broker.js"),
+    AnyHostService(ns, canCorp)("/bin/corporation/corporation.js"),
     AnyHostService(ns, isRemoteApiConnected)("/bin/nvim.js"),
   ];
 
