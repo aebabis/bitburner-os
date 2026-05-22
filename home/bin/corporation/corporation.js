@@ -17,5 +17,5 @@ export async function main(ns) {
 
   await rmi(ns)('/bin/corporation/unlock.js');
   await rmi(ns)('/bin/corporation/create/industries.js');
-  await rmi(ns)('/bin/corporation/manage.js');
+  await rmi(ns)('/bin/corporation/managers/agriculture.js');
 }
