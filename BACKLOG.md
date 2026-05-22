@@ -18,3 +18,7 @@
 - Explore removing `staticData.ownedAugmentations` in favour of deriving it from `staticData.resetInfo.ownedAugs` at call sites
 - Rewrite purchase-augs.js
 - Make accountant sell when close to install time
+- Share indicator
+- XP targets at start of run? (5s worth of school/gym XP)
+- Make sysadmin pay attention to goals
+- Avoid lengthy crimes that won't finish before next milestone (faction join or install)
