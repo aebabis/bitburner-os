@@ -29,7 +29,7 @@ export async function main(ns) {
     };
 
     if (!ns.corporation.hasWarehouse(divisionName, city)) {
-      return;
+      continue;
     }
     const warehouse = ns.corporation.getWarehouse(divisionName, city);
 
