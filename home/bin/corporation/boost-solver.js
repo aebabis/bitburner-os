@@ -10,20 +10,20 @@ const sum = (a, b) => a + b;
   */
 export const solveBoost = (S, ...csPairs) => {
   const cs = csPairs.map(([c]) => c).reduce(sum);
-  const volumes = csPairs.map(([c, s], i) => {
+  const amounts = csPairs.map(([c, s], i) => {
     const others = csPairs.filter((_,idx) => idx !== i);
     const oc = others.map(([c]) => c).reduce(sum);
     const os = others.map(([, s]) => s).reduce(sum);
     return ((S - 500 * ((s/c) * oc - os)) / (cs/c)) / s;
   });
-  const negIndex = volumes.findIndex((vol) => vol < 0);
+  const negIndex = amounts.findIndex((vol) => vol < 0);
   if (negIndex !== -1) {
     const newParams = csPairs.filter((_, idx) => idx !== negIndex);
     const result = solveBoost(S, ...newParams);
     result.splice(negIndex, 0, 0);
     return result;
   }
-  return volumes;
+  return amounts;
 };
 
 /** @param {NS} ns
