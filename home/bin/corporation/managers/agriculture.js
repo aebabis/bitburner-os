@@ -54,7 +54,7 @@ export async function main(ns) {
 
       const { stored } = ns.corporation.getMaterial(divisionName, city, material);
       const needed = demand + tsl - stored;
-      const surplus = stored - BATCH_INPUT_MAX;
+      const surplus = stored - coefficient * BATCH_INPUT_MAX;
 
       if (needed > 0)
         await buy(material, needed);
