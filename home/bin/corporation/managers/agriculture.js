@@ -59,7 +59,7 @@ export async function main(ns) {
       if (needed > 0)
         await buy(material, needed);
       else if (surplus > 0)
-        await sell(material, 1, 'MP/2');
+        await sell(material, surplus / 100, 'MP/2');
       else
         await buy(material, 0);
     }
@@ -70,6 +70,8 @@ export async function main(ns) {
       const targetAmount = boostTargets[material];
       if (stored < targetAmount)
         await buy(material, 1);
+      else if (stored - targetAmount > 10)
+        await sell(material, 1, 'MP');
       else
         await buy(material, 0);
     }
