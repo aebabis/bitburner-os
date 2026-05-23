@@ -1,22 +1,29 @@
 import { getStaticData } from '../../lib/data-store';
 
+/** @param {number} a
+ *  @param {number} b */
+const sum = (a, b) => a + b;
+
 /** @param {number} S
-  * @param {number} c1
-  * @param {number} c2
-  * @param {number} c3
-  * @param {number} c4
-  * @param {number} s1
-  * @param {number} s2
-  * @param {number} s3
-  * @param {number} s4
+  * @param {[number, number][]} csPairs
+  * @return {number[]}
   */
-export const solveBoost = (S, c1, c2, c3, c4, s1, s2, s3, s4) => {
-  const c = c1+c2+c3+c4;
-  const v1 = (S - 500 * (s1/c1 * (c2+c3+c4) - (s2+s3+s4))) / (c/c1);
-  const v2 = (S - 500 * (s2/c2 * (c1+c3+c4) - (s1+s3+s4))) / (c/c2);
-  const v3 = (S - 500 * (s3/c3 * (c1+c2+c4) - (s1+s2+s4))) / (c/c3);
-  const v4 = (S - 500 * (s4/c4 * (c1+c2+c3) - (s1+s2+s3))) / (c/c4);
-  return [ v1/s1, v2/s2, v3/s3, v4/s4 ];
+export const solveBoost = (S, ...csPairs) => {
+  const cs = csPairs.map(([c]) => c).reduce(sum);
+  const volumes = csPairs.map(([c, s], i) => {
+    const others = csPairs.filter((_,idx) => idx !== i);
+    const oc = others.map(([c]) => c).reduce(sum);
+    const os = others.map(([, s]) => s).reduce(sum);
+    return ((S - 500 * ((s/c) * oc - os)) / (cs/c)) / s;
+  });
+  const negIndex = volumes.findIndex((vol) => vol < 0);
+  if (negIndex !== -1) {
+    const newParams = csPairs.filter((_, idx) => idx !== negIndex);
+    const result = solveBoost(S, ...newParams);
+    result.splice(negIndex, 0, 0);
+    return result;
+  }
+  return volumes;
 };
 
 /** @param {NS} ns
@@ -40,8 +47,12 @@ export const getBoostTargets = (ns, industryName, S) => {
   const realEstateSize = materialData['Real Estate'].size;
   const robotSize = materialData['Robots'].size;
   const [aiCoreAmount, hardwareAmount, realEstateAmount, robotAmount] =
-    solveBoost(S, aiCoreFactor, hardwareFactor, realEstateFactor, robotFactor,
-      aiCoreSize, hardwareSize, realEstateSize, robotSize);
+    solveBoost(S,
+      [aiCoreFactor, aiCoreSize],
+      [hardwareFactor, hardwareSize],
+      [realEstateFactor, realEstateSize],
+      [robotFactor, robotSize]
+    );
   return {
     'AI Cores': Math.max(0, aiCoreAmount),
     'Hardware': Math.max(0, hardwareAmount),
