@@ -1,5 +1,4 @@
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
-import { buildJoinSubtree } from "./goals/nodes.js";
 
 /** @type {Record<keyof Multipliers, number>} */
 export const DEFAULT_AUG_WEIGHTS = {
@@ -150,7 +149,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  * @param {{ moneyRate?: number, repRate?: number, activeRepRate?: Record<string,number>, passiveRepRate?: Record<string,number> }} [opts]
  * @returns {{ utility: number, batch: string[] }}
  */
-export const findOptimalBatch = (faction, staticData, player, formulas, factionRep, ownedAugmentations, { moneyRate = Infinity, repRate, activeRepRate, passiveRepRate } = {}) => {
+export const findOptimalBatch = (faction, staticData, player, formulas, factionRep, ownedAugmentations, { moneyRate = Infinity, repRate, activeRepRate, passiveRepRate, joinTime = 0 } = {}) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -172,17 +171,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   const gainRate = formulas?.work.factionGains(player, 'hacking', factionFavor?.[faction]);
   const effectiveRepRate = activeRepRate?.[faction] ?? passiveRepRate?.[faction] ?? repRate ?? gainRate?.reputation * 5;
 
-  // Overhead = how long the next run will take to reach this productive state.
-  // Best proxy: how long this run has taken (runs are roughly reproducible).
-  // Floor at OVERHEAD_BASE/(1+installed) so early-run estimates stay conservative.
-  const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
-  const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
-  const resetOverhead = Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
-
-  const { joinGoal } = buildJoinSubtree(faction, {
-    player, staticData, money: player.money ?? 0, referenceIncome: moneyRate, karma: player.karma ?? 0, formulas,
-  });
-  const joinTime = joinGoal.timeToComplete() ?? 0;
+  const resetOverhead = computeResetOverhead(staticData);
 
   // Neuroflux is always available regardless of owned count — you can always buy more.
   // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.

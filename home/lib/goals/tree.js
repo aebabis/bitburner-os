@@ -1,8 +1,109 @@
 import {
   factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
-  NEUROFLUX, buildJoinSubtree,
+  factionJoinGoal, hackingLevelGoal, combatLevelsGoal, killsGoal, karmaGoal,
+  moneyPrereqGoal, locationGoal, COMBAT_STATS, NEUROFLUX,
 } from "./nodes.js";
 import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost, augValueFromStats } from "../aug-select.js";
+
+// Port program costs in purchase order; used to estimate backdoor access cost.
+// TODO: Exclude programs the player already owns; consider fetching costs via ns.
+const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
+const EXP_PER_SECOND = 10;
+
+/**
+ * @param {number} requirement
+ * @param {number} currentLevel
+ * @param {string} stat
+ * @param {string[]} installedAugs
+ * @param {Record<string,any>|undefined} augmentationStats
+ * @param {any} formulas
+ * @returns {number|null}
+ */
+const skillTrainingTime = (requirement, currentLevel, stat, installedAugs, augmentationStats, formulas) => {
+  if (!formulas) return null;
+  let levelMult = 1, expMult = 1;
+  for (const aug of installedAugs) {
+    const s = augmentationStats?.[aug];
+    if (s?.[stat] != null) levelMult *= s[stat];
+    if (s?.[`${stat}_exp`] != null) expMult *= s[`${stat}_exp`];
+  }
+  const currentExp = formulas.skills.calculateExp(currentLevel ?? 1, levelMult);
+  const expReq = formulas.skills.calculateExp(requirement, levelMult);
+  return Math.max(0, expReq - currentExp) / expMult / EXP_PER_SECOND;
+};
+
+/**
+ * Build the join prereq subtree for a faction.
+ * Returns early (already-joined short-circuit) when player is already a member.
+ * @param {string} faction
+ * @param {{
+ *   player: Player,
+ *   staticData: any,
+ *   money: number,
+ *   referenceIncome: number,
+ *   karma: number,
+ *   formulas?: any,
+ * }} data
+ * @returns {{ joinPrereqs: Goal[], joinGoal: import('./nodes.js').Goal }}
+ */
+export const buildJoinSubtree = (faction, {
+  player, staticData, money, referenceIncome, karma, formulas = null,
+}) => {
+  const { factions, skills, location } = player;
+  const { factionRequirements, installedAugmentations, augmentationStats, serverBackdoorRequirements } = staticData;
+
+  if (factions.includes(faction)) {
+    return { joinPrereqs: [], joinGoal: factionJoinGoal(faction, factions, []) };
+  }
+
+  const joinPrereqs = [];
+  const requirements = factionRequirements?.[faction] ?? [];
+  const skillReqs = Object.assign({}, ...requirements.filter(r => r.type === 'skills').map(r => r.skills));
+  const karmaReq = requirements.find(r => r.type === 'karma')?.karma ?? 0;
+  const killsReq = requirements.find(r => r.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
+  const moneyTarget = requirements.find(r => r.type === 'money')?.money ?? 0;
+  const locationReqs = [
+    ...requirements.filter(r => r.type === 'city'),
+    ...requirements.filter(r => r.type === 'someCondition').flatMap(r => r.conditions).filter(r => r.type === 'city'),
+  ].map(r => r.city);
+
+  const bdReq = requirements.find(r => r.type === 'backdoorInstalled');
+  let bdHackReq = 0, bdMoney = 0;
+  if (bdReq && serverBackdoorRequirements) {
+    const serverReq = serverBackdoorRequirements.find(s => s.hostname === bdReq.server);
+    if (serverReq) {
+      bdHackReq = serverReq.requiredHackingLevel;
+      bdMoney = PORT_PROGRAM_COSTS
+        .filter((_, i) => i < serverReq.numPortsRequired)
+        .reduce((a, b) => a + b, 0);
+    }
+  }
+
+  // Combine explicit skill req with backdoor hacking req; only one goal needed.
+  const hackReq = Math.max(skillReqs.hacking ?? 0, bdHackReq) || null;
+  const combatReq = skillReqs.strength ?? null;
+
+  if (hackReq != null) {
+    const t = skillTrainingTime(hackReq, skills.hacking ?? 1, 'hacking', installedAugmentations, augmentationStats, formulas);
+    joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
+  }
+  if (combatReq != null) {
+    const times = formulas
+      ? COMBAT_STATS.map(stat => skillTrainingTime(combatReq, skills[stat] ?? 1, stat, installedAugmentations, augmentationStats, formulas) ?? 0)
+      : null;
+    const t = times ? Math.max(...times) : null;
+    joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
+  }
+  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
+  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
+  const totalMoneyTarget = moneyTarget + bdMoney;
+  if (totalMoneyTarget > 0) joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, referenceIncome));
+  const [loc] = locationReqs;
+  if (loc) joinPrereqs.push(locationGoal(loc, location));
+
+  const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
+  return { joinPrereqs, joinGoal };
+};
 
 /** @param {import('./nodes.js').Goal[]} goals @returns {boolean} */
 export const isRepBound = (goals) => {
@@ -46,11 +147,16 @@ export const buildFactionGoalTree = (faction, {
 
   const moneyRate = referenceIncome || Infinity;
 
+  const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
+    player, staticData, money, referenceIncome, karma, formulas,
+  });
+  const joinTime = joinGoal.timeToComplete() ?? 0;
+
   let batch;
   if (augsOverride != null) {
     batch = augsOverride;
   } else {
-    ({ batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, { moneyRate, activeRepRate, passiveRepRate }));
+    ({ batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, { moneyRate, activeRepRate, passiveRepRate, joinTime }));
   }
   if (batch.length === 0) return null;
 
@@ -73,9 +179,6 @@ export const buildFactionGoalTree = (faction, {
   const augs = getPurchaseOrder(batch);
 
   const repReq = computeRepReq(augs, staticData);
-  const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
-    player, staticData, money, referenceIncome, karma, formulas,
-  });
   const repRate = activeRepRate[faction]
     || passiveRepRate[faction]
     || formulas?.work.factionGains(player, 'hacking', staticData.factionFavor?.[faction])?.reputation * 5;
