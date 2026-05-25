@@ -29,7 +29,13 @@ export async function main(ns) {
   while (requiredJobRam < minServiceRam) requiredJobRam *= 2;
   tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);
 
-  putStaticData(ns, { requiredJobRam });
+  const augScripts = Object.keys(scriptRam).filter(s => s.startsWith('bin/self/aug/'));
+  const maxAugRam = Math.max(0, ...augScripts.map(getRam));
+  let requiredAugRam = 1;
+  while (requiredAugRam < maxAugRam) requiredAugRam *= 2;
+  tprint(ns)(STR + `  Aug Suite RAM Required: ${requiredAugRam}GB`);
+
+  putStaticData(ns, { requiredJobRam, requiredAugRam });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);

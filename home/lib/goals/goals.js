@@ -4,13 +4,14 @@ import { jobRamGoal, installGoal } from "./nodes.js";
 import { buildFactionGoalTree, isRepBound as isRepBoundPure } from "./tree.js";
 import { getAccessibleFactions, computeResetOverhead } from "../aug-select.js";
 import { getMockFormulas } from "../formulas.js";
+import { needsAugRam, needsJobRam } from "../query-service.js";
 
 /** @param {NS} ns @returns {import('./nodes.js').Goal[]} */
 export const getGoals = (ns) => {
   const { player, factionRep, purchasedAugmentations = [], activeRepRate = {}, passiveRepRate = {} } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
-  const { requiredJobRam, purchasedServerCosts } = staticData;
+  const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
   const goalsData = getGoalsData(ns);
 
@@ -38,10 +39,35 @@ export const getGoals = (ns) => {
       bestPlan = plans.reduce((a, b) => a.utility(overhead) >= b.utility(overhead) ? a : b);
   }
 
-  if (bestPlan) return bestPlan.goals;
-
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
+
+  if (bestPlan) {
+    const ramGoals = [];
+
+    if (needsAugRam(ns)) {
+      const augRamCost = purchasedServerCosts?.[requiredAugRam] ?? 0;
+      ramGoals.push(jobRamGoal(POOL1, pool1Ram, requiredAugRam, augRamCost, money, referenceIncome));
+    }
+
+    if (needsJobRam(ns) && referenceIncome > 0) {
+      const baselineTTC = Math.max(...bestPlan.terminalGoals.map(g => g.timeToComplete() ?? Infinity));
+      const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
+      if (jobRamCost / referenceIncome < baselineTTC)
+        ramGoals.push(jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome));
+    }
+
+    if (ramGoals.length > 0) {
+      for (const g of bestPlan.goals) {
+        if (g.type === 'AUGMENTATION' || g.type === 'INSTALL')
+          g.deps.push(...ramGoals);
+      }
+      return [...ramGoals, ...bestPlan.goals];
+    }
+
+    return bestPlan.goals;
+  }
+
   const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
   const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, referenceIncome);
   return [jrg, installGoal([jrg])];

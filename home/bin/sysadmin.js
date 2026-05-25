@@ -9,7 +9,9 @@ import {
 import { disableService } from "../lib/service-api";
 import {
   needsJobRam,
+  needsAugRam,
   getJobRamCost,
+  getAugRamCost,
 } from "../lib/query-service";
 import { getTimeToComplete } from "../lib/goals/goals";
 import { infect, fullInfect } from "./infect";
@@ -53,6 +55,7 @@ export async function main(ns) {
 
   const {
     requiredJobRam,
+    requiredAugRam,
     purchasedServerLimit,
     purchasedServerCosts,
     purchasedServerMaxRam,
@@ -99,12 +102,6 @@ export async function main(ns) {
     else infect(ns, hostname);
   };
 
-  const getSmallestServer = (/** @type {{hostname: string, ram: number}[]} */ servers) => {
-    if (servers.length === 0) return null;
-    if (servers.length === 1) return servers[0];
-    return servers.reduce((/** @type {{hostname: string, ram: number}} */ s1, /** @type {{hostname: string, ram: number}} */ s2) => (s1.ram <= s2.ram ? s1 : s2));
-  };
-
   const attemptPurchase = async (/** @type {NS} */ ns) => {
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     if (referenceIncome == null) return;
@@ -113,16 +110,14 @@ export async function main(ns) {
 
     const servers = getPurchasedServerRams(ns, purchasedServerLimit);
     const atMaxServers = servers.length === purchasedServerLimit;
-    const smallest = getSmallestServer(servers);
 
     const profit = (/** @type {number} */ ram) => {
-      const newRam = ram - (smallest?.ram || 0);
-      const ramProfit = timeToGoal * theftRatePerGB * newRam;
+      const ramProfit = timeToGoal * theftRatePerGB * ram;
       return ramProfit - purchasedServerCosts[ram];
     };
 
     const getMinRam = () => {
-      let minRam = !atMaxServers ? 4 : /** @type {{hostname: string, ram: number}} */ (smallest).ram * 2;
+      let minRam = 4;
       while (profit(minRam) < 0) {
         minRam *= 2;
         if (minRam > purchasedServerMaxRam) return null;
@@ -146,11 +141,12 @@ export async function main(ns) {
     if (needsJobRam(ns)) {
       if (getJobRamCost(ns) <= money)
         await buyServer(requiredJobRam, requiredJobRam, `${THREADPOOL}-01`);
+      else if (needsAugRam(ns) && getAugRamCost(ns) <= money)
+        await buyServer(requiredAugRam, requiredAugRam, `${THREADPOOL}-01`);
       return;
     }
 
     const minRam = getMinRam();
-    const maxRam = Math.min(purchasedServerMaxRam, /** @type {number} */ (minRam) * 4);
 
     if (minRam == null) {
       ns.print("Not purchasing server because estimated time of goal too soon");
@@ -158,12 +154,18 @@ export async function main(ns) {
       return;
     }
 
+    const maxRam = Math.min(purchasedServerMaxRam, minRam * 4);
+
     if (money < purchasedServerCosts[minRam]) return;
 
     if (servers.length > 0 && !atCapacity(ns)) return;
 
-    if (!atMaxServers) await buyServer(minRam, maxRam);
-    else await buyServer(minRam, maxRam, /** @type {{hostname: string, ram: number}} */ (smallest).hostname);
+    // Prefer upgrading the lowest-numbered server that hasn't yet reached minRam
+    const upgradeTarget = servers.find(({ ram }) => ram < minRam) ?? null;
+    if (upgradeTarget != null)
+      await buyServer(minRam, maxRam, upgradeTarget.hostname);
+    else if (!atMaxServers)
+      await buyServer(minRam, maxRam);
   };
 
   while (true) {

@@ -1,5 +1,4 @@
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
-import { getMockFormulas } from "./formulas.js";
 import { buildJoinSubtree } from "./goals/nodes.js";
 
 /** @type {Record<keyof Multipliers, number>} */
@@ -49,7 +48,7 @@ export const DEFAULT_AUG_WEIGHTS = {
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
   'CashRoot Starter Kit': .5,
-  'Neuroreceptor Management Implant': .1,
+  'Neuroreceptor Management Implant': 1,
   'The Red Pill': 10,
 };
 
@@ -227,7 +226,7 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
     const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
-    const timeForMoney = totalPrice / moneyRate;
+    const timeForMoney = Math.max(0, totalPrice - (player.money ?? 0)) / moneyRate;
     const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
