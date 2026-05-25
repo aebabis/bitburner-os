@@ -12,7 +12,7 @@ export async function main(ns) {
     officeInitialCost + warehouseInitialCost :
     officeInitialCost;
 
-  if (ns.corporation.getCorporation().funds < setupCost) {
+  if (ns.corporation.getCorporation().funds > setupCost) {
     ns.corporation.expandCity(divisionName, cityName);
     if (needsWarehouse)
       ns.corporation.purchaseWarehouse(divisionName, cityName);
