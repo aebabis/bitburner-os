@@ -1,27 +1,33 @@
 import { getStaticData, putStaticData } from '../lib/data-store';
 import { defer } from './defer';
 import { tprint } from './util';
+import { getCallGraph } from './call-graph';
 import { STR } from '../lib/colors';
+import { getViableServices } from '../bin/services/services';
 
 /** @param {NS} ns */
 export async function main(ns) {
   tprint(ns)(STR.BOLD + "Determining required job RAM");
 
-  const { resetInfo, scriptRam } = getStaticData(ns);
+  const { scriptRam } = getStaticData(ns);
+  
+  const callGraph = getCallGraph(ns);
+  const services = getViableServices(ns)
+    .map((service) => service.toData().script);
 
-  // Compute RAM required on job server
-  let requiredJobRam = 32;
-  if (resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4)) {
-    const maxScriptSize =
-      scriptRam['/bin/self/aug/purchase-augs.js'] +
-      scriptRam['/bin/self/job.js'] +
-      scriptRam['/bin/self/work.js'] +
-      scriptRam['/bin/self/tor.js'] +
-      scriptRam['/bin/self/faction-work.js'];
-    requiredJobRam = 1;
-    while (requiredJobRam < maxScriptSize) requiredJobRam *= 2;
-    tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);
-  }
+  /** @param {string} script */
+  const getRam = (script) => scriptRam[script.replace(/^\.*[/]/, '')];
+  /** @param {string} script @returns {number} **/
+  const getRamDepth = (script) => {
+    return getRam(script) + Math.max(0, ...callGraph[script].map(getRamDepth));
+  };
+
+  const minServiceRam = services.map(getRamDepth)
+    .reduce((a, b) => a+b, 0);
+
+  let requiredJobRam = 1;
+  while (requiredJobRam < minServiceRam) requiredJobRam *= 2;
+  tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);
 
   putStaticData(ns, { requiredJobRam });
 

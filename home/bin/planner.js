@@ -1,7 +1,5 @@
-import { AnyHostService } from "../lib/service";
-import { getStaticData, getRamData, putPlayerData } from "../lib/data-store";
+import { putPlayerData } from "../lib/data-store";
 import { logger } from "../lib/logger";
-import { CRIMINAL_ORGANIZATIONS } from "../lib/factions";
 
 import {
   ENABLE,
@@ -10,19 +8,7 @@ import {
   checkQueue,
   getTableString,
 } from "../lib/service-api";
-
-const isRemoteApiConnected = () => {
-  const elem = eval('doc' + 'ument').querySelector('svg[aria-label^="Remote API"]');
-  if (elem) {
-    const label = elem.getAttribute('aria-label');
-    return label?.match('Online');
-  }
-};
-
-const mostRootRam = (/** @type {NS} */ ns) => {
-  const { rootServers = [] } = getRamData(ns);
-  return Math.max(0, ...rootServers.map((/** @type {{maxRam: number}} */ server) => server.maxRam));
-};
+import { getViableServices } from "./services/services";
 
 /** @param {NS} ns **/
 const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
@@ -30,58 +16,8 @@ const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
 /** @param {NS} ns **/
 const go = async (ns) => {
   ns.disableLog("ALL");
-  const { requiredJobRam, purchasedServerCosts, resetInfo } =
-    getStaticData(ns);
 
-  console.log(resetInfo);
-  const gangsAvailable = resetInfo.currentNode > 1;
-  const hasSingularity = resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4);
-
-  const canPurchaseServers = () => player(ns).money >= purchasedServerCosts[4];
-  const couldTrade = () => ns.stock.hasTixApiAccess() || player(ns).money >= 5.2e9;
-  const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
-  const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
-  const inCriminalFaction = () => player(ns).factions.some(isCriminal);
-  const canCorp = () => {
-    const selfFund = resetInfo.currentNode !== 3;
-    return ns.corporation.hasCorporation() ||
-      ns.corporation.canCreateCorporation(selfFund) === 'Success';
-  };
-
-  /* eslint-disable no-unexpected-multiline */
-  const tasks = [
-    AnyHostService(ns)("/bin/access.js"),
-    AnyHostService(ns)("/bin/hacknet.js"),
-    AnyHostService(ns)("/bin/thief.js"),
-    AnyHostService(ns, canPurchaseServers, 1000)("/bin/sysadmin.js"),
-    // AnyHostService(ns)("/bin/goals.js"),
-    AnyHostService(ns)("/bin/dashboard.js"),
-    AnyHostService(ns)("/bin/accountant.js"),
-    AnyHostService(ns)("/bin/contracts/freelancer.js"),
-    AnyHostService(ns)("/bin/share.js"),
-    AnyHostService(ns)("/bin/stalker.js"),
-    AnyHostService(ns, couldTrade)("/bin/broker/broker.js"),
-    AnyHostService(ns, canCorp)("/bin/corporation/corporation.js"),
-    AnyHostService(ns, isRemoteApiConnected)("/bin/nvim.js"),
-  ];
-
-  if (gangsAvailable)
-    tasks.push(AnyHostService(ns, inCriminalFaction)("/bin/gang/mob-boss.js"));
-
-  if (hasSingularity) {
-    tasks.push(
-      AnyHostService(ns, canAutopilot)("/bin/self/aug/augment.js"),
-      AnyHostService(ns, canAutopilot)("/bin/self/work.js"),
-      AnyHostService(ns, canAutopilot)("/bin/self/control.js"),
-      AnyHostService(ns, canAutopilot)("/bin/self/tor.js"),
-      AnyHostService(ns, canAutopilot)("/bin/self/liaison.js"),
-    );
-  } else {
-    tasks.push(
-      AnyHostService(ns)("/bin/hinter.js"),
-      AnyHostService(ns)("/bin/trailblazer.js"),
-    );
-  }
+  const tasks = getViableServices(ns, player);
 
   const showServices = () => {
     ns.clearLog();

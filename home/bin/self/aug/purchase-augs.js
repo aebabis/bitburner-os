@@ -55,9 +55,10 @@ export async function main(ns) {
     ns.tprint(`  bought ${nfCount} Neuroflux`);
 
     ns.tprint(`I'm the scheduler now!`);
-    const finisher = ['home', 'THREADPOOL-01'].sort(by((hostname) => {
-      return -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname));
-    }))[0];
+    const finisher = ['home', 'THREADPOOL-01']
+      .filter((hostname) => ns.serverExists(hostname))
+      .sort(by((hostname) => -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname))
+    ))[0];
     ns.tprint(`Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`);
 
     /** @param {string} script
