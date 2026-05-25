@@ -28,6 +28,7 @@ export async function main(ns) {
       await rmi(ns)('/bin/corporation/create/offices.js');
 
       await rmi(ns)('/bin/corporation/managers/agriculture.js');
+      await rmi(ns)('/bin/corporation/managers/chemicals.js');
     }
   }
 }

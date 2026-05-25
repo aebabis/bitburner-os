@@ -7,7 +7,7 @@ import { getActions } from '../orders/actions';
 export async function main(ns) {
   ns.disableLog("ALL");
   
-  const INDUSTRY = 'Agriculture';
+  const INDUSTRY = 'Chemical';
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
@@ -25,9 +25,8 @@ export async function main(ns) {
     }
     const warehouse = ns.corporation.getWarehouse(divisionName, city);
 
-    const foodRate = ns.corporation.getMaterial(divisionName, city, 'Food').productionAmount;
-    const plantRate = ns.corporation.getMaterial(divisionName, city, 'Plants').productionAmount;
-    const outputVolume = foodRate * materialData['Food'].size + plantRate * materialData['Plants'].size;
+    const chemRate = ns.corporation.getMaterial(divisionName, city, 'Chemicals').productionAmount;
+    const outputVolume = chemRate * materialData['Chemicals'].size;
 
     const BUFFER = warehouse.size * .1;
     const TARGET_INPUT_VOLUME = 10;
@@ -40,11 +39,13 @@ export async function main(ns) {
     const BATCH_INPUT_TSL = TARGET_INPUT_VOLUME / BATCH_INPUT_VOLUME;
     const BATCH_INPUT_MAX = MAX_INPUT_VOLUME / BATCH_INPUT_VOLUME;
 
+    const productionRate = ns.corporation.getMaterial(divisionName, city, 'Food').productionAmount;
+
     for (const material of materialNames) {
       const coefficient = requiredMaterials[material];
 
       const tsl = coefficient * BATCH_INPUT_TSL;
-      const demand = coefficient * Math.min(BATCH_INPUT_MAX, foodRate);
+      const demand = coefficient * Math.min(BATCH_INPUT_MAX, productionRate);
 
       const { stored } = ns.corporation.getMaterial(divisionName, city, material);
       const needed = demand + tsl - stored;
