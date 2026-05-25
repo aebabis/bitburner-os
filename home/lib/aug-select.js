@@ -80,6 +80,28 @@ export const computeResetOverhead = (staticData) => {
   return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
 };
 
+// With queued augs the price multiplier is already inflated. Installing now resets it to 1,
+// making the remaining augs cheaper. Rep persists through installs, so the main cost is
+// re-leveling after reset. True if that reset cost is less than waiting for the full batch.
+// TODO: use formulas to estimate re-leveling time and replace the constant.
+const INSTALL_OVERHEAD_SEC = 60;
+
+/**
+ * @param {number} numQueued - augs purchased but not yet installed
+ * @param {number} numTargeted - augs in the next planned batch
+ * @param {number} costToAug - total money needed for the next batch
+ * @param {number} money - current money
+ * @param {number} referenceIncome - current income rate ($/s)
+ * @returns {boolean}
+ */
+export const shouldEarlyInstall = (numQueued, numTargeted, costToAug, money, referenceIncome) => {
+  if (numQueued === 0 || numTargeted === 0) return false;
+  const timeToMoneyGoal = referenceIncome > 0
+    ? Math.max(0, costToAug - money) / referenceIncome
+    : Infinity;
+  return timeToMoneyGoal > INSTALL_OVERHEAD_SEC;
+};
+
 export const MAX_AUGS = 6;
 const NEUROFLUX = "NeuroFlux Governor";
 
