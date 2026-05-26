@@ -153,6 +153,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  * Cost is time (seconds): (max(moneyTime, marginalRepTime) + resetOverhead + trainingTime)
  * Marginal rep excludes the cheapest aug's rep since that cost is committed once
  * the faction is targeted. Tries every aug as the binding rep tier — O(n²).
+ * When the faction has donation access, rep cost folds into money cost via donationForRep.
  * @param {string} faction
  * @param {{
  *   augmentationPrices?: Record<string,number>,
@@ -161,6 +162,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  *   factionAugmentations?: Record<string,string[]>,
  *   factionRequirements?: Record<string,any[]>,
  *   factionFavor?: Record<string,number>,
+ *   favorToDonate?: number,
  *   serverBackdoorRequirements: any[],
  *   installedAugmentations: string[],
  * }} staticData
@@ -179,6 +181,9 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     factionAugmentations,
     factionFavor,
   } = staticData;
+
+  const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
+  const donationRate = canDonate ? (formulas?.reputation?.donationForRep(1, player) ?? Infinity) : Infinity;
 
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
@@ -235,10 +240,10 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     const totalValue = affordable.reduce((s, a) => s + a.value, 0);
     const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
     const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
-    const minRemainingRep = Math.min(...affordable.map((a) => a.remainingRep));
 
-    const timeForMoney = Math.max(0, totalPrice - (player.money ?? 0)) / moneyRate;
-    const timeForRep = (bindingRep - minRemainingRep) / effectiveRepRate;
+    const effectivePrice = canDonate ? totalPrice + bindingRep * donationRate : totalPrice;
+    const timeForMoney = Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
+    const timeForRep = canDonate ? 0 : bindingRep / effectiveRepRate;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
 
@@ -247,6 +252,45 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
   }
 
   return best;
+};
+
+/**
+ * Returns true when a softReset to gain donation access (favor path) is faster than direct
+ * rep grinding for the given faction and aug batch parameters.
+ * augTimeWithFavor: t_favor + t_reset + t_N1 (favor grind → softReset → donate next cycle)
+ * augTimeWithoutFavor: max(t_rep, t_money) (direct grind this cycle)
+ * @param {string} faction
+ * @param {number} repRequired - total rep requirement for the batch (rep resets after softReset)
+ * @param {number} augCost - money needed for the batch
+ * @param {number} currentRep - current faction rep
+ * @param {number} currentFavor - current faction favor
+ * @param {number} repRate - rep/s
+ * @param {number} moneyRate - $/s
+ * @param {number} currentMoney
+ * @param {Player} player
+ * @param {ReturnType<typeof getMockFormulas>} formulas
+ * @param {{ installedAugmentations: string[], resetInfo: any, favorToDonate?: number }} staticData
+ * @returns {boolean}
+ */
+export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, currentFavor, repRate, moneyRate, currentMoney, player, formulas, staticData) => {
+  const { favorToDonate } = staticData;
+  if (favorToDonate == null || currentFavor >= favorToDonate) return false;
+  if (!formulas?.reputation || !repRate || !moneyRate) return false;
+
+  const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
+  const donationRate = formulas.reputation.donationForRep(1, player);
+
+  const tFavor = Math.max(0, repForFavor - currentRep) / repRate;
+  const tReset = computeResetOverhead(staticData);
+  const tN1 = (repRequired * donationRate + augCost) / moneyRate;
+  const augTimeWithFavor = tFavor + tReset + tN1;
+
+  const augTimeWithoutFavor = Math.max(
+    Math.max(0, repRequired - currentRep) / repRate,
+    Math.max(0, augCost - currentMoney) / moneyRate,
+  );
+
+  return augTimeWithFavor < augTimeWithoutFavor;
 };
 
 /**
