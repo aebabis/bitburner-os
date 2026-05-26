@@ -2,32 +2,38 @@ import { getStaticData } from '../../../lib/data-store';
 import { BOOST_MATERIALS, DivisionNames } from '../constants';
 import { getBoostTargets } from '../boost-solver';
 import { getActions } from '../orders/actions';
+import { startReport } from './report';
 
 /** @param {NS} ns */
 export async function main(ns) {
   ns.disableLog("ALL");
-  
-  const INDUSTRY = 'Agriculture';
+
+
+  const INDUSTRY = 'Tobacco';
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
+  const report = startReport(ns, divisionName);
   const division = ns.corporation.getDivision(divisionName);
   const { requiredMaterials } = industryData[INDUSTRY];
 
   /** @type {CorpMaterialName[]} */
   const materialNames = Object.keys(requiredMaterials);
 
-  for (const city of division.cities) {
-    const { buy, sell, transfer } = getActions(ns, divisionName, city);
+  for (const cityName of division.cities) {
+    report.add([' ' + cityName]);
+    const { buy, sell } = getActions(ns, divisionName, cityName);
 
-    if (!ns.corporation.hasWarehouse(divisionName, city)) {
+    if (!ns.corporation.hasWarehouse(divisionName, cityName)) {
       continue;
     }
-    const warehouse = ns.corporation.getWarehouse(divisionName, city);
 
-    const foodRate = ns.corporation.getMaterial(divisionName, city, 'Food').productionAmount;
-    const plantRate = ns.corporation.getMaterial(divisionName, city, 'Plants').productionAmount;
-    const outputVolume = foodRate * materialData['Food'].size + plantRate * materialData['Plants'].size;
+    const format = (/** @type number */ num) => ns.format.number(num, 1);
+
+    const warehouse = ns.corporation.getWarehouse(divisionName, cityName);
+    const product = ns.corporation.getProduct(divisionName, cityName, "R'");
+    const outputVolume = product.productionAmount * product.size;
+    report.add(['  Output Volume:', ''+format(product.productionAmount)]);
 
     const BUFFER = warehouse.size * .1;
     const TARGET_INPUT_VOLUME = 10;
@@ -37,30 +43,23 @@ export async function main(ns) {
     const BATCH_INPUT_VOLUME = materialNames.map((material) => (
       requiredMaterials[material] * materialData[material].size
     )).reduce((a, b) => a + b, 0);
-    const BATCH_INPUT_TSL = TARGET_INPUT_VOLUME / BATCH_INPUT_VOLUME;
     const BATCH_INPUT_MAX = MAX_INPUT_VOLUME / BATCH_INPUT_VOLUME;
 
     for (const material of materialNames) {
       const coefficient = requiredMaterials[material];
-
-      const tsl = coefficient * BATCH_INPUT_TSL;
-      const demand = coefficient * Math.min(BATCH_INPUT_MAX, foodRate);
-
-      const { stored } = ns.corporation.getMaterial(divisionName, city, material);
-      const needed = demand + tsl - stored;
+      const { stored } = ns.corporation.getMaterial(divisionName, cityName, material);
       const surplus = stored - coefficient * BATCH_INPUT_MAX;
 
-      if (needed > 0)
-        await buy(material, needed);
-      else if (surplus > 0)
+      if (surplus > 0)
         await sell(material, surplus / 100, 'MP/2');
       else
         await buy(material, 0);
+      report.add(['  '+material+':', format(stored) + '/' + format(product.productionAmount)]);
     }
 
     const boostTargets = getBoostTargets(ns, INDUSTRY, BOOST_VOLUME);
     for (const material of BOOST_MATERIALS) {
-      const { stored } = ns.corporation.getMaterial(divisionName, city, material);
+      const { stored } = ns.corporation.getMaterial(divisionName, cityName, material);
       const targetAmount = boostTargets[material];
       if (stored < targetAmount)
         await buy(material, 1);
@@ -68,20 +67,8 @@ export async function main(ns) {
         await sell(material, 1, 'MP');
       else
         await buy(material, 0);
-    }
-
-    try {
-      const tobacco = DivisionNames['Tobacco'];
-      const chemical = DivisionNames['Chemical'];
-      const PLANT_TSL = Math.floor(10 / materialData['Plants'].size);
-      if (ns.corporation.hasWarehouse(tobacco, city)) {
-        await transfer(divisionName, city, tobacco, city, 'Plants', `(-IPROD-IINV+${PLANT_TSL})/10`);
-      }
-      if (ns.corporation.hasWarehouse(chemical, city)) {
-        await transfer(divisionName, city, chemical, city, 'Plants', `(-IPROD-IINV+${PLANT_TSL})/10`);
-      }
-    } catch (error) {
-      ns.tprint('You have to check if the division exists, I guess');
+      report.add(['  '+material+':', format(stored) + '/' + format(targetAmount)]);
     }
   }
+  report.send();
 }

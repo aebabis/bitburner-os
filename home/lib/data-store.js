@@ -9,6 +9,7 @@ import {
   PORT_MONEY_DATA,
   PORT_CONTRACT_DATA,
   PORT_GOALS_DATA,
+  PORT_CORP_REPORTS,
 } from "../etc/ports.js";
 
 /** @param {NS} ns @param {number} port */
@@ -79,3 +80,8 @@ export const putContractData = (ns, data) =>
 export const getGoalsData = (ns) => readData(ns, PORT_GOALS_DATA) || {};
 /** @param {NS} ns */
 export const putGoalsData = (ns, data) => putData(ns, PORT_GOALS_DATA, data);
+
+/** @param {NS} ns */
+export const getCorpReports = (ns) => readData(ns, PORT_CORP_REPORTS) || {};
+/** @param {NS} ns */
+export const putCorpReports = (ns, data) => putData(ns, PORT_CORP_REPORTS, data);

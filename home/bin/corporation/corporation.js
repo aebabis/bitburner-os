@@ -1,5 +1,5 @@
 import { rmi } from '../../lib/rmi';
-import { getStaticData } from '../../lib/data-store';
+import { getStaticData, getCorpReports } from '../../lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -20,15 +20,24 @@ export async function main(ns) {
     const prevState = await ns.corporation.nextUpdate();
     const prevIndex = STATES.indexOf(prevState);
     const currState = STATES.at(prevIndex + 1 - STATES.length);
-    ns.print(prevState.padStart(10) + ' ----> ' + currState);
 
-    if (currState === 'START') {
+    if (currState !== 'START') {
       await rmi(ns)('/bin/corporation/unlock.js');
       await rmi(ns)('/bin/corporation/create/industries.js');
       await rmi(ns)('/bin/corporation/create/offices.js');
 
       await rmi(ns)('/bin/corporation/managers/agriculture.js');
       await rmi(ns)('/bin/corporation/managers/chemicals.js');
+      await rmi(ns)('/bin/corporation/managers/tobacco.js');
+    }
+    const reports = getCorpReports(ns);
+    ns.clearLog();
+    for (const report of Object.values(reports)) {
+      ns.print(report.shift()[0]);
+      while (report.length) {
+        const row = report.shift();
+        ns.print(row.join(' '));
+      }
     }
   }
 }

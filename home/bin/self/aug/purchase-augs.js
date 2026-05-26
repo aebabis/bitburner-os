@@ -36,7 +36,8 @@ export async function main(ns) {
         }
 
     // Sell all stocks
-    dump(ns);
+    if(ns.stock.hasTixApiAccess())
+      dump(ns);
 
     ns.tprint(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
