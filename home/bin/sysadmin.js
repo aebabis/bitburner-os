@@ -138,11 +138,12 @@ export async function main(ns) {
       return;
     }
 
-    if (needsJobRam(ns)) {
-      if (getJobRamCost(ns) <= money)
-        await buyServer(requiredJobRam, requiredJobRam, `${THREADPOOL}-01`);
-      else if (needsAugRam(ns) && getAugRamCost(ns) <= money)
-        await buyServer(requiredAugRam, requiredAugRam, `${THREADPOOL}-01`);
+    if (needsJobRam(ns) && getJobRamCost(ns) <= money) {
+      await buyServer(requiredJobRam, requiredJobRam, `${THREADPOOL}-01`);
+      return;
+    }
+    if (needsAugRam(ns) && getAugRamCost(ns) <= money) {
+      await buyServer(requiredAugRam, requiredAugRam, `${THREADPOOL}-01`);
       return;
     }
 

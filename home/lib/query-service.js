@@ -1,12 +1,7 @@
 import {
-  // getHostnames,
   getStaticData,
-  // getGangData,
-  // getDataboardData,
   getRamData,
   getPlayerData,
-  getGoalsData,
-  getGangData,
 } from "./data-store";
 
 /** @template T
@@ -44,26 +39,15 @@ const getPoolRamStatus = (ns) => {
 };
 
 /** @param {NS} ns */
-const getTargetFaction = (ns) => {
-  const { targetFaction, manualOverride } = getGoalsData(ns);
-  if (manualOverride) return targetFaction;
-  const { factionRep } = getPlayerData(ns);
-  const gang = getGangData(ns)?.gangInfo?.faction;
-  const gangRep = factionRep?.[gang] ?? 0;
-  const targetFactionRep = factionRep?.[targetFaction] ?? 0;
-  return gangRep > targetFactionRep ? gang : targetFaction;
-};
-
-/** @param {NS} ns */
 export const needsJobRam = (ns) => {
-  const { requiredJobRam } = getRamInfo(ns);
+  const { requiredJobRam } = getStaticData(ns);
   const { homeRam, pool1Ram } = getPoolRamStatus(ns);
   return homeRam < requiredJobRam * 2 && pool1Ram < requiredJobRam;
 };
 
 /** @param {NS} ns */
 export const needsAugRam = (ns) => {
-  const { requiredAugRam } = getRamInfo(ns);
+  const { requiredAugRam } = getStaticData(ns);
   const { homeRam, pool1Ram } = getPoolRamStatus(ns);
   return homeRam < requiredAugRam * 2 && pool1Ram < requiredAugRam;
 };
