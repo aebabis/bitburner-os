@@ -29,13 +29,13 @@ export const getViableServices = (ns, player) => {
   const corpAvailable = hasNode(3) && !resetInfo.bitNodeOptions.disableCorporation;
   const hasSingularity = hasNode(4);
 
-  const money = (player && player(ns).money) ?? 0;
-  const factions = (player && player(ns).factions) ?? [];
-  const canPurchaseServers = () => money >= purchasedServerCosts[4];
-  const couldTrade = () => ns.stock.hasTixApiAccess() || money >= 5.2e9;
+  const money = () => (player && player(ns).money) ?? 0;
+  const factions = () => (player && player(ns).factions) ?? [];
+  const canPurchaseServers = () => money() >= purchasedServerCosts[4];
+  const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= 5.2e9;
   const canAutopilot = () => hasSingularity && requiredJobRam <= mostRootRam(ns);
   const isCriminal = (/** @type {string} */ faction) => CRIMINAL_ORGANIZATIONS.includes(faction);
-  const inCriminalFaction = () => factions.some(isCriminal);
+  const inCriminalFaction = () => factions().some(isCriminal);
   const corpReady = () => {
     const selfFund = resetInfo.currentNode !== 3;
     return ns.corporation.hasCorporation() ||
