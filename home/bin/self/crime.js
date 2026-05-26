@@ -4,12 +4,8 @@ import { getPlayerData, putPlayerData } from "../../lib/data-store";
 
 /** @param {NS} ns @param {number|null} maxDuration */
 const selectCrime = (ns, maxDuration) => {
-  const { player, crimeStats } = getPlayerData(ns);
+  const { crimeStats } = getPlayerData(ns);
   if (crimeStats == null) return "Shoplift";
-
-  const homicide = crimeStats.find((/** @type {CrimeStat} */ c) => c.name === "Homicide");
-  if (homicide.chance > 0.5 && player.numPeopleKilled < 30)
-    return "Homicide";
 
   const PATIENCE = 90 * 1000;
   const allowedCrimes = crimeStats
@@ -28,9 +24,8 @@ const selectCrime = (ns, maxDuration) => {
 export async function main(ns) {
   ns.disableLog("ALL");
 
-  const maxDuration = +ns.args[0] || null;
-
-  const crime = selectCrime(ns, maxDuration);
+  const crime = typeof ns.args[0] === 'string' ? ns.args[0]
+    : selectCrime(ns, +ns.args[0] || null);
   const duration = ns.singularity.commitCrime(crime);
   putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
   await ns.sleep(duration);

@@ -34,7 +34,7 @@ export async function main(ns) {
       } else {
         await rmi(ns)("/bin/self/crime-stats.js");
         await rmi(ns)("/bin/self/crime-chance.js");
-        await rmi(ns)("/bin/self/crime.js");
+        await rmi(ns)("/bin/self/crime.js", 1, 30);
       }
     };
 
@@ -43,6 +43,8 @@ export async function main(ns) {
     const statForCrimeTraining = (["strength", "defense", "dexterity", "agility"])
       .find((/** @type {string} */ stat) => player.skills[/** @type {keyof Skills} */ (stat)] < 5);
     const hackLevelGoal = goals.find((goal) => goal.type === 'HACKING_LEVEL')?.requirement ?? 0;
+    const killsGoal = goals.find((goal) => goal.type === 'KILLS');
+    getConfig(ns).set("share", 0);
 
     if (statForCrimeTraining != null) {
       if (player.money > 5000)
@@ -53,13 +55,14 @@ export async function main(ns) {
     } else if (player.skills.hacking < hackLevelGoal) {
       await rmi(ns)("/bin/self/travel.js", 1, 'Sector-12');
       await rmi(ns)("/bin/self/school.js", 1);
+    } else if (killsGoal && !killsGoal.isDone()) {
+      await rmi(ns)("/bin/self/crime.js", 1, 'Homicide');
     } else if (!isRepBound(ns, goals)) {
       await makeMoney();
     } else if (workFaction != null) {
       getConfig(ns).set("share", 0.1);
       await rmi(ns)("/bin/self/faction-work.js", 1, workFaction);
     } else {
-      getConfig(ns).set("share", 0);
       const combatGoal = goals.find(g => g.type === "COMBAT_LEVELS" && !g.isDone());
       const locationGoal = goals.find(g => g.type === "LOCATION" && !g.isDone())?.requirement;
       const killsGoal = goals.find(g => g.type === "KILLS" && !g.isDone())?.requirement;
