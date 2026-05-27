@@ -92,6 +92,7 @@ export async function main(ns) {
           ? ns.formulas
           : getMockFormulas(getStaticData(ns));
         const server = {
+          ...ns.formulas.mockServer(),
           hackDifficulty: ns.getServerMinSecurityLevel(target),
           requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
         };

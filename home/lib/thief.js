@@ -21,6 +21,7 @@ const PORTIONS = new Array(count + 1)
 const getTimes = (ns, target) => {
   if (ns.fileExists('Formulas.exe', 'home')) {
     const server = /** @type {Server} */ ({
+      ...ns.formulas.mockServer(),
       hackDifficulty: ns.getServerMinSecurityLevel(target),
       requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
     });
