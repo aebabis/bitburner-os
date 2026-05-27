@@ -30,7 +30,7 @@ const calculateExp = (skill, mult = 1) =>
  *   installedAugmentations: string[],
  *   augmentationStats?: Record<string, Multipliers>,
  *   hacknetMultipliers?: { production: number },
- *   bitNodeMultipliers?: { HacknetNodeMoney: number },
+ *   bitNodeMultipliers?: BitNodeMultipliers
  * }} staticData
  */
 export const getMockFormulas = (staticData) => {
@@ -44,11 +44,16 @@ export const getMockFormulas = (staticData) => {
       )
       .reduce((a, b) => a * b, 1);
 
-  const defaultProdMult =
-    (staticData.hacknetMultipliers?.production ?? 1) *
-    (staticData.bitNodeMultipliers?.HacknetNodeMoney ?? 1);
+  const {
+    FactionWorkExpGain = 1,
+    FactionWorkRepGain = 1,
+    HacknetNodeMoney = 1,
+  } = staticData.bitNodeMultipliers ?? {};
 
-  const factionRepMult = () => getAugMult('faction_rep');
+  const defaultProdMult =
+    (staticData.hacknetMultipliers?.production ?? 1) * HacknetNodeMoney;
+
+  const factionRepMult = () => FactionWorkRepGain * getAugMult('faction_rep');
 
   return {
     skills: { calculateExp, calculateSkill },
@@ -81,10 +86,10 @@ export const getMockFormulas = (staticData) => {
         if (workType === 'hacking') {
           return {
             ...WORK_STATS,
-            hackExp: (2 / 5) * getAugMult('hacking_exp'),
+            hackExp: (2 / 5) * getAugMult('hacking_exp') * FactionWorkExpGain,
             reputation:
               ((player.skills?.hacking ?? 1) / 975) *
-              getAugMult('faction_rep') *
+              factionRepMult() *
               favorMult(favor),
           };
         }

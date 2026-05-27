@@ -225,7 +225,7 @@ export const findOptimalBatch = (
     augValueFromStats(aug, augmentationStats);
 
   const currentRep = factionRep[faction] ?? 0;
-  const gainRate = formulas?.work.factionGains(
+  const gainRate = formulas.work.factionGains(
     player,
     'hacking',
     factionFavor?.[faction],
