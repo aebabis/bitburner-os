@@ -90,14 +90,14 @@ const INSTALL_OVERHEAD_SEC = 60;
  * @param {number} numQueued - augs purchased but not yet installed
  * @param {number} numTargeted - augs in the next planned batch
  * @param {number} costToAug - total money needed for the next batch
- * @param {number} money - current money
+ * @param {number} liquidAssets - available money
  * @param {number} referenceIncome - current income rate ($/s)
  * @returns {boolean}
  */
-export const shouldEarlyInstall = (numQueued, numTargeted, costToAug, money, referenceIncome) => {
+export const shouldEarlyInstall = (numQueued, numTargeted, costToAug, liquidAssets, referenceIncome) => {
   if (numQueued === 0 || numTargeted === 0) return false;
   const timeToMoneyGoal = referenceIncome > 0
-    ? Math.max(0, costToAug - money) / referenceIncome
+    ? Math.max(0, costToAug - liquidAssets) / referenceIncome
     : Infinity;
   return timeToMoneyGoal > INSTALL_OVERHEAD_SEC;
 };
@@ -266,13 +266,13 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
  * @param {number} currentFavor - current faction favor
  * @param {number} repRate - rep/s
  * @param {number} moneyRate - $/s
- * @param {number} currentMoney
+ * @param {number} liquidAssets
  * @param {Player} player
  * @param {ReturnType<typeof getMockFormulas>} formulas
  * @param {{ installedAugmentations: string[], resetInfo: any, favorToDonate?: number }} staticData
  * @returns {boolean}
  */
-export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, currentFavor, repRate, moneyRate, currentMoney, player, formulas, staticData) => {
+export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, currentFavor, repRate, moneyRate, liquidAssets, player, formulas, staticData) => {
   const { favorToDonate } = staticData;
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
   if (!formulas?.reputation || !repRate || !moneyRate) return false;
@@ -287,7 +287,7 @@ export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, cur
 
   const augTimeWithoutFavor = Math.max(
     Math.max(0, repRequired - currentRep) / repRate,
-    Math.max(0, augCost - currentMoney) / moneyRate,
+    Math.max(0, augCost - liquidAssets) / moneyRate,
   );
 
   return augTimeWithFavor < augTimeWithoutFavor;

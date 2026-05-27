@@ -145,7 +145,7 @@ const goalsTable = (/** @type {NS} */ ns) => {
     ["GOALS", {name: '', align: 'right'}],
     goals.map(goal => [
       goal.toString(),
-      DARK(formatTime(goal.timeToComplete())),
+      MEDIUM(formatTime(goal.timeToComplete())),
     ]),
     { colors: true },
   );
@@ -218,7 +218,7 @@ const getServiceTable = (ns) => {
     ns,
     ['SERVICES', '', ''],
     getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-      [name, status, '  ' + (ram ? DARK(ram.toFixed(2)+'GB') : ERROR('error'))]),
+      [name, status, '  ' + (ram ? MEDIUM(ram.toFixed(2)+'GB') : ERROR('error'))]),
     { colors: true },
   );
 };

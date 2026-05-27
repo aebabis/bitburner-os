@@ -13,6 +13,10 @@ const selectCrime = (ns, maxDuration) => {
     .filter((/** @type {CrimeStat} */ c) => c.chance === 1 || c.chance >= c.time / PATIENCE,
   );
 
+  if (allowedCrimes.length === 0) {
+    return 'Shoplift';
+  }
+
   const bestCrime = allowedCrimes.reduce((/** @type {CrimeStat} */ a, /** @type {CrimeStat} */ b) =>
     a.expectedValue > b.expectedValue ? a : b,
   );

@@ -1,4 +1,4 @@
-import { DARK } from "../colors.js";
+import { C } from "../colors.js";
 
 const fmt = new Intl.NumberFormat("en", { notation: "compact" });
 const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
@@ -37,7 +37,7 @@ const goal = (type, desc, isDone, { requirement, faction, deps = [], value = 0, 
   let _ttc;
   return {
     type, desc, isDone, requirement, faction, deps, value, ownTime,
-    toString: () => isDone() ? desc : DARK(desc),
+    toString: () => isDone() ? desc : C(57)(desc),
     timeToComplete() {
       if (_ttc !== undefined) return _ttc;
       if (isDone()) return (_ttc = 0);
@@ -122,15 +122,15 @@ export const factionRepGoal = (faction, requirement, factionRep, dep, repRate) =
     });
 };
 
-/** @param {number | undefined} costToAug @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
-export const augMoneyGoal = (costToAug, currentMoney, referenceIncome) =>
+/** @param {number | undefined} costToAug @param {number} liquidAssets @param {number} referenceIncome @returns {Goal} */
+export const augMoneyGoal = (costToAug, liquidAssets, referenceIncome) =>
   goal("AUG_MONEY",
     "Save " + (costToAug != null ? fmtMoney(costToAug) : "?") + " for augmentations",
-    () => costToAug != null && currentMoney >= costToAug,
+    () => costToAug != null && liquidAssets >= costToAug,
     {
       requirement: costToAug,
       ownTime: () => costToAug != null && referenceIncome > 0
-        ? Math.max(0, costToAug - currentMoney) / referenceIncome
+        ? Math.max(0, costToAug - liquidAssets) / referenceIncome
         : null,
     });
 

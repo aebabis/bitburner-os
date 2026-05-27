@@ -128,6 +128,7 @@ export const isRepBound = (goals) => {
  *   purchasedAugmentations: string[],
  *   ownedAugs: string[],
  *   money: number,
+ *   estimatedStockValue: number,
  *   referenceIncome: number,
  *   activeRepRate: Record<string, number>,
  *   passiveRepRate: Record<string, number>,
@@ -139,13 +140,14 @@ export const isRepBound = (goals) => {
  */
 export const buildFactionGoalTree = (faction, {
   player, staticData, factionRep, purchasedAugmentations, ownedAugs,
-  money, referenceIncome, activeRepRate, passiveRepRate,
+  money, estimatedStockValue, referenceIncome, activeRepRate, passiveRepRate,
   formulas, karma, augsOverride = undefined,
 }) => {
   const { augmentationPrices, augmentationPrereqs, augmentationStats } = staticData;
   const augValue = (/** @type {string} */ aug) => augValueFromStats(aug, augmentationStats);
 
   const moneyRate = referenceIncome || Infinity;
+  const liquidAssets = money + estimatedStockValue;
 
   const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
     player, staticData, money, referenceIncome, karma, formulas,
@@ -191,7 +193,7 @@ export const buildFactionGoalTree = (faction, {
   const currentRep = factionRep[faction] ?? 0;
 
   // Path 1: Early install — existing queued augs are cheaper to install now than waiting
-  if (shouldEarlyInstall(numQueued, augs.length, costToAug, money, referenceIncome)) {
+  if (shouldEarlyInstall(numQueued, augs.length, costToAug, liquidAssets, referenceIncome)) {
     const queuedAugs = purchasedAugmentations.filter(aug => !installedSet.has(aug));
     const queuedAugGoals = queuedAugs.map(aug =>
       augmentationGoal(aug, faction, purchasedAugmentations, [], augValue(aug)));
@@ -211,7 +213,7 @@ export const buildFactionGoalTree = (faction, {
   const canDonate = currentFavor >= (staticData.favorToDonate ?? Infinity);
 
   // Path 2: Favor grind — softReset to reach donation threshold, then donate next cycle
-  if (!canDonate && shouldPursueFavor(faction, repReq, costToAug, currentRep, currentFavor, repRate, referenceIncome, money, player, formulas, staticData)) {
+  if (!canDonate && shouldPursueFavor(faction, repReq, costToAug, currentRep, currentFavor, repRate, referenceIncome, liquidAssets, player, formulas, staticData)) {
     const { favorToDonate } = staticData;
     const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
     const favorGain = staticData.factionFavorGain?.[faction] ?? 0;
@@ -238,7 +240,7 @@ export const buildFactionGoalTree = (faction, {
   if (canDonate) {
     const donationRate = formulas?.reputation?.donationForRep(1, player) ?? Infinity;
     const donationCost = Math.max(0, repReq - currentRep) * donationRate;
-    const moneyGoal = augMoneyGoal(costToAug + donationCost, money, referenceIncome);
+    const moneyGoal = augMoneyGoal(costToAug + donationCost, liquidAssets, referenceIncome);
     const repGoal = buyRepGoal(faction, repReq, currentRep, [moneyGoal]);
     const augGoals = augs.map(aug =>
       aug === NEUROFLUX
@@ -258,7 +260,7 @@ export const buildFactionGoalTree = (faction, {
 
   // Path 4: Normal — grind faction rep
   const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, repRate);
-  const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
+  const moneyGoal = augMoneyGoal(costToAug, liquidAssets, referenceIncome);
   const augGoals = augs.map(aug =>
     aug === NEUROFLUX
       ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug))
