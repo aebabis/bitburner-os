@@ -3,7 +3,6 @@ import {
   getStaticData,
   getMoneyData,
   getPlayerData,
-  getGoalsData,
   getSchedulerReportData,
 } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
@@ -170,8 +169,6 @@ const threadpoolTable = (ns) => {
 };
 
 const goalsTable = (/** @type {NS} */ ns) => {
-  const { enabled = true } = getGoalsData(ns);
-  if (!enabled) return ` ${H('GOALS')} \n ${DARK('(disabled)')} `;
   const goals = getGoals(ns);
   return table(
     ns,

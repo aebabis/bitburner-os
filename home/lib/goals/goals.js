@@ -1,9 +1,4 @@
-import {
-  getStaticData,
-  getGoalsData,
-  getPlayerData,
-  getMoneyData,
-} from '../data-store.js';
+import { getStaticData, getPlayerData, getMoneyData } from '../data-store.js';
 import { THREADPOOL } from '../../etc/config.js';
 import { jobRamGoal, installGoal } from './nodes.js';
 import { buildFactionGoalTree, isRepBound as isRepBoundPure } from './tree.js';
@@ -24,8 +19,6 @@ export const getGoals = (ns) => {
   const staticData = getStaticData(ns);
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
-  const goalsData = getGoalsData(ns);
-
   const formulas = ns.fileExists('Formulas.exe', 'home')
     ? ns.formulas
     : getMockFormulas(staticData);
@@ -51,21 +44,15 @@ export const getGoals = (ns) => {
 
   const overhead = computeResetOverhead(staticData);
 
-  let bestPlan = null;
-  if (goalsData.manualOverride && goalsData.targetFaction) {
-    bestPlan = buildFactionGoalTree(goalsData.targetFaction, {
-      ...planData,
-      augsOverride: goalsData.targetAugmentations,
-    });
-  } else {
-    const plans = getAccessibleFactions(staticData, player, ownedAugs)
-      .map((f) => buildFactionGoalTree(f, planData))
-      .filter(/** @type {<T>(x: T | null) => x is T} */ (Boolean));
-    if (plans.length > 0)
-      bestPlan = plans.reduce((a, b) =>
-        a.utility(overhead) >= b.utility(overhead) ? a : b,
-      );
-  }
+  const plans = getAccessibleFactions(staticData, player, ownedAugs)
+    .map((f) => buildFactionGoalTree(f, planData))
+    .filter(/** @type {<T>(x: T | null) => x is T} */ (Boolean));
+  const bestPlan =
+    plans.length > 0
+      ? plans.reduce((a, b) =>
+          a.utility(overhead) >= b.utility(overhead) ? a : b,
+        )
+      : null;
 
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;

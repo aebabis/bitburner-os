@@ -14,13 +14,12 @@ const HOME = join(ROOT, 'home');
 
 // hostnames is an array, not a keyed object — skip it
 const STORES = {
-  staticData:   { get: 'getStaticData',   put: 'putStaticData' },
-  playerData:   { get: 'getPlayerData',   put: 'putPlayerData' },
-  gangData:     { get: 'getGangData',     put: 'putGangData' },
-  moneyData:    { get: 'getMoneyData',    put: 'putMoneyData' },
-  ramData:      { get: 'getRamData',      put: 'putRamData' },
+  staticData: { get: 'getStaticData', put: 'putStaticData' },
+  playerData: { get: 'getPlayerData', put: 'putPlayerData' },
+  gangData: { get: 'getGangData', put: 'putGangData' },
+  moneyData: { get: 'getMoneyData', put: 'putMoneyData' },
+  ramData: { get: 'getRamData', put: 'putRamData' },
   contractData: { get: 'getContractData', put: 'putContractData' },
-  goalsData:    { get: 'getGoalsData',    put: 'putGoalsData' },
 };
 
 // ── AST helpers ───────────────────────────────────────────────────────────────
@@ -38,7 +37,10 @@ function getAllJsFiles(dir) {
 /** Visit every AST node depth-first. */
 function walk(node, fn) {
   if (!node || typeof node !== 'object') return;
-  if (Array.isArray(node)) { node.forEach(n => walk(n, fn)); return; }
+  if (Array.isArray(node)) {
+    node.forEach((n) => walk(n, fn));
+    return;
+  }
   if (typeof node.type === 'string') fn(node);
   for (const key of Object.keys(node)) {
     if (key === 'type' || key === 'start' || key === 'end') continue;
@@ -91,13 +93,13 @@ function analyzeFile(src, getFn, putFn) {
   }
 
   const written = new Set();
-  const read    = new Set();
+  const read = new Set();
   const warnings = new Set();
 
   // Pass 1: collect written keys and variable aliases for the store.
   const aliases = new Set(); // names of variables assigned directly from getFn(ns)
 
-  walk(ast, node => {
+  walk(ast, (node) => {
     // putFn(ns, { k: v, k2 }) — record every property key
     if (isCallTo(node, putFn) && node.arguments[1]?.type === 'ObjectExpression')
       for (const k of keysOf(node.arguments[1])) written.add(k);
@@ -115,38 +117,47 @@ function analyzeFile(src, getFn, putFn) {
   });
 
   // Pass 2: find reads via aliases and direct chained access.
-  walk(ast, node => {
+  walk(ast, (node) => {
     // getFn(ns).key  or  getFn(ns)?.key
-    if (node.type === 'MemberExpression' &&
-        isCallTo(node.object, getFn) &&
-        node.property?.type === 'Identifier')
+    if (
+      node.type === 'MemberExpression' &&
+      isCallTo(node.object, getFn) &&
+      node.property?.type === 'Identifier'
+    )
       read.add(node.property.name);
 
     for (const alias of aliases) {
       // alias.key  or  alias?.key
-      if (node.type === 'MemberExpression' &&
-          node.object?.type === 'Identifier' &&
-          node.object.name === alias &&
-          node.property?.type === 'Identifier')
+      if (
+        node.type === 'MemberExpression' &&
+        node.object?.type === 'Identifier' &&
+        node.object.name === alias &&
+        node.property?.type === 'Identifier'
+      )
         read.add(node.property.name);
 
       // const { k } = alias
-      if (node.type === 'VariableDeclarator' &&
-          node.id?.type === 'ObjectPattern' &&
-          node.init?.type === 'Identifier' &&
-          node.init.name === alias)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id?.type === 'ObjectPattern' &&
+        node.init?.type === 'Identifier' &&
+        node.init.name === alias
+      )
         for (const k of keysOf(node.id)) read.add(k);
 
       // alias passed as a direct argument to an unknown function
       // (not getFn/putFn, not as alias.prop — that's caught above as a read)
       if (node.type === 'CallExpression') {
-        const callee = node.callee?.type === 'Identifier' ? node.callee.name : '(expression)';
+        const callee =
+          node.callee?.type === 'Identifier'
+            ? node.callee.name
+            : '(expression)';
         if (callee === getFn || callee === putFn) continue;
         for (const arg of node.arguments) {
           if (arg.type === 'Identifier' && arg.name === alias)
             warnings.add(
               `'${alias}' (alias of ${getFn}) passed as argument to '${callee}' ` +
-              `— reads inside that function are not detected`
+                `— reads inside that function are not detected`,
             );
         }
       }
@@ -160,7 +171,10 @@ function analyzeFile(src, getFn, putFn) {
 
 const files = getAllJsFiles(HOME);
 const stats = Object.fromEntries(
-  Object.keys(STORES).map(s => [s, { written: new Map(), read: new Map(), warnings: [] }])
+  Object.keys(STORES).map((s) => [
+    s,
+    { written: new Map(), read: new Map(), warnings: [] },
+  ]),
 );
 
 for (const file of files) {
@@ -187,7 +201,7 @@ for (const file of files) {
 
 let anyOutput = false;
 for (const [store, { written, read, warnings }] of Object.entries(stats)) {
-  const orphaned = [...written.keys()].filter(k => !read.has(k)).sort();
+  const orphaned = [...written.keys()].filter((k) => !read.has(k)).sort();
   if (orphaned.length === 0 && warnings.length === 0) continue;
 
   anyOutput = true;

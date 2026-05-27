@@ -1,39 +1,10 @@
-import {
-  getStaticData,
-  putGoalsData,
-  getPlayerData,
-  getMoneyData,
-} from '../lib/data-store';
+import { getStaticData, getPlayerData, getMoneyData } from '../lib/data-store';
 import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
 import { getMockFormulas } from '../lib/formulas';
 
 const NEUROFLUX = 'NeuroFlux Governor';
-
-/** @param {NS} ns @param {string} faction */
-const getAugsForFaction = (ns, faction) => {
-  const {
-    factionAugmentations = {},
-    ownedAugmentations = [],
-    augmentationPrices = {},
-  } = getStaticData(ns);
-  const { purchasedAugmentations = [] } = getPlayerData(ns);
-  const alreadyHave = new Set([
-    ...ownedAugmentations,
-    ...purchasedAugmentations,
-  ]);
-  const remaining = (factionAugmentations[faction] || [])
-    .filter(
-      (/** @type {string} */ aug) => !alreadyHave.has(aug) && aug !== NEUROFLUX,
-    )
-    .sort(
-      (/** @type {string} */ a, /** @type {string} */ b) =>
-        (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0),
-    );
-  const limit = 10 - purchasedAugmentations.length;
-  return remaining.slice(0, Math.max(0, limit));
-};
 
 /** @param {NS} ns */
 const getAugTableData = (ns) => {
@@ -72,23 +43,6 @@ export async function main(ns) {
   }
 
   switch (command) {
-    case 'faction': {
-      const faction = /** @type {string} */ (rest[0]);
-      if (!faction) {
-        ns.tprint('ERROR: Usage: goals faction <name>');
-        return;
-      }
-      const targetAugmentations = getAugsForFaction(ns, faction);
-      putGoalsData(ns, { manualOverride: targetAugmentations });
-      ns.tprint(
-        `Target faction set to ${faction} (${targetAugmentations.length} augmentations queued)`,
-      );
-      break;
-    }
-    case 'reset':
-      putGoalsData(ns, { manualOverride: null });
-      ns.tprint('Goals reset to automatic');
-      break;
     case 'aug-table': {
       const {
         augmentations,
@@ -328,8 +282,6 @@ export async function main(ns) {
       }
     }
     default:
-      ns.tprint(
-        'Commands: faction <name> | reset | aug-table | aug-live | faction-live',
-      );
+      ns.tprint('Commands: aug-table | aug-live | faction-live');
   }
 }
