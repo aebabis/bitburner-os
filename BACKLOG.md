@@ -23,3 +23,6 @@
 - XP targets at start of run? (5s worth of school/gym XP)
 - Make sysadmin pay attention to goals
 - Avoid lengthy crimes that won't finish before next milestone (faction join or install)
+- Consider pros and cons of making thief accounting use high-water mark for money rate
+- Alternatively, consider always having an HWGW batch working alongside the WGW batch. Weakening a server just to have the levelup cause a switch feels suboptimal.
+- Alternatively, consider introducing an experience mode to the thief (triggerable by goals?). Would it behave differently?

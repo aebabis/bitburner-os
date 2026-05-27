@@ -5,6 +5,7 @@ import { getPlayerData, putPlayerData } from '../../lib/data-store';
 export async function main(ns) {
   ns.disableLog('ALL');
   const faction = /** @type {string} */ (ns.args[0]);
+  const duration = ns.args[1] ?? 10;
   const focus = shouldWorkHaveFocus(ns);
   if (
     ns.singularity.workForFaction(faction, 'hacking', focus) ||
@@ -15,7 +16,7 @@ export async function main(ns) {
     const start = new Date();
     const repBefore = ns.singularity.getFactionRep(faction);
 
-    await ns.sleep(10 * 1000);
+    await ns.sleep(duration * 1000);
 
     const end = new Date();
     const repAfter = ns.singularity.getFactionRep(faction);

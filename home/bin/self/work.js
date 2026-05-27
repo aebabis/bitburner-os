@@ -33,6 +33,8 @@ export async function main(ns) {
 
   await rmi(ns, true)('/bin/self/apply.js');
 
+  let lastRepScan = Date.now();
+
   while (true) {
     const { player, isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
@@ -45,6 +47,12 @@ export async function main(ns) {
         await rmi(ns)('/bin/self/crime.js', 1, 30);
       }
     };
+    // TODO: Make all rmi programs used here not sleep.
+    // Make work, faction, and gym tasks record expected time to finish
+    // (and possibly a calculated utility)
+    // so cancellation can be determined here.
+    // This is possible because crimes no longer require explicit
+    // restarting when done.
 
     const goals = getGoals(ns);
     const workFaction = getWorkFaction(goals, player.factions, factionRep);
@@ -61,6 +69,15 @@ export async function main(ns) {
       goals.find((goal) => goal.type === 'HACKING_LEVEL')?.requirement ?? 0;
     const killsGoal = goals.find((goal) => goal.type === 'KILLS');
     getConfig(ns).set('share', 0);
+
+    // TODO: Consider hacking ability (level) increase instead of time constraint
+    // TODO: Only scan factions with augs left
+    if (!ns.fileExists('Formulas.exe', 'home') && Date.now() - lastRepScan > 60000) {
+      for (const faction of player.factions) {
+        await rmi(ns)("/bin/self/faction-work.js", 1, faction, 1);
+      }
+      lastRepScan = Date.now();
+    }
 
     if (statForCrimeTraining != null) {
       if (player.money > 5000)
