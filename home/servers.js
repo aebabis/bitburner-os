@@ -1,16 +1,16 @@
-import { by, small } from "./lib/util";
-import { nmap } from "./lib/nmap";
-import { table } from "./lib/table";
-import { THREADPOOL } from "./etc/config";
+import { by, small } from './lib/util';
+import { nmap } from './lib/nmap';
+import { table } from './lib/table';
+import { THREADPOOL } from './etc/config';
 
 /** @param {NS} ns **/
 const getServers = (ns) =>
   nmap(ns)
-    .filter((name) => name !== "home" && !name.startsWith(THREADPOOL))
+    .filter((name) => name !== 'home' && !name.startsWith(THREADPOOL))
     .map(ns.getServer)
-    .sort(by("hostname"))
-    .sort(by("maxRam"))
-    .sort(by("requiredHackingSkill"));
+    .sort(by('hostname'))
+    .sort(by('maxRam'))
+    .sort(by('requiredHackingSkill'));
 
 /** @param {NS} ns @param {Server} server **/
 const serverRow = (ns, server) => {
@@ -29,10 +29,10 @@ const serverRow = (ns, server) => {
   } = server;
 
   const status = backdoorInstalled
-    ? "💻 "
+    ? '💻 '
     : hasAdminRights
-      ? "🔗 "
-      : "❌\u200b ";
+      ? '🔗 '
+      : '❌\u200b ';
   const name = `${status}${hostname}${small(numOpenPortsRequired ?? 0)}`;
   const money = `${ns.format.number(moneyAvailable ?? 0, 2)}/${ns.format.number(moneyMax ?? 0, 2)}`;
   const ram = `${ns.format.ram(ramUsed ?? 0)}/${ns.format.ram(maxRam)}`;
@@ -50,11 +50,11 @@ const serverRow = (ns, server) => {
 /** @param {NS} ns **/
 const getTable = (ns) => {
   const columns = [
-    "\u2796\u200b HOSTNAME" + small("ports"),
-    "MONEY",
-    "RAM",
-    "LEVEL",
-    "HACKING",
+    '\u2796\u200b HOSTNAME' + small('ports'),
+    'MONEY',
+    'RAM',
+    'LEVEL',
+    'HACKING',
   ];
   const data = getServers(ns)
     .map((server) => serverRow(ns, server))
@@ -75,21 +75,21 @@ const getTable = (ns) => {
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const [command] = ns.args;
 
   if (command == null) {
-    ns.tprint("\n" + getTable(ns));
+    ns.tprint('\n' + getTable(ns));
   } else {
-    if (command === "service") {
+    if (command === 'service') {
       while (true) {
         ns.clearLog();
         ns.print(getTable(ns));
         await ns.sleep(5000);
       }
     } else {
-      throw new Error("Illegal argument: " + command); // TODO: Usage
+      throw new Error('Illegal argument: ' + command); // TODO: Usage
     }
   }
 }

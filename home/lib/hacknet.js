@@ -1,5 +1,5 @@
-import { getMockFormulas } from "./formulas";
-import { getStaticData } from "./data-store";
+import { getMockFormulas } from './formulas';
+import { getStaticData } from './data-store';
 
 /** @param {NS} ns **/
 export const getNodes = (ns) => {
@@ -11,16 +11,28 @@ export const getNodes = (ns) => {
 
 /** @param {NS} ns **/
 const getNodeData = (ns) => {
-  const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(getStaticData(ns));
+  const formulas = ns.fileExists('Formulas.exe', 'home')
+    ? ns.formulas
+    : getMockFormulas(getStaticData(ns));
   const { moneyGainRate } = formulas.hacknetNodes;
-  const levelUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
-    moneyGainRate(level + 1, ram, cores) - moneyGainRate(level, ram, cores);
-  const ramUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
-    moneyGainRate(level, ram + 1, cores) - moneyGainRate(level, ram, cores);
-  const coreUpgradeProfit = (/** @type {number} */ level, /** @type {number} */ ram, /** @type {number} */ cores) =>
-    moneyGainRate(level, ram, cores + 1) - moneyGainRate(level, ram, cores);
+  const levelUpgradeProfit = (
+    /** @type {number} */ level,
+    /** @type {number} */ ram,
+    /** @type {number} */ cores,
+  ) => moneyGainRate(level + 1, ram, cores) - moneyGainRate(level, ram, cores);
+  const ramUpgradeProfit = (
+    /** @type {number} */ level,
+    /** @type {number} */ ram,
+    /** @type {number} */ cores,
+  ) => moneyGainRate(level, ram + 1, cores) - moneyGainRate(level, ram, cores);
+  const coreUpgradeProfit = (
+    /** @type {number} */ level,
+    /** @type {number} */ ram,
+    /** @type {number} */ cores,
+  ) => moneyGainRate(level, ram, cores + 1) - moneyGainRate(level, ram, cores);
 
-  const m = (/** @type {number | null | undefined} */ n) => n && "$" + ns.format.number(n, 0);
+  const m = (/** @type {number | null | undefined} */ n) =>
+    n && '$' + ns.format.number(n, 0);
   return getNodes(ns).map((stats, i) => {
     const lp = levelUpgradeProfit(stats.level, stats.ram, stats.cores);
     const rp = ramUpgradeProfit(stats.level, stats.ram, stats.cores);
@@ -30,7 +42,7 @@ const getNodeData = (ns) => {
     const cc = ns.hacknet.getCoreUpgradeCost(i, 1);
     const upgrades = {
       level: {
-        type: "level",
+        type: 'level',
         index: i,
         profit: lp,
         cost: lc,
@@ -40,7 +52,7 @@ const getNodeData = (ns) => {
         toString: () => `${i}-level ${m(lp)}/${m(lc)}`,
       },
       ram: {
-        type: "ram",
+        type: 'ram',
         index: i,
         profit: rp,
         cost: rc,
@@ -50,7 +62,7 @@ const getNodeData = (ns) => {
         toString: () => `${i}-ram ${m(rp)}/${m(rc)}`,
       },
       core: {
-        type: "core",
+        type: 'core',
         index: i,
         profit: cp,
         cost: cc,
@@ -88,7 +100,7 @@ export const getBestPurchase = (ns) => {
     const profitPerCost = profit / nodeCost;
     const breakEvenTime = profit === 0 ? 0 : nodeCost / profit;
     return {
-      type: "node",
+      type: 'node',
       profit,
       cost: nodeCost,
       profitPerCost,

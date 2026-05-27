@@ -1,9 +1,9 @@
-import { logger } from "./logger";
-import { delegateAny } from "./scheduler-delegate";
+import { logger } from './logger';
+import { delegateAny } from './scheduler-delegate';
 
 /** @param {NS} ns */
 export const rmi =
-  (ns, retry=false) =>
+  (ns, retry = false) =>
   async (/** @type {[string, number?, ...ScriptArg[]]} */ ...args) => {
     while (true) {
       try {

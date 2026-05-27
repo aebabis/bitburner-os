@@ -20,7 +20,8 @@ export async function main(ns) {
     contracts: getContractData,
     goals: getGoalsData,
   };
-  const usage = () => ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
+  const usage = () =>
+    ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
   const [input = ''] = ns.args;
   if (typeof input !== 'string') {
     usage();

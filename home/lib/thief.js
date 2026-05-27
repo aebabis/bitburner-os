@@ -1,5 +1,5 @@
-import { WEAKEN, GROW, HACK } from "../etc/filenames";
-import { createBatch } from "./scheduler-delegate";
+import { WEAKEN, GROW, HACK } from '../etc/filenames';
+import { createBatch } from './scheduler-delegate';
 
 const _win = globalThis;
 
@@ -19,7 +19,7 @@ const PORTIONS = new Array(count + 1)
 /** @param {NS} ns
  *  @param {string} target */
 const getTimes = (ns, target) => {
-  if (ns.fileExists("Formulas.exe", "home")) {
+  if (ns.fileExists('Formulas.exe', 'home')) {
     const server = /** @type {Server} */ ({
       hackDifficulty: ns.getServerMinSecurityLevel(target),
       requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
@@ -83,9 +83,10 @@ class Batch {
     this.ns = ns;
     this.target = target;
     this.jobs = createBatch(ns);
-    this.type = this.constructor.name.replace("Batch", "");
+    this.type = this.constructor.name.replace('Batch', '');
     this.threads = 0;
-    this._profilerRecords = /** @type {[string, string, string, string, number, number, number][]} */ ([]);
+    this._profilerRecords =
+      /** @type {[string, string, string, string, number, number, number][]} */ ([]);
     this.endAfter = /** @type {number | null} */ (null);
     this.frame = /** @type {number[] | undefined} */ (undefined);
     this.portion = /** @type {number | undefined} */ (undefined);
@@ -93,7 +94,15 @@ class Batch {
 
   /** @param {string} frameId @param {string} jobId @param {string} target @param {string} label @param {number} threads @param {number} startTime @param {number} endTime */
   _queueProfiler(frameId, jobId, target, label, threads, startTime, endTime) {
-    this._profilerRecords.push([frameId, jobId, target, label, threads, startTime, endTime]);
+    this._profilerRecords.push([
+      frameId,
+      jobId,
+      target,
+      label,
+      threads,
+      startTime,
+      endTime,
+    ]);
   }
 
   /** @param {string} script @param {number} threads @param {string} target @param {number} startTime @param {string} jobId */
@@ -118,11 +127,11 @@ class Batch {
   toString() {
     return (
       this.target.padEnd(20) +
-      " " +
+      ' ' +
       this.type +
-      " " +
+      ' ' +
       this.jobs.getSize() +
-      " " +
+      ' ' +
       ((this.endAfter ?? 0) - Date.now())
     );
   }
@@ -177,10 +186,42 @@ class HWGWBatch extends Batch {
       const growId = crypto.randomUUID();
       const w2Id = crypto.randomUUID();
 
-      this._queueProfiler(frameId, hackId, target, "H", hackThreads, hackEnd - hackTime, hackEnd);
-      this._queueProfiler(frameId, w1Id, target, "W1", weaken1Threads, weaken1End - weakenTime, weaken1End);
-      this._queueProfiler(frameId, growId, target, "G", growThreads, growEnd - growTime, growEnd);
-      this._queueProfiler(frameId, w2Id, target, "W2", weaken2Threads, weaken2End - weakenTime, weaken2End);
+      this._queueProfiler(
+        frameId,
+        hackId,
+        target,
+        'H',
+        hackThreads,
+        hackEnd - hackTime,
+        hackEnd,
+      );
+      this._queueProfiler(
+        frameId,
+        w1Id,
+        target,
+        'W1',
+        weaken1Threads,
+        weaken1End - weakenTime,
+        weaken1End,
+      );
+      this._queueProfiler(
+        frameId,
+        growId,
+        target,
+        'G',
+        growThreads,
+        growEnd - growTime,
+        growEnd,
+      );
+      this._queueProfiler(
+        frameId,
+        w2Id,
+        target,
+        'W2',
+        weaken2Threads,
+        weaken2End - weakenTime,
+        weaken2End,
+      );
 
       this.addJob(HACK, hackThreads, target, hackEnd - hackTime, hackId);
       this.addJob(
@@ -221,7 +262,7 @@ class WGWBatch extends Batch {
     const money = ns.getServerMoneyAvailable(target) || 1;
 
     if (maxMoney === 0)
-      throw new Error("Cannot hack server with no money: " + target);
+      throw new Error('Cannot hack server with no money: ' + target);
     const portion = maxMoney / money;
     let growThreads = Math.ceil(ns.growthAnalyze(target, portion));
 
@@ -237,8 +278,7 @@ class WGWBatch extends Batch {
 
     const weaken1Start = startAfter;
     const weaken2Start = startAfter + 2 * SUBTASK_SPACING;
-    const growStart =
-      weaken1Start + weakenTime + SUBTASK_SPACING - growTime;
+    const growStart = weaken1Start + weakenTime + SUBTASK_SPACING - growTime;
 
     const threadsPerJob = Math.max(8, Math.ceil(ram / 24 / 1.75 / 2));
 
@@ -247,7 +287,15 @@ class WGWBatch extends Batch {
     while (ram > 0 && weaken1Threads > 0) {
       const threads = Math.min(weaken1Threads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      this._queueProfiler(frameId, jobId, target, "W1", threads, weaken1Start, weaken1Start + weakenTime);
+      this._queueProfiler(
+        frameId,
+        jobId,
+        target,
+        'W1',
+        threads,
+        weaken1Start,
+        weaken1Start + weakenTime,
+      );
       this.addJob(WEAKEN, threads, target, weaken1Start, jobId);
       weaken1Threads -= threads;
       ram -= threads * 1.75;
@@ -256,7 +304,15 @@ class WGWBatch extends Batch {
     while (ram > 0 && growThreads > 0) {
       const threads = Math.min(growThreads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      this._queueProfiler(frameId, jobId, target, "G", threads, growStart, growStart + growTime);
+      this._queueProfiler(
+        frameId,
+        jobId,
+        target,
+        'G',
+        threads,
+        growStart,
+        growStart + growTime,
+      );
       this.addJob(GROW, threads, target, growStart, jobId);
       growThreads -= threads;
       ram -= threads * 1.75;
@@ -265,7 +321,15 @@ class WGWBatch extends Batch {
     while (ram > 0 && weaken2Threads > 0) {
       const threads = Math.min(weaken2Threads, threadsPerJob);
       const jobId = crypto.randomUUID();
-      this._queueProfiler(frameId, jobId, target, "W2", threads, weaken2Start, weaken2Start + weakenTime);
+      this._queueProfiler(
+        frameId,
+        jobId,
+        target,
+        'W2',
+        threads,
+        weaken2Start,
+        weaken2Start + weakenTime,
+      );
       this.addJob(WEAKEN, threads, target, weaken2Start, jobId);
       weaken2Threads -= threads;
       ram -= threads * 1.75;
@@ -304,13 +368,13 @@ export default class Thief {
   isGrooming = () => {
     const { currentBatch } = this;
     if (currentBatch == null || currentBatch.hasEnded()) return false;
-    return currentBatch.type === "WGW";
+    return currentBatch.type === 'WGW';
   };
 
   isStealing = () => {
     const { currentBatch } = this;
     if (currentBatch == null || currentBatch.hasEnded()) return false;
-    return currentBatch.type !== "WGW";
+    return currentBatch.type !== 'WGW';
   };
 
   canStartNextBatch = () => !this.currentBatch || this.currentBatch.hasEnded();
@@ -338,30 +402,34 @@ export default class Thief {
       this.currentBatch = new HWGWBatch(ns, server, portion, ram, endAfter);
     }
     await this.currentBatch.send();
-    this.batches = [...this.batches, this.currentBatch].filter((batch) => !batch.hasEnded());
+    this.batches = [...this.batches, this.currentBatch].filter(
+      (batch) => !batch.hasEnded(),
+    );
     return this.currentBatch.jobs.getSize() > 0;
   }
 
   getTableData() {
     const { server, batches, currentBatch } = this;
     if (currentBatch == null) return { hostname: server };
-    return batches.filter((batch) => !batch.hasEnded()).map((batch) => {
-      const { type, jobs, frame = [], portion } = batch;
-      const timeLeft = ((batch.endAfter ?? 0) - Date.now()) / 1000;
-      const sign = Math.sign(timeLeft) === -1 ? "-" : "";
-      const minutes = Math.floor(Math.abs(timeLeft / 60));
-      const seconds = Math.floor(Math.abs(timeLeft % 60))
-        .toString()
-        .padStart(2, "0");
-      return {
-        hostname: server,
-        type,
-        jobs: jobs.getSize(),
-        portion,
-        timeLeft: `${sign}${minutes}:${seconds}`,
-        frame: frame.join(" "),
-      };
-    });
+    return batches
+      .filter((batch) => !batch.hasEnded())
+      .map((batch) => {
+        const { type, jobs, frame = [], portion } = batch;
+        const timeLeft = ((batch.endAfter ?? 0) - Date.now()) / 1000;
+        const sign = Math.sign(timeLeft) === -1 ? '-' : '';
+        const minutes = Math.floor(Math.abs(timeLeft / 60));
+        const seconds = Math.floor(Math.abs(timeLeft % 60))
+          .toString()
+          .padStart(2, '0');
+        return {
+          hostname: server,
+          type,
+          jobs: jobs.getSize(),
+          portion,
+          timeLeft: `${sign}${minutes}:${seconds}`,
+          frame: frame.join(' '),
+        };
+      });
   }
 
   /** @param {number} ramAvailable */
@@ -373,7 +441,10 @@ export default class Thief {
     const maxMoney = ns.getServerMaxMoney(server);
     const weaken1Threads = getWThreads(ns, curSec - minSec);
     const growThreads = Math.ceil(ns.growthAnalyze(server, maxMoney / money));
-    const weaken2Threads = getWThreads(ns, ns.growthAnalyzeSecurity(growThreads));
+    const weaken2Threads = getWThreads(
+      ns,
+      ns.growthAnalyzeSecurity(growThreads),
+    );
     const totalThreads = weaken1Threads + growThreads + weaken2Threads;
     const minPasses = Math.ceil((totalThreads * 1.75) / ramAvailable);
     return minPasses * ns.getWeakenTime(server);

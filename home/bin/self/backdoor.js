@@ -1,4 +1,4 @@
-import { stop } from "../../stop";
+import { stop } from '../../stop';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -7,7 +7,7 @@ export async function main(ns) {
 
   // Kill all scripts before backdooring
   // final server to prevent glitches.
-  if (path[path.length - 1] === "w0r1d_d43m0n") await stop(ns);
+  if (path[path.length - 1] === 'w0r1d_d43m0n') await stop(ns);
 
   // Hop along path to target
   for (const hostname of path) ns.singularity.connect(hostname);

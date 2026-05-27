@@ -11,7 +11,7 @@ export async function main(ns) {
     const selfFund = resetInfo.currentNode !== 3;
     await rmi(ns)('/bin/corporation/create/corporation.js', 1, selfFund);
   }
-  
+
   while (getStaticData(ns).materialData == null)
     await rmi(ns)('/bin/corporation/orders/load-material-data.js');
   while (getStaticData(ns).industryData == null)

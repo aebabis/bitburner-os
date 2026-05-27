@@ -1,15 +1,29 @@
-import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
-import Ports from "./ports";
-import { logger } from "./logger";
-import { getSchedulerReportData, putSchedulerReportData } from "./data-store";
+import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
+import Ports from './ports';
+import { logger } from './logger';
+import { getSchedulerReportData, putSchedulerReportData } from './data-store';
 
-const desc = (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
-  `${script} ${host || "*"} ${numThreads} ${args.join(" ")}`;
+const desc = (
+  /** @type {string} */ script,
+  host = null,
+  /** @type {number} */ numThreads = 1,
+  /** @type {ScriptArg[]} */ ...args
+) => `${script} ${host || '*'} ${numThreads} ${args.join(' ')}`;
 
 const Job =
-  (/** @type {NS} */ ns, /** @type {boolean} */ response, /** @type {number} */ startTime, /** @type {boolean} */ highPriority = false) =>
-  (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
-    if (script.startsWith(".") || !script.endsWith(".js"))
+  (
+    /** @type {NS} */ ns,
+    /** @type {boolean} */ response,
+    /** @type {number} */ startTime,
+    /** @type {boolean} */ highPriority = false,
+  ) =>
+  (
+    /** @type {string} */ script,
+    host = null,
+    /** @type {number} */ numThreads = 1,
+    /** @type {ScriptArg[]} */ ...args
+  ) => {
+    if (script.startsWith('.') || !script.endsWith('.js'))
       throw new Error(
         `Illegal script name in ${desc(script, host, numThreads, ...args)}`,
       );
@@ -33,8 +47,17 @@ const Job =
 
 /** @param {NS} ns **/
 export const delegate =
-  (ns, /** @type {boolean} */ response, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
-  async (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) => {
+  (
+    ns,
+    /** @type {boolean} */ response,
+    /** @type {{startTime?: number, highPriority?: boolean}} */ options = {},
+  ) =>
+  async (
+    /** @type {string} */ script,
+    host = null,
+    /** @type {number} */ numThreads = 1,
+    /** @type {ScriptArg[]} */ ...args
+  ) => {
     const { startTime = Date.now(), highPriority = false } = options;
     const job = Job(ns, response, startTime, highPriority)(
       script,
@@ -58,7 +81,7 @@ export const delegate =
         if (responses?.[job.ticket] != null) return responses[job.ticket];
         if (Date.now() - start >= 70000)
           throw new Error(
-            `Timed-out: ${script} ${host || "*"} ${numThreads} ${args.join(" ")}`,
+            `Timed-out: ${script} ${host || '*'} ${numThreads} ${args.join(' ')}`,
           );
         await ns.sleep(10);
       }
@@ -67,8 +90,16 @@ export const delegate =
 
 /** @param {NS} ns **/
 export const delegateAny =
-  (ns, /** @type {boolean} */ response = false, /** @type {{startTime?: number, highPriority?: boolean}} */ options = {}) =>
-  async (/** @type {string} */ script, numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
+  (
+    ns,
+    /** @type {boolean} */ response = false,
+    /** @type {{startTime?: number, highPriority?: boolean}} */ options = {},
+  ) =>
+  async (
+    /** @type {string} */ script,
+    numThreads = 1,
+    /** @type {ScriptArg[]} */ ...args
+  ) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
 /** @param {NS} ns */
@@ -76,13 +107,24 @@ export const createBatch = (ns) => {
   const jobs = /** @type {ReturnType<ReturnType<typeof Job>>[]} */ ([]);
   const delegate =
     (/** @type {number} */ startTime) =>
-    (/** @type {string} */ script, host = null, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
-      jobs.push(Job(ns, false, startTime, false)(script, host, numThreads, ...args));
+    (
+      /** @type {string} */ script,
+      host = null,
+      /** @type {number} */ numThreads = 1,
+      /** @type {ScriptArg[]} */ ...args
+    ) =>
+      jobs.push(
+        Job(ns, false, startTime, false)(script, host, numThreads, ...args),
+      );
   return {
     delegate,
     delegateAny:
       (/** @type {number} */ startTime) =>
-      (/** @type {string} */ script, /** @type {number} */ numThreads = 1, /** @type {ScriptArg[]} */ ...args) =>
+      (
+        /** @type {string} */ script,
+        /** @type {number} */ numThreads = 1,
+        /** @type {ScriptArg[]} */ ...args
+      ) =>
         delegate(startTime)(script, null, numThreads, ...args),
     getSize: () => jobs.length,
     send: async () =>
@@ -108,14 +150,21 @@ export const getDelegatedTasks = async (ns) => {
 const TICKET_TTL = 30_000;
 
 /** @param {NS} ns **/
-export const closeTicket = (ns) => async (/** @type {string} */ ticket, /** @type {number} */ pid = 0, /** @type {string | null} */ hostname = null, /** @type {number} */ threads = 0) => {
-  const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
-  const timestamp = Date.now();
-  const responses = port.peek() || {};
-  for (const [k, v] of Object.entries(responses))
-    if (timestamp - v.timestamp > TICKET_TTL) delete responses[k];
-  responses[ticket] = { pid, hostname, threads, timestamp };
-  port.clear();
-  port.write(responses);
-  return true;
-};
+export const closeTicket =
+  (ns) =>
+  async (
+    /** @type {string} */ ticket,
+    /** @type {number} */ pid = 0,
+    /** @type {string | null} */ hostname = null,
+    /** @type {number} */ threads = 0,
+  ) => {
+    const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
+    const timestamp = Date.now();
+    const responses = port.peek() || {};
+    for (const [k, v] of Object.entries(responses))
+      if (timestamp - v.timestamp > TICKET_TTL) delete responses[k];
+    responses[ticket] = { pid, hostname, threads, timestamp };
+    port.clear();
+    port.write(responses);
+    return true;
+  };

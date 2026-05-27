@@ -50,7 +50,11 @@ export class Timeline {
 
   /** @param {number} timestamp */
   findValue(timestamp) {
-    const terpolate = (/** @type {Sample} */ s1, /** @type {Sample} */ s2, /** @type {number} */ timestamp) => {
+    const terpolate = (
+      /** @type {Sample} */ s1,
+      /** @type {Sample} */ s2,
+      /** @type {number} */ timestamp,
+    ) => {
       const portion =
         (timestamp - s1.timestamp) / (s2.timestamp - s1.timestamp);
       return s1.value + portion * (s2.value - s1.value);

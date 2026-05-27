@@ -1,17 +1,17 @@
-import { putStaticData } from "../lib/data-store";
-import * as cheaty from "./cheaty-data";
-import { tprint } from "./util";
-import { STR } from "../lib/colors";
+import { putStaticData } from '../lib/data-store';
+import * as cheaty from './cheaty-data';
+import { tprint } from './util';
+import { STR } from '../lib/colors';
 
 /**
  * @precondition Running on BN1.1
  * @param {NS} ns */
 export async function main(ns) {
-  tprint(ns)(STR.BOLD + "ADDING MULTIPLIERS TO CACHE");
+  tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 
   putStaticData(ns, {
     hacknetMultipliers: ns.getHacknetMultipliers(),
-    bitNodeMultipliers: cheaty["getBitNodeMultipliers"](1),
+    bitNodeMultipliers: cheaty['getBitNodeMultipliers'](1),
   });
 
   // Go to next step in the boot sequence

@@ -1,11 +1,16 @@
-import { getTailModal } from "../lib/modal";
-import { getSnapshot } from "../lib/profiler";
+import { getTailModal } from '../lib/modal';
+import { getSnapshot } from '../lib/profiler';
 
-const doc = eval("document");
-const win = eval("window");
+const doc = eval('document');
+const win = eval('window');
 
-const COLORS = /** @type {Record<string, string>} */ ({ H: "#e5c07b", W1: "#56b6c2", G: "#98c379", W2: "#61afef" });
-const TYPES = ["H", "W1", "G", "W2"];
+const COLORS = /** @type {Record<string, string>} */ ({
+  H: '#e5c07b',
+  W1: '#56b6c2',
+  G: '#98c379',
+  W2: '#61afef',
+});
+const TYPES = ['H', 'W1', 'G', 'W2'];
 const AXIS_H = 22;
 const LABEL_W = 28;
 const LANE_H = 20;
@@ -31,20 +36,28 @@ const TIMELINE_H = AXIS_H + TYPES.length * (LANE_H + LANE_GAP);
  * @param {number} tMax
  */
 const drawTimeAxis = (ctx, toX, bounds, now, tMin, tMax) => {
-  ctx.fillStyle = "#222";
+  ctx.fillStyle = '#222';
   ctx.fillRect(LABEL_W, bounds.y, bounds.w - LABEL_W, AXIS_H);
-  ctx.font = "9px monospace";
-  ctx.textBaseline = "alphabetic";
+  ctx.font = '9px monospace';
+  ctx.textBaseline = 'alphabetic';
   const tRange = tMax - tMin;
   const tickStep = Math.ceil(tRange / 6 / 1000) * 1000;
-  for (let t = Math.ceil(tMin / tickStep) * tickStep; t <= tMax; t += tickStep) {
+  for (
+    let t = Math.ceil(tMin / tickStep) * tickStep;
+    t <= tMax;
+    t += tickStep
+  ) {
     const x = Math.round(toX(t));
     if (x < LABEL_W) continue;
-    ctx.fillStyle = "#444";
+    ctx.fillStyle = '#444';
     ctx.fillRect(x, bounds.y + AXIS_H - 4, 1, 4);
-    ctx.fillStyle = "#666";
+    ctx.fillStyle = '#666';
     const offsetS = ((t - now) / 1000).toFixed(0);
-    ctx.fillText(`${+offsetS >= 0 ? "+" : ""}${offsetS}s`, x + 2, bounds.y + AXIS_H - 6);
+    ctx.fillText(
+      `${+offsetS >= 0 ? '+' : ''}${offsetS}s`,
+      x + 2,
+      bounds.y + AXIS_H - 6,
+    );
   }
 };
 
@@ -56,7 +69,7 @@ const drawTimeAxis = (ctx, toX, bounds, now, tMin, tMax) => {
  */
 const drawNowLine = (ctx, toX, now, bounds) => {
   const nowX = Math.round(toX(now));
-  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
   ctx.setLineDash([3, 4]);
   ctx.beginPath();
   ctx.moveTo(nowX, bounds.y);
@@ -84,7 +97,9 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 
   const outOfOrder = new Set();
   for (const { jobs: frameJobs } of snapshot) {
-    const sorted = [...frameJobs].sort((a, b) => a.scheduledEnd - b.scheduledEnd);
+    const sorted = [...frameJobs].sort(
+      (a, b) => a.scheduledEnd - b.scheduledEnd,
+    );
     for (let i = 0; i < sorted.length - 1; i++) {
       const cur = sorted[i];
       const next = sorted[i + 1];
@@ -95,7 +110,9 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     }
   }
 
-  const byType = /** @type {Record<string, typeof allJobs>} */ (Object.fromEntries(TYPES.map((t) => [t, []])));
+  const byType = /** @type {Record<string, typeof allJobs>} */ (
+    Object.fromEntries(TYPES.map((t) => [t, []]))
+  );
   for (const job of allJobs) {
     if (!job) continue;
     if (byType[job.type]) byType[job.type].push(job);
@@ -106,18 +123,18 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     const stripeY = laneY + Math.floor((LANE_H - STRIPE_H) / 2);
     const color = COLORS[type];
 
-    ctx.fillStyle = "#111";
+    ctx.fillStyle = '#111';
     ctx.fillRect(LABEL_W, laneY, bounds.w - LABEL_W, LANE_H);
 
     ctx.fillStyle = color;
-    ctx.font = "10px monospace";
-    ctx.textBaseline = "middle";
+    ctx.font = '10px monospace';
+    ctx.textBaseline = 'middle';
     ctx.fillText(type, 4, laneY + LANE_H / 2);
 
     for (const job of byType[type]) {
       const started = job.actualStart != null;
       const completed = job.actualEnd != null;
-      const failed = type === "H" && job.result === 0;
+      const failed = type === 'H' && job.result === 0;
       const ooo = outOfOrder.has(job.jobId) || failed;
 
       // Dim: scheduled end, not yet started. Medium: started. Bright: completed.
@@ -132,8 +149,13 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
         ctx.fillRect(toX(job.scheduledEnd), stripeY, 1, STRIPE_H);
         ctx.globalAlpha = 1;
       } else {
-        ctx.fillStyle = ooo ? "#ff4444" : color;
-        ctx.fillRect(toX(/** @type {number} */ (job.actualEnd)), stripeY, 1, STRIPE_H);
+        ctx.fillStyle = ooo ? '#ff4444' : color;
+        ctx.fillRect(
+          toX(/** @type {number} */ (job.actualEnd)),
+          stripeY,
+          1,
+          STRIPE_H,
+        );
       }
     }
   });
@@ -142,7 +164,8 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 // -- Drift panel --
 
 /** @param {number} ms */
-const fmtMs = (ms) => Math.abs(ms) >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms.toFixed(0)}ms`;
+const fmtMs = (ms) =>
+  Math.abs(ms) >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms.toFixed(0)}ms`;
 
 /**
  * Plots drift decomposed into start delay and duration error.
@@ -172,7 +195,7 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   const plotH = Math.max(20, bounds.h - AXIS_H - DRIFT_STATS_H);
   const statsY0 = plotY + plotH + 4;
 
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = '#111';
   ctx.fillRect(LABEL_W, plotY, bounds.w - LABEL_W, plotH);
 
   drawNowLine(ctx, toX, now, { y: plotY, h: plotH });
@@ -181,17 +204,19 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   const completedJobs = allJobs.filter((j) => j != null && j.actualEnd != null);
 
   if (completedJobs.length === 0) {
-    ctx.fillStyle = "#555";
-    ctx.font = "12px monospace";
-    ctx.textBaseline = "middle";
-    ctx.fillText("No completed jobs yet…", LABEL_W + 8, plotY + plotH / 2);
+    ctx.fillStyle = '#555';
+    ctx.font = '12px monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('No completed jobs yet…', LABEL_W + 8, plotY + plotH / 2);
     return;
   }
 
   // Total drift = actualEnd - scheduledEnd.
   // Start delay = actualStart - scheduledStart (how late the script launched).
   // Duration error = total drift - start delay (how much longer the op ran than scheduled).
-  const drifts = completedJobs.map((j) => /** @type {number} */ (j.actualEnd) - j.scheduledEnd);
+  const drifts = completedJobs.map(
+    (j) => /** @type {number} */ (j.actualEnd) - j.scheduledEnd,
+  );
   const startDelays = completedJobs.map((j) =>
     j.actualStart != null ? j.actualStart - j.scheduledStart : 0,
   );
@@ -204,27 +229,32 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   const dRange = Math.max(1, dHi - dLo);
 
   // Positive drift up (smaller canvas Y), negative down (larger canvas Y).
-  const toYDrift = (/** @type {number} */ d) => plotY + plotH - ((d - dLo) / dRange) * plotH;
+  const toYDrift = (/** @type {number} */ d) =>
+    plotY + plotH - ((d - dLo) / dRange) * plotH;
 
   // Y-axis grid ticks
   const mag = Math.pow(10, Math.floor(Math.log10(dRange / 4)));
   const yTickStep = Math.max(1, Math.ceil(dRange / 4 / mag) * mag);
-  ctx.font = "9px monospace";
-  ctx.textBaseline = "middle";
-  for (let d = Math.ceil(dLo / yTickStep) * yTickStep; d <= dHi; d += yTickStep) {
+  ctx.font = '9px monospace';
+  ctx.textBaseline = 'middle';
+  for (
+    let d = Math.ceil(dLo / yTickStep) * yTickStep;
+    d <= dHi;
+    d += yTickStep
+  ) {
     const y = Math.round(toYDrift(d));
     if (y < plotY || y > plotY + plotH) continue;
-    ctx.fillStyle = "#2a2a2a";
+    ctx.fillStyle = '#2a2a2a';
     ctx.fillRect(LABEL_W, y, bounds.w - LABEL_W, 1);
     const label = fmtMs(d);
-    ctx.fillStyle = d === 0 ? "#777" : "#555";
+    ctx.fillStyle = d === 0 ? '#777' : '#555';
     ctx.fillText(label, 2, y);
   }
 
   // Zero line
   const zeroY = Math.round(toYDrift(0));
   if (zeroY >= plotY && zeroY <= plotY + plotH) {
-    ctx.strokeStyle = "#555";
+    ctx.strokeStyle = '#555';
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(LABEL_W, zeroY);
@@ -236,11 +266,12 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   // Dots: dim marker at startDelay, bright marker at totalDrift, line between them.
   for (const job of completedJobs) {
     const drift = /** @type {number} */ (job.actualEnd) - job.scheduledEnd;
-    const delay = job.actualStart != null ? job.actualStart - job.scheduledStart : null;
+    const delay =
+      job.actualStart != null ? job.actualStart - job.scheduledStart : null;
     const x = Math.round(toX(/** @type {number} */ (job.actualEnd)));
     if (x < LABEL_W || x > bounds.w) continue;
 
-    const color = COLORS[job.type] || "#888";
+    const color = COLORS[job.type] || '#888';
     const yDrift = Math.round(toYDrift(drift));
     const yDelay = delay != null ? Math.round(toYDrift(delay)) : null;
 
@@ -273,8 +304,8 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   }
 
   // -- Stats rows --
-  ctx.font = "10px monospace";
-  ctx.textBaseline = "top";
+  ctx.font = '10px monospace';
+  ctx.textBaseline = 'top';
 
   /** @param {(j: typeof completedJobs[0]) => number} fn @returns {Record<string, number>} */
   const meanByType = (fn) => {
@@ -289,16 +320,19 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 
   /** @param {Record<string, number>} means @param {number} rowY @param {string} label */
   const drawStatsRow = (means, rowY, label) => {
-    const hVal = means["H"];
+    const hVal = means['H'];
     let x = LABEL_W + 8;
-    ctx.fillStyle = "#555";
+    ctx.fillStyle = '#555';
     ctx.fillText(label, x, rowY);
     x += ctx.measureText(label).width + 6;
     for (const type of TYPES) {
       const val = means[type];
       if (val == null) continue;
-      const ratioStr = hVal != null && hVal !== 0 && type !== "H" ? ` (×${(val / hVal).toFixed(1)})` : "";
-      const text = `${type}:${val >= 0 ? "+" : ""}${fmtMs(val)}${ratioStr}`;
+      const ratioStr =
+        hVal != null && hVal !== 0 && type !== 'H'
+          ? ` (×${(val / hVal).toFixed(1)})`
+          : '';
+      const text = `${type}:${val >= 0 ? '+' : ''}${fmtMs(val)}${ratioStr}`;
       ctx.fillStyle = COLORS[type];
       ctx.fillText(text, x, rowY);
       x += ctx.measureText(text).width + 10;
@@ -309,62 +343,78 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   drawStatsRow(
     meanByType((j) => /** @type {number} */ (j.actualEnd) - j.scheduledEnd),
     statsY0,
-    "drift:",
+    'drift:',
   );
 
   // Row 2: start delay only (how late each script was launched)
   drawStatsRow(
-    meanByType((j) => (j.actualStart != null ? j.actualStart - j.scheduledStart : 0)),
+    meanByType((j) =>
+      j.actualStart != null ? j.actualStart - j.scheduledStart : 0,
+    ),
     statsY0 + STATS_LINE_H,
-    "start:",
+    'start:',
   );
 
   // Row 3: within-frame drift ratio (only frames where all 4 types completed)
   // If the cross-frame mean ratio (row 1) exceeds these, it's a sampling artifact.
   const completedFrames = snapshot.filter(({ jobs }) =>
-    TYPES.every((t) => jobs.some((j) => j != null && j.type === t && j.actualEnd != null)),
+    TYPES.every((t) =>
+      jobs.some((j) => j != null && j.type === t && j.actualEnd != null),
+    ),
   );
   const frameRatioRow = statsY0 + STATS_LINE_H * 2;
   if (completedFrames.length > 0) {
     /** @type {Record<string, number[]>} */
     const ratiosByType = Object.fromEntries(TYPES.map((t) => [t, []]));
     for (const { jobs } of completedFrames) {
-      const hJob = jobs.find((j) => j != null && j.type === "H" && j.actualEnd != null);
+      const hJob = jobs.find(
+        (j) => j != null && j.type === 'H' && j.actualEnd != null,
+      );
       if (!hJob) continue;
       const hDrift = /** @type {number} */ (hJob.actualEnd) - hJob.scheduledEnd;
       if (hDrift === 0) continue;
       for (const type of TYPES) {
-        const j = jobs.find((jj) => jj != null && jj.type === type && jj.actualEnd != null);
-        if (j) ratiosByType[type].push((/** @type {number} */ (j.actualEnd) - j.scheduledEnd) / hDrift);
+        const j = jobs.find(
+          (jj) => jj != null && jj.type === type && jj.actualEnd != null,
+        );
+        if (j)
+          ratiosByType[type].push(
+            /** @type {number} */ (j.actualEnd - j.scheduledEnd) / hDrift,
+          );
       }
     }
     const frameMeans = /** @type {Record<string, number>} */ ({});
     for (const type of TYPES) {
       const rs = ratiosByType[type];
-      if (rs.length > 0) frameMeans[type] = rs.reduce((a, b) => a + b, 0) / rs.length;
+      if (rs.length > 0)
+        frameMeans[type] = rs.reduce((a, b) => a + b, 0) / rs.length;
     }
     let x = LABEL_W + 8;
-    ctx.fillStyle = "#555";
+    ctx.fillStyle = '#555';
     const frameLabel = `frame(${completedFrames.length}):`;
     ctx.fillText(frameLabel, x, frameRatioRow);
     x += ctx.measureText(frameLabel).width + 6;
     for (const type of TYPES) {
       const r = frameMeans[type];
       if (r == null) continue;
-      const text = type === "H" ? `H:1.0` : `${type}:×${r.toFixed(1)}`;
+      const text = type === 'H' ? `H:1.0` : `${type}:×${r.toFixed(1)}`;
       ctx.fillStyle = COLORS[type];
       ctx.fillText(text, x, frameRatioRow);
       x += ctx.measureText(text).width + 10;
     }
   } else {
-    ctx.fillStyle = "#444";
-    ctx.fillText("frame: waiting for complete frames…", LABEL_W + 8, frameRatioRow);
+    ctx.fillStyle = '#444';
+    ctx.fillText(
+      'frame: waiting for complete frames…',
+      LABEL_W + 8,
+      frameRatioRow,
+    );
   }
 };
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   ns.ui.openTail();
 
   let startTime = -VIEW_MS;
@@ -374,26 +424,26 @@ export async function main(ns) {
   if (!modal) return;
   const headerHeight = modal.top.clientHeight;
   const content = modal.bottom;
-  content.style.overflow = "hidden";
+  content.style.overflow = 'hidden';
   content.style.padding = 0;
-  content.style.display = "flex";
-  content.style.flexDirection = "column";
+  content.style.display = 'flex';
+  content.style.flexDirection = 'column';
   content.style.height = `calc(100% - ${headerHeight}px)`;
 
-  const canvas = doc.createElement("canvas");
-  canvas.style.cssText = "display:block;width:100%;height:0;flex:1";
+  const canvas = doc.createElement('canvas');
+  canvas.style.cssText = 'display:block;width:100%;height:0;flex:1';
   content.appendChild(canvas);
 
-  const buttons = doc.createElement("div");
-  const zoomIn = doc.createElement("button");
-  const zoomOut = doc.createElement("button");
-  zoomIn.innerText = "+";
-  zoomOut.innerText = "-";
-  zoomIn.addEventListener("click", () => {
+  const buttons = doc.createElement('div');
+  const zoomIn = doc.createElement('button');
+  const zoomOut = doc.createElement('button');
+  zoomIn.innerText = '+';
+  zoomOut.innerText = '-';
+  zoomIn.addEventListener('click', () => {
     startTime /= 2;
     endTime /= 2;
   });
-  zoomOut.addEventListener("click", () => {
+  zoomOut.addEventListener('click', () => {
     startTime *= 2;
     endTime *= 2;
   });
@@ -410,14 +460,14 @@ export async function main(ns) {
     canvas.width = w;
     canvas.height = h;
 
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#1a1a1a";
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, w, h);
 
     if (!snapshot || snapshot.length === 0) {
-      ctx.fillStyle = "#555";
-      ctx.font = "12px monospace";
-      ctx.fillText("Waiting for batch data…", 12, 36);
+      ctx.fillStyle = '#555';
+      ctx.font = '12px monospace';
+      ctx.fillText('Waiting for batch data…', 12, 36);
       rafId = win.requestAnimationFrame(render);
       return;
     }
@@ -426,19 +476,36 @@ export async function main(ns) {
     const tMin = now + startTime;
     const tMax = now + endTime;
     const tRange = Math.max(tMax - tMin, 1);
-    const toX = (/** @type {number} */ t) => ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
+    const toX = (/** @type {number} */ t) =>
+      ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
 
     const driftY = TIMELINE_H + PANEL_GAP;
     const driftH = h - driftY;
 
-    drawTimeline(ctx, snapshot, toX, { y: 0, w, h: TIMELINE_H }, now, tMin, tMax);
+    drawTimeline(
+      ctx,
+      snapshot,
+      toX,
+      { y: 0, w, h: TIMELINE_H },
+      now,
+      tMin,
+      tMax,
+    );
 
     // Separator
-    ctx.fillStyle = "#333";
+    ctx.fillStyle = '#333';
     ctx.fillRect(0, TIMELINE_H + 2, w, 2);
 
     if (driftH > AXIS_H + DRIFT_STATS_H + 20)
-      drawDriftPanel(ctx, snapshot, toX, { y: driftY, w, h: driftH }, now, tMin, tMax);
+      drawDriftPanel(
+        ctx,
+        snapshot,
+        toX,
+        { y: driftY, w, h: driftH },
+        now,
+        tMin,
+        tMax,
+      );
 
     rafId = win.requestAnimationFrame(render);
   };

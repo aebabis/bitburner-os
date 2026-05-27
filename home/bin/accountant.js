@@ -1,5 +1,5 @@
-import { getMoneyData, putMoneyData } from "../lib/data-store";
-import { Timeline } from "../lib/timeline";
+import { getMoneyData, putMoneyData } from '../lib/data-store';
+import { Timeline } from '../lib/timeline';
 
 class Timer {
   constructor(/** @type NS */ ns, interval = 50, maxInterval = null) {
@@ -16,21 +16,21 @@ class Timer {
   }
 
   backoff() {
-    if (typeof this.maxInterval !== "number")
-      throw new Error("Backoff only works for timers with a maxInterval");
+    if (typeof this.maxInterval !== 'number')
+      throw new Error('Backoff only works for timers with a maxInterval');
     this.interval = Math.min(this.interval * 2, this.maxInterval);
   }
 
   reset() {
-    if (typeof this.maxInterval !== "number")
-      throw new Error("Backoff only works for timers with a maxInterval");
+    if (typeof this.maxInterval !== 'number')
+      throw new Error('Backoff only works for timers with a maxInterval');
     this.interval = 1;
   }
 }
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const moneyTimeline = new Timeline();
   const theftTimeline = new Timeline();
@@ -40,12 +40,21 @@ export async function main(ns) {
   let prevMoney = 0;
 
   while (true) {
-    const scheduler = ns.getRunningScript("/bin/scheduler.js", "home");
+    const scheduler = ns.getRunningScript('/bin/scheduler.js', 'home');
     if (scheduler == null) return;
     const timestamp = Date.now();
     const money = ns.getServerMoneyAvailable('home');
-    const { thiefReferenceWindow = 60, hacknetIncome = 0, gangIncome = 0 } = getMoneyData(ns);
-    const { onlineMoneyMade, offlineMoneyMade, onlineRunningTime, offlineRunningTime } = scheduler;
+    const {
+      thiefReferenceWindow = 60,
+      hacknetIncome = 0,
+      gangIncome = 0,
+    } = getMoneyData(ns);
+    const {
+      onlineMoneyMade,
+      offlineMoneyMade,
+      onlineRunningTime,
+      offlineRunningTime,
+    } = scheduler;
     const moneyMade = onlineMoneyMade + offlineMoneyMade;
     const timeSpent = onlineRunningTime + offlineRunningTime;
     const incomeWindow = Math.min(timeSpent, thiefReferenceWindow);
@@ -58,7 +67,9 @@ export async function main(ns) {
     moneyTimeline.addPoint(timestamp, estTotalGain);
     theftTimeline.addPoint(timestamp, moneyMade);
 
-    const moneyAtStartOfWindow = theftTimeline.findValue(timestamp - incomeWindow * 1000);
+    const moneyAtStartOfWindow = theftTimeline.findValue(
+      timestamp - incomeWindow * 1000,
+    );
     const theftIncome = (moneyMade - moneyAtStartOfWindow) / incomeWindow;
     const referenceIncome = theftIncome + hacknetIncome + gangIncome;
 

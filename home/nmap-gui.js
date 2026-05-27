@@ -1,62 +1,62 @@
 // @ts-nocheck
-import { nmap } from "./lib/nmap";
-import { getTailModal } from "./lib/modal";
-import * as d3 from "./lib/d3";
-import { THREADPOOL } from "./etc/config";
+import { nmap } from './lib/nmap';
+import { getTailModal } from './lib/modal';
+import * as d3 from './lib/d3';
+import { THREADPOOL } from './etc/config';
 
 /** @param {NS} ns **/
 async function showChart(ns, element, nodes, links) {
   const width = 1000;
   const height = 1000;
   const font = [
-    "monospace",
-    "Lucida Console",
-    "Lucida Sans Unicode",
-    "Fira Mono",
-    "Consolas",
-    "Courier New",
-    "Courier",
-    "monospace",
-    "Times New Roman",
+    'monospace',
+    'Lucida Console',
+    'Lucida Sans Unicode',
+    'Fira Mono',
+    'Consolas',
+    'Courier New',
+    'Courier',
+    'monospace',
+    'Times New Roman',
   ]
     .map((f) => JSON.stringify(f))
-    .join(",");
+    .join(',');
   const theme = ns.ui.getTheme();
 
   const container = d3
     .select(element)
-    .append("div")
-    .classed("svg-container", true)
-    .style("position", "relative")
-    .attr("style", "max-width: 100%; max-height: 100%");
+    .append('div')
+    .classed('svg-container', true)
+    .style('position', 'relative')
+    .attr('style', 'max-width: 100%; max-height: 100%');
 
   const chart = container
-    .append("svg")
-    .attr("preserveAspectRatio", "xMinYMin meet")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("style", "max-width: 100%; max-height: 100%")
-    .classed("svg-content-responsive", true);
+    .append('svg')
+    .attr('preserveAspectRatio', 'xMinYMin meet')
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('style', 'max-width: 100%; max-height: 100%')
+    .classed('svg-content-responsive', true);
 
   var tooltip = container
-    .append("div")
-    .attr("class", "tooltip")
-    .style("position", "absolute")
-    .style("background", "black")
-    .style("color", theme.primary)
-    .style("border", "solid 1px " + theme.primary)
-    .style("padding", ".3em")
-    .style("font-family", font)
-    .style("display", "none");
+    .append('div')
+    .attr('class', 'tooltip')
+    .style('position', 'absolute')
+    .style('background', 'black')
+    .style('color', theme.primary)
+    .style('border', 'solid 1px ' + theme.primary)
+    .style('padding', '.3em')
+    .style('font-family', font)
+    .style('display', 'none');
 
   const simulation = d3
     .forceSimulation()
     .nodes(nodes)
-    .force("link", d3.forceLink().distance(50))
-    .force("gravity", d3.forceManyBody().strength(100))
-    .force("charge", d3.forceManyBody().strength(-450))
-    .force("center", d3.forceCenter(width / 2, height / 2).strength(1))
-    .force("y", d3.forceY(height / 2))
-    .force("x", d3.forceX(width / 2));
+    .force('link', d3.forceLink().distance(50))
+    .force('gravity', d3.forceManyBody().strength(100))
+    .force('charge', d3.forceManyBody().strength(-450))
+    .force('center', d3.forceCenter(width / 2, height / 2).strength(1))
+    .force('y', d3.forceY(height / 2))
+    .force('x', d3.forceX(width / 2));
 
   ns.atExit(() => {
     tooltip.remove();
@@ -65,25 +65,25 @@ async function showChart(ns, element, nodes, links) {
     simulation.stop();
   });
 
-  simulation.force("link").links(links);
+  simulation.force('link').links(links);
 
   const link = chart
-    .append("g")
-    .attr("class", "links")
-    .selectAll("line")
+    .append('g')
+    .attr('class', 'links')
+    .selectAll('line')
     .data(links)
     .enter()
-    .append("line")
-    .attr("stroke", theme.primary + "33")
-    .attr("strokewidth", "1");
+    .append('line')
+    .attr('stroke', theme.primary + '33')
+    .attr('strokewidth', '1');
 
   const node = chart
-    .selectAll("circle")
+    .selectAll('circle')
     .data(nodes)
     .enter()
-    .append("g")
-    .style("cursor", "default")
-    .on("mouseover", function (event, d) {
+    .append('g')
+    .style('cursor', 'default')
+    .on('mouseover', function (event, d) {
       const {
         maxRam,
         isFullyAccessed,
@@ -93,75 +93,75 @@ async function showChart(ns, element, nodes, links) {
         nMoneyMax,
         moneyMax,
       } = d;
-      const color = isFullyAccessed ? theme.primary : theme.primary + "AA";
+      const color = isFullyAccessed ? theme.primary : theme.primary + 'AA';
       const scale = Math.min(element.clientWidth, element.clientHeight) / 1000;
       const info = isFullyAccessed
         ? moneyMax
           ? `${nMoneyAvailable}/${nMoneyMax}`
-          : "$0"
+          : '$0'
         : `ports=${numOpenPortsRequired} hack=${requiredHackingSkill}`;
-      tooltip.style("display", "block");
-      tooltip.style("color", color);
-      tooltip.style("border-color", color);
+      tooltip.style('display', 'block');
+      tooltip.style('color', color);
+      tooltip.style('border-color', color);
       tooltip
         .html(
           `<strong>${d.name}</strong> <span style="font-size: .9em">${maxRam}GB ${info}</span>`,
         )
-        .style("left", d.x * scale - 100 + "px")
-        .style("top", d.y * scale - 20 + "px");
+        .style('left', d.x * scale - 100 + 'px')
+        .style('top', d.y * scale - 20 + 'px');
     })
-    .on("mouseout", () => tooltip.style("display", "none"))
+    .on('mouseout', () => tooltip.style('display', 'none'))
     .call(
       d3
         .drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended),
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended),
     );
 
-  simulation.on("tick", function () {
-    node.attr("transform", function (d) {
-      return "translate(" + d.x + "," + d.y + ")";
+  simulation.on('tick', function () {
+    node.attr('transform', function (d) {
+      return 'translate(' + d.x + ',' + d.y + ')';
     });
 
     link
-      .attr("x1", function (d) {
+      .attr('x1', function (d) {
         return d.source.x;
       })
-      .attr("y1", function (d) {
+      .attr('y1', function (d) {
         return d.source.y;
       })
-      .attr("x2", function (d) {
+      .attr('x2', function (d) {
         return d.target.x;
       })
-      .attr("y2", function (d) {
+      .attr('y2', function (d) {
         return d.target.y;
       });
   });
 
   node
-    .append("text")
+    .append('text')
     .text(function (d) {
       return d.name;
     })
-    .attr("font-family", font)
-    .attr("text-anchor", "middle")
-    .attr("font-weight", (d, i) => (i === 0 ? "bold" : "normal"))
-    .attr("font-size", (d) => {
+    .attr('font-family', font)
+    .attr('text-anchor', 'middle')
+    .attr('font-weight', (d, i) => (i === 0 ? 'bold' : 'normal'))
+    .attr('font-size', (d) => {
       const { name } = d;
-      if (name.length <= 10) return "1.25em";
+      if (name.length <= 10) return '1.25em';
       else return `${0.75 + (0.5 * 10) / name.length}em`;
     });
 
   function dragstarted(event, d) {
     if (!event.active) simulation.alphaTarget(0.9).restart();
     if (!d.selected && !event.shiftKey) {
-      node.classed("selected", function (p) {
+      node.classed('selected', function (p) {
         return (p.selected = p.previouslySelected = false);
       });
     }
 
-    d3.select(this).classed("selected", function () {
+    d3.select(this).classed('selected', function () {
       d.previouslySelected = d.selected;
       return (d.selected = true);
     });
@@ -198,7 +198,7 @@ async function showChart(ns, element, nodes, links) {
   }
   while (true) {
     if (element.offsetParent == null) ns.exit();
-    node.selectAll("text").attr("fill", function (d) {
+    node.selectAll('text').attr('fill', function (d) {
       const skill = ns.getHackingLevel();
       const server = ns.getServer(d.name);
       Object.assign(d, server);
@@ -210,9 +210,9 @@ async function showChart(ns, element, nodes, links) {
         purchasedByPlayer,
       } = server;
       d.isFullyAccessed =
-        d.name === "home" || purchasedByPlayer || backdoorInstalled;
-      d.nMoneyAvailable = "$" + ns.format.number(server.moneyAvailable, 3);
-      d.nMoneyMax = "$" + ns.format.number(server.moneyMax, 3);
+        d.name === 'home' || purchasedByPlayer || backdoorInstalled;
+      d.nMoneyAvailable = '$' + ns.format.number(server.moneyAvailable, 3);
+      d.nMoneyMax = '$' + ns.format.number(server.moneyMax, 3);
       if (d.isFullyAccessed)
         return theme.primary; //palette.text;
       else if (
@@ -220,7 +220,7 @@ async function showChart(ns, element, nodes, links) {
         openPortCount >= numOpenPortsRequired
       )
         return theme.primarylight;
-      else return theme.primary + "77";
+      else return theme.primary + '77';
     });
     await ns.sleep(50);
   }

@@ -1,26 +1,26 @@
-import { THREADPOOL } from "../etc/config";
+import { THREADPOOL } from '../etc/config';
 import {
   getRamData,
   getMoneyData,
   getStaticData,
   getHostnames,
   putHostnames,
-} from "../lib/data-store";
-import { disableService } from "../lib/service-api";
+} from '../lib/data-store';
+import { disableService } from '../lib/service-api';
 import {
   needsJobRam,
   needsAugRam,
   getJobRamCost,
   getAugRamCost,
-} from "../lib/query-service";
-import { getTimeToComplete } from "../lib/goals/goals";
-import { infect, fullInfect } from "./infect";
+} from '../lib/query-service';
+import { getTimeToComplete } from '../lib/goals/goals';
+import { infect, fullInfect } from './infect';
 
 /** @param {number} maxServers */
 const getServerNames = (maxServers) => {
   return new Array(maxServers)
     .fill(null)
-    .map((_, i) => (i + 1).toString().padStart(2, "0"))
+    .map((_, i) => (i + 1).toString().padStart(2, '0'))
     .map((n) => `${THREADPOOL}-${n}`);
 };
 
@@ -51,7 +51,7 @@ const atCapacity = (ns) => {
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const {
     requiredJobRam,
@@ -64,19 +64,23 @@ export async function main(ns) {
   const buyServer = async (
     /** @type {number} */ minRam,
     /** @type {number} */ maxRam,
-    /** @type {string} */ hostname = /** @type {string} */ (getNextServerName(ns, purchasedServerLimit)),
+    /** @type {string} */ hostname = /** @type {string} */ (
+      getNextServerName(ns, purchasedServerLimit)
+    ),
   ) => {
     const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 
     const isUpgrade = ns.serverExists(hostname);
     const isJobServer = JOB_SERVERS.includes(hostname);
-    const savings = isUpgrade ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname)) : 0;
+    const savings = isUpgrade
+      ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname))
+      : 0;
 
-    const purchase = isUpgrade ?
-      /** @param {string} hostname @param {number} ram */
-      (hostname, ram) => ns.cloud.upgradeServer(hostname, ram) :
-      /** @param {string} hostname @param {number} ram */
-      (hostname, ram) => ns.cloud.purchaseServer(hostname, ram);
+    const purchase = isUpgrade
+      ? /** @param {string} hostname @param {number} ram */
+        (hostname, ram) => ns.cloud.upgradeServer(hostname, ram)
+      : /** @param {string} hostname @param {number} ram */
+        (hostname, ram) => ns.cloud.purchaseServer(hostname, ram);
 
     let ram = maxRam;
     while (!purchase(hostname, ram)) {
@@ -106,7 +110,7 @@ export async function main(ns) {
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     if (referenceIncome == null) return;
     const timeToGoal = getTimeToComplete(ns) ?? Infinity;
-    const money = ns.getServerMoneyAvailable("home");
+    const money = ns.getServerMoneyAvailable('home');
 
     const servers = getPurchasedServerRams(ns, purchasedServerLimit);
     const atMaxServers = servers.length === purchasedServerLimit;
@@ -134,7 +138,7 @@ export async function main(ns) {
       atMaxServers &&
       servers.every((server) => server.ram === purchasedServerMaxRam)
     ) {
-      disableService(ns, "sysadmin");
+      disableService(ns, 'sysadmin');
       return;
     }
 
@@ -150,7 +154,7 @@ export async function main(ns) {
     const minRam = getMinRam();
 
     if (minRam == null) {
-      ns.print("Not purchasing server because estimated time of goal too soon");
+      ns.print('Not purchasing server because estimated time of goal too soon');
       await ns.sleep(10000);
       return;
     }
@@ -165,8 +169,7 @@ export async function main(ns) {
     const upgradeTarget = servers.find(({ ram }) => ram < minRam) ?? null;
     if (upgradeTarget != null)
       await buyServer(minRam, maxRam, upgradeTarget.hostname);
-    else if (!atMaxServers)
-      await buyServer(minRam, maxRam);
+    else if (!atMaxServers) await buyServer(minRam, maxRam);
   };
 
   while (true) {

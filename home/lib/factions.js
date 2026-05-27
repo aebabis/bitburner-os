@@ -1,9 +1,9 @@
 /** @type {FactionName[]} */
-const EARLY_FACTIONS = ["CyberSec", "Tian Di Hui", "Netburners"];
+const EARLY_FACTIONS = ['CyberSec', 'Tian Di Hui', 'Netburners'];
 /** @type {FactionName[]} */
-const HACKING_GROUPS = ["NiteSec", "The Black Hand", "BitRunners"];
+const HACKING_GROUPS = ['NiteSec', 'The Black Hand', 'BitRunners'];
 /** @type {FactionName[]} */
-const ENDGAME_FACTIONS = ["The Covenant", "Daedalus", "Illuminati"];
+const ENDGAME_FACTIONS = ['The Covenant', 'Daedalus', 'Illuminati'];
 
 /** @type {FactionName[]} */
 export const STORY_FACTIONS = [
@@ -14,36 +14,36 @@ export const STORY_FACTIONS = [
 
 /** @type {FactionName[]} */
 const MEGACORPORATIONS = [
-  "ECorp",
-  "MegaCorp",
-  "KuaiGong International",
-  "Four Sigma",
-  "NWO",
-  "Blade Industries",
-  "OmniTek Incorporated",
-  "Bachman & Associates",
-  "Clarke Incorporated",
-  "Fulcrum Secret Technologies",
+  'ECorp',
+  'MegaCorp',
+  'KuaiGong International',
+  'Four Sigma',
+  'NWO',
+  'Blade Industries',
+  'OmniTek Incorporated',
+  'Bachman & Associates',
+  'Clarke Incorporated',
+  'Fulcrum Secret Technologies',
 ];
 
 /** @type {FactionName[]} */
 export const CRIMINAL_ORGANIZATIONS = [
-  "Slum Snakes",
-  "Tetrads",
-  "Silhouette",
-  "Speakers for the Dead",
-  "The Dark Army",
-  "The Syndicate",
+  'Slum Snakes',
+  'Tetrads',
+  'Silhouette',
+  'Speakers for the Dead',
+  'The Dark Army',
+  'The Syndicate',
 ];
 
 /** @type {FactionName[]} */
 export const CITY_FACTIONS = [
-  "Sector-12",
-  "Chongqing",
-  "New Tokyo",
-  "Ishima",
-  "Aevum",
-  "Volhaven",
+  'Sector-12',
+  'Chongqing',
+  'New Tokyo',
+  'Ishima',
+  'Aevum',
+  'Volhaven',
 ];
 
 /** @type {FactionName[]} */

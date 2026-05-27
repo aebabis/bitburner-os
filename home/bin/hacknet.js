@@ -1,7 +1,7 @@
-import { getNodes, getBestPurchase } from "../lib/hacknet";
-import { logger } from "../lib/logger";
-import { getTimeToComplete } from "../lib/goals/goals";
-import { getMoneyData, putMoneyData } from "../lib/data-store";
+import { getNodes, getBestPurchase } from '../lib/hacknet';
+import { logger } from '../lib/logger';
+import { getTimeToComplete } from '../lib/goals/goals';
+import { getMoneyData, putMoneyData } from '../lib/data-store';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -9,7 +9,9 @@ export async function main(ns) {
   let waitMessageShown = false;
   let lastMessageTime = 0;
   while (true) {
-    const hacknetIncome = getNodes(ns).map((node) => node.production).reduce((a, b) => a+b, 0);
+    const hacknetIncome = getNodes(ns)
+      .map((node) => node.production)
+      .reduce((a, b) => a + b, 0);
     const moneyData = getMoneyData(ns);
     putMoneyData(ns, { ...moneyData, hacknetIncome });
 
@@ -27,7 +29,7 @@ export async function main(ns) {
         await ns.sleep(10000);
         continue;
       }
-      const money = ns.getServerMoneyAvailable("home");
+      const money = ns.getServerMoneyAvailable('home');
       const factor = purchase.cost <= 1000 ? 1 : BUFFER_FACTOR;
       if (money >= factor * purchase.cost) {
         ns.print(`PO: ${purchase.toString()}`);

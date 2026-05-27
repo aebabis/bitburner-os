@@ -1,7 +1,7 @@
-import { liquidate } from "./bin/liquidate";
+import { liquidate } from './bin/liquidate';
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   await liquidate(ns);
 }

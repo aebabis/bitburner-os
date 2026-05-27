@@ -5,16 +5,16 @@ import { getStaticData } from '../../lib/data-store';
 const sum = (a, b) => a + b;
 
 /** @param {number} S
-  * @param {[number, number][]} csPairs
-  * @return {number[]}
-  */
+ * @param {[number, number][]} csPairs
+ * @return {number[]}
+ */
 export const solveBoost = (S, ...csPairs) => {
   const cs = csPairs.map(([c]) => c).reduce(sum);
   const amounts = csPairs.map(([c, s], i) => {
-    const others = csPairs.filter((_,idx) => idx !== i);
+    const others = csPairs.filter((_, idx) => idx !== i);
     const oc = others.map(([c]) => c).reduce(sum);
     const os = others.map(([, s]) => s).reduce(sum);
-    return ((S - 500 * ((s/c) * oc - os)) / (cs/c)) / s;
+    return (S - 500 * ((s / c) * oc - os)) / (cs / c) / s;
   });
   const negIndex = amounts.findIndex((vol) => vol < 0);
   if (negIndex !== -1) {
@@ -37,26 +37,27 @@ export const getBoostTargets = (ns, industryName, S) => {
   /** @type {Record<CorpIndustryName, CorpIndustryData>} */
   const industryData = staticData.industryData;
   const {
-    aiCoreFactor=0,
-    hardwareFactor=0,
-    realEstateFactor=0,
-    robotFactor=0,
+    aiCoreFactor = 0,
+    hardwareFactor = 0,
+    realEstateFactor = 0,
+    robotFactor = 0,
   } = industryData[industryName];
   const aiCoreSize = materialData['AI Cores'].size;
   const hardwareSize = materialData['Hardware'].size;
   const realEstateSize = materialData['Real Estate'].size;
   const robotSize = materialData['Robots'].size;
   const [aiCoreAmount, hardwareAmount, realEstateAmount, robotAmount] =
-    solveBoost(S,
+    solveBoost(
+      S,
       [aiCoreFactor, aiCoreSize],
       [hardwareFactor, hardwareSize],
       [realEstateFactor, realEstateSize],
-      [robotFactor, robotSize]
+      [robotFactor, robotSize],
     );
   return {
     'AI Cores': Math.max(0, aiCoreAmount),
-    'Hardware': Math.max(0, hardwareAmount),
+    Hardware: Math.max(0, hardwareAmount),
     'Real Estate': Math.max(0, realEstateAmount),
-    'Robots': Math.max(0, robotAmount),
+    Robots: Math.max(0, robotAmount),
   };
 };

@@ -1,18 +1,18 @@
-import { by } from "../../lib/util";
-import { getGangData } from "../../lib/data-store";
+import { by } from '../../lib/util';
+import { getGangData } from '../../lib/data-store';
 
 const HEADINGS = {
-  name: "Name",
-  baseRespect: "R",
-  baseWanted: "W",
-  baseMoney: "$",
-  difficulty: "Diff",
-  hackWeight: "hackW",
-  strWeight: "strW",
-  defWeight: "defW",
-  dexWeight: "dexW",
-  agiWeight: "agiW",
-  chaWeight: "chaW",
+  name: 'Name',
+  baseRespect: 'R',
+  baseWanted: 'W',
+  baseMoney: '$',
+  difficulty: 'Diff',
+  hackWeight: 'hackW',
+  strWeight: 'strW',
+  defWeight: 'defW',
+  dexWeight: 'dexW',
+  agiWeight: 'agiW',
+  chaWeight: 'chaW',
 };
 
 /** @param {NS} ns
@@ -20,7 +20,7 @@ const HEADINGS = {
 export const printTaskTable = async (ns, sortColumnIndex) => {
   const gangData = getGangData(ns);
   if (gangData == null)
-    return ns.tprint("No data to show yet. Make sure gang.js has run");
+    return ns.tprint('No data to show yet. Make sure gang.js has run');
 
   const propOrder = Object.keys(HEADINGS);
   const comparator =
@@ -43,12 +43,12 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
       agiWeight,
       chaWeight,
     } = stats;
-    const stat = (/** @type {number} */ s) => s || "-";
+    const stat = (/** @type {number} */ s) => s || '-';
     return [
       name,
       baseRespect,
       baseWanted,
-      "$" + ns.format.number(baseMoney, 2),
+      '$' + ns.format.number(baseMoney, 2),
       difficulty,
       stat(hackWeight),
       stat(strWeight),
@@ -61,18 +61,27 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
 
   const cw = Object.values(HEADINGS).map((heading, col) => {
     // Get column widths
-    const cellWidths = [heading.length, ...rows.map((/** @type {string[]} */ row) => row[col].length)];
+    const cellWidths = [
+      heading.length,
+      ...rows.map((/** @type {string[]} */ row) => row[col].length),
+    ];
     return cellWidths.reduce((a, b) => (a < b ? b : a), 0);
   });
   const pad = (/** @type {string} */ content, /** @type {number} */ i) =>
     i >= 4 ? content.padStart(cw[i]) : content.padEnd(cw[i]);
   let output = [
-    "",
+    '',
     Object.values(HEADINGS)
       .map((heading, i) => pad(heading, i))
-      .join("  "),
-    ...rows.map((/** @type {string[]} */ cells) => cells.map((/** @type {string} */ cell, /** @type {number} */ i) => pad(cell, i)).join("  ")),
-  ].join("\n");
+      .join('  '),
+    ...rows.map((/** @type {string[]} */ cells) =>
+      cells
+        .map((/** @type {string} */ cell, /** @type {number} */ i) =>
+          pad(cell, i),
+        )
+        .join('  '),
+    ),
+  ].join('\n');
   ns.tprint(output);
 };
 

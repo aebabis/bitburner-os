@@ -1,7 +1,7 @@
-const NULL = "NULL PORT DATA";
+const NULL = 'NULL PORT DATA';
 
 function replacer(key, value) {
-  if(value instanceof Map) {
+  if (value instanceof Map) {
     return {
       dataType: 'Map',
       value: Array.from(value.entries()), // or with spread: value: [...value]
@@ -12,7 +12,7 @@ function replacer(key, value) {
 }
 
 function reviver(key, value) {
-  if(typeof value === 'object' && value !== null) {
+  if (typeof value === 'object' && value !== null) {
     if (value.dataType === 'Map') {
       return new Map(value.value);
     }
@@ -35,10 +35,15 @@ export default (ns) => {
     if (packet === NULL) return null;
     return p(packet);
   };
-  const writePort = (/** @type {number} */ handle, data) => ns.getPortHandle(handle).write(s(data));
+  const writePort = (/** @type {number} */ handle, data) =>
+    ns.getPortHandle(handle).write(s(data));
   const tryWritePort = (/** @type {number} */ handle, data) =>
     ns.getPortHandle(handle).tryWrite(s(data));
-  const blockingWritePort = async (/** @type {number} */ handle, data, timeout = 60000) => {
+  const blockingWritePort = async (
+    /** @type {number} */ handle,
+    data,
+    timeout = 60000,
+  ) => {
     let start = Date.now();
     let outcome = false;
     while (true) {
@@ -48,15 +53,18 @@ export default (ns) => {
     }
     return outcome;
   };
-  const clearPort = (/** @type {number} */ handle) => ns.getPortHandle(handle).clear();
+  const clearPort = (/** @type {number} */ handle) =>
+    ns.getPortHandle(handle).clear();
 
   const peek = (/** @type {number} */ handle) => {
     const packet = ns.getPortHandle(handle).peek();
     if (packet === NULL) return null;
     return p(packet);
   };
-  const full = (/** @type {number} */ handle) => ns.getPortHandle(handle).full();
-  const empty = (/** @type {number} */ handle) => ns.getPortHandle(handle).empty();
+  const full = (/** @type {number} */ handle) =>
+    ns.getPortHandle(handle).full();
+  const empty = (/** @type {number} */ handle) =>
+    ns.getPortHandle(handle).empty();
 
   return {
     readPort,

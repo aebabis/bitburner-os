@@ -1,25 +1,25 @@
-import { PORT_RUN_CONFIG } from "../etc/ports";
-import Ports from "./ports";
+import { PORT_RUN_CONFIG } from '../etc/ports';
+import Ports from './ports';
 
-const PROPS = /** @type {Record<string, string>} */({
-  share: "Share rate",
-  "share-cap": "Max share threads",
-  "reserved-funds": "Threshold for investment",
-  "reserved-home-ram": "On-demand RAM",
+const PROPS = /** @type {Record<string, string>} */ ({
+  share: 'Share rate',
+  'share-cap': 'Max share threads',
+  'reserved-funds': 'Threshold for investment',
+  'reserved-home-ram': 'On-demand RAM',
 });
 
-const VALIDATORS = /** @type {Record<string, (x: number) => boolean>} */({
+const VALIDATORS = /** @type {Record<string, (x: number) => boolean>} */ ({
   share: (/** @type {number} */ x) => x >= 0 && x <= 1,
-  "share-cap": (/** @type {number} */ x) => x >= 0,
-  "reserved-funds": (/** @type {number} */ x) => x >= 0,
-  "reserved-home-ram": (/** @type {number} */ x) => x > 0 && x <= 1 << 20,
+  'share-cap': (/** @type {number} */ x) => x >= 0,
+  'reserved-funds': (/** @type {number} */ x) => x >= 0,
+  'reserved-home-ram': (/** @type {number} */ x) => x > 0 && x <= 1 << 20,
 });
 
 const DEFAULT_VALUES = {
   share: 0,
-  "share-cap": 1 << 20,
-  "reserved-funds": 1e10,
-  "reserved-home-ram": 8,
+  'share-cap': 1 << 20,
+  'reserved-funds': 1e10,
+  'reserved-home-ram': 8,
 };
 
 /** @param {NS} ns **/
@@ -28,7 +28,7 @@ export const getConfig = (ns) => {
 
   const getAll = () => {
     let obj = port.peek();
-    if (typeof obj === "object") return obj;
+    if (typeof obj === 'object') return obj;
     return {};
   };
 

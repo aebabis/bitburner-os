@@ -1,19 +1,26 @@
-import { THREADPOOL } from "../etc/config";
-import { logger } from "../lib/logger";
-import { by } from "../lib/util";
-import { table } from "../lib/table";
-import { getHostnames, getRamData, getMoneyData, putMoneyData, putPlayerData, getStaticData } from "../lib/data-store";
-import { getMockFormulas } from "../lib/formulas";
+import { THREADPOOL } from '../etc/config';
+import { logger } from '../lib/logger';
+import { by } from '../lib/util';
+import { table } from '../lib/table';
+import {
+  getHostnames,
+  getRamData,
+  getMoneyData,
+  putMoneyData,
+  putPlayerData,
+  getStaticData,
+} from '../lib/data-store';
+import { getMockFormulas } from '../lib/formulas';
 
-import Thief, { HORIZON_MS } from "../lib/thief";
-import { initProfiler } from "../lib/profiler";
+import Thief, { HORIZON_MS } from '../lib/thief';
+import { initProfiler } from '../lib/profiler';
 
 /** @typedef {{hostname: string, type?: string, jobs?: number, portion?: number, timeLeft?: string, frame?: string}} ThiefTableRow */
 
 /** @param {NS} ns **/
 export async function main(ns) {
   initProfiler();
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const WIDTH = 800;
   const HEIGHT = 150;
@@ -32,17 +39,24 @@ export async function main(ns) {
   const hostnames = getHostnames(ns);
   const possibleTargets = hostnames.filter(
     (/** @type {string} */ hostname) =>
-      hostname !== "home" &&
+      hostname !== 'home' &&
       !hostname.startsWith(THREADPOOL) &&
       ns.getServerMaxMoney(hostname) > 0,
   );
 
-  const thieves = possibleTargets.map((/** @type {string} */ hostname) => new Thief(ns, hostname));
+  const thieves = possibleTargets.map(
+    (/** @type {string} */ hostname) => new Thief(ns, hostname),
+  );
 
   const prioritize = (/** @type {number} */ ram) =>
     thieves
       .filter((/** @type {Thief} */ thief) => thief.canHack())
-      .sort(by((/** @type {Thief} */ thief) => -thief.getDesirability(HORIZON_MS, ram)));
+      .sort(
+        by(
+          (/** @type {Thief} */ thief) =>
+            -thief.getDesirability(HORIZON_MS, ram),
+        ),
+      );
 
   let viableThieves = /** @type {Thief[]} */ ([]);
   let lastPrioritization = 0;
@@ -62,10 +76,11 @@ export async function main(ns) {
         .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 
       // let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
-      let ramAvailable = (ramData.rootServers ?? [])
-        .map((server) => server.ramUnused)
-        .filter((ram) => ram >= 1.75)
-        .reduce((a,b) => a+b, 0) - reservedThreads;
+      let ramAvailable =
+        (ramData.rootServers ?? [])
+          .map((server) => server.ramUnused)
+          .filter((ram) => ram >= 1.75)
+          .reduce((a, b) => a + b, 0) - reservedThreads;
 
       // God mode: when one hack thread can steal 50%+ of the best server,
       // batches are trivially cheap and spreading across all servers is better.
@@ -73,18 +88,28 @@ export async function main(ns) {
       if (topThief != null) {
         const target = topThief.getHostname();
         const player = ns.getPlayer();
-        const formulas = ns.fileExists('Formulas.exe', 'home') ? ns.formulas : getMockFormulas(getStaticData(ns));
+        const formulas = ns.fileExists('Formulas.exe', 'home')
+          ? ns.formulas
+          : getMockFormulas(getStaticData(ns));
         const server = {
           hackDifficulty: ns.getServerMinSecurityLevel(target),
           requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
         };
         const hackExpPerThread = formulas.hacking.hackExp(server, player);
         const weakenTime = topThief.getWeakenTime() / 1000; // s
-        const [hackThreads = 1, weaken1Threads = 0, growThreads = 0, weaken2Threads = 0] =
-          topThief.currentBatch?.frame ?? [];
+        const [
+          hackThreads = 1,
+          weaken1Threads = 0,
+          growThreads = 0,
+          weaken2Threads = 0,
+        ] = topThief.currentBatch?.frame ?? [];
         const hackChance = ns.hackAnalyzeChance(target);
-        const xpPerCycle = hackExpPerThread *
-          (weaken1Threads + weaken2Threads + growThreads + hackThreads * hackChance);
+        const xpPerCycle =
+          hackExpPerThread *
+          (weaken1Threads +
+            weaken2Threads +
+            growThreads +
+            hackThreads * hackChance);
         putPlayerData(ns, { hackingXpRate: xpPerCycle / weakenTime });
       }
       const godMode =
@@ -101,34 +126,50 @@ export async function main(ns) {
             thief.currentBatch != null && !thief.currentBatch.hasEnded(),
         )
         .flatMap((/** @type {Thief} */ thief) => thief.getTableData())
-        .map((/** @type {ThiefTableRow} */ { hostname, type, frame, portion, jobs, timeLeft }) => {
-          return [
-            hostname,
-            moneyStr(hostname),
-            secStr(hostname),
-            type,
-            frame,
-            portion,
-            jobs,
-            timeLeft,
-          ];
-        })
+        .map(
+          (
+            /** @type {ThiefTableRow} */ {
+              hostname,
+              type,
+              frame,
+              portion,
+              jobs,
+              timeLeft,
+            },
+          ) => {
+            return [
+              hostname,
+              moneyStr(hostname),
+              secStr(hostname),
+              type,
+              frame,
+              portion,
+              jobs,
+              timeLeft,
+            ];
+          },
+        )
         .sort(by(0));
       const tString = table(
         ns,
-        ["SERVER", "MONEY", "SEC", "TYPE", "FRAME", "PORTION", "JOBS", "TIME"],
+        ['SERVER', 'MONEY', 'SEC', 'TYPE', 'FRAME', 'PORTION', 'JOBS', 'TIME'],
         rows,
       );
       ns.print(tString);
       ns.print(
-        ` RAM AVAILABLE: ${ramAvailable.toFixed(2)}  MODE: ${godMode ? "GOD" : "FOCUS"}`,
+        ` RAM AVAILABLE: ${ramAvailable.toFixed(2)}  MODE: ${godMode ? 'GOD' : 'FOCUS'}`,
       );
 
-      const stealing = viableThieves.filter((/** @type {Thief} */ thief) => thief.isStealing());
-      const grooming = viableThieves.filter((/** @type {Thief} */ thief) => thief.isGrooming());
+      const stealing = viableThieves.filter((/** @type {Thief} */ thief) =>
+        thief.isStealing(),
+      );
+      const grooming = viableThieves.filter((/** @type {Thief} */ thief) =>
+        thief.isGrooming(),
+      );
       const mayGroom = grooming.length <= stealing.length;
       const mayStart = (/** @type {Thief} */ thief) =>
-        thief.canStartNextBatch() && (thief.isGroomed() || thief.isPipelining() || mayGroom);
+        thief.canStartNextBatch() &&
+        (thief.isGroomed() || thief.isPipelining() || mayGroom);
 
       const startable = viableThieves.filter(mayStart);
       const candidates = godMode

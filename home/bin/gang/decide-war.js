@@ -1,11 +1,12 @@
-import { putGangData } from "../../lib/data-store";
+import { putGangData } from '../../lib/data-store';
 
 /** @param {NS} ns */
 export async function main(ns) {
   const [gangName] = ns.args;
 
   const otherGangInformation = ns.gang.getAllGangInformation();
-  const { power, territory } = otherGangInformation[/** @type {string} */ (gangName)];
+  const { power, territory } =
+    otherGangInformation[/** @type {string} */ (gangName)];
   delete otherGangInformation[/** @type {string} */ (gangName)];
 
   const enemyInfo = Object.entries(otherGangInformation).map(

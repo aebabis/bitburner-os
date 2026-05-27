@@ -1,14 +1,14 @@
-import { putPlayerData } from "../../../lib/data-store";
-import { getGoals } from "../../../lib/goals/goals";
-import { by } from "../../../lib/util";
-import { nmap } from "../../../lib/nmap";
+import { putPlayerData } from '../../../lib/data-store';
+import { getGoals } from '../../../lib/goals/goals';
+import { by } from '../../../lib/util';
+import { nmap } from '../../../lib/nmap';
 import { dump } from '../../../bin/broker/dump';
 
-const NEUROFLUX = "NeuroFlux Governor";
+const NEUROFLUX = 'NeuroFlux Governor';
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   const { factions, money } = ns.getPlayer();
   const purchasedAugmentations = ns.singularity.getOwnedAugmentations(true);
 
@@ -18,7 +18,7 @@ export async function main(ns) {
   const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
   const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
   const moneyGoal = goals.find((goal) => goal.type === 'AUG_MONEY');
-  
+
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
@@ -36,13 +36,16 @@ export async function main(ns) {
         }
 
     // Sell all stocks
-    if(ns.stock.hasTixApiAccess())
-      dump(ns);
+    if (ns.stock.hasTixApiAccess()) dump(ns);
 
-    ns.tprint(`Attempting to purchase ${targetAugmentations.length} augmentations`);
+    ns.tprint(
+      `Attempting to purchase ${targetAugmentations.length} augmentations`,
+    );
 
     for (const augmentation of targetAugmentations) {
-      const bought = factions.some((faction) => ns.singularity.purchaseAugmentation(faction, augmentation));
+      const bought = factions.some((faction) =>
+        ns.singularity.purchaseAugmentation(faction, augmentation),
+      );
       ns.tprint(`  Purchase ${augmentation}?: ${bought}`);
     }
 
@@ -52,15 +55,22 @@ export async function main(ns) {
       factions.some((faction) =>
         ns.singularity.purchaseAugmentation(faction, NEUROFLUX),
       )
-    ) nfCount++;
+    )
+      nfCount++;
     ns.tprint(`  bought ${nfCount} Neuroflux`);
 
     ns.tprint(`I'm the scheduler now!`);
     const finisher = ['home', 'THREADPOOL-01']
       .filter((hostname) => ns.serverExists(hostname))
-      .sort(by((hostname) => -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname))
-    ))[0];
-    ns.tprint(`Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`);
+      .sort(
+        by(
+          (hostname) =>
+            -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname)),
+        ),
+      )[0];
+    ns.tprint(
+      `Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`,
+    );
 
     /** @param {string} script
      *  @param {number} threads
@@ -78,24 +88,24 @@ export async function main(ns) {
     };
 
     // Buy RAM if we can
-    await run("/bin/self/buy-ram.js", 1);
+    await run('/bin/self/buy-ram.js', 1);
 
     // Try to start next aug with market access
-    await run("/bin/broker/purchase.js", 1, "purchaseWseAccount");
-    await run("/bin/broker/purchase.js", 1, "purchaseTixApi");
-    await run("/bin/broker/purchase.js", 1, "purchase4SMarketDataTixApi");
-    await run("/bin/broker/purchase.js", 1, "purchase4SMarketData");
+    await run('/bin/broker/purchase.js', 1, 'purchaseWseAccount');
+    await run('/bin/broker/purchase.js', 1, 'purchaseTixApi');
+    await run('/bin/broker/purchase.js', 1, 'purchase4SMarketDataTixApi');
+    await run('/bin/broker/purchase.js', 1, 'purchase4SMarketData');
 
     // Start all over
-    await run("/bin/self/aug/install.js", 1);
+    await run('/bin/self/aug/install.js', 1);
   } else {
     const lines = [
       `purchase-augs: no trigger @ ${new Date().toISOString()}`,
-      `  inTargetFactions=${inTargetFactions}  factionJoinGoals=[${factionJoinGoals.map(g => `${g.faction}:${g.isDone()}`).join(', ')}]`,
-      `  hasEnoughRep=${hasEnoughRep}  factionRepGoals=[${factionRepGoals.map(g => `${g.faction}:${g.isDone()}(req=${g.requirement})`).join(', ')}]`,
-      `  hasEnoughMoney=${hasEnoughMoney}  money=${ns.format.number(money,3)}`,
+      `  inTargetFactions=${inTargetFactions}  factionJoinGoals=[${factionJoinGoals.map((g) => `${g.faction}:${g.isDone()}`).join(', ')}]`,
+      `  hasEnoughRep=${hasEnoughRep}  factionRepGoals=[${factionRepGoals.map((g) => `${g.faction}:${g.isDone()}(req=${g.requirement})`).join(', ')}]`,
+      `  hasEnoughMoney=${hasEnoughMoney}  money=${ns.format.number(money, 3)}`,
       `  targetAugmentations=${JSON.stringify(targetAugmentations)}`,
-      `  goalTypes=${JSON.stringify(goals.map(g => g.type))}`,
+      `  goalTypes=${JSON.stringify(goals.map((g) => g.type))}`,
     ].join('\n');
     ns.write('/tmp/purchase-augs-debug.txt', lines, 'w');
   }

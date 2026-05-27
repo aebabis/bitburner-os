@@ -1,8 +1,15 @@
 import { getStaticData } from './data-store.js';
 
 const WORK_STATS = {
-  agiExp: 0, chaExp: 0, defExp: 0, dexExp: 0,
-  hackExp: 0, intExp: 0, money: 0, reputation: 0, strExp: 0,
+  agiExp: 0,
+  chaExp: 0,
+  defExp: 0,
+  dexExp: 0,
+  hackExp: 0,
+  intExp: 0,
+  money: 0,
+  reputation: 0,
+  strExp: 0,
 };
 
 /** @param {number} [favor] */
@@ -29,7 +36,12 @@ const calculateExp = (skill, mult = 1) =>
 export const getMockFormulas = (staticData) => {
   const getAugMult = (/** @type {string} */ stat) =>
     staticData.installedAugmentations
-      .map(aug => staticData.augmentationStats?.[aug]?.[/** @type {keyof Multipliers} */ (stat)] ?? 1)
+      .map(
+        (aug) =>
+          staticData.augmentationStats?.[aug]?.[
+            /** @type {keyof Multipliers} */ (stat)
+          ] ?? 1,
+      )
       .reduce((a, b) => a * b, 1);
 
   const defaultProdMult =
@@ -41,10 +53,13 @@ export const getMockFormulas = (staticData) => {
     hacking: {
       /** @param {{requiredHackingSkill?: number}} server @param {Person} _player */
       hackExp: (server, _player) =>
-        Math.max(1, (server.requiredHackingSkill ?? 1) / 30) * getAugMult('hacking_exp'),
+        Math.max(1, (server.requiredHackingSkill ?? 1) / 30) *
+        getAugMult('hacking_exp'),
       /** @param {{hackDifficulty?: number}} server @param {Person} player */
       hackTime: (server, player) =>
-        5 * (server.hackDifficulty ?? 1) / ((player.skills?.hacking ?? 1) * getAugMult('hacking_speed')) * 1000,
+        ((5 * (server.hackDifficulty ?? 1)) /
+          ((player.skills?.hacking ?? 1) * getAugMult('hacking_speed'))) *
+        1000,
     },
     work: {
       /** @param {Person} player @param {FactionWorkType} workType @param {number} [favor] */
@@ -52,8 +67,11 @@ export const getMockFormulas = (staticData) => {
         if (workType === 'hacking') {
           return {
             ...WORK_STATS,
-            hackExp: 2 / 5 * getAugMult('hacking_exp'),
-            reputation: ((player.skills?.hacking ?? 1) / 975) * getAugMult('faction_rep') * favorMult(favor),
+            hackExp: (2 / 5) * getAugMult('hacking_exp'),
+            reputation:
+              ((player.skills?.hacking ?? 1) / 975) *
+              getAugMult('faction_rep') *
+              favorMult(favor),
           };
         }
         throw new Error(`Not yet implemented: ${workType}`);

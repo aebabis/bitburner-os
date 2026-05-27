@@ -14,7 +14,10 @@ const mayPurchase = (ns, funcName) => {
 
 /** @param {NS} ns */
 export async function main(ns) {
-  const [funcName] = /** @type {('purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData')[]} */ (ns.args);
+  const [funcName] =
+    /** @type {('purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData')[]} */ (
+      ns.args
+    );
   if (mayPurchase(ns, funcName)) {
     ns.stock[funcName]();
   }

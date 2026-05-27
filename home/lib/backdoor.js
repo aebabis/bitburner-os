@@ -1,13 +1,13 @@
-import { nmap } from "./nmap";
-import { by } from "./util";
+import { nmap } from './nmap';
+import { by } from './util';
 
 const PRIORITIES = [
-  "CSEC",
-  "I.I.I.I",
-  "avmnite-02h",
-  "run4theh111z",
-  "The-Cave",
-  "w0r1d_d43m0n",
+  'CSEC',
+  'I.I.I.I',
+  'avmnite-02h',
+  'run4theh111z',
+  'The-Cave',
+  'w0r1d_d43m0n',
 ];
 
 /** @param {NS} ns @param {string} hostname **/
@@ -15,8 +15,9 @@ const getPathTo = (ns, hostname) => {
   if (ns.getServer(hostname).isConnectedTo) return [];
   const next = /** @type {Record<string, string>} */ ({});
   const visited = [hostname];
-  const path = /** @type {(start: string) => string[]} */ ((start) =>
-    start === hostname ? [hostname] : [start, ...path(next[start])]);
+  const path = /** @type {(start: string) => string[]} */ (
+    (start) => (start === hostname ? [hostname] : [start, ...path(next[start])])
+  );
   for (let i = 0; i < visited.length; i++) {
     const neighbors = ns.scan(visited[i]).filter((s) => !visited.includes(s));
     for (const neighbor of neighbors) {
@@ -24,7 +25,7 @@ const getPathTo = (ns, hostname) => {
       next[neighbor] = visited[i];
       const { isConnectedTo, backdoorInstalled } = ns.getServer(neighbor);
       if (isConnectedTo) return path(visited[i]);
-      else if (neighbor === "home" || backdoorInstalled) return path(neighbor);
+      else if (neighbor === 'home' || backdoorInstalled) return path(neighbor);
     }
   }
 };
@@ -50,5 +51,5 @@ export const getPath = (ns) => {
   const routes = backdoorableServers.map((server) =>
     getPathTo(ns, server.hostname),
   );
-  return routes.sort(by("length"))[0];
+  return routes.sort(by('length'))[0];
 };

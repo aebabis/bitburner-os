@@ -1,52 +1,56 @@
-import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from "./factions.js";
+import {
+  STORY_FACTIONS,
+  CITY_FACTIONS,
+  CRIMINAL_ORGANIZATIONS,
+} from './factions.js';
 
 /** @type {Record<keyof Multipliers, number>} */
 export const DEFAULT_AUG_WEIGHTS = {
   // High — stats that increase reputation gain
-  hacking:        10,
+  hacking: 10,
   hacking_chance: 10,
-  hacking_speed:  10,
-  hacking_exp:    10,
-  faction_rep:    10,
+  hacking_speed: 10,
+  hacking_exp: 10,
+  faction_rep: 10,
 
   // Low-medium — rep/income acceleration
-  hacking_money:   2,
-  hacking_grow:    2,
-  company_rep:  1,
-  work_money:   1,
+  hacking_money: 2,
+  hacking_grow: 2,
+  company_rep: 1,
+  work_money: 1,
 
   // Low — combat stats
-  strength:      1,
-  defense:       1,
-  dexterity:     1,
-  agility:       1,
-  strength_exp:  0.5,
-  defense_exp:   0.5,
+  strength: 1,
+  defense: 1,
+  dexterity: 1,
+  agility: 1,
+  strength_exp: 0.5,
+  defense_exp: 0.5,
   dexterity_exp: 0.5,
-  agility_exp:   0.5,
+  agility_exp: 0.5,
 
   // Low — hacknet (cost stats use reciprocal: lower value = better, treated as equivalent boost)
-  hacknet_node_money:         1,
-  hacknet_node_purchase_cost: .5,
-  hacknet_node_ram_cost:      .5,
-  hacknet_node_core_cost:     .5,
-  hacknet_node_level_cost:    .5,
+  hacknet_node_money: 1,
+  hacknet_node_purchase_cost: 0.5,
+  hacknet_node_ram_cost: 0.5,
+  hacknet_node_core_cost: 0.5,
+  hacknet_node_level_cost: 0.5,
 
   // Zero — not relevant for automated play in tested bitnodes
-  charisma:                  0,
-  charisma_exp:              0,
-  crime_money:               0,
-  crime_success:             0,
-  dnet_money:                0,
-  bladeburner_max_stamina:   0,
-  bladeburner_stamina_gain:  0,
-  bladeburner_analysis:      0,
+  charisma: 0,
+  charisma_exp: 0,
+  crime_money: 0,
+  crime_success: 0,
+  dnet_money: 0,
+  bladeburner_max_stamina: 0,
+  bladeburner_stamina_gain: 0,
+  bladeburner_analysis: 0,
   bladeburner_success_chance: 0,
 };
 
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
-  'CashRoot Starter Kit': .5,
+  'CashRoot Starter Kit': 0.5,
   'Neuroreceptor Management Implant': 1,
   'The Red Pill': 10,
 };
@@ -56,12 +60,13 @@ const UNITY_AUGS = {
  * @param {Record<keyof Multipliers, number>} weights
  * @returns {number}
  */
-export const scoreAug = (stats, weights) => Object.entries(stats)
-  .map(([key, stat = 1]) => {
-    const mult = stat >= 1 ? stat : (1 / stat);
-    return (mult - 1) * weights[key];
-  })
-  .reduce((a, b) => a+b, 0);
+export const scoreAug = (stats, weights) =>
+  Object.entries(stats)
+    .map(([key, stat = 1]) => {
+      const mult = stat >= 1 ? stat : 1 / stat;
+      return (mult - 1) * weights[key];
+    })
+    .reduce((a, b) => a + b, 0);
 
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
@@ -76,7 +81,8 @@ const OVERHEAD_BASE = 120 * 60;
 export const computeResetOverhead = (staticData) => {
   const installedAugs = staticData.installedAugmentations ?? [];
   const lastAugReset = staticData.resetInfo.lastAugReset ?? 0;
-  const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+  const timeSinceInstall =
+    lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
   return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
 };
 
@@ -94,16 +100,23 @@ const INSTALL_OVERHEAD_SEC = 60;
  * @param {number} referenceIncome - current income rate ($/s)
  * @returns {boolean}
  */
-export const shouldEarlyInstall = (numQueued, numTargeted, costToAug, liquidAssets, referenceIncome) => {
+export const shouldEarlyInstall = (
+  numQueued,
+  numTargeted,
+  costToAug,
+  liquidAssets,
+  referenceIncome,
+) => {
   if (numQueued === 0 || numTargeted === 0) return false;
-  const timeToMoneyGoal = referenceIncome > 0
-    ? Math.max(0, costToAug - liquidAssets) / referenceIncome
-    : Infinity;
+  const timeToMoneyGoal =
+    referenceIncome > 0
+      ? Math.max(0, costToAug - liquidAssets) / referenceIncome
+      : Infinity;
   return timeToMoneyGoal > INSTALL_OVERHEAD_SEC;
 };
 
 export const MAX_AUGS = 6;
-const NEUROFLUX = "NeuroFlux Governor";
+const NEUROFLUX = 'NeuroFlux Governor';
 
 /**
  * @param {string} aug
@@ -122,7 +135,7 @@ export const augValueFromStats = (aug, augmentationStats) => {
  * @returns {number}
  */
 export const computeRepReq = (augs, staticData) =>
-  Math.max(...augs.map(aug => staticData.augmentationRepReqs?.[aug] ?? 0), 0);
+  Math.max(...augs.map((aug) => staticData.augmentationRepReqs?.[aug] ?? 0), 0);
 
 /**
  * Total cost to purchase all augs in the batch, accounting for the 1.9× queue
@@ -136,7 +149,9 @@ export const computeRepReq = (augs, staticData) =>
 export const computeAugCost = (augs, staticData, numQueued) => {
   const { augmentationPrices } = staticData;
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
-  const sorted = [...augs].sort((a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0));
+  const sorted = [...augs].sort(
+    (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
+  );
   let multiplier = 1.9 ** numQueued;
   let nfLevelOffset = installedNFCount;
   let cost = 0;
@@ -173,7 +188,21 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  * @param {{ moneyRate?: number, repRate?: number, activeRepRate?: Record<string,number>, passiveRepRate?: Record<string,number> }} [opts]
  * @returns {{ utility: number, batch: string[] }}
  */
-export const findOptimalBatch = (faction, staticData, player, formulas, factionRep, ownedAugmentations, { moneyRate = Infinity, repRate, activeRepRate, passiveRepRate, joinTime = 0 } = {}) => {
+export const findOptimalBatch = (
+  faction,
+  staticData,
+  player,
+  formulas,
+  factionRep,
+  ownedAugmentations,
+  {
+    moneyRate = Infinity,
+    repRate,
+    activeRepRate,
+    passiveRepRate,
+    joinTime = 0,
+  } = {},
+) => {
   const {
     augmentationPrices,
     augmentationRepReqs,
@@ -182,21 +211,36 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     factionFavor,
   } = staticData;
 
-  const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
-  const donationRate = canDonate ? (formulas?.reputation?.donationForRep(1, player) ?? Infinity) : Infinity;
+  const canDonate =
+    (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
+  const donationRate = canDonate
+    ? (formulas?.reputation?.donationForRep(1, player) ?? Infinity)
+    : Infinity;
 
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
 
-  const stillNeeds = (/** @type {string} */ aug) => !ownedAugmentations.includes(aug);
+  const stillNeeds = (/** @type {string} */ aug) =>
+    !ownedAugmentations.includes(aug);
   const getNeededAugs = (/** @type {string} */ fac) =>
-    (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
+    (factionAugmentations?.[fac] ?? [])
+      .filter(stillNeeds)
+      .filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (/** @type {string} */ aug) => augValueFromStats(aug, augmentationStats);
+  const augValue = (/** @type {string} */ aug) =>
+    augValueFromStats(aug, augmentationStats);
 
   const currentRep = factionRep[faction] ?? 0;
-  const gainRate = formulas?.work.factionGains(player, 'hacking', factionFavor?.[faction]);
-  const effectiveRepRate = activeRepRate?.[faction] ?? passiveRepRate?.[faction] ?? repRate ?? gainRate?.reputation * 5;
+  const gainRate = formulas?.work.factionGains(
+    player,
+    'hacking',
+    factionFavor?.[faction],
+  );
+  const effectiveRepRate =
+    activeRepRate?.[faction] ??
+    passiveRepRate?.[faction] ??
+    repRate ??
+    gainRate?.reputation * 5;
 
   const resetOverhead = computeResetOverhead(staticData);
 
@@ -212,8 +256,11 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     ? Array.from({ length: MAX_AUGS }, (_, i) => ({
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
-        price: nfBase * (1.9 ** (numQueued + i)) * (1.14 ** (installedNFCount + i)),
-        remainingRep: Math.max(0, nfBaseRep * (1.14 ** (installedNFCount + i)) - currentRep),
+        price: nfBase * 1.9 ** (numQueued + i) * 1.14 ** (installedNFCount + i),
+        remainingRep: Math.max(
+          0,
+          nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep,
+        ),
       }))
     : [];
 
@@ -233,7 +280,8 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.
     // Pick top MAX_AUGS by value from this affordable prefix.
     // .slice() gives a copy, so sorting it doesn't disturb the rep-ascending order of augs[]
-    const affordable = augs.slice(0, i + 1)
+    const affordable = augs
+      .slice(0, i + 1)
       .sort((a, b) => b.value - a.value)
       .slice(0, MAX_AUGS);
 
@@ -241,8 +289,11 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
     const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
     const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
 
-    const effectivePrice = canDonate ? totalPrice + bindingRep * donationRate : totalPrice;
-    const timeForMoney = Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
+    const effectivePrice = canDonate
+      ? totalPrice + bindingRep * donationRate
+      : totalPrice;
+    const timeForMoney =
+      Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
     const timeForRep = canDonate ? 0 : bindingRep / effectiveRepRate;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
@@ -272,12 +323,26 @@ export const findOptimalBatch = (faction, staticData, player, formulas, factionR
  * @param {{ installedAugmentations: string[], resetInfo: any, favorToDonate?: number }} staticData
  * @returns {boolean}
  */
-export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, currentFavor, repRate, moneyRate, liquidAssets, player, formulas, staticData) => {
+export const shouldPursueFavor = (
+  faction,
+  repRequired,
+  augCost,
+  currentRep,
+  currentFavor,
+  repRate,
+  moneyRate,
+  liquidAssets,
+  player,
+  formulas,
+  staticData,
+) => {
   const { favorToDonate } = staticData;
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
   if (!formulas?.reputation || !repRate || !moneyRate) return false;
 
-  const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
+  const repForFavor = formulas.reputation.calculateFavorToRep(
+    favorToDonate - currentFavor,
+  );
   const donationRate = formulas.reputation.donationForRep(1, player);
 
   const tFavor = Math.max(0, repForFavor - currentRep) / repRate;
@@ -302,18 +367,45 @@ export const shouldPursueFavor = (faction, repRequired, augCost, currentRep, cur
  * @param {string[]} ownedAugmentations
  * @returns {string[]}
  */
-export const getAccessibleFactions = (staticData, player, ownedAugmentations) => {
+export const getAccessibleFactions = (
+  staticData,
+  player,
+  ownedAugmentations,
+) => {
   const { factionRequirements } = staticData;
-  return [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS].filter((faction) => {
+  return [
+    ...STORY_FACTIONS,
+    ...CRIMINAL_ORGANIZATIONS,
+    ...CITY_FACTIONS,
+  ].filter((faction) => {
     const reqs = factionRequirements?.[faction] ?? [];
-    const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
+    const disqualifiers = reqs
+      .filter((req) => req.type === 'not')
+      .map((req) => req.condition);
     const requiredAugCount =
-      reqs.find((/** @type {any} */ req) => req.type === "numAugmentations")?.numAugmentations ?? 0;
+      reqs.find((/** @type {any} */ req) => req.type === 'numAugmentations')
+        ?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
-    if (CITY_FACTIONS.includes(faction) && player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction))
+    if (
+      CITY_FACTIONS.includes(faction) &&
+      player.factions?.find(
+        (other) => CITY_FACTIONS.includes(other) && other !== faction,
+      )
+    )
       return false;
-    if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company])) return false;
-    if (reqs.some((req) => req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'))) {
+    if (
+      disqualifiers.some(
+        (req) => req.type === 'employedBy' && player.jobs?.[req.company],
+      )
+    )
+      return false;
+    if (
+      reqs.some(
+        (req) =>
+          req.type === 'someCondition' &&
+          req.conditions.some((req) => req.type === 'jobTitle'),
+      )
+    ) {
       // TODO: Actually evaluate difficulty of obtaining job
       return false;
     }

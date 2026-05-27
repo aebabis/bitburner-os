@@ -1,5 +1,10 @@
 /** @type {('AI Cores'|'Hardware'|'Real Estate'|'Robots')[]} */
-export const BOOST_MATERIALS = ['AI Cores', 'Hardware', 'Real Estate', 'Robots'];
+export const BOOST_MATERIALS = [
+  'AI Cores',
+  'Hardware',
+  'Real Estate',
+  'Robots',
+];
 
 /** @type {Record<CorpIndustryName, string>} */
 export const DivisionNames = {
@@ -8,4 +13,3 @@ export const DivisionNames = {
   Tobacco: 'Rhizome Reeds',
   'Water Utilities': 'Taproot Infrastructure',
 };
-

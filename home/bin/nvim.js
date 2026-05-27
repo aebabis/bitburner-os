@@ -25,8 +25,8 @@
 import { getStaticData } from '../lib/data-store';
 import { fullInfect } from './infect';
 
-const OUTPUT_FILE = "/.bitburner/info.json";
-const CMD_FILE = "/.bitburner/cmd.json";
+const OUTPUT_FILE = '/.bitburner/info.json';
+const CMD_FILE = '/.bitburner/cmd.json';
 const INTERVAL_MS = 2000;
 
 /** @typedef {{v: number, ts: number, ram: {max: number, used: number}, player: {money: number, hacking: number}, procs: {file: string, pid: number, threads: number, args: ScriptArg[]}[], status: string, reset: {bitnode: number, playtime: number}, last_cmd_id: number}} NvimData */
@@ -36,7 +36,7 @@ function formatStatus(data) {
   const ram = `home:${Math.round(data.ram.used)}/${Math.round(data.ram.max)}GB`;
   const money = formatMoney(data.player.money);
   const hk = `hk:${data.player.hacking}`;
-  return [ram, money, hk].join(" | ");
+  return [ram, money, hk].join(' | ');
 }
 
 /** @param {number} n */
@@ -54,12 +54,12 @@ export async function main(ns) {
   while (true) {
     const data = /** @type {NvimData} */ ({ v: 1, ts: Date.now() });
     data.ram = {
-      max: ns.getServerMaxRam("home"),
-      used: ns.getServerUsedRam("home"),
+      max: ns.getServerMaxRam('home'),
+      used: ns.getServerUsedRam('home'),
     };
     const p = ns.getPlayer();
     data.player = { money: p.money, hacking: p.skills.hacking };
-    data.procs = ns.ps("home").map((proc) => ({
+    data.procs = ns.ps('home').map((proc) => ({
       file: proc.filename,
       pid: proc.pid,
       threads: proc.threads,
@@ -76,7 +76,7 @@ export async function main(ns) {
           lastCmdId = cmd.id;
           if (cmd.restart_if_running && cmd.pushed) {
             const procs = ns
-              .ps("home")
+              .ps('home')
               .filter((p) => p.filename === cmd.pushed);
             for (const proc of procs) {
               ns.kill(proc.pid);
@@ -89,7 +89,7 @@ export async function main(ns) {
       } catch {}
     }
     data.last_cmd_id = lastCmdId;
-    ns.write(OUTPUT_FILE, JSON.stringify(data), "w");
+    ns.write(OUTPUT_FILE, JSON.stringify(data), 'w');
     await ns.sleep(INTERVAL_MS);
   }
 }

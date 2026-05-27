@@ -1,5 +1,5 @@
-import { getPath } from "../lib/backdoor.js";
-import { BRIGHT } from "../lib/colors";
+import { getPath } from '../lib/backdoor.js';
+import { BRIGHT } from '../lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -9,19 +9,21 @@ export async function main(ns) {
 
   while (true) {
     ns.clearLog();
-    ns.print(` ${BRIGHT.BOLD("BACKDOOR HELPER")} \n`);
+    ns.print(` ${BRIGHT.BOLD('BACKDOOR HELPER')} \n`);
     const path = getPath(ns);
     if (path == null) {
-      ns.print(" (no available servers) ");
+      ns.print(' (no available servers) ');
     } else {
       const rows = [
-        ...path.map((/** @type {string} */ s) => (s === "home" ? " home" : ` connect ${s} `)),
-        " backdoor",
+        ...path.map((/** @type {string} */ s) =>
+          s === 'home' ? ' home' : ` connect ${s} `,
+        ),
+        ' backdoor',
       ];
       while (rows.length < 15) {
         rows.push('');
       }
-      ns.print(rows.join("\n"));
+      ns.print(rows.join('\n'));
     }
     await ns.sleep(100);
   }

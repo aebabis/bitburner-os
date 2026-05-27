@@ -1,13 +1,21 @@
-import { getContractData, putContractData } from "../../lib/data-store";
-import algorithms from "./mapper";
+import { getContractData, putContractData } from '../../lib/data-store';
+import algorithms from './mapper';
 
 const decode = (/** @type {unknown} */ data) =>
-  typeof data === "string" && data.match(/^\d+n$/)
+  typeof data === 'string' && data.match(/^\d+n$/)
     ? BigInt(data.slice(0, -1))
     : data;
 
 /** @param {NS} ns */
-const attemptContract = (ns, /** @type {{filename: string, hostname: string, type: string, data: unknown}} */ { filename, hostname, type, data }) => {
+const attemptContract = (
+  ns,
+  /** @type {{filename: string, hostname: string, type: string, data: unknown}} */ {
+    filename,
+    hostname,
+    type,
+    data,
+  },
+) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
   const answer = algorithm(/** @type {never} */ (decode(data)));
@@ -16,16 +24,16 @@ const attemptContract = (ns, /** @type {{filename: string, hostname: string, typ
     const outcome = ns.codingcontract.attempt(answer, filename, hostname, {
       returnReward: true,
     });
-    if (outcome === "")
+    if (outcome === '')
       ns.tprint(
-        "ERROR " +
+        'ERROR ' +
           algorithm.name +
           `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`,
       );
     else ns.tprint(outcome);
     return !!outcome;
   } catch (error) {
-    ns.tprint("ERROR " + error);
+    ns.tprint('ERROR ' + error);
     return false;
   }
 };

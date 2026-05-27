@@ -1,7 +1,7 @@
 const HISTORY = 10;
 
 export const forecaster = () => {
-  const histories = /** @type {{[sym: string]: {price: number}[]}} */({});
+  const histories = /** @type {{[sym: string]: {price: number}[]}} */ ({});
   const record = (/** @type {{sym: string, price: number}} */ data) => {
     const { sym } = data;
     if (histories[sym] == null) histories[sym] = [];

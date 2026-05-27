@@ -1,9 +1,9 @@
-import { table } from "./lib/table";
-import { GRAY } from "./lib/colors";
-import { getPlayerData } from "./lib/data-store";
+import { table } from './lib/table';
+import { GRAY } from './lib/colors';
+import { getPlayerData } from './lib/data-store';
 
 const dec = (/** @type {number} */ num, places = 2) => {
-  if (num === 0) return GRAY("-");
+  if (num === 0) return GRAY('-');
   const rounded = +num.toFixed(places);
   if (rounded < 1) return GRAY(0) + rounded.toString().substring(1);
   else return rounded;
@@ -13,41 +13,43 @@ const dec = (/** @type {number} */ num, places = 2) => {
 const getCrimeTable = (ns) => {
   const { crimeStats } = getPlayerData(ns);
   const HEAD = [
-    "NAME",
-    "DIFF",
-    "KARMA",
-    "TIME",
-    { name: "$", align: "right" },
-    "%",
-    "$-%/s",
-    "Hack",
-    "Str",
-    "Def",
-    "Dex",
-    "Agi",
-    "Cha",
-    "Int",
+    'NAME',
+    'DIFF',
+    'KARMA',
+    'TIME',
+    { name: '$', align: 'right' },
+    '%',
+    '$-%/s',
+    'Hack',
+    'Str',
+    'Def',
+    'Dex',
+    'Agi',
+    'Cha',
+    'Int',
   ];
   return table(
     ns,
     HEAD,
     crimeStats.map(
-      (/** @type {CrimeStats & {type: string}} */ {
-        type,
-        difficulty,
-        karma,
-        time,
-        money,
-        chance,
-        expectedValue,
-        hacking_exp,
-        strength_exp,
-        defense_exp,
-        dexterity_exp,
-        agility_exp,
-        charisma_exp,
-        intelligence_exp,
-      }) => [
+      (
+        /** @type {CrimeStats & {type: string}} */ {
+          type,
+          difficulty,
+          karma,
+          time,
+          money,
+          chance,
+          expectedValue,
+          hacking_exp,
+          strength_exp,
+          defense_exp,
+          dexterity_exp,
+          agility_exp,
+          charisma_exp,
+          intelligence_exp,
+        },
+      ) => [
         type,
         dec(difficulty),
         dec(karma),
@@ -71,5 +73,5 @@ const getCrimeTable = (ns) => {
 /** @param {NS} ns **/
 export async function main(ns) {
   const [topic] = ns.args;
-  if (topic === "crimes") ns.tprint("\n" + getCrimeTable(ns));
+  if (topic === 'crimes') ns.tprint('\n' + getCrimeTable(ns));
 }

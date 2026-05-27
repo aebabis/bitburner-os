@@ -1,15 +1,27 @@
-import { THREADPOOL } from "../etc/config";
-import { by } from "../lib/util";
-import { checkPort, fulfill, reject, lastRuns, lastCancellations, droppedTickets } from "../lib/scheduler-api";
-import { getStaticData, putRamData, getHostnames, putSchedulerReportData } from "../lib/data-store";
-import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from "../etc/ports";
-import { logger } from "../lib/logger";
+import { THREADPOOL } from '../etc/config';
+import { by } from '../lib/util';
+import {
+  checkPort,
+  fulfill,
+  reject,
+  lastRuns,
+  lastCancellations,
+  droppedTickets,
+} from '../lib/scheduler-api';
+import {
+  getStaticData,
+  putRamData,
+  getHostnames,
+  putSchedulerReportData,
+} from '../lib/data-store';
+import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
+import { logger } from '../lib/logger';
 
-const SCHEDULER_HOME = "home";
+const SCHEDULER_HOME = 'home';
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   if (ns.getHostname() !== SCHEDULER_HOME) {
     throw new Error(`Scheduler only runs on ${SCHEDULER_HOME}`);
@@ -20,7 +32,7 @@ export async function main(ns) {
   // it can't run on 8GB ram while the boot
   // sequence is finishing.
   await ns.sleep(50);
-  ns.exec("/bin/planner.js", "home");
+  ns.exec('/bin/planner.js', 'home');
 
   const { purchasedServerMaxRam, purchasedServerLimit } = getStaticData(ns);
 
@@ -29,19 +41,21 @@ export async function main(ns) {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);
     const ramUnused = maxRam - ramUsed;
-    let ramAvailableTo = (/** @type {{script: string, highPriority?: boolean, isWorker: boolean}} */ _process) => ramUnused;
-    if (hostname === "home") {
+    let ramAvailableTo = (
+      /** @type {{script: string, highPriority?: boolean, isWorker: boolean}} */ _process,
+    ) => ramUnused;
+    if (hostname === 'home') {
       // On home, 32GB is unavailable to services
       // and batch jobs so that rmi calls can use it.
       // The last 2GB is always reserved for manual (user)
       // programs.
       const reserve = (/** @type {number} */ gb) => Math.max(0, ramUnused - gb);
       ramAvailableTo = (process) => {
-        if (process.script === "/bin/access.js") return reserve(0);
+        if (process.script === '/bin/access.js') return reserve(0);
         if (process.highPriority) return reserve(2);
         return reserve(32);
       };
-    } else if (["foodnstuff", "neo-net"].includes(hostname)) {
+    } else if (['foodnstuff', 'neo-net'].includes(hostname)) {
       ramAvailableTo = (process) => (process.isWorker ? 0 : ramUnused);
     }
     return {
@@ -59,28 +73,49 @@ export async function main(ns) {
     const rootServers = hostnames
       .filter(ns.hasRootAccess)
       .map(getRamInfo) //.filter(server=>server.hasAdminRights)
-      .sort(by((/** @type {ReturnType<typeof getRamInfo>} */ s) => -s.ramUnused));
+      .sort(
+        by((/** @type {ReturnType<typeof getRamInfo>} */ s) => -s.ramUnused),
+      );
     const purchasedServers = hostnames
-      .filter((/** @type {string} */ hostname) => hostname.startsWith(THREADPOOL))
+      .filter((/** @type {string} */ hostname) =>
+        hostname.startsWith(THREADPOOL),
+      )
       .sort()
       .map(getRamInfo);
     const purchasedServersMaxedOut =
       purchasedServers.length === purchasedServerLimit &&
       purchasedServers.every(
-        (/** @type {ReturnType<typeof getRamInfo>} */ server) => server.maxRam === purchasedServerMaxRam,
+        (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
+          server.maxRam === purchasedServerMaxRam,
       );
     const totalMaxRam =
-      rootServers.map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.maxRam).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
+      rootServers
+        .map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.maxRam)
+        .reduce(
+          (/** @type {number} */ a, /** @type {number} */ b) => a + b,
+          0,
+        ) || 0;
     const totalRamUsed =
-      rootServers.map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.ramUsed).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) || 0;
+      rootServers
+        .map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.ramUsed)
+        .reduce(
+          (/** @type {number} */ a, /** @type {number} */ b) => a + b,
+          0,
+        ) || 0;
     const totalRamUnused = totalMaxRam - totalRamUsed;
     const maxRamSlot = rootServers
-      .map((/** @type {ReturnType<typeof getRamInfo>} */ s) => s.maxRam - s.ramUsed)
-      .reduce((/** @type {number} */ a, /** @type {number} */ b) => (a > b ? a : b), 0);
+      .map(
+        (/** @type {ReturnType<typeof getRamInfo>} */ s) =>
+          s.maxRam - s.ramUsed,
+      )
+      .reduce(
+        (/** @type {number} */ a, /** @type {number} */ b) => (a > b ? a : b),
+        0,
+      );
     const demand = queue
       .map(
         ({ script, numThreads }) =>
-          numThreads * ns.getScriptRam(script, "home"),
+          numThreads * ns.getScriptRam(script, 'home'),
       )
       .reduce((a, b) => a + b, 0);
     const data = {
@@ -99,7 +134,8 @@ export async function main(ns) {
     return data;
   };
 
-  const queue = /** @type {{script: string, numThreads: number, startTime: number, time: number, isWorker: boolean, args: string[], host: string | null, waitTime: () => number, toString: (hostname?: string) => string, highPriority: boolean, ticket?: string}[]} */ ([]);
+  const queue =
+    /** @type {{script: string, numThreads: number, startTime: number, time: number, isWorker: boolean, args: string[], host: string | null, waitTime: () => number, toString: (hostname?: string) => string, highPriority: boolean, ticket?: string}[]} */ ([]);
   while (true) {
     try {
       ns.clearLog();
@@ -110,7 +146,9 @@ export async function main(ns) {
         await ns.sleep(20);
         continue;
       } else if (queue.length !== length)
-        queue.sort(by((/** @type {{startTime: number}} */ job) => job.startTime));
+        queue.sort(
+          by((/** @type {{startTime: number}} */ job) => job.startTime),
+        );
 
       const now = Date.now();
       for (let i = 0; i < queue.length; i++) {
@@ -125,7 +163,7 @@ export async function main(ns) {
           await reject(ns, queue.splice(i--, 1)[0]);
           continue;
         }
-        const scriptRam = ns.getScriptRam(process.script, "home");
+        const scriptRam = ns.getScriptRam(process.script, 'home');
         const ramRequired = scriptRam * process.numThreads;
 
         const ramQueued = queue
@@ -147,22 +185,25 @@ export async function main(ns) {
             (server) => ns.getScriptRam(process.script, server.hostname) > 0,
           );
 
-          const isServerValid = (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
-            server?.ramAvailableTo(process) >= ramRequired;
-          const isServerUsable = (/** @type {ReturnType<typeof getRamInfo>} */ server) =>
-            server?.ramAvailableTo(process) >= scriptRam;
+          const isServerValid = (
+            /** @type {ReturnType<typeof getRamInfo>} */ server,
+          ) => server?.ramAvailableTo(process) >= ramRequired;
+          const isServerUsable = (
+            /** @type {ReturnType<typeof getRamInfo>} */ server,
+          ) => server?.ramAvailableTo(process) >= scriptRam;
 
           const server = eligibleServers.find(isServerValid);
           const settleServer = eligibleServers.find(isServerUsable);
 
-          if (server != null) await fulfill(ns, queue.splice(i--, 1)[0], server);
+          if (server != null)
+            await fulfill(ns, queue.splice(i--, 1)[0], server);
           else if (settleServer != null)
             await fulfill(ns, queue.splice(i--, 1)[0], settleServer);
           else if (
             !process.isWorker &&
-            ramRequired <= ns.getServerMaxRam("home")
+            ramRequired <= ns.getServerMaxRam('home')
           )
-            logger(ns).warn("Failed to find RAM for: " + process.toString());
+            logger(ns).warn('Failed to find RAM for: ' + process.toString());
         }
       }
       ns.print(`${queue.length} items queued`);
@@ -177,7 +218,10 @@ export async function main(ns) {
         heartbeat: Date.now(),
         inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
         outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
-        maxWaitTime: queue.reduce((max, item) => Math.max(max, item.waitTime()), 0),
+        maxWaitTime: queue.reduce(
+          (max, item) => Math.max(max, item.waitTime()),
+          0,
+        ),
         droppedTickets,
       });
       await ns.sleep(10);

@@ -1,16 +1,20 @@
-import { BRIGHT } from "./colors";
-import { length } from "./util";
+import { BRIGHT } from './colors';
+import { length } from './util';
 
 /** @typedef {{ name?: string, align?: string, process?: (x: string | number) => (string | null | undefined), empty?: string }} ColumnSpec */
 /** @typedef {{ name: string, process: (x: string | number) => string, pad: (c: string | number, a: number) => string }} TableColumn */
 
 /** @param {string | ColumnSpec} column @returns {TableColumn} */
 const headData = (column) => {
-  const spec = /** @type {ColumnSpec} */ (typeof column === "string" ? {} : column);
+  const spec = /** @type {ColumnSpec} */ (
+    typeof column === 'string' ? {} : column
+  );
   const name = spec.name != null ? spec.name : /** @type {string} */ (column);
-  const align = spec.align || "left";
-  const process = spec.process || ((/** @type {string | number} */ x) => /** @type {string} */ (x));
-  const empty = spec.empty || "-";
+  const align = spec.align || 'left';
+  const process =
+    spec.process ||
+    ((/** @type {string | number} */ x) => /** @type {string} */ (x));
+  const empty = spec.empty || '-';
   return {
     name,
     process: (/** @type {string | number} */ x) => {
@@ -19,12 +23,12 @@ const headData = (column) => {
     },
     pad: (/** @type {string | number} */ c, /** @type {number} */ a) => {
       const str = c.toString();
-      if (str === "empty") {
+      if (str === 'empty') {
         const left = Math.floor(a / 2);
         return str.padStart(left).padEnd(a - left);
       }
       const e = str.length - length(str);
-      return align === "left" ? str.padEnd(a + e) : str.padStart(a + e);
+      return align === 'left' ? str.padEnd(a + e) : str.padStart(a + e);
     },
   };
 };
@@ -40,7 +44,7 @@ export const transpose = (lines, numCols) => {
     const row = cols
       .map((col, i) => {
         const section = col?.shift();
-        if (section && i < numCols - 1) section.push(" ");
+        if (section && i < numCols - 1) section.push(' ');
         return section;
       })
       .flat();
@@ -52,22 +56,22 @@ export const transpose = (lines, numCols) => {
 /** @param {NS} ns @param {(string | ColumnSpec)[] | null} columns @param {(string | number | undefined)[][]} data @param {{ borders?: boolean, colors?: boolean }} [options] */
 export const table = (ns, columns, data, options = {}) => {
   const { borders = false, colors = false } = options;
-  const joiner = borders ? " | " : "  ";
+  const joiner = borders ? ' | ' : '  ';
   const head = colors ? BRIGHT.BOLD : (/** @type {string} */ s) => s;
   /** @type {TableColumn[]} */
   let processedColumns;
   if (columns == null) {
-    if (data.length === 0) return "";
+    if (data.length === 0) return '';
     processedColumns = /** @type {string[]} */ (data.shift()).map(headData);
   } else {
     processedColumns = columns.map(headData);
   }
   const processedData = data.map((row) =>
-    row.map((cell, i) => processedColumns[i].process(cell ?? "").toString()),
+    row.map((cell, i) => processedColumns[i].process(cell ?? '').toString()),
   );
   const widths = processedColumns.map((column, i) =>
     processedData
-      .map((row) => length(row[i] || ""))
+      .map((row) => length(row[i] || ''))
       .reduce((a, b) => Math.max(a, b), length(column.name)),
   );
   const lines = [
@@ -77,8 +81,10 @@ export const table = (ns, columns, data, options = {}) => {
         .join(joiner),
     ),
     ...processedData.map((row) =>
-      row.map((cell, i) => processedColumns[i].pad(cell, widths[i])).join(joiner),
+      row
+        .map((cell, i) => processedColumns[i].pad(cell, widths[i]))
+        .join(joiner),
     ),
   ].map((x) => ` ${x} `);
-  return lines.join("\n");
+  return lines.join('\n');
 };

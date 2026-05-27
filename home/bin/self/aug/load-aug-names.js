@@ -1,10 +1,10 @@
-import { putStaticData } from "../../../lib/data-store";
-import { FACTIONS } from "../../../lib/factions";
+import { putStaticData } from '../../../lib/data-store';
+import { FACTIONS } from '../../../lib/factions';
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
-  ns.tprint("Loading Augmentation Names");
+  ns.disableLog('ALL');
+  ns.tprint('Loading Augmentation Names');
 
   const factionAugmentations = /** @type {Record<string, string[]>} */ ({});
   const augSet = new Set();

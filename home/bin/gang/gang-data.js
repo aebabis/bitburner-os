@@ -1,4 +1,4 @@
-import { putGangData } from "../../lib/data-store";
+import { putGangData } from '../../lib/data-store';
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -8,7 +8,8 @@ export async function main(ns) {
   const tasks = Object.values(taskStats);
 
   const equipmentNames = ns.gang.getEquipmentNames();
-  const equipmentStats = /** @type {Record<string, EquipmentStats & {type?: string}>} */ ({});
+  const equipmentStats =
+    /** @type {Record<string, EquipmentStats & {type?: string}>} */ ({});
   const equipmentTypes = /** @type {Record<string, string>} */ ({});
   for (const name of equipmentNames)
     equipmentStats[name] = ns.gang.getEquipmentStats(name);

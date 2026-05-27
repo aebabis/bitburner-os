@@ -1,11 +1,11 @@
-import { getPlayerData, putPlayerData } from "../../lib/data-store";
-import { FACTIONS } from "../../lib/factions";
-import { Timeline } from "../../lib/timeline";
-import { table } from "../../lib/table";
+import { getPlayerData, putPlayerData } from '../../lib/data-store';
+import { FACTIONS } from '../../lib/factions';
+import { Timeline } from '../../lib/timeline';
+import { table } from '../../lib/table';
 
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   const {
     factionRep = /** @type {Record<string, number>} */ ({}),
     activeRepRate = /** @type {Record<string, number>} */ ({}),
@@ -40,7 +40,7 @@ export async function main(ns) {
         n(activeRepRate[faction]),
       ]);
     ns.clearLog();
-    ns.print(table(ns, ["FACTION", "P REP", "W REP"], tableData));
+    ns.print(table(ns, ['FACTION', 'P REP', 'W REP'], tableData));
 
     putPlayerData(ns, { factionRep, passiveRepRate });
     await ns.sleep(200);

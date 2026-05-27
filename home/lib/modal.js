@@ -1,9 +1,9 @@
-const doc = eval("document");
+const doc = eval('document');
 
-let style = doc.querySelector("#custom-style");
+let style = doc.querySelector('#custom-style');
 if (style == null) {
-  const style = doc.createElement("style");
-  style.id = "custom-style";
+  const style = doc.createElement('style');
+  style.id = 'custom-style';
   style.innerText = `.windower p {
         line-height: 1.18;
         font-family: monospace;
@@ -15,7 +15,7 @@ if (style == null) {
 
 /** @param {NS} ns **/
 function getCommandLine(ns) {
-  return ns.getScriptName() + " " + ns.args.join(" ");
+  return ns.getScriptName() + ' ' + ns.args.join(' ');
 }
 
 /** @param {NS} ns **/
@@ -34,8 +34,8 @@ export async function getTailModal(ns, retry = true) {
   const bottom = top.nextSibling;
   const closeButton = buttons.children[2];
   const close = () => closeButton.click();
-  if (!titlebar.getAttribute("flagged")) {
-    titlebar.setAttribute("flagged", true);
+  if (!titlebar.getAttribute('flagged')) {
+    titlebar.setAttribute('flagged', true);
     ns.atExit(close);
   }
   return {
@@ -47,13 +47,13 @@ export async function getTailModal(ns, retry = true) {
 }
 
 /** @param {NS} ns **/
-const charWidth = (ns) => 9.65 * ns.ui.getStyles().tailFontSize / 16;
+const charWidth = (ns) => (9.65 * ns.ui.getStyles().tailFontSize) / 16;
 
 /** @param {NS} ns **/
 export async function getModalColumnCount(ns) {
   const tailPane = await getTailModal(ns, true);
   if (tailPane == null) return null;
-  tailPane.bottom.classList.add("windower");
+  tailPane.bottom.classList.add('windower');
   ns.clearLog();
   return Math.floor(
     (tailPane.bottom.parentElement.clientWidth - 2) / charWidth(ns),

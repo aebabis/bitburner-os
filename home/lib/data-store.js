@@ -1,4 +1,4 @@
-import Ports from "./ports.js";
+import Ports from './ports.js';
 import {
   PORT_HOSTNAMES,
   PORT_STATIC_DATA,
@@ -10,7 +10,7 @@ import {
   PORT_CONTRACT_DATA,
   PORT_GOALS_DATA,
   PORT_CORP_REPORTS,
-} from "../etc/ports.js";
+} from '../etc/ports.js';
 
 /** @param {NS} ns @param {number} port */
 const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();
@@ -40,9 +40,11 @@ export const putHostnames = (ns, hostnames) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
 /** @param {NS} ns */
-export const getSchedulerReportData = (ns) => readData(ns, PORT_SCH_REPORTING) || {};
+export const getSchedulerReportData = (ns) =>
+  readData(ns, PORT_SCH_REPORTING) || {};
 /** @param {NS} ns */
-export const putSchedulerReportData = (ns, data) => putData(ns, PORT_SCH_REPORTING, data);
+export const putSchedulerReportData = (ns, data) =>
+  putData(ns, PORT_SCH_REPORTING, data);
 
 /** @param {NS} ns */
 export const getStaticData = (ns) => readData(ns, PORT_STATIC_DATA) || {};
@@ -84,4 +86,5 @@ export const putGoalsData = (ns, data) => putData(ns, PORT_GOALS_DATA, data);
 /** @param {NS} ns */
 export const getCorpReports = (ns) => readData(ns, PORT_CORP_REPORTS) || {};
 /** @param {NS} ns */
-export const putCorpReports = (ns, data) => putData(ns, PORT_CORP_REPORTS, data);
+export const putCorpReports = (ns, data) =>
+  putData(ns, PORT_CORP_REPORTS, data);

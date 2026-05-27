@@ -1,18 +1,18 @@
-import { THREADPOOL } from "../etc/config";
+import { THREADPOOL } from '../etc/config';
 import {
   getStaticData,
   getMoneyData,
   getPlayerData,
   getGoalsData,
   getSchedulerReportData,
-} from "../lib/data-store";
-import { getGoals } from "../lib/goals/goals";
-import { GrowingWindow, renderWindows } from "../lib/layout";
-import { getTailModal, getModalColumnCount } from "../lib/modal";
-import { table } from "../lib/table";
-import { getServices } from "../lib/service-api";
-import { C, WARN, MEDIUM, DARK, BRIGHT, ERROR } from "../lib/colors";
-import { hasBitNode } from "../lib/query-service";
+} from '../lib/data-store';
+import { getGoals } from '../lib/goals/goals';
+import { GrowingWindow, renderWindows } from '../lib/layout';
+import { getTailModal, getModalColumnCount } from '../lib/modal';
+import { table } from '../lib/table';
+import { getServices } from '../lib/service-api';
+import { C, WARN, MEDIUM, DARK, BRIGHT, ERROR } from '../lib/colors';
+import { hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 
 const H = BRIGHT.BOLD;
@@ -44,7 +44,8 @@ const formatTime = (seconds) => {
 /** @param {NS} ns */
 const getRunStats = (ns) => {
   const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
-  const { onlineRunningTime = 0 } = ns.getRunningScript("/bin/scheduler.js", "home") || {};
+  const { onlineRunningTime = 0 } =
+    ns.getRunningScript('/bin/scheduler.js', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
   const karma = Math.trunc(ns.heart.break());
@@ -72,10 +73,11 @@ const getPlayerLevels = (ns) => {
   const stat = (/** @type {string} */ stat) => {
     let p = 1;
     for (const aug of ownedAugmentations)
-      p *= augmentationStats[aug]?.[/** @type {keyof Multipliers} */ (stat)] ?? 1;
+      p *=
+        augmentationStats[aug]?.[/** @type {keyof Multipliers} */ (stat)] ?? 1;
     return p;
   };
-  
+
   const G = C(72);
   const W = C(251);
   const M = MEDIUM;
@@ -83,12 +85,42 @@ const getPlayerLevels = (ns) => {
   const fmt = (/** @type {number} */ v) => M('x' + v.toFixed(3));
   return table(ns, null, [
     ['', '', M('mult'), M('exp')],
-    [G('Hack'), G(skills.hacking), fmt(stat('hacking')), fmt(stat('hacking_exp'))],
-    [W('Str'), W(skills.strength), fmt(stat('strength')), fmt(stat('strength_exp'))],
-    [W('Def'), W(skills.defense), fmt(stat('defense')), fmt(stat('defense_exp'))],
-    [W('Dex'), W(skills.dexterity), fmt(stat('dexterity')), fmt(stat('dexterity_exp'))],
-    [W('Agi'), W(skills.agility), fmt(stat('agility')), fmt(stat('agility_exp'))],
-    [W('Cha'), W(skills.charisma), fmt(stat('charisma')), fmt(stat('charisma_exp'))],
+    [
+      G('Hack'),
+      G(skills.hacking),
+      fmt(stat('hacking')),
+      fmt(stat('hacking_exp')),
+    ],
+    [
+      W('Str'),
+      W(skills.strength),
+      fmt(stat('strength')),
+      fmt(stat('strength_exp')),
+    ],
+    [
+      W('Def'),
+      W(skills.defense),
+      fmt(stat('defense')),
+      fmt(stat('defense_exp')),
+    ],
+    [
+      W('Dex'),
+      W(skills.dexterity),
+      fmt(stat('dexterity')),
+      fmt(stat('dexterity_exp')),
+    ],
+    [
+      W('Agi'),
+      W(skills.agility),
+      fmt(stat('agility')),
+      fmt(stat('agility_exp')),
+    ],
+    [
+      W('Cha'),
+      W(skills.charisma),
+      fmt(stat('charisma')),
+      fmt(stat('charisma_exp')),
+    ],
   ]);
 };
 
@@ -105,7 +137,7 @@ const threadpoolRow = (ns, server) => {
 const threadpools = (ns) => {
   const names = Array(ns.cloud.getServerLimit())
     .fill(null)
-    .map((_, i) => (i + 1).toString().padStart(2, "0"))
+    .map((_, i) => (i + 1).toString().padStart(2, '0'))
     .map((num) => `${THREADPOOL}-${num}`);
   return names
     .map((hostname) => {
@@ -131,19 +163,20 @@ const threadpoolTable = (ns) => {
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
-  const rows = left.map((list, i) => [...list, ...(middle[i] || [""]), ...(right[i] || [""])].map(MEDIUM));
-  return BRIGHT.BOLD(" SERVERS ") + "\n" + table(ns, null, rows);
+  const rows = left.map((list, i) =>
+    [...list, ...(middle[i] || ['']), ...(right[i] || [''])].map(MEDIUM),
+  );
+  return BRIGHT.BOLD(' SERVERS ') + '\n' + table(ns, null, rows);
 };
-
 
 const goalsTable = (/** @type {NS} */ ns) => {
   const { enabled = true } = getGoalsData(ns);
-  if (!enabled) return ` ${H("GOALS")} \n ${DARK("(disabled)")} `;
+  if (!enabled) return ` ${H('GOALS')} \n ${DARK('(disabled)')} `;
   const goals = getGoals(ns);
   return table(
     ns,
-    ["GOALS", {name: '', align: 'right'}],
-    goals.map(goal => [
+    ['GOALS', { name: '', align: 'right' }],
+    goals.map((goal) => [
       goal.toString(),
       MEDIUM(formatTime(goal.timeToComplete())),
     ]),
@@ -154,7 +187,7 @@ const goalsTable = (/** @type {NS} */ ns) => {
 const moneyTable = (/** @type {NS} */ ns) => {
   const moneyData = getMoneyData(ns);
   if (moneyData == null) {
-    return ` ${H("INCOME")} \n ${MEDIUM(loading)} `;
+    return ` ${H('INCOME')} \n ${MEDIUM(loading)} `;
   }
   const {
     theftIncome = 0,
@@ -164,12 +197,13 @@ const moneyTable = (/** @type {NS} */ ns) => {
     referenceIncome = 0,
   } = moneyData;
   const rows = [
-    [" Theft", `$${ns.format.number(theftIncome, 1)}/s`],
+    [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
     ['', formatTime(thiefReferenceWindow)],
-    [" Hacknet", `$${ns.format.number(hacknetIncome, 1)}/s`],
-    [" Gang", `$${ns.format.number(gangIncome, 1)}/s`],
+    [' Hacknet', `$${ns.format.number(hacknetIncome, 1)}/s`],
+    [' Gang', `$${ns.format.number(gangIncome, 1)}/s`],
   ];
-  const top = H(' INCOME    ') + C(183)(`$${ns.format.number(referenceIncome, 1)}/s`);
+  const top =
+    H(' INCOME    ') + C(183)(`$${ns.format.number(referenceIncome, 1)}/s`);
   return top + '\n' + table(ns, null, rows);
 };
 
@@ -177,9 +211,9 @@ const moneyTable = (/** @type {NS} */ ns) => {
 const getWork = (ns) => {
   const { factionRep = {}, currentWork } = getPlayerData(ns);
   const { location } = getPlayerData(ns).player;
-  const WORK = H("WORK");
+  const WORK = H('WORK');
   if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
-  if (currentWork == null) return ` ${WORK} ${MEDIUM("(idle)")} `;
+  if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
   const {
     type,
     crimeType,
@@ -188,12 +222,12 @@ const getWork = (ns) => {
     // workMoneyGained,
     // workRepGained,
   } = currentWork;
-  if (type === "FACTION") {
+  if (type === 'FACTION') {
     const rep = Math.floor(factionRep[factionName]);
     return ` ${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
-  } else if (type === "COMPANY") {
+  } else if (type === 'COMPANY') {
     return ` ${WORK} ${companyName} `;
-  } else if (type === "CRIME") {
+  } else if (type === 'CRIME') {
     return ` ${WORK} ${crimeType} `;
   }
   return ` ${WORK} ${type} ${location} `;
@@ -208,8 +242,11 @@ const getExecutionTable = (ns) => {
     .sort(by(([, lastRun]) => lastRun))
     .map(([script, lastRun]) => [script, (Date.now() - lastRun) / 1000])
     .filter(([, lastRun]) => +lastRun >= 10)
-    .map(([script, timeSince]) => [script.replace(/^\/bin\//, ''), formatTime(timeSince)]);
-  return ` ${H("DELAYS")} \n` + table(ns, null, rows);
+    .map(([script, timeSince]) => [
+      script.replace(/^\/bin\//, ''),
+      formatTime(timeSince),
+    ]);
+  return ` ${H('DELAYS')} \n` + table(ns, null, rows);
 };
 
 /** @param {NS} ns */
@@ -217,19 +254,47 @@ const getServiceTable = (ns) => {
   return table(
     ns,
     ['SERVICES', '', ''],
-    getServices(ns).map((/** @type {{name: string, status: string, ram: number}} */ { name, status, ram }) =>
-      [name, status, '  ' + (ram ? MEDIUM(ram.toFixed(2)+'GB') : ERROR('error'))]),
+    getServices(ns).map(
+      (
+        /** @type {{name: string, status: string, ram: number}} */ {
+          name,
+          status,
+          ram,
+        },
+      ) => [
+        name,
+        status,
+        '  ' + (ram ? MEDIUM(ram.toFixed(2) + 'GB') : ERROR('error')),
+      ],
+    ),
     { colors: true },
   );
 };
 
 /** @param {NS} ns */
 const getSchedulerTable = (ns) => {
-  const { inputFull, outputFull, heartbeat, maxWaitTime = 0, enqueueFails = 0, droppedTickets = 0 } = getSchedulerReportData(ns);
+  const {
+    inputFull,
+    outputFull,
+    heartbeat,
+    maxWaitTime = 0,
+    enqueueFails = 0,
+    droppedTickets = 0,
+  } = getSchedulerReportData(ns);
   const age = heartbeat == null ? null : Date.now() - heartbeat;
-  const heartbeatStr = age == null ? ERROR('no data') : age > 5000 ? ERROR(`${(age / 1000).toFixed(1)}s ago`) : `${age}ms ago`;
+  const heartbeatStr =
+    age == null
+      ? ERROR('no data')
+      : age > 5000
+        ? ERROR(`${(age / 1000).toFixed(1)}s ago`)
+        : `${age}ms ago`;
   const waitSec = (maxWaitTime / 1000).toFixed(1);
-  const waitStr = maxWaitTime > 45000 ? ERROR(`${waitSec}s`) : maxWaitTime > 20000 ? WARN(`${waitSec}s`) : `${waitSec}s`;
+  const waitStr =
+    maxWaitTime > 45000
+      ? ERROR(`${waitSec}s`)
+      : maxWaitTime > 20000
+        ? WARN(`${waitSec}s`)
+        : `${waitSec}s`;
   const queue = enqueueFails + ' fails';
   const tickets = droppedTickets + ' dropped';
   const rows = [
@@ -241,12 +306,12 @@ const getSchedulerTable = (ns) => {
     ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
     ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
   ];
-  return table(ns, null, rows, {colors:true});
+  return table(ns, null, rows, { colors: true });
 };
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   ns.ui.openTail();
   const windows = [
     new GrowingWindow(() => getRunStats(ns), true),
@@ -273,7 +338,9 @@ export async function main(ns) {
         const textField = renderWindows(windows, width);
 
         ns.clearLog();
-        textField.split("\n").forEach((/** @type {string} */ line) => ns.print(line));
+        textField
+          .split('\n')
+          .forEach((/** @type {string} */ line) => ns.print(line));
         await ns.sleep(1);
       }
     } catch (error) {

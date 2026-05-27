@@ -62,7 +62,7 @@ export const countPaths = (/** @type {number[][]} */ grid) => {
 
 export const generateIPs = (() => {
   const isValid = (/** @type {string} */ seq) => {
-    const badZero = seq[0] === "0" && seq.length > 1;
+    const badZero = seq[0] === '0' && seq.length > 1;
     return seq.length > 0 && !badZero && +seq <= 255;
   };
 
@@ -124,15 +124,15 @@ export const mergeIntervals = (/** @type {[number, number][]} */ intervals) => {
 /** @returns {string[]} */
 const fixParens = (/** @type {string} */ str, index = 0, balance = 0) => {
   if (balance < 0) return [];
-  if (index === str.length) return balance === 0 ? [""] : [];
+  if (index === str.length) return balance === 0 ? [''] : [];
 
   const ch = str[index];
-  if (ch === "(") {
+  if (ch === '(') {
     return [
       ...fixParens(str, index + 1, balance),
       ...fixParens(str, index + 1, balance + 1).map((s) => ch + s),
     ];
-  } else if (ch === ")") {
+  } else if (ch === ')') {
     return [
       ...fixParens(str, index + 1, balance),
       ...fixParens(str, index + 1, balance - 1).map((s) => ch + s),
@@ -161,7 +161,7 @@ export const spiralizeMatrix = (/** @type {number[][]} */ grid) => {
     result.push(.../** @type {number[]} */ (grid.shift()));
     if (grid.length === 0 || grid[0].length === 0) break;
     result.push(...grid.map((r) => r.pop()));
-    result.push(...(/** @type {number[]} */ (grid.pop())).reverse());
+    result.push(.../** @type {number[]} */ (grid.pop()).reverse());
     if (grid.length === 0 || grid[0].length === 0) break;
     result.push(...grid.map((r) => r.shift()).reverse());
   }
@@ -173,17 +173,21 @@ export const pathToCorner = (/** @type {number[][]} */ grid) => {
   const w = grid[0].length;
   const k = (/** @type {number} */ x, /** @type {number} */ y) => `${x},${y}`;
   const map = new Map();
-  const gset = (/** @type {number} */ x, /** @type {number} */ y, /** @type {string} */ v) => !map.get(k(x, y)) && map.set(k(x, y), v);
-  map.set(k(0, 0), "");
+  const gset = (
+    /** @type {number} */ x,
+    /** @type {number} */ y,
+    /** @type {string} */ v,
+  ) => !map.get(k(x, y)) && map.set(k(x, y), v);
+  map.set(k(0, 0), '');
   for (const [coords, path] of map) {
-    const [x, y] = coords.split(",").map(Number);
+    const [x, y] = coords.split(',').map(Number);
     if (x === w - 1 && y === h - 1) return path;
-    if (x + 1 < w && grid[y][x + 1] === 0) gset(x + 1, y, path + "R");
-    if (x - 1 >= 0 && grid[y][x - 1] === 0) gset(x - 1, y, path + "L");
-    if (y + 1 < h && grid[y + 1][x] === 0) gset(x, y + 1, path + "D");
-    if (y - 1 >= 0 && grid[y - 1][x] === 0) gset(x, y - 1, path + "U");
+    if (x + 1 < w && grid[y][x + 1] === 0) gset(x + 1, y, path + 'R');
+    if (x - 1 >= 0 && grid[y][x - 1] === 0) gset(x - 1, y, path + 'L');
+    if (y + 1 < h && grid[y + 1][x] === 0) gset(x, y + 1, path + 'D');
+    if (y - 1 >= 0 && grid[y - 1][x] === 0) gset(x, y - 1, path + 'U');
   }
-  return "";
+  return '';
 };
 
 export const lpf = (/** @type {number} */ num) => {
@@ -192,7 +196,7 @@ export const lpf = (/** @type {number} */ num) => {
 };
 
 const hammingExtract = (/** @type {string | number[]} */ str) => {
-  let result = "0b";
+  let result = '0b';
   let b = 4;
   for (let i = 3; i < str.length; i++) {
     if (i === b) b *= 2;
@@ -202,7 +206,7 @@ const hammingExtract = (/** @type {string | number[]} */ str) => {
 };
 
 export const hammingCorrect = (/** @type {string} */ str) => {
-  const bits = str.split("").map(Number);
+  const bits = str.split('').map(Number);
   let badbit = 0;
   for (let b = 1; b < str.length; b *= 2) {
     let parity = 0;
@@ -217,7 +221,7 @@ export const hammingCorrect = (/** @type {string} */ str) => {
 };
 
 export const hammingEncode = (/** @type {number} */ num) => {
-  const digits = num.toString(2).split("");
+  const digits = num.toString(2).split('');
   const encoded = [0];
 
   let pow = 1;
@@ -240,10 +244,15 @@ export const hammingEncode = (/** @type {number} */ num) => {
     // console.log('^'.padStart(i+1))
     // console.log(encoded.join(''))
   }
-  return encoded.join("");
+  return encoded.join('');
 };
 
-export const stockProfit = (/** @type {number[]} */ prices, n = 1, s = 0, /** @type {Record<string, number>} */ c = {}) => {
+export const stockProfit = (
+  /** @type {number[]} */ prices,
+  n = 1,
+  s = 0,
+  /** @type {Record<string, number>} */ c = {},
+) => {
   let split = 0;
   const key = `${s},${prices.length},${n}`;
   if (c[key]) return c[key];
@@ -266,7 +275,7 @@ export const stockProfit = (/** @type {number[]} */ prices, n = 1, s = 0, /** @t
 };
 
 export const lzDecode = (/** @type {string} */ str) => {
-  const buffer = str.split("");
+  const buffer = str.split('');
   let isMode1 = true;
   let result = /** @type {string[]} */ ([]);
   while (buffer.length) {
@@ -279,10 +288,10 @@ export const lzDecode = (/** @type {string} */ str) => {
         while (size--) result.push(result[result.length - offset]);
       }
     }
-    console.log(result.join(""));
+    console.log(result.join(''));
     isMode1 = !isMode1;
   }
-  return result.join("");
+  return result.join('');
 };
 
 const cypher = (/** @type {string} */ char, /** @type {number} */ shift) => {
@@ -290,26 +299,33 @@ const cypher = (/** @type {string} */ char, /** @type {number} */ shift) => {
   return String.fromCharCode(code);
 };
 
-export const caesarCypher = (/** @type {[string, number]} */ [plaintext, shift]) => {
+export const caesarCypher = (
+  /** @type {[string, number]} */ [plaintext, shift],
+) => {
   const result = [];
-  for (const c of plaintext) result.push(c === " " ? c : cypher(c, 26 - shift));
-  return result.join("");
+  for (const c of plaintext) result.push(c === ' ' ? c : cypher(c, 26 - shift));
+  return result.join('');
 };
 
-export const vigenereCypher = (/** @type {[string, string]} */ [plaintext, password]) => {
-  const pw = password.split("");
+export const vigenereCypher = (
+  /** @type {[string, string]} */ [plaintext, password],
+) => {
+  const pw = password.split('');
   const pwChar = () => pw.push(pw[0]) && pw.shift();
-  const lookup = (/** @type {string} */ c1, /** @type {string} */ c2) => cypher(c2, c1.charCodeAt(0) - 65);
+  const lookup = (/** @type {string} */ c1, /** @type {string} */ c2) =>
+    cypher(c2, c1.charCodeAt(0) - 65);
   return plaintext
-    .split("")
+    .split('')
     .map((ch) => lookup(ch, /** @type {string} */ (pwChar())))
-    .join("");
+    .join('');
 };
 
 export const rle = (/** @type {string} */ text) =>
   text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x, a) => x.length + a);
 
-export const twoColor = (/** @type {[number, number[][]]} */ [numVertices, edges]) => {
+export const twoColor = (
+  /** @type {[number, number[][]]} */ [numVertices, edges],
+) => {
   const arr = new Array(numVertices);
   edges.sort((a, b) => a[0] - b[0]);
   for (const [a, b] of edges) {

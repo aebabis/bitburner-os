@@ -1,21 +1,20 @@
-import { tprint } from "./util";
+import { tprint } from './util';
 
 const DELEGATE_PATTERN =
   /\b(?:rmi|delegateAny|delegate|AnyHostService|Service)\s*\([^)]*\)\s*\(\s*["'`]([^"'`]+)["'`]/g;
 const IMPORT_PATTERN = /\bimport\b[^'"]*from\s*["']([^"']+)["']/g;
 
 const resolve = (fromPath, rel) => {
-  if (rel.startsWith("/"))
-    return rel.endsWith(".js") ? rel : rel + ".js";
-  const dir = fromPath.split("/").slice(0, -1).join("/");
-  const parts = (dir + "/" + rel).split("/");
+  if (rel.startsWith('/')) return rel.endsWith('.js') ? rel : rel + '.js';
+  const dir = fromPath.split('/').slice(0, -1).join('/');
+  const parts = (dir + '/' + rel).split('/');
   const out = [];
   for (const p of parts) {
-    if (p === "..") out.pop();
-    else if (p !== "." && p) out.push(p);
+    if (p === '..') out.pop();
+    else if (p !== '.' && p) out.push(p);
   }
-  const path = "/" + out.join("/");
-  return path.endsWith(".js") ? path : path + ".js";
+  const path = '/' + out.join('/');
+  return path.endsWith('.js') ? path : path + '.js';
 };
 
 const hasMain = (content) =>
@@ -41,7 +40,7 @@ export const getCallGraph = (ns) => {
 
   const graph = {};
   const visited = new Set();
-  const queue = ["/bin/planner.js"];
+  const queue = ['/bin/planner.js'];
 
   while (queue.length > 0) {
     const path = queue.shift();
@@ -73,6 +72,6 @@ export const getCallGraph = (ns) => {
 /** @param {NS} ns */
 export async function main(ns) {
   const graph = getCallGraph(ns);
-  ns.write("/tmp/call-graph.json", JSON.stringify(graph, null, 2), "w");
+  ns.write('/tmp/call-graph.json', JSON.stringify(graph, null, 2), 'w');
   tprint(ns)(`INFO call-graph: ${Object.keys(graph).length} nodes`);
 }

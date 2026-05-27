@@ -20,7 +20,16 @@ const evict = (p) => {
 
 /** @param {ProfilerState} p */
 const makeRecordScheduled =
-  (p) => (/** @type {string} */ frameId, /** @type {string} */ jobId, /** @type {string} */ server, /** @type {string} */ type, /** @type {number} */ threads, /** @type {number} */ start, /** @type {number} */ end) => {
+  (p) =>
+  (
+    /** @type {string} */ frameId,
+    /** @type {string} */ jobId,
+    /** @type {string} */ server,
+    /** @type {string} */ type,
+    /** @type {number} */ threads,
+    /** @type {number} */ start,
+    /** @type {number} */ end,
+  ) => {
     if (!p.frameIds.has(frameId)) {
       p.frameIds.add(frameId);
       p.frames.push({ frameId, jobIds: [], scheduledStart: start });
@@ -42,20 +51,28 @@ const makeRecordScheduled =
   };
 
 /** @param {ProfilerState} p */
-const makeRecordStart = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart) => {
-  const job = p.jobs.get(jobId);
-  if (job) job.actualStart = actualStart;
-};
+const makeRecordStart =
+  (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart) => {
+    const job = p.jobs.get(jobId);
+    if (job) job.actualStart = actualStart;
+  };
 
 /** @param {ProfilerState} p */
-const makeRecordActual = (p) => (/** @type {string} */ jobId, /** @type {number} */ actualStart, /** @type {number} */ actualEnd, /** @type {unknown} */ result) => {
-  const job = p.jobs.get(jobId);
-  if (job) {
-    job.actualStart = actualStart;
-    job.actualEnd = actualEnd;
-    job.result = result;
-  }
-};
+const makeRecordActual =
+  (p) =>
+  (
+    /** @type {string} */ jobId,
+    /** @type {number} */ actualStart,
+    /** @type {number} */ actualEnd,
+    /** @type {unknown} */ result,
+  ) => {
+    const job = p.jobs.get(jobId);
+    if (job) {
+      job.actualStart = actualStart;
+      job.actualEnd = actualEnd;
+      job.result = result;
+    }
+  };
 
 /** @param {ProfilerState} p */
 const makeRecordReaped = (p) => (/** @type {string} */ jobId) => {
@@ -92,6 +109,8 @@ export const getSnapshot = () => {
   if (!p) return null;
   return p.frames.map(({ frameId, jobIds }) => ({
     frameId,
-    jobs: /** @type {Job[]} */ (jobIds.map((/** @type {string} */ id) => p.jobs.get(id)).filter(Boolean)),
+    jobs: /** @type {Job[]} */ (
+      jobIds.map((/** @type {string} */ id) => p.jobs.get(id)).filter(Boolean)
+    ),
   }));
 };

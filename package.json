@@ -8,7 +8,8 @@
     "bundle:d3": "node scripts/bundle-d3.js",
     "check-data-deps": "node scripts/check-data-deps.js",
     "knip": "knip",
-    "test": "node --test scripts/test-*.js"
+    "test": "node --test scripts/test-*.js",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -28,9 +29,14 @@
     "d3-selection": "^3.0.0",
     "esbuild": "^0.28.0",
     "eslint": "^8.15.0",
+    "husky": "^9.1.7",
     "knip": "^6.12.2",
+    "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
+  },
+  "lint-staged": {
+    "*.{js,ts,json}": "prettier --write"
   },
   "dependencies": {
     "acorn": "^8.16.0"

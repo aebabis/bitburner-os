@@ -1,5 +1,5 @@
-import { putPlayerData } from "../lib/data-store";
-import { logger } from "../lib/logger";
+import { putPlayerData } from '../lib/data-store';
+import { logger } from '../lib/logger';
 
 import {
   ENABLE,
@@ -7,15 +7,15 @@ import {
   writeServices,
   checkQueue,
   getTableString,
-} from "../lib/service-api";
-import { getViableServices } from "./services/services";
+} from '../lib/service-api';
+import { getViableServices } from './services/services';
 
 /** @param {NS} ns **/
 const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
 
 /** @param {NS} ns **/
 const go = async (ns) => {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const tasks = getViableServices(ns, player);
 

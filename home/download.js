@@ -140,7 +140,11 @@ const FILES = [
 export async function main(ns) {
   const { branch } = ns.flags([['branch', 'main']]);
   if (_[0] != null) {
-    ns.tprint('\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
+    ns.tprint(
+      '\u001b[31mUnrecognized parameter(s): ' +
+        _ +
+        '. To set a branch use --branch BRANCH',
+    );
     return;
   }
   for (const file of FILES) {

@@ -1,19 +1,19 @@
-import { getStaticData, putStaticData } from "../lib/data-store";
-import { defer } from "./defer";
-import { getBitNodeMultipliers } from "./cheaty-data";
-import { tprint } from "./util";
-import { STR } from "../lib/colors";
+import { getStaticData, putStaticData } from '../lib/data-store';
+import { defer } from './defer';
+import { getBitNodeMultipliers } from './cheaty-data';
+import { tprint } from './util';
+import { STR } from '../lib/colors';
 
 /** @param {NS} ns */
 export async function main(ns) {
   const { currentNode, ownedSF } = getStaticData(ns).resetInfo;
-  tprint(ns)(STR.BOLD + "ADDING MULTIPLIERS TO CACHE");
+  tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 
   const canUseHackNodes = currentNode === 5 || ownedSF.has(5);
   let bitNodeMultipliers = null;
 
   if (canUseHackNodes) {
-    tprint(ns)(STR + "  Adding bit node multipliers to static data cache");
+    tprint(ns)(STR + '  Adding bit node multipliers to static data cache');
     bitNodeMultipliers = ns.getBitNodeMultipliers();
   } else {
     bitNodeMultipliers = getBitNodeMultipliers(currentNode);

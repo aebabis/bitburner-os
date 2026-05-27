@@ -1,7 +1,7 @@
-import { SHARE } from "../etc/filenames";
-import { getConfig } from "../lib/config";
-import { getStaticData, getRamData, getHostnames } from "../lib/data-store";
-import { delegateAny } from "../lib/scheduler-delegate";
+import { SHARE } from '../etc/filenames';
+import { getConfig } from '../lib/config';
+import { getStaticData, getRamData, getHostnames } from '../lib/data-store';
+import { delegateAny } from '../lib/scheduler-delegate';
 
 const sum = (/** @type {number} */ a, /** @type {number} */ b) => a + b;
 
@@ -13,14 +13,14 @@ export const getTotalRam = (ns) => getRamData(ns).totalMaxRam;
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
   const config = getConfig(ns);
   const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE.slice(1)];
 
   let wait = MIN_WAIT;
   while (true) {
-    const shareRate = config.get("share");
-    const shareCap = config.get("share-cap");
+    const shareRate = config.get('share');
+    const shareCap = config.get('share-cap');
     const hostnames = getHostnames(ns);
     const processes = hostnames
       .flatMap((hostname) => ns.ps(hostname))
@@ -34,7 +34,9 @@ export async function main(ns) {
     if (sharedThreads > maxDesiredThreads) {
       ns.print(`Overallocated. T=${sharedThreads} MAX=${maxDesiredThreads}`);
       while (sharedThreads > maxDesiredThreads) {
-        const process = /** @type {{pid: number, threads: number}} */ (processes.shift());
+        const process = /** @type {{pid: number, threads: number}} */ (
+          processes.shift()
+        );
         ns.kill(process.pid);
         sharedThreads -= process.threads;
       }

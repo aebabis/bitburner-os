@@ -1,13 +1,13 @@
 /** @param {NS} ns */
 export async function main(ns) {
-  ns.disableLog("ALL");
+  ns.disableLog('ALL');
 
   const { funds } = ns.corporation.getCorporation();
 
   /** @constant */
   const canUnlock = {
     'Smart Supply': () => true,
-    'Export': () => false,
+    Export: () => false,
     'Shady Accounting': () => false,
     'Market Research - Demand': () => false,
     'Market Data - Competition': () => false,
@@ -17,9 +17,11 @@ export async function main(ns) {
   };
 
   for (const unlock in canUnlock) {
-    if (!ns.corporation.hasUnlock(unlock) &&
+    if (
+      !ns.corporation.hasUnlock(unlock) &&
       ns.corporation.getUnlockCost(unlock) <= funds &&
-      canUnlock[unlock]()) {
+      canUnlock[unlock]()
+    ) {
       ns.corporation.purchaseUnlock(unlock);
     }
   }
