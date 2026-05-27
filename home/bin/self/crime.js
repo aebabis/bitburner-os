@@ -30,8 +30,10 @@ export async function main(ns) {
 
   const crime = typeof ns.args[0] === 'string' ? ns.args[0]
     : selectCrime(ns, +ns.args[0] || null);
-  const duration = ns.singularity.commitCrime(crime);
-  putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
-  await ns.sleep(duration);
-  putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
+  if (ns.singularity.getCurrentWork().crimeType !== crime) {
+    const duration = ns.singularity.commitCrime(crime);
+    putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
+    await ns.sleep(duration);
+    putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
+  }
 }
