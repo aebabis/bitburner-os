@@ -206,7 +206,6 @@ export const isRepBound = (goals) => {
  *   passiveRepRate: Record<string, number>,
  *   formulas: ReturnType<import('../formulas.js').getMockFormulas>,
  *   karma: number,
- *   augsOverride?: string[],
  * }} data
  * @returns {{ goals: import('./nodes.js').Goal[], terminalGoals: import('./nodes.js').Goal[], value: number, utility: (overhead: number) => number } | null}
  */
@@ -225,7 +224,6 @@ export const buildFactionGoalTree = (
     passiveRepRate,
     formulas,
     karma,
-    augsOverride = undefined,
   },
 ) => {
   const { augmentationPrices, augmentationPrereqs, augmentationStats } =
@@ -246,20 +244,15 @@ export const buildFactionGoalTree = (
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 
-  let batch;
-  if (augsOverride != null) {
-    batch = augsOverride;
-  } else {
-    ({ batch } = findOptimalBatch(
-      faction,
-      staticData,
-      player,
-      formulas,
-      factionRep,
-      ownedAugs,
-      { moneyRate, activeRepRate, passiveRepRate, joinTime },
-    ));
-  }
+  const { batch } = findOptimalBatch(
+    faction,
+    staticData,
+    player,
+    formulas,
+    factionRep,
+    ownedAugs,
+    { moneyRate, activeRepRate, passiveRepRate, joinTime },
+  );
   if (batch.length === 0) return null;
 
   const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);

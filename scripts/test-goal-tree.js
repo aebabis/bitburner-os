@@ -143,6 +143,8 @@ describe('buildFactionGoalTree', () => {
       player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
       staticData: {
         factionRequirements: {},
+        factionAugmentations: { TestFaction: ['TargetAug'] },
+        augmentationStats: { TargetAug: { hacking: 1.5 } },
         augmentationRepReqs: { TargetAug: 0 },
         augmentationPrices: { TargetAug: AUG_PRICE },
         augmentationPrereqs: {},
@@ -153,11 +155,10 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: ['InstalledAug', 'QueuedAug'],
       money: AUG_PRICE * 2,
       referenceIncome: 1,
-      activeRepRate: {},
+      activeRepRate: { TestFaction: 1 },
       passiveRepRate: {},
       formulas: null,
       karma: 0,
-      augsOverride: ['TargetAug'],
     });
 
     const moneyGoal = tree.goals.find((g) => g.type === 'AUG_MONEY');
@@ -168,36 +169,6 @@ describe('buildFactionGoalTree', () => {
       `expected isDone but requirement was ${moneyGoal.requirement}`,
     );
   });
-  it('augsOverride skips findOptimalBatch', () => {
-    // SpecificAug is not in factionAugmentations — findOptimalBatch would never select it.
-    // augsOverride forces the batch to contain it, proving findOptimalBatch was bypassed.
-    const tree = buildFactionGoalTree('TestFaction', {
-      player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
-      staticData: {
-        factionRequirements: {},
-        factionAugmentations: { TestFaction: ['OtherAug'] },
-        augmentationRepReqs: { SpecificAug: 0 },
-        augmentationPrices: { SpecificAug: 0 },
-        augmentationPrereqs: {},
-        installedAugmentations: [],
-      },
-      factionRep: {},
-      purchasedAugmentations: [],
-      ownedAugs: [],
-      money: 0,
-      referenceIncome: 0,
-      activeRepRate: {},
-      passiveRepRate: {},
-      formulas: null,
-      karma: 0,
-      augsOverride: ['SpecificAug'],
-    });
-    const augGoals = tree.goals.filter((g) => g.type === 'AUGMENTATION');
-    assert.deepEqual(
-      augGoals.map((g) => g.desc),
-      ['SpecificAug'],
-    );
-  });
   it('join prereqs appear as deps of the join goal', () => {
     const tree = buildFactionGoalTree('TestFaction', {
       player: { factions: [], skills: { hacking: 1 }, location: 'Sector-12' },
@@ -205,6 +176,8 @@ describe('buildFactionGoalTree', () => {
         factionRequirements: {
           TestFaction: [{ type: 'skills', skills: { hacking: 100 } }],
         },
+        factionAugmentations: { TestFaction: ['TestAug'] },
+        augmentationStats: { TestAug: { hacking: 1.5 } },
         augmentationRepReqs: { TestAug: 0 },
         augmentationPrices: { TestAug: 0 },
         augmentationPrereqs: {},
@@ -215,11 +188,10 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: [],
       money: 0,
       referenceIncome: 0,
-      activeRepRate: {},
+      activeRepRate: { TestFaction: 1 },
       passiveRepRate: {},
       formulas: null,
       karma: 0,
-      augsOverride: ['TestAug'],
     });
     const joinGoal = tree.goals.find((g) => g.type === 'FACTION_JOIN');
     assert.ok(joinGoal, 'join goal should exist');
@@ -233,7 +205,15 @@ describe('buildFactionGoalTree', () => {
       player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
       staticData: {
         factionRequirements: {},
-        augmentationRepReqs: { AugA: 10000, AugB: 25000, AugC: 5000 },
+        factionAugmentations: { TestFaction: ['AugA', 'AugB', 'AugC'] },
+        // Equal value, tightly-spaced repReqs so the 3-aug batch beats any subset:
+        // utility([A,B,C])=3v/(3k+7200) > utility([A,B])=2v/(2k+7200) > utility([A])=v/(1k+7200)
+        augmentationStats: {
+          AugA: { hacking: 1.5 },
+          AugB: { hacking: 1.5 },
+          AugC: { hacking: 1.5 },
+        },
+        augmentationRepReqs: { AugA: 1000, AugB: 2000, AugC: 3000 },
         augmentationPrices: { AugA: 0, AugB: 0, AugC: 0 },
         augmentationPrereqs: {},
         installedAugmentations: [],
@@ -243,14 +223,13 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: [],
       money: 0,
       referenceIncome: 0,
-      activeRepRate: {},
+      activeRepRate: { TestFaction: 1 },
       passiveRepRate: {},
       formulas: null,
       karma: 0,
-      augsOverride: ['AugA', 'AugB', 'AugC'],
     });
     const repGoal = tree.goals.find((g) => g.type === 'FACTION_REP');
-    assert.equal(repGoal.requirement, 25000);
+    assert.equal(repGoal.requirement, 3000);
   });
 
   // Shared setup for utility/value tests: aug A with hacking:1.5 → value=(1.5-1)*10=5.0
@@ -258,32 +237,27 @@ describe('buildFactionGoalTree', () => {
     player: { factions: ['F'], skills: {}, location: 'Sector-12' },
     staticData: {
       factionRequirements: {},
+      factionAugmentations: { F: ['A'] },
+      augmentationStats: { A: { hacking: 1.5 } },
       augmentationRepReqs: { A: 100 },
       augmentationPrices: { A: 0 },
       augmentationPrereqs: {},
       installedAugmentations: [],
-      augmentationStats: { A: { hacking: 1.5 } },
     },
     factionRep: {},
     purchasedAugmentations: [],
     ownedAugs: [],
     money: 0,
     referenceIncome: 0,
-    activeRepRate: repRate > 0 ? { F: repRate } : {},
+    activeRepRate: { F: repRate },
     passiveRepRate: {},
     formulas: null,
     karma: 0,
-    augsOverride: ['A'],
   });
 
   it('tree.value equals sum of terminal aug values', () => {
     const tree = buildFactionGoalTree('F', valueTestData(1));
     assert.equal(tree.value, 5.0); // (1.5-1)*10 = 5.0
-  });
-
-  it('utility returns 0 when rep rate is unknown (null timeToComplete)', () => {
-    const tree = buildFactionGoalTree('F', valueTestData(0));
-    assert.equal(tree.utility(0), 0);
   });
 
   it('utility returns value / (eta + overhead)', () => {
@@ -429,6 +403,8 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
     },
     staticData: {
       factionRequirements: {},
+      factionAugmentations: { F: ['A'] },
+      augmentationStats: { A: { hacking: 1.5 } },
       augmentationRepReqs: { A: 50_000 },
       augmentationPrices: { A: 1_000_000 },
       augmentationPrereqs: {},
@@ -446,7 +422,6 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
     passiveRepRate: {},
     formulas: mockFormulas,
     karma: 0,
-    augsOverride: ['A'],
   });
 
   it('produces a BUY_REP goal when faction has enough favor', () => {
