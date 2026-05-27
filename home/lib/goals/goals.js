@@ -59,7 +59,7 @@ export const getGoals = (ns) => {
 
     if (ramGoals.length > 0) {
       for (const g of bestPlan.goals) {
-        if (g.type === 'AUGMENTATION' || g.type === 'INSTALL')
+        if (g.type === 'INSTALL')
           g.deps.push(...ramGoals);
       }
       return [...ramGoals, ...bestPlan.goals];
@@ -76,8 +76,8 @@ export const getGoals = (ns) => {
 /** @param {NS} ns @returns {number | null} */
 export const getTimeToComplete = (ns) => {
   const goals = getGoals(ns);
-  const augGoals = goals.filter(g => g.type === 'AUGMENTATION');
-  const roots = augGoals.length > 0 ? augGoals : goals.filter(g => g.type === 'INSTALL');
+  const installGoals = goals.filter(g => g.type === 'INSTALL');
+  const roots = installGoals.length > 0 ? installGoals : goals.filter(g => g.type === 'AUGMENTATION');
   if (roots.length === 0) return null;
   const times = roots.map(g => g.timeToComplete());
   if (times.some(t => t == null)) return null;

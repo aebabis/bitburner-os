@@ -1,9 +1,9 @@
 import {
   factionRepGoal, augMoneyGoal, augmentationGoal, neurofluxGoal, installGoal,
   factionJoinGoal, hackingLevelGoal, combatLevelsGoal, killsGoal, karmaGoal,
-  moneyPrereqGoal, locationGoal, COMBAT_STATS, NEUROFLUX,
+  moneyPrereqGoal, locationGoal, factionFavorGoal, buyRepGoal, COMBAT_STATS, NEUROFLUX,
 } from "./nodes.js";
-import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost, augValueFromStats, shouldEarlyInstall } from "../aug-select.js";
+import { findOptimalBatch, MAX_AUGS, computeRepReq, computeAugCost, augValueFromStats, shouldEarlyInstall, shouldPursueFavor, computeResetOverhead } from "../aug-select.js";
 
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.
@@ -177,19 +177,20 @@ export const buildFactionGoalTree = (faction, {
   };
 
   const augs = getPurchaseOrder(batch);
-
   const repReq = computeRepReq(augs, staticData);
   const repRate = activeRepRate[faction]
     || passiveRepRate[faction]
     || formulas?.work.factionGains(player, 'hacking', staticData.factionFavor?.[faction])?.reputation * 5;
-  const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, repRate);
 
   const installedSet = new Set(staticData.installedAugmentations);
   const numQueued = purchasedAugmentations.filter(aug => !installedSet.has(aug)).length;
   const costToAug = computeAugCost(augs, staticData, numQueued);
+  const treeValue = augs.reduce((s, aug) => s + augValue(aug), 0);
 
-  const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
+  const currentFavor = staticData.factionFavor?.[faction] ?? 0;
+  const currentRep = factionRep[faction] ?? 0;
 
+  // Path 1: Early install — existing queued augs are cheaper to install now than waiting
   if (shouldEarlyInstall(numQueued, augs.length, costToAug, money, referenceIncome)) {
     const queuedAugs = purchasedAugmentations.filter(aug => !installedSet.has(aug));
     const queuedAugGoals = queuedAugs.map(aug =>
@@ -197,7 +198,7 @@ export const buildFactionGoalTree = (faction, {
     const earlyInstall = installGoal(queuedAugGoals);
     const earlyValue = earlyInstall.value;
     return {
-      goals: [...joinPrereqs, joinGoal, repGoal, ...queuedAugGoals, earlyInstall],
+      goals: [...joinPrereqs, joinGoal, ...queuedAugGoals, earlyInstall],
       terminalGoals: [earlyInstall],
       value: earlyValue,
       utility(overhead) {
@@ -207,14 +208,61 @@ export const buildFactionGoalTree = (faction, {
     };
   }
 
+  const canDonate = currentFavor >= (staticData.favorToDonate ?? Infinity);
+
+  // Path 2: Favor grind — softReset to reach donation threshold, then donate next cycle
+  if (!canDonate && shouldPursueFavor(faction, repReq, costToAug, currentRep, currentFavor, repRate, referenceIncome, money, player, formulas, staticData)) {
+    const { favorToDonate } = staticData;
+    const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
+    const favorGain = staticData.factionFavorGain?.[faction] ?? 0;
+    const favorGoal = factionFavorGoal(faction, repForFavor, currentRep, currentFavor, favorGain, favorToDonate, repRate, joinGoal);
+    const favorInstall = installGoal([favorGoal], "Soft reset for favor");
+    return {
+      goals: [...joinPrereqs, joinGoal, favorGoal, favorInstall],
+      terminalGoals: [favorInstall],
+      value: treeValue,
+      utility(overhead) {
+        const tFavor = favorInstall.timeToComplete();
+        if (tFavor == null || treeValue === 0) return 0;
+        const donationRate = formulas.reputation.donationForRep(1, player);
+        const tN1 = (repReq * donationRate + costToAug) / referenceIncome;
+        return treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead);
+      },
+    };
+  }
+
   const nfBaseOrdinal = purchasedAugmentations.filter(a => a === NEUROFLUX).length + 1;
   let nfOrdinal = nfBaseOrdinal;
+
+  // Path 3: Donation — faction has enough favor; buy remaining rep with money
+  if (canDonate) {
+    const donationRate = formulas?.reputation?.donationForRep(1, player) ?? Infinity;
+    const donationCost = Math.max(0, repReq - currentRep) * donationRate;
+    const moneyGoal = augMoneyGoal(costToAug + donationCost, money, referenceIncome);
+    const repGoal = buyRepGoal(faction, repReq, currentRep, [moneyGoal]);
+    const augGoals = augs.map(aug =>
+      aug === NEUROFLUX
+        ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug))
+        : augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug)));
+    return {
+      goals: [...joinPrereqs, joinGoal, moneyGoal, repGoal, ...augGoals],
+      terminalGoals: augGoals,
+      value: treeValue,
+      utility(overhead) {
+        const times = augGoals.map(g => g.timeToComplete());
+        if (times.some(t => t == null) || treeValue === 0) return 0;
+        return treeValue / (Math.max(.../** @type {number[]} */ (times)) + overhead);
+      },
+    };
+  }
+
+  // Path 4: Normal — grind faction rep
+  const repGoal = factionRepGoal(faction, repReq, factionRep, joinGoal, repRate);
+  const moneyGoal = augMoneyGoal(costToAug, money, referenceIncome);
   const augGoals = augs.map(aug =>
     aug === NEUROFLUX
       ? neurofluxGoal(nfOrdinal++, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug))
       : augmentationGoal(aug, faction, purchasedAugmentations, [repGoal, moneyGoal], augValue(aug)));
-
-  const treeValue = augGoals.reduce((s, g) => s + g.value, 0);
   return {
     goals: [...joinPrereqs, joinGoal, repGoal, moneyGoal, ...augGoals],
     terminalGoals: augGoals,

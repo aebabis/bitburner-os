@@ -2,9 +2,10 @@ import { DARK } from "../colors.js";
 
 const fmt = new Intl.NumberFormat("en", { notation: "compact" });
 const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
+const fmtRep = (/** @type {number} */ n) => fmt.format(n);
 
 /**
- * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'KILLS' | 'KARMA' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
+ * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'FACTION_FAVOR' | 'BUY_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'KILLS' | 'KARMA' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
  */
 
 /**
@@ -56,9 +57,9 @@ export const jobRamGoal = (poolServer, currentRam, requiredJobRam, jobRamCost, c
       ownTime: () => referenceIncome > 0 ? Math.max(0, jobRamCost - currentMoney) / referenceIncome : null,
     });
 
-/** @param {import('./nodes.js').Goal[]} deps @returns {Goal} */
-export const installGoal = (deps) =>
-  goal("INSTALL", "Run augmentation suite", () => false,
+/** @param {import('./nodes.js').Goal[]} deps @param {string} [desc] @returns {Goal} */
+export const installGoal = (deps, desc = "Run augmentation suite") =>
+  goal("INSTALL", desc, () => false,
     { deps, value: deps.reduce((s, d) => s + d.value, 0), ownTime: () => 0 });
 
 /** @param {number} hackReq @param {number} currentHacking @param {number|null} [trainingTime] @returns {Goal} */
@@ -148,4 +149,38 @@ export const neurofluxGoal = (ordinal, faction, purchasedAugmentations, deps, va
   goal("AUGMENTATION", NEUROFLUX,
     () => purchasedAugmentations.filter(a => a === NEUROFLUX).length >= ordinal,
     { faction, deps, value, ownTime: () => 0 });
+
+/**
+ * @param {string} faction
+ * @param {number} repForFavor - rep required so next reset reaches favorToDonate
+ * @param {number} currentRep
+ * @param {number} currentFavor
+ * @param {number} favorGain - favor gained at next reset
+ * @param {number} favorToDonate
+ * @param {number|undefined} repRate
+ * @param {Goal} dep - joinGoal
+ * @returns {Goal}
+ */
+export const factionFavorGoal = (faction, repForFavor, currentRep, currentFavor, favorGain, favorToDonate, repRate, dep) => {
+  const remaining = Math.max(0, repForFavor - currentRep);
+  return goal("FACTION_FAVOR", `${fmtRep(remaining)} rep for favor (${faction})`,
+    () => currentFavor + favorGain >= favorToDonate,
+    {
+      faction,
+      deps: [dep],
+      ownTime: () => repRate > 0 ? remaining / repRate : null,
+    });
+};
+
+/**
+ * @param {string} faction
+ * @param {number} repRequired
+ * @param {number} currentRep
+ * @param {Goal[]} deps
+ * @returns {Goal}
+ */
+export const buyRepGoal = (faction, repRequired, currentRep, deps) =>
+  goal("BUY_REP", `Buy ${fmtRep(repRequired)} rep (${faction})`,
+    () => currentRep >= repRequired,
+    { faction, deps, ownTime: () => 0 });
 
