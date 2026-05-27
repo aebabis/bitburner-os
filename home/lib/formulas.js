@@ -48,8 +48,22 @@ export const getMockFormulas = (staticData) => {
     (staticData.hacknetMultipliers?.production ?? 1) *
     (staticData.bitNodeMultipliers?.HacknetNodeMoney ?? 1);
 
+  const factionRepMult = () => getAugMult('faction_rep');
+
   return {
     skills: { calculateExp, calculateSkill },
+    reputation: {
+      /** @param {number} favor */
+      calculateFavorToRep: (favor) => 25000 * (1.02 ** favor - 1),
+      /** @param {number} rep */
+      calculateRepToFavor: (rep) =>
+        Math.floor(Math.log(rep / 25000 + 1) / Math.log(1.02)),
+      /** @param {number} amount @param {Person} _player */
+      repFromDonation: (amount, _player) => (amount / 1e6) * factionRepMult(),
+      /** @param {number} reputation @param {Person} _player */
+      donationForRep: (reputation, _player) =>
+        (reputation * 1e6) / factionRepMult(),
+    },
     hacking: {
       /** @param {{requiredHackingSkill?: number}} server @param {Person} _player */
       hackExp: (server, _player) =>
@@ -92,4 +106,22 @@ export const formulas = (ns) => {
   } else {
     return getMockFormulas(getStaticData(ns));
   }
+};
+
+/**
+ * Construct a Person for use in Formulas API speculation.
+ * Starts from the game's base mock (all-1 multipliers, all-1 skills) and
+ * deep-merges the provided overrides for skills and mults.
+ * Requires Formulas.exe.
+ * @param {NS} ns
+ * @param {{ skills?: Partial<Skills>, mults?: Partial<Multipliers> }} [overrides]
+ * @returns {Person}
+ */
+export const speculativePerson = (ns, { skills, mults } = {}) => {
+  const base = ns.formulas.mockPerson();
+  return {
+    ...base,
+    skills: { ...base.skills, ...skills },
+    mults: { ...base.mults, ...mults },
+  };
 };

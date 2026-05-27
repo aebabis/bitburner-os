@@ -80,7 +80,7 @@ const OVERHEAD_BASE = 120 * 60;
  */
 export const computeResetOverhead = (staticData) => {
   const installedAugs = staticData.installedAugmentations ?? [];
-  const lastAugReset = staticData.resetInfo.lastAugReset ?? 0;
+  const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
   const timeSinceInstall =
     lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
   return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));

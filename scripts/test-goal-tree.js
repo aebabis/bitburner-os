@@ -1,8 +1,16 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { augMoneyGoal, factionJoinGoal, factionRepGoal, karmaGoal, augmentationGoal, installGoal } from '../home/lib/goals/nodes.js';
+import {
+  augMoneyGoal,
+  factionJoinGoal,
+  factionRepGoal,
+  karmaGoal,
+  augmentationGoal,
+  installGoal,
+} from '../home/lib/goals/nodes.js';
 import { isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
 import { computeRepReq, computeAugCost } from '../home/lib/aug-select.js';
+import { getMockFormulas } from '../home/lib/formulas.js';
 
 describe('Goal node factories', () => {
   describe('augMoneyGoal', () => {
@@ -23,7 +31,10 @@ describe('Goal node factories', () => {
     });
 
     it('ownTime() is 0 when rep is already met', () => {
-      assert.equal(factionRepGoal('F', 1000, { F: 1000 }, join, 1).ownTime(), 0);
+      assert.equal(
+        factionRepGoal('F', 1000, { F: 1000 }, join, 1).ownTime(),
+        0,
+      );
     });
   });
 
@@ -135,10 +146,10 @@ describe('buildFactionGoalTree', () => {
         augmentationRepReqs: { TargetAug: 0 },
         augmentationPrices: { TargetAug: AUG_PRICE },
         augmentationPrereqs: {},
-        installedAugmentations: ['InstalledAug'],     // 1 installed
+        installedAugmentations: ['InstalledAug'], // 1 installed
       },
       factionRep: { TestFaction: 0 },
-      purchasedAugmentations: ['InstalledAug', 'QueuedAug'],  // 1 installed + 1 queued
+      purchasedAugmentations: ['InstalledAug', 'QueuedAug'], // 1 installed + 1 queued
       ownedAugs: ['InstalledAug', 'QueuedAug'],
       money: AUG_PRICE * 2,
       referenceIncome: 1,
@@ -149,10 +160,13 @@ describe('buildFactionGoalTree', () => {
       augsOverride: ['TargetAug'],
     });
 
-    const moneyGoal = tree.goals.find(g => g.type === 'AUG_MONEY');
+    const moneyGoal = tree.goals.find((g) => g.type === 'AUG_MONEY');
     // correct: requirement = 1.9^1 × price = 1.9M ≤ money (2M) → isDone
     // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
-    assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
+    assert.ok(
+      moneyGoal.isDone(),
+      `expected isDone but requirement was ${moneyGoal.requirement}`,
+    );
   });
   it('augsOverride skips findOptimalBatch', () => {
     // SpecificAug is not in factionAugmentations — findOptimalBatch would never select it.
@@ -178,14 +192,19 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
       augsOverride: ['SpecificAug'],
     });
-    const augGoals = tree.goals.filter(g => g.type === 'AUGMENTATION');
-    assert.deepEqual(augGoals.map(g => g.desc), ['SpecificAug']);
+    const augGoals = tree.goals.filter((g) => g.type === 'AUGMENTATION');
+    assert.deepEqual(
+      augGoals.map((g) => g.desc),
+      ['SpecificAug'],
+    );
   });
   it('join prereqs appear as deps of the join goal', () => {
     const tree = buildFactionGoalTree('TestFaction', {
       player: { factions: [], skills: { hacking: 1 }, location: 'Sector-12' },
       staticData: {
-        factionRequirements: { TestFaction: [{ type: 'skills', skills: { hacking: 100 } }] },
+        factionRequirements: {
+          TestFaction: [{ type: 'skills', skills: { hacking: 100 } }],
+        },
         augmentationRepReqs: { TestAug: 0 },
         augmentationPrices: { TestAug: 0 },
         augmentationPrereqs: {},
@@ -202,9 +221,12 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
       augsOverride: ['TestAug'],
     });
-    const joinGoal = tree.goals.find(g => g.type === 'FACTION_JOIN');
+    const joinGoal = tree.goals.find((g) => g.type === 'FACTION_JOIN');
     assert.ok(joinGoal, 'join goal should exist');
-    assert.ok(joinGoal.deps.some(d => d.type === 'HACKING_LEVEL'), 'join goal should have a HACKING_LEVEL dep');
+    assert.ok(
+      joinGoal.deps.some((d) => d.type === 'HACKING_LEVEL'),
+      'join goal should have a HACKING_LEVEL dep',
+    );
   });
   it('rep goal requirement equals max rep requirement across batch', () => {
     const tree = buildFactionGoalTree('TestFaction', {
@@ -227,7 +249,7 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
       augsOverride: ['AugA', 'AugB', 'AugC'],
     });
-    const repGoal = tree.goals.find(g => g.type === 'FACTION_REP');
+    const repGoal = tree.goals.find((g) => g.type === 'FACTION_REP');
     assert.equal(repGoal.requirement, 25000);
   });
 
@@ -309,7 +331,10 @@ describe('computeAugCost', () => {
     const staticData = { augmentationPrices: { Cheap: 100, Expensive: 1000 } };
     // sorted desc: Expensive (×1.9^0), Cheap (×1.9^1)
     const expected = 1000 * 1 + 100 * 1.9;
-    assert.equal(computeAugCost(['Cheap', 'Expensive'], staticData, 0), expected);
+    assert.equal(
+      computeAugCost(['Cheap', 'Expensive'], staticData, 0),
+      expected,
+    );
   });
 
   it('applies the 1.14^installedNFCount base offset to NF price', () => {
@@ -357,5 +382,85 @@ describe('isRepBound', () => {
     const repGoal = factionRepGoal('TestFaction', 500, {}, joinGoal, 1);
     const moneyGoal = augMoneyGoal(1000, 0, 0.5);
     assert.equal(isRepBound([repGoal, moneyGoal]), false);
+  });
+});
+
+const mockFormulas = getMockFormulas({ installedAugmentations: [] });
+
+describe('getMockFormulas reputation', () => {
+  it('calculateFavorToRep(0) is 0', () => {
+    assert.equal(mockFormulas.reputation.calculateFavorToRep(0), 0);
+  });
+
+  it('calculateRepToFavor is the inverse of calculateFavorToRep', () => {
+    for (const favor of [1, 10, 50, 100, 150]) {
+      const rep = mockFormulas.reputation.calculateFavorToRep(favor);
+      assert.equal(mockFormulas.reputation.calculateRepToFavor(rep), favor);
+    }
+  });
+
+  it('donationForRep is the inverse of repFromDonation', () => {
+    const rep = 100_000;
+    const cost = mockFormulas.reputation.donationForRep(rep, {});
+    const repBack = mockFormulas.reputation.repFromDonation(cost, {});
+    assert.ok(Math.abs(repBack - rep) < 1e-6);
+  });
+
+  it('donationForRep scales with faction_rep aug mult', () => {
+    const base = getMockFormulas({ installedAugmentations: [] });
+    const boosted = getMockFormulas({
+      installedAugmentations: ['FactionAug'],
+      augmentationStats: { FactionAug: { faction_rep: 1.25 } },
+    });
+    const baseCost = base.reputation.donationForRep(1000, {});
+    const boostedCost = boosted.reputation.donationForRep(1000, {});
+    assert.ok(boostedCost < baseCost, 'aug mult should reduce donation cost');
+    assert.ok(Math.abs(boostedCost - baseCost / 1.25) < 1e-6);
+  });
+});
+
+describe('buildFactionGoalTree path 3 (donation)', () => {
+  // canDonate = true when factionFavor >= favorToDonate
+  const donationData = () => ({
+    player: {
+      factions: ['F'],
+      skills: { hacking: 200 },
+      location: 'Sector-12',
+    },
+    staticData: {
+      factionRequirements: {},
+      augmentationRepReqs: { A: 50_000 },
+      augmentationPrices: { A: 1_000_000 },
+      augmentationPrereqs: {},
+      installedAugmentations: [],
+      factionFavor: { F: 150 },
+      favorToDonate: 150,
+    },
+    factionRep: { F: 0 },
+    purchasedAugmentations: [],
+    ownedAugs: [],
+    money: 0,
+    estimatedStockValue: 0,
+    referenceIncome: 1,
+    activeRepRate: { F: 1 },
+    passiveRepRate: {},
+    formulas: mockFormulas,
+    karma: 0,
+    augsOverride: ['A'],
+  });
+
+  it('produces a BUY_REP goal when faction has enough favor', () => {
+    const tree = buildFactionGoalTree('F', donationData());
+    assert.ok(tree, 'tree should not be null');
+    const repGoal = tree.goals.find((g) => g.type === 'BUY_REP');
+    assert.ok(repGoal, 'should have a BUY_REP goal');
+  });
+
+  it('money goal includes donation cost', () => {
+    const tree = buildFactionGoalTree('F', donationData());
+    const moneyGoal = tree.goals.find((g) => g.type === 'AUG_MONEY');
+    // donationForRep(50000, player) = 50000 * 1e6 / 1 = 5e10; augCost = 1e6
+    const expectedDonation = mockFormulas.reputation.donationForRep(50_000, {});
+    assert.equal(moneyGoal.requirement, 1_000_000 + expectedDonation);
   });
 });

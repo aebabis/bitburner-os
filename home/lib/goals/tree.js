@@ -219,7 +219,7 @@ export const buildFactionGoalTree = (
     purchasedAugmentations,
     ownedAugs,
     money,
-    estimatedStockValue,
+    estimatedStockValue = 0,
     referenceIncome,
     activeRepRate,
     passiveRepRate,
