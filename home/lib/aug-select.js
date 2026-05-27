@@ -185,7 +185,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  * @param {ReturnType<typeof getMockFormulas>} formulas
  * @param {Record<string, number>} factionRep
  * @param {string[]} ownedAugmentations - installed + purchased (for stillNeeds filter)
- * @param {{ moneyRate?: number, repRate?: number, activeRepRate?: Record<string,number>, passiveRepRate?: Record<string,number> }} [opts]
+ * @param {{ moneyRate?: number, joinTime?: number }} [opts]
  * @returns {{ utility: number, batch: string[] }}
  */
 export const findOptimalBatch = (
@@ -195,13 +195,7 @@ export const findOptimalBatch = (
   formulas,
   factionRep,
   ownedAugmentations,
-  {
-    moneyRate = Infinity,
-    repRate,
-    activeRepRate,
-    passiveRepRate,
-    joinTime = 0,
-  } = {},
+  { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
   const {
     augmentationPrices,
@@ -236,11 +230,6 @@ export const findOptimalBatch = (
     'hacking',
     factionFavor?.[faction],
   );
-  const effectiveRepRate =
-    activeRepRate?.[faction] ??
-    passiveRepRate?.[faction] ??
-    repRate ??
-    gainRate?.reputation * 5;
 
   const resetOverhead = computeResetOverhead(staticData);
 
@@ -294,7 +283,12 @@ export const findOptimalBatch = (
       : totalPrice;
     const timeForMoney =
       Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
-    const timeForRep = canDonate ? 0 : bindingRep / effectiveRepRate;
+    const timeForRep =
+      canDonate || bindingRep === 0
+        ? 0
+        : gainRate != null
+          ? bindingRep / (gainRate.reputation * 5)
+          : Infinity;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
 

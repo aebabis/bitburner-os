@@ -13,24 +13,5 @@ export async function main(ns) {
     ns.singularity.workForFaction(faction, 'security', focus)
   ) {
     putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
-    const start = new Date();
-    const repBefore = ns.singularity.getFactionRep(faction);
-
-    await ns.sleep(duration * 1000);
-
-    const end = new Date();
-    const repAfter = ns.singularity.getFactionRep(faction);
-
-    const seconds = (+end - +start) / 1000;
-    const repRate = (repAfter - repBefore) / seconds;
-
-    const { factionRep = {}, activeRepRate = {} } = getPlayerData(ns);
-    factionRep[faction] = ns.singularity.getFactionRep(faction);
-    activeRepRate[faction] = repRate;
-    putPlayerData(ns, {
-      factionRep,
-      activeRepRate,
-      currentWork: ns.singularity.getCurrentWork(),
-    });
   }
 }

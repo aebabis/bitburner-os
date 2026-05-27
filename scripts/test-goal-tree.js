@@ -110,7 +110,6 @@ describe('timeToComplete', () => {
 describe('buildFactionGoalTree', () => {
   it('returns null when batch is empty', () => {
     // All augs already owned → findOptimalBatch returns [] → buildFactionGoalTree returns null.
-    // activeRepRate provides repRate so formulas.work.factionGains is never called.
     const tree = buildFactionGoalTree('TestFaction', {
       player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
       staticData: {
@@ -127,8 +126,6 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: ['OwnedAug'],
       money: 0,
       referenceIncome: 0,
-      activeRepRate: { TestFaction: 1 },
-      passiveRepRate: {},
       formulas: null,
       karma: 0,
     });
@@ -155,8 +152,6 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: ['InstalledAug', 'QueuedAug'],
       money: AUG_PRICE * 2,
       referenceIncome: 1,
-      activeRepRate: { TestFaction: 1 },
-      passiveRepRate: {},
       formulas: null,
       karma: 0,
     });
@@ -188,8 +183,6 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: [],
       money: 0,
       referenceIncome: 0,
-      activeRepRate: { TestFaction: 1 },
-      passiveRepRate: {},
       formulas: null,
       karma: 0,
     });
@@ -202,7 +195,11 @@ describe('buildFactionGoalTree', () => {
   });
   it('rep goal requirement equals max rep requirement across batch', () => {
     const tree = buildFactionGoalTree('TestFaction', {
-      player: { factions: ['TestFaction'], skills: {}, location: 'Sector-12' },
+      player: {
+        factions: ['TestFaction'],
+        skills: { hacking: 195 },
+        location: 'Sector-12',
+      },
       staticData: {
         factionRequirements: {},
         factionAugmentations: { TestFaction: ['AugA', 'AugB', 'AugC'] },
@@ -223,9 +220,7 @@ describe('buildFactionGoalTree', () => {
       ownedAugs: [],
       money: 0,
       referenceIncome: 0,
-      activeRepRate: { TestFaction: 1 },
-      passiveRepRate: {},
-      formulas: null,
+      formulas: mockFormulas,
       karma: 0,
     });
     const repGoal = tree.goals.find((g) => g.type === 'FACTION_REP');
@@ -233,8 +228,14 @@ describe('buildFactionGoalTree', () => {
   });
 
   // Shared setup for utility/value tests: aug A with hacking:1.5 → value=(1.5-1)*10=5.0
+  // repRate=N requires hacking = N * 195: factionGains(player,'hacking',0).reputation = hacking/975,
+  // effectiveRepRate = reputation * 5 = N when hacking = N * 195.
   const valueTestData = (repRate) => ({
-    player: { factions: ['F'], skills: {}, location: 'Sector-12' },
+    player: {
+      factions: ['F'],
+      skills: { hacking: repRate * 195 },
+      location: 'Sector-12',
+    },
     staticData: {
       factionRequirements: {},
       factionAugmentations: { F: ['A'] },
@@ -249,9 +250,7 @@ describe('buildFactionGoalTree', () => {
     ownedAugs: [],
     money: 0,
     referenceIncome: 0,
-    activeRepRate: { F: repRate },
-    passiveRepRate: {},
-    formulas: null,
+    formulas: mockFormulas,
     karma: 0,
   });
 
@@ -418,8 +417,6 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
     money: 0,
     estimatedStockValue: 0,
     referenceIncome: 1,
-    activeRepRate: { F: 1 },
-    passiveRepRate: {},
     formulas: mockFormulas,
     karma: 0,
   });

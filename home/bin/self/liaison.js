@@ -1,48 +1,26 @@
 import { getPlayerData, putPlayerData } from '../../lib/data-store';
 import { FACTIONS } from '../../lib/factions';
-import { Timeline } from '../../lib/timeline';
 import { table } from '../../lib/table';
 
 /** @param {NS} ns */
 export async function main(ns) {
   ns.disableLog('ALL');
-  const {
-    factionRep = /** @type {Record<string, number>} */ ({}),
-    activeRepRate = /** @type {Record<string, number>} */ ({}),
-    passiveRepRate = /** @type {Record<string, number>} */ ({}),
-  } = getPlayerData(ns);
-
-  const timelines = /** @type {Record<string, Timeline>} */ ({});
-
-  for (const faction of FACTIONS) timelines[faction] = new Timeline();
+  const { factionRep = /** @type {Record<string, number>} */ ({}) } =
+    getPlayerData(ns);
 
   while (true) {
-    const now = Date.now();
     for (const faction of FACTIONS) {
-      const curRep = ns.singularity.getFactionRep(faction);
-      factionRep[faction] = curRep;
-
-      // Prevent double-counting
-      if (activeRepRate[faction] > 0) {
-        const timeline = timelines[faction];
-        timeline.addPoint(now, curRep);
-        const rep60s = curRep - timeline.findValue(now - 60000);
-        passiveRepRate[faction] = rep60s / 60;
-      }
+      factionRep[faction] = ns.singularity.getFactionRep(faction);
     }
 
     const n = (/** @type {number} */ num) => ns.format.number(num || 0, 1);
     const tableData = FACTIONS.slice()
       .sort()
-      .map((faction) => [
-        faction,
-        n(passiveRepRate[faction]),
-        n(activeRepRate[faction]),
-      ]);
+      .map((faction) => [faction, n(factionRep[faction])]);
     ns.clearLog();
-    ns.print(table(ns, ['FACTION', 'P REP', 'W REP'], tableData));
+    ns.print(table(ns, ['FACTION', 'REP'], tableData));
 
-    putPlayerData(ns, { factionRep, passiveRepRate });
+    putPlayerData(ns, { factionRep });
     await ns.sleep(200);
   }
 }

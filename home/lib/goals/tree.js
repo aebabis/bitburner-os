@@ -202,8 +202,6 @@ export const isRepBound = (goals) => {
  *   money: number,
  *   estimatedStockValue: number,
  *   referenceIncome: number,
- *   activeRepRate: Record<string, number>,
- *   passiveRepRate: Record<string, number>,
  *   formulas: ReturnType<import('../formulas.js').getMockFormulas>,
  *   karma: number,
  * }} data
@@ -220,8 +218,6 @@ export const buildFactionGoalTree = (
     money,
     estimatedStockValue = 0,
     referenceIncome,
-    activeRepRate,
-    passiveRepRate,
     formulas,
     karma,
   },
@@ -251,7 +247,7 @@ export const buildFactionGoalTree = (
     formulas,
     factionRep,
     ownedAugs,
-    { moneyRate, activeRepRate, passiveRepRate, joinTime },
+    { moneyRate, joinTime },
   );
   if (batch.length === 0) return null;
 
@@ -278,8 +274,6 @@ export const buildFactionGoalTree = (
   const augs = getPurchaseOrder(batch);
   const repReq = computeRepReq(augs, staticData);
   const repRate =
-    activeRepRate[faction] ||
-    passiveRepRate[faction] ||
     formulas?.work.factionGains(
       player,
       'hacking',

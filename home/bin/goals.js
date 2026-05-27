@@ -113,13 +113,18 @@ export async function main(ns) {
         } = getAugTableData(ns);
         const { referenceIncome = 0 } = getMoneyData(ns);
         const {
+          player: augLivePlayer,
           factionRep = /** @type {Record<string, number>} */ ({}),
-          activeRepRate = /** @type {Record<string, number>} */ ({}),
         } = getPlayerData(ns);
 
         const {
           factionAugmentations = /** @type {Record<string, string[]>} */ ({}),
+          factionFavor:
+            augLiveFactionFavor = /** @type {Record<string, number>} */ ({}),
         } = getStaticData(ns);
+        const augLiveFormulas = ns.fileExists('Formulas.exe', 'home')
+          ? ns.formulas
+          : getMockFormulas({ installedAugmentations: [] });
         const augFactions = /** @type {Record<string, string[]>} */ ({});
         for (const [faction, augs] of Object.entries(factionAugmentations))
           for (const aug of augs) (augFactions[aug] ??= []).push(faction);
@@ -132,7 +137,17 @@ export async function main(ns) {
             const price = (augmentationPrices[aug] ?? 0) * nfMult;
             const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
             const factions = augFactions[aug] ?? [];
-            const bestRepRate = Math.max(0, ...Object.values(activeRepRate));
+            const bestRepRate = Math.max(
+              0,
+              ...(augLivePlayer.factions ?? []).map(
+                (f) =>
+                  (augLiveFormulas.work.factionGains(
+                    augLivePlayer,
+                    'hacking',
+                    augLiveFactionFavor[f],
+                  )?.reputation ?? 0) * 5,
+              ),
+            );
             const bestCurrentRep = Math.max(
               0,
               ...factions.map((f) => factionRep[f] ?? 1),
@@ -195,8 +210,6 @@ export async function main(ns) {
           player,
           factionRep = {},
           purchasedAugmentations = [],
-          activeRepRate = {},
-          passiveRepRate = {},
         } = getPlayerData(ns);
         const { referenceIncome = 0 } = getMoneyData(ns);
         const formulas = ns.fileExists('Formulas.exe', 'home')
@@ -215,8 +228,6 @@ export async function main(ns) {
           ownedAugs,
           money: player.money ?? 0,
           referenceIncome,
-          activeRepRate,
-          passiveRepRate,
           formulas,
           karma: ns.heart.break(),
         };
@@ -230,7 +241,7 @@ export async function main(ns) {
               formulas,
               factionRep,
               ownedAugs,
-              { moneyRate, activeRepRate, passiveRepRate },
+              { moneyRate },
             );
             const nfCount = batch.filter((a) => a === NEUROFLUX).length;
             const nonNfCount = batch.length - nfCount;

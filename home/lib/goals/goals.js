@@ -8,13 +8,7 @@ import { needsAugRam, needsJobRam } from '../query-service.js';
 
 /** @param {NS} ns @returns {import('./nodes.js').Goal[]} */
 export const getGoals = (ns) => {
-  const {
-    player,
-    factionRep,
-    purchasedAugmentations = [],
-    activeRepRate = {},
-    passiveRepRate = {},
-  } = getPlayerData(ns);
+  const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
@@ -36,8 +30,6 @@ export const getGoals = (ns) => {
     money,
     estimatedStockValue,
     referenceIncome,
-    activeRepRate,
-    passiveRepRate,
     formulas,
     karma,
   };
