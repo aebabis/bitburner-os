@@ -28,6 +28,12 @@ export async function main(ns) {
   const hasEnoughRep = factionRepGoals.every((goal) => goal.isDone());
 
   if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {
+    const buyRepGoal = goals.find((goal) => goal.type === 'BUY_REP');
+    if (buyRepGoal != null) {
+      const donationRate = ns.formulas.reputation.donationForRep(1, ns.getPlayer());
+      ns.singularity.donateToFaction(buyRepGoal.faction, buyRepGoal.requirement * donationRate)
+    }
+
     for (const hostname of nmap(ns))
       for (const { pid } of ns.ps(hostname))
         if (pid !== ns.pid) {

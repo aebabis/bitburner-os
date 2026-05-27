@@ -301,5 +301,5 @@ export const buyRepGoal = (faction, repRequired, currentRep, deps) =>
     'BUY_REP',
     `Buy ${fmtRep(repRequired)} rep (${faction})`,
     () => currentRep >= repRequired,
-    { faction, deps, ownTime: () => 0 },
+    { faction, deps, requirement: repRequired - currentRep, ownTime: () => 0 },
   );
