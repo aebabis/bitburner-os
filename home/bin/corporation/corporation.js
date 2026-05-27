@@ -5,9 +5,11 @@ import { getStaticData, getCorpReports } from '../../lib/data-store';
 export async function main(ns) {
   ns.disableLog('ALL');
   ns.ui.openTail();
+  const { resetInfo } = getStaticData(ns);
 
   while (!ns.corporation.hasCorporation()) {
-    await rmi(ns)('/bin/corporation/create/corporation.js', 1, false);
+    const selfFund = resetInfo.currentNode !== 3;
+    await rmi(ns)('/bin/corporation/create/corporation.js', 1, selfFund);
   }
   
   while (getStaticData(ns).materialData == null)
