@@ -228,7 +228,7 @@ export const findOptimalBatch = (
   const gainRate = formulas.work.factionGains(
     player,
     'hacking',
-    factionFavor?.[faction],
+    factionFavor?.[faction] ?? 0,
   );
 
   const resetOverhead = computeResetOverhead(staticData);

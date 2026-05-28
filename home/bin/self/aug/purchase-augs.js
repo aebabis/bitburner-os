@@ -17,14 +17,14 @@ export async function main(ns) {
   const goals = getGoals(ns);
   const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
   const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
-  const moneyGoal = goals.find((goal) => goal.type === 'AUG_MONEY');
+  const moneyGoals = goals.filter((goal) => goal.type === 'AUG_MONEY');
 
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
 
   const inTargetFactions = factionJoinGoals.every((goal) => goal.isDone());
-  const hasEnoughMoney = moneyGoal?.isDone();
+  const hasEnoughMoney = moneyGoals.every((goal) => goal.isDone());
   const hasEnoughRep = factionRepGoals.every((goal) => goal.isDone());
 
   if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {

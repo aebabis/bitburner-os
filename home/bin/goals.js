@@ -142,7 +142,7 @@ export async function main(ns) {
                   (augLiveFormulas.work.factionGains(
                     augLivePlayer,
                     'hacking',
-                    augLiveFactionFavor[f],
+                    augLiveFactionFavor[f] ?? 0,
                   )?.reputation ?? 0) * 5,
               ),
             );

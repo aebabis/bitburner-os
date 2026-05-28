@@ -16,13 +16,9 @@ const getWorkFaction = (goals, factions, factionRep) => {
     (g.requirement ?? 0) - (factionRep[/** @type {string} */ (g.faction)] ?? 0);
   return (
     goals
-      .filter(
-        (g) =>
-          g.type === 'FACTION_REP' &&
-          g.faction != null &&
-          !g.isDone() &&
-          factions.includes(/** @type {string} */ (g.faction)),
-      )
+      .filter((g) => !g.isDone())
+      .filter((g) => g.type === 'FACTION_REP' || g.type === 'FACTION_FAVOR')
+      .filter((g) => g.faction && factions.includes(g.faction))
       .sort((a, b) => gap(b) - gap(a))[0]?.faction ?? null
   );
 };

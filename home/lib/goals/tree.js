@@ -276,7 +276,7 @@ export const buildFactionGoalTree = (
     formulas?.work.factionGains(
       player,
       'hacking',
-      staticData.factionFavor?.[faction],
+      staticData.factionFavor?.[faction] ?? 0,
     )?.reputation * 5;
 
   const installedSet = new Set(staticData.installedAugmentations);
