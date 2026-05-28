@@ -12,7 +12,7 @@ export async function main(ns) {
     'Market Research - Demand': () => false,
     'Market Data - Competition': () => false,
     'Government Partnership': () => false,
-    'Warehouse API': () => false,
+    'Warehouse API': () => true,
     'Office API': () => false,
   };
 

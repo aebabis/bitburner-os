@@ -26,7 +26,7 @@ export const getActions = (ns, divisionName, cityName) => {
     );
   };
 
-  /** @param {CorpMaterialName} material @param {number} amount @param {string} price */
+  /** @param {CorpMaterialName} material @param {number|string} amount @param {string} price */
   const sell = async (material, amount, price) => {
     await rmi(ns)(
       '/bin/corporation/orders/buy-material.js',

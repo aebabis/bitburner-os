@@ -9,11 +9,11 @@ const sum = (a, b) => a + b;
  * @return {number[]}
  */
 export const solveBoost = (S, ...csPairs) => {
-  const cs = csPairs.map(([c]) => c).reduce(sum);
+  const cs = csPairs.map(([c]) => c).reduce(sum, 0);
   const amounts = csPairs.map(([c, s], i) => {
     const others = csPairs.filter((_, idx) => idx !== i);
-    const oc = others.map(([c]) => c).reduce(sum);
-    const os = others.map(([, s]) => s).reduce(sum);
+    const oc = others.map(([c]) => c).reduce(sum, 0);
+    const os = others.map(([, s]) => s).reduce(sum, 0);
     return (S - 500 * ((s / c) * oc - os)) / (cs / c) / s;
   });
   const negIndex = amounts.findIndex((vol) => vol < 0);

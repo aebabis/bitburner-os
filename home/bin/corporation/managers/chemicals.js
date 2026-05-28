@@ -2,6 +2,7 @@ import { getStaticData } from '../../../lib/data-store';
 import { BOOST_MATERIALS, DivisionNames } from '../constants';
 import { getBoostTargets } from '../boost-solver';
 import { getActions } from '../orders/actions';
+import { getDivision } from './get-division';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -11,8 +12,10 @@ export async function main(ns) {
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
-  const division = ns.corporation.getDivision(divisionName);
   const { requiredMaterials } = industryData[INDUSTRY];
+  const division = getDivision(ns, divisionName);
+
+  if (division == null) return;
 
   /** @type {CorpMaterialName[]} */
   const materialNames = Object.keys(requiredMaterials);

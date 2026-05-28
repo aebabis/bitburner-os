@@ -2,6 +2,7 @@ import { getStaticData } from '../../../lib/data-store';
 import { BOOST_MATERIALS, DivisionNames } from '../constants';
 import { getBoostTargets } from '../boost-solver';
 import { getActions } from '../orders/actions';
+import { getDivision } from './get-division';
 
 /** @param {NS} ns */
 export async function main(ns) {
@@ -11,8 +12,10 @@ export async function main(ns) {
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
-  const division = ns.corporation.getDivision(divisionName);
   const { requiredMaterials } = industryData[INDUSTRY];
+  const division = getDivision(ns, divisionName);
+
+  if (division == null) return;
 
   /** @type {CorpMaterialName[]} */
   const materialNames = Object.keys(requiredMaterials);
@@ -85,32 +88,33 @@ export async function main(ns) {
       else await buy(material, 0);
     }
 
-    try {
-      const tobacco = DivisionNames['Tobacco'];
-      const chemical = DivisionNames['Chemical'];
-      const PLANT_TSL = Math.floor(10 / materialData['Plants'].size);
-      if (ns.corporation.hasWarehouse(tobacco, city)) {
-        await transfer(
-          divisionName,
-          city,
-          tobacco,
-          city,
-          'Plants',
-          `(-IPROD-IINV+${PLANT_TSL})/10`,
-        );
-      }
-      if (ns.corporation.hasWarehouse(chemical, city)) {
-        await transfer(
-          divisionName,
-          city,
-          chemical,
-          city,
-          'Plants',
-          `(-IPROD-IINV+${PLANT_TSL})/10`,
-        );
-      }
-    } catch (error) {
-      ns.tprint('You have to check if the division exists, I guess');
+    const tobacco = DivisionNames['Tobacco'];
+    const chemical = DivisionNames['Chemical'];
+    const hasTobacco = !!getDivision(ns, tobacco);
+    const hasChem = !!getDivision(ns, chemical);
+    const PLANT_TSL = Math.floor(10 / materialData['Plants'].size);
+    if (hasTobacco && ns.corporation.hasWarehouse(tobacco, city)) {
+      await transfer(
+        divisionName,
+        city,
+        tobacco,
+        city,
+        'Plants',
+        `(-IPROD-IINV+${PLANT_TSL})/10`,
+      );
     }
+    if (hasChem && ns.corporation.hasWarehouse(chemical, city)) {
+      await transfer(
+        divisionName,
+        city,
+        chemical,
+        city,
+        'Plants',
+        `(-IPROD-IINV+${PLANT_TSL})/10`,
+      );
+    }
+    await sell('Food', 'MAX', 'MP');
+    if (!hasTobacco && !hasChem) await sell('Plants', 'MAX', 'MP');
+    else await sell('Plants', 0, '100*MP');
   }
 }
