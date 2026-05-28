@@ -7,16 +7,22 @@ import { dump } from '../../../bin/broker/dump';
 const NEUROFLUX = 'NeuroFlux Governor';
 
 /** @param {NS} ns */
-export async function main(ns) {
-  ns.disableLog('ALL');
-  const { factions, money } = ns.getPlayer();
+const getPurchasedAugmentations = (ns) => {
   const installedAugmentations = ns.singularity.getOwnedAugmentations(false);
   const ownedAugmentations = ns.singularity.getOwnedAugmentations(true);
   const purchasedAugmentations = ownedAugmentations.slice();
   for (const aug of installedAugmentations)
     purchasedAugmentations.splice(purchasedAugmentations.indexOf(aug), 1);
+  return purchasedAugmentations;
+}
 
-  putPlayerData(ns, { purchasedAugmentations });
+/** @param {NS} ns */
+export async function main(ns) {
+  ns.disableLog('ALL');
+  const { factions, money } = ns.getPlayer();
+  putPlayerData(ns, {
+    purchasedAugmentations: getPurchasedAugmentations(ns),
+  });
 
   const goals = getGoals(ns);
   const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
@@ -122,8 +128,7 @@ export async function main(ns) {
       } while(ns.singularity.purchaseAugmentation(highestFavorFaction, NEUROFLUX));
     }
 
-    const allPurchases = ns.singularity.getOwnedAugmentations(true);
-    ns.write('/tmp/last-reset.txt', ns.format.time(Date.now()) + '\n' + allPurchases.join('\n'), 'w');
+    ns.write('/tmp/last-reset.txt', new Date().toString() + '\n' + getPurchasedAugmentations(ns).join('\n'), 'w');
 
     // Start all over
     await run('/bin/self/aug/install.js', 1);
