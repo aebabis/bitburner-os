@@ -27,7 +27,7 @@ const mostRootRam = (/** @type {NS} */ ns) => {
  **/
 export const getViableServices = (ns, player) => {
   ns.disableLog('ALL');
-  const { requiredJobRam, purchasedServerCosts, resetInfo } = getStaticData(ns);
+  const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } = getStaticData(ns);
 
   /** @param {number} num */
   const hasNode = (num) =>
@@ -42,7 +42,7 @@ export const getViableServices = (ns, player) => {
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
   const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= 5.2e9;
   const canAutopilot = () =>
-    hasSingularity && requiredJobRam <= mostRootRam(ns);
+    hasSingularity && requiredAugRam <= mostRootRam(ns);
   const isCriminal = (/** @type {string} */ faction) =>
     CRIMINAL_ORGANIZATIONS.includes(faction);
   const inCriminalFaction = () => factions().some(isCriminal);
@@ -50,7 +50,8 @@ export const getViableServices = (ns, player) => {
     const selfFund = resetInfo.currentNode !== 3;
     return (
       ns.corporation.hasCorporation() ||
-      ns.corporation.canCreateCorporation(selfFund) === 'Success'
+      (requiredJobRam < mostRootRam(ns) &&
+      ns.corporation.canCreateCorporation(selfFund) === 'Success')
     );
   };
 
