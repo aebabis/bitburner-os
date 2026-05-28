@@ -208,7 +208,7 @@ export const findOptimalBatch = (
   const canDonate =
     (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
-    ? (formulas?.reputation?.donationForRep(1, player) ?? Infinity)
+    ? (formulas.reputation.donationForRep(1, player) ?? Infinity)
     : Infinity;
 
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.

@@ -421,7 +421,7 @@ export const buildFactionGoalTree = (
   const repGoal = factionRepGoal(
     faction,
     repReq,
-    factionRep,
+    currentRep,
     joinGoal,
     repRate,
   );
