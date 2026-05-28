@@ -3,7 +3,7 @@ import { THREADPOOL } from '../../etc/config.js';
 import { jobRamGoal, installGoal } from './nodes.js';
 import { buildFactionGoalTree, isRepBound as isRepBoundPure } from './tree.js';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.js';
-import { getMockFormulas } from '../formulas.js';
+import { formulas as getFormulas } from '../formulas.js';
 import { needsAugRam, needsJobRam } from '../query-service.js';
 
 /** @param {NS} ns @returns {import('./nodes.js').Goal[]} */
@@ -13,9 +13,7 @@ export const getGoals = (ns) => {
   const staticData = getStaticData(ns);
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
-  const formulas = ns.fileExists('Formulas.exe', 'home')
-    ? ns.formulas
-    : getMockFormulas(staticData);
+  const formulas = getFormulas(ns);
   const karma = ns.heart.break();
   const ownedAugs = [
     ...staticData.installedAugmentations,

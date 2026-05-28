@@ -10,7 +10,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, DARK, BRIGHT, ERROR } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR } from '../lib/colors';
 import { hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 

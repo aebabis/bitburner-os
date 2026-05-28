@@ -33,7 +33,7 @@ const calculateExp = (skill, mult = 1) =>
  *   bitNodeMultipliers?: BitNodeMultipliers
  * }} staticData
  */
-export const getMockFormulas = (staticData) => {
+export const getMockFormulas = (staticData, sharePower = 1) => {
   const getAugMult = (/** @type {string} */ stat) =>
     staticData.installedAugmentations
       .map(
@@ -90,7 +90,8 @@ export const getMockFormulas = (staticData) => {
             reputation:
               ((player.skills?.hacking ?? 1) / 975) *
               factionRepMult() *
-              favorMult(favor),
+              favorMult(favor) *
+              sharePower,
           };
         }
         throw new Error(`Not yet implemented: ${workType}`);
@@ -109,7 +110,7 @@ export const formulas = (ns) => {
   if (ns.fileExists('Formulas.exe', 'home')) {
     return ns.formulas;
   } else {
-    return getMockFormulas(getStaticData(ns));
+    return getMockFormulas(getStaticData(ns), ns.getSharePower());
   }
 };
 

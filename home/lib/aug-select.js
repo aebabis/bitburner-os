@@ -182,7 +182,7 @@ export const computeAugCost = (augs, staticData, numQueued) => {
  *   installedAugmentations: string[],
  * }} staticData
  * @param {Player} player
- * @param {ReturnType<typeof getMockFormulas>} formulas
+ * @param {ReturnType<import('./formulas.js').getMockFormulas>} formulas
  * @param {Record<string, number>} factionRep
  * @param {string[]} ownedAugmentations - installed + purchased (for stillNeeds filter)
  * @param {{ moneyRate?: number, joinTime?: number }} [opts]
@@ -313,7 +313,7 @@ export const findOptimalBatch = (
  * @param {number} moneyRate - $/s
  * @param {number} liquidAssets
  * @param {Player} player
- * @param {ReturnType<typeof getMockFormulas>} formulas
+ * @param {ReturnType<import('./formulas.js').getMockFormulas>} formulas,
  * @param {{ installedAugmentations: string[], resetInfo: any, favorToDonate?: number }} staticData
  * @returns {boolean}
  */

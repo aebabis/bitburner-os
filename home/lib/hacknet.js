@@ -1,5 +1,4 @@
-import { getMockFormulas } from './formulas';
-import { getStaticData } from './data-store';
+import { formulas as getFormulas } from './formulas';
 
 /** @param {NS} ns **/
 export const getNodes = (ns) => {
@@ -11,9 +10,7 @@ export const getNodes = (ns) => {
 
 /** @param {NS} ns **/
 const getNodeData = (ns) => {
-  const formulas = ns.fileExists('Formulas.exe', 'home')
-    ? ns.formulas
-    : getMockFormulas(getStaticData(ns));
+  const formulas = getFormulas(ns);
   const { moneyGainRate } = formulas.hacknetNodes;
   const levelUpgradeProfit = (
     /** @type {number} */ level,

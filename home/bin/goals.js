@@ -2,7 +2,7 @@ import { getStaticData, getPlayerData, getMoneyData } from '../lib/data-store';
 import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
-import { getMockFormulas } from '../lib/formulas';
+import { getMockFormulas, formulas as getFormulas } from '../lib/formulas';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -122,9 +122,7 @@ export async function main(ns) {
           factionFavor:
             augLiveFactionFavor = /** @type {Record<string, number>} */ ({}),
         } = getStaticData(ns);
-        const augLiveFormulas = ns.fileExists('Formulas.exe', 'home')
-          ? ns.formulas
-          : getMockFormulas({ installedAugmentations: [] });
+        const augLiveFormulas = getFormulas(ns);
         const augFactions = /** @type {Record<string, string[]>} */ ({});
         for (const [faction, augs] of Object.entries(factionAugmentations))
           for (const aug of augs) (augFactions[aug] ??= []).push(faction);
@@ -212,9 +210,7 @@ export async function main(ns) {
           purchasedAugmentations = [],
         } = getPlayerData(ns);
         const { referenceIncome = 0 } = getMoneyData(ns);
-        const formulas = ns.fileExists('Formulas.exe', 'home')
-          ? ns.formulas
-          : getMockFormulas(staticData);
+        const formulas = getFormulas(ns);
         const ownedAugs = [
           ...(staticData.ownedAugmentations ?? []),
           ...purchasedAugmentations,
