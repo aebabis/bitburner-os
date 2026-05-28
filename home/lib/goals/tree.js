@@ -3,7 +3,6 @@ import {
   augMoneyGoal,
   augmentationGoal,
   neurofluxGoal,
-  installGoal,
   factionJoinGoal,
   hackingLevelGoal,
   combatLevelsGoal,
@@ -80,7 +79,7 @@ export const buildJoinSubtree = (
   faction,
   { player, staticData, money, referenceIncome, karma, formulas = null },
 ) => {
-  const { factions, skills, location } = player;
+  const { factions, skills, city } = player;
   const {
     factionRequirements,
     installedAugmentations,
@@ -168,7 +167,7 @@ export const buildJoinSubtree = (
   if (totalMoneyTarget > 0)
     joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, referenceIncome));
   const [loc] = locationReqs;
-  if (loc) joinPrereqs.push(locationGoal(loc, location));
+  if (loc) joinPrereqs.push(locationGoal(loc, city));
 
   const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
   return { joinPrereqs, joinGoal };
@@ -205,7 +204,7 @@ export const isRepBound = (goals) => {
  *   formulas: ReturnType<import('../formulas.js').getMockFormulas>,
  *   karma: number,
  * }} data
- * @returns {{ goals: import('./nodes.js').Goal[], terminalGoals: import('./nodes.js').Goal[], value: number, utility: (overhead: number) => number } | null}
+ * @returns {{ goals: import('./nodes.js').Goal[], terminalGoals: import('./nodes.js').Goal[], value: number, utility: (overhead: number) => number, installDesc?: string } | null}
  */
 export const buildFactionGoalTree = (
   faction,
@@ -306,15 +305,14 @@ export const buildFactionGoalTree = (
     const queuedAugGoals = queuedAugs.map((aug) =>
       augmentationGoal(aug, faction, purchasedAugmentations, [], augValue(aug)),
     );
-    const earlyInstall = installGoal(queuedAugGoals);
-    const earlyValue = earlyInstall.value;
+    const earlyValue = queuedAugGoals.reduce((s, g) => s + g.value, 0);
     return {
-      goals: [...joinPrereqs, joinGoal, ...queuedAugGoals, earlyInstall],
-      terminalGoals: [earlyInstall],
+      goals: [...joinPrereqs, joinGoal, ...queuedAugGoals],
+      terminalGoals: queuedAugGoals,
       value: earlyValue,
+      installDesc: 'Run augmentation suite',
       utility(overhead) {
-        const t = earlyInstall.timeToComplete();
-        return t != null && earlyValue > 0 ? earlyValue / (t + overhead) : 0;
+        return earlyValue > 0 ? earlyValue / overhead : 0;
       },
     };
   }
@@ -353,13 +351,13 @@ export const buildFactionGoalTree = (
       repRate,
       joinGoal,
     );
-    const favorInstall = installGoal([favorGoal], 'Soft reset for favor');
     return {
-      goals: [...joinPrereqs, joinGoal, favorGoal, favorInstall],
-      terminalGoals: [favorInstall],
+      goals: [...joinPrereqs, joinGoal, favorGoal],
+      terminalGoals: [favorGoal],
       value: treeValue,
+      installDesc: 'Soft reset for favor',
       utility(overhead) {
-        const tFavor = favorInstall.timeToComplete();
+        const tFavor = favorGoal.timeToComplete();
         if (tFavor == null || treeValue === 0) return 0;
         const donationRate = formulas.reputation.donationForRep(1, player);
         const tN1 = (repReq * donationRate + costToAug) / referenceIncome;

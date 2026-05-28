@@ -84,10 +84,14 @@ export const getGoals = (ns) => {
         );
     }
 
+    if ('installDesc' in bestPlan) {
+      const install = installGoal(
+        [...bestPlan.terminalGoals, ...ramGoals],
+        bestPlan.installDesc,
+      );
+      return [...ramGoals, ...bestPlan.goals, install];
+    }
     if (ramGoals.length > 0) {
-      for (const g of bestPlan.goals) {
-        if (g.type === 'INSTALL') g.deps.push(...ramGoals);
-      }
       return [...ramGoals, ...bestPlan.goals];
     }
 

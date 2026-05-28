@@ -33,8 +33,6 @@ export async function main(ns) {
 
   await rmi(ns, true)('/bin/self/apply.js');
 
-  let lastRepScan = Date.now();
-
   while (true) {
     const { player, isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
@@ -70,15 +68,6 @@ export async function main(ns) {
     const killsGoal = goals.find((goal) => goal.type === 'KILLS');
     getConfig(ns).set('share', 0);
 
-    // TODO: Consider hacking ability (level) increase instead of time constraint
-    // TODO: Only scan factions with augs left
-    if (!ns.fileExists('Formulas.exe', 'home') && Date.now() - lastRepScan > 60000) {
-      for (const faction of player.factions) {
-        await rmi(ns)("/bin/self/faction-work.js", 1, faction, 1);
-      }
-      lastRepScan = Date.now();
-    }
-
     if (statForCrimeTraining != null) {
       if (player.money > 5000)
         await rmi(ns)('/bin/self/improvement.js', 1, statForCrimeTraining, 5);
@@ -102,6 +91,7 @@ export async function main(ns) {
       const locationGoal = goals.find(
         (g) => g.type === 'LOCATION' && !g.isDone(),
       )?.requirement;
+      ns.print(locationGoal);
       const killsGoal = goals.find(
         (g) => g.type === 'KILLS' && !g.isDone(),
       )?.requirement;
