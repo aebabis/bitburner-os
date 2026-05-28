@@ -7,10 +7,7 @@ import {
   getRamData,
   getMoneyData,
   putMoneyData,
-  putPlayerData,
-  getStaticData,
 } from '../lib/data-store';
-import { getMockFormulas } from '../lib/formulas';
 
 import Thief, { HORIZON_MS } from '../lib/thief';
 import { initProfiler } from '../lib/profiler';
@@ -85,34 +82,6 @@ export async function main(ns) {
       // God mode: when one hack thread can steal 50%+ of the best server,
       // batches are trivially cheap and spreading across all servers is better.
       const [topThief] = viableThieves;
-      if (topThief != null) {
-        const target = topThief.getHostname();
-        const player = ns.getPlayer();
-        const formulas = ns.fileExists('Formulas.exe', 'home')
-          ? ns.formulas
-          : getMockFormulas(getStaticData(ns));
-        const server = {
-          ...ns.formulas.mockServer(),
-          hackDifficulty: ns.getServerMinSecurityLevel(target),
-          requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
-        };
-        const hackExpPerThread = formulas.hacking.hackExp(server, player);
-        const weakenTime = topThief.getWeakenTime() / 1000; // s
-        const [
-          hackThreads = 1,
-          weaken1Threads = 0,
-          growThreads = 0,
-          weaken2Threads = 0,
-        ] = topThief.currentBatch?.frame ?? [];
-        const hackChance = ns.hackAnalyzeChance(target);
-        const xpPerCycle =
-          hackExpPerThread *
-          (weaken1Threads +
-            weaken2Threads +
-            growThreads +
-            hackThreads * hackChance);
-        putPlayerData(ns, { hackingXpRate: xpPerCycle / weakenTime });
-      }
       const godMode =
         topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
 
