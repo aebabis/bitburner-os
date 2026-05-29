@@ -17,7 +17,9 @@ export async function main(ns: NS) {
 
   const goals = getGoals(ns);
   const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
-  const factionRepGoals = goals.filter((goal) => goal.type === 'FACTION_REP');
+  const factionRepGoals = goals.filter(
+    (goal) => goal.type === 'FACTION_REP' || goal.type === 'FACTION_FAVOR',
+  );
   const moneyGoals = goals.filter((goal) => goal.type === 'AUG_MONEY');
 
   const targetAugmentations = goals

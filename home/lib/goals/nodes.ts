@@ -294,6 +294,7 @@ export const factionFavorGoal = (
       faction,
       deps: [dep],
       ownTime: () => (repRate > 0 ? remaining / repRate : null),
+      isDone: () => remaining <= 0,
     },
   );
 };
