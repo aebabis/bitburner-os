@@ -26,3 +26,6 @@
 - Consider pros and cons of making thief accounting use high-water mark for money rate
 - Alternatively, consider always having an HWGW batch working alongside the WGW batch. Weakening a server just to have the levelup cause a switch feels suboptimal.
 - Alternatively, consider introducing an experience mode to the thief (triggerable by goals?). Would it behave differently?
+- Make purchase-augs use a findOptimalBatch variation that takes available money as a target spend.
+- Account for augs with prereqs in utility calculation (ensure all prereqs are in batch or owned, and make purchase order factor into price)
+- Multiple target factions
