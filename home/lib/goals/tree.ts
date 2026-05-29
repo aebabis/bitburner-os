@@ -337,17 +337,14 @@ export const buildFactionGoalTree = (
     )
   ) {
     const { favorToDonate } = staticData;
-    const repForFavor = formulas.reputation.calculateFavorToRep(
-      favorToDonate - currentFavor,
-    );
-    const favorGain = staticData.factionFavorGain?.[faction] ?? 0;
+    const pastRep = formulas.reputation.calculateFavorToRep(currentFavor);
+    const totalNeededRep =
+      formulas.reputation.calculateFavorToRep(favorToDonate);
+    const repToInstall = totalNeededRep - pastRep;
     const favorGoal = factionFavorGoal(
       faction,
-      repForFavor,
+      repToInstall,
       currentRep,
-      currentFavor,
-      favorGain,
-      favorToDonate,
       repRate,
       joinGoal,
     );

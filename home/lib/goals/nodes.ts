@@ -263,38 +263,23 @@ export const neurofluxGoal = (
     { faction, deps, value, ownTime: () => 0 },
   );
 
-/**
- * @param {string} faction
- * @param {number} repForFavor - rep required so next reset reaches favorToDonate
- * @param {number} currentRep
- * @param {number} currentFavor
- * @param {number} favorGain - favor gained at next reset
- * @param {number} favorToDonate
- * @param {number|undefined} repRate
- * @param {Goal} dep - joinGoal
- * @returns {Goal}
- */
 export const factionFavorGoal = (
-  faction,
-  repForFavor,
-  currentRep,
-  currentFavor,
-  favorGain,
-  favorToDonate,
-  repRate,
-  dep,
+  faction: FactionName,
+  neededRep: number,
+  currentRep: number,
+  repRate: number,
+  dep: Goal,
 ) => {
-  const remaining = Math.max(0, repForFavor - currentRep);
+  const remaining = Math.max(0, neededRep - currentRep);
   return goal(
     'FACTION_FAVOR',
-    `${fmtRep(remaining)} rep for favor (${faction})`,
-    () => currentFavor + favorGain >= favorToDonate,
+    `${neededRep} rep for favor (${faction})`,
+    () => currentRep >= neededRep,
     {
-      requirement: repForFavor,
+      requirement: neededRep,
       faction,
       deps: [dep],
       ownTime: () => (repRate > 0 ? remaining / repRate : null),
-      isDone: () => remaining <= 0,
     },
   );
 };

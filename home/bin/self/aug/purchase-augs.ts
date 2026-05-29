@@ -10,25 +10,43 @@ const NEUROFLUX = 'NeuroFlux Governor';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  const { factions, money } = ns.getPlayer();
+  const { factions } = ns.getPlayer();
   putPlayerData(ns, {
     purchasedAugmentations: getPurchasedAugmentations(ns),
   });
 
   const goals = getGoals(ns);
-  const factionJoinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
-  const factionRepGoals = goals.filter((goal) => ['FACTION_REP', 'FACTION_FAVOR'].includes(goal.type));
-  const moneyGoals = goals.filter((goal) => goal.type === 'AUG_MONEY');
+  const joinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
+  const repGoals = goals.filter((goal) =>
+    ['FACTION_REP', 'FACTION_FAVOR'].includes(goal.type),
+  );
+  const moneyGoals = goals.filter((goal) =>
+    ['MONEY', 'AUG_MONEY'].includes(goal.type),
+  );
 
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
 
-  const inTargetFactions = factionJoinGoals.every((goal) => goal.isDone());
+  const inTargetFactions = joinGoals.every((goal) => goal.isDone());
   const hasEnoughMoney = moneyGoals.every((goal) => goal.isDone());
-  const hasEnoughRep = factionRepGoals.every((goal) => goal.isDone());
+  const hasEnoughRep = repGoals.every((goal) => goal.isDone());
 
   if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {
+    const LOGFILE = `/tmp/reset-${Date.now()}.txt`;
+
+    const print = (...args: (string | boolean | number)[]) => {
+      ns.tprint(...args);
+      ns.write(LOGFILE, args.join(' ') + '\n', 'a');
+    };
+    for (const goal of goals) {
+      print(
+        goal.desc.padEnd(40) + ' ' + goal.type.padEnd(15) + ' ' + goal.isDone(),
+      );
+    }
+
+    print(new Date().toDateString('YYYY-MM-DD HH:MM'));
+
     for (const hostname of nmap(ns))
       for (const { pid } of ns.ps(hostname))
         if (pid !== ns.pid) {
@@ -36,7 +54,7 @@ export async function main(ns: NS) {
           ns.kill(pid);
         }
 
-    ns.tprint(`I'm the scheduler now!`);
+    print(`I'm the scheduler now!`);
     const finisher = ['home', 'THREADPOOL-01']
       .filter((hostname) => ns.serverExists(hostname))
       .sort(
@@ -45,7 +63,7 @@ export async function main(ns: NS) {
             -(ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname)),
         ),
       )[0];
-    ns.tprint(
+    print(
       `Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`,
     );
 
@@ -53,14 +71,14 @@ export async function main(ns: NS) {
      *  @param {number} threads
      *  @param { ...ScriptArg} args*/
     const run = async (script, threads, ...args) => {
-      ns.tprint(`${script} ${args.join(' ')}`);
+      print(`${script} ${args.join(' ')}`);
       const pid = ns.exec(script, finisher, threads, ...args);
-      ns.tprint(pid);
+      print(pid);
       if (pid === 0) {
-        ns.tprint(' failed to run');
+        print(' failed to run');
       } else {
         while (ns.isRunning(pid)) await ns.sleep(50);
-        ns.tprint(' done');
+        print(' done');
       }
     };
 
@@ -81,15 +99,13 @@ export async function main(ns: NS) {
     // Sell all stocks
     if (ns.stock.hasTixApiAccess()) dump(ns);
 
-    ns.tprint(
-      `Attempting to purchase ${targetAugmentations.length} augmentations`,
-    );
+    print(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
     for (const augmentation of targetAugmentations) {
       const bought = factions.some((faction) =>
         ns.singularity.purchaseAugmentation(faction, augmentation),
       );
-      ns.tprint(`  Purchase ${augmentation}?: ${bought}`);
+      print(`  Purchase ${augmentation}?: ${bought}`);
     }
 
     // Spend what's left on Neuroflux
@@ -100,7 +116,7 @@ export async function main(ns: NS) {
       )
     )
       nfCount++;
-    ns.tprint(`  bought ${nfCount} Neuroflux`);
+    print(`  bought ${nfCount} Neuroflux`);
 
     // Buy RAM if we can
     await run('/bin/self/buy-ram.ts', 1);
@@ -118,50 +134,55 @@ export async function main(ns: NS) {
       .factions.reduce((f1, f2) =>
         factionFavor[f1] > factionFavor[f2] ? f1 : f2,
       );
+    print(
+      'Buying favor and NFG from highest favor faction: ' + highestFavorFaction,
+    );
     if (factionFavor[highestFavorFaction] >= favorToDonate) {
-      const ownedAugs = ns.singularity.getOwnedAugmentations(true);
-      let neurofluxExponent = ownedAugs.filter(
-        (aug) => aug === NEUROFLUX,
-      ).length;
+      const currentNfgRepBase = augmentationRepReqs[NEUROFLUX];
       do {
-        neurofluxExponent++;
+        const purchasedAugs = getPurchasedAugmentations(ns);
+        print('Purchased augs: ' + purchasedAugs);
+        const purchasedNfg = purchasedAugs.filter((name) => name === NEUROFLUX);
         const repOfNextNeuroflux =
-          augmentationRepReqs[NEUROFLUX] * 1.14 ** neurofluxExponent;
+          currentNfgRepBase * 1.14 ** purchasedNfg.length;
+        print('Next Rep: ' + repOfNextNeuroflux);
         const donationRate = formulas(ns).reputation.donationForRep(
           1,
           ns.getPlayer(),
         );
         const currentRep = ns.singularity.getFactionRep(highestFavorFaction);
+        const donationAmount = (repOfNextNeuroflux - currentRep) * donationRate;
+        print('Donation: $' + donationAmount);
         if (currentRep < repOfNextNeuroflux) {
           await run(
             '/bin/self/aug/donate-to-faction.ts',
             1,
             highestFavorFaction,
-            (repOfNextNeuroflux - currentRep) * donationRate,
+            donationAmount,
           );
         }
       } while (
         ns.singularity.purchaseAugmentation(highestFavorFaction, NEUROFLUX)
       );
+
+      print(
+        'Done buying NFG. Donating remaining money: $' +
+          ns.format.number(ns.getPlayer().money),
+      );
+      await run(
+        '/bin/self/aug/donate-to-faction.ts',
+        1,
+        highestFavorFaction,
+        ns.getPlayer().money,
+      );
+      print('Money now: $' + ns.format.number(ns.getPlayer().money));
     }
 
-    ns.write(
-      '/tmp/last-reset.txt',
-      new Date().toString() + '\n' + getPurchasedAugmentations(ns).join('\n'),
-      'w',
-    );
+    print(getPurchasedAugmentations(ns).join('\n'));
+
+    ns.write('/tmp/last-reset.txt', ns.read(LOGFILE), 'w');
 
     // Start all over
     await run('/bin/self/aug/install.ts', 1);
-  } else {
-    const lines = [
-      `purchase-augs: no trigger @ ${new Date().toISOString()}`,
-      `  inTargetFactions=${inTargetFactions}  factionJoinGoals=[${factionJoinGoals.map((g) => `${g.faction}:${g.isDone()}`).join(', ')}]`,
-      `  hasEnoughRep=${hasEnoughRep}  factionRepGoals=[${factionRepGoals.map((g) => `${g.faction}:${g.isDone()}(req=${g.requirement})`).join(', ')}]`,
-      `  hasEnoughMoney=${hasEnoughMoney}  money=${ns.format.number(money, 3)}`,
-      `  targetAugmentations=${JSON.stringify(targetAugmentations)}`,
-      `  goalTypes=${JSON.stringify(goals.map((g) => g.type))}`,
-    ].join('\n');
-    ns.write('/tmp/purchase-augs-debug.txt', lines, 'w');
   }
 }
