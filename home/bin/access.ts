@@ -2,8 +2,7 @@ import { INFECT } from '../etc/filenames';
 import { delegateAny } from '../lib/scheduler-delegate';
 import { getHostnames } from '../lib/data-store';
 
-/** @param {NS} ns **/
-export const access = (ns) => (/** @type string */ target) => {
+export const access = (ns: NS) => (/** @type string */ target) => {
   if (ns.fileExists('BruteSSH.exe', 'home')) ns.brutessh(target);
   if (ns.fileExists('FTPCrack.exe', 'home')) ns.ftpcrack(target);
   if (ns.fileExists('relaySMTP.exe', 'home')) ns.relaysmtp(target);
@@ -12,8 +11,7 @@ export const access = (ns) => (/** @type string */ target) => {
   return ns.nuke(target);
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   if (ns.args[0] != null) {
     return access(ns)(ns.args[0]);
   }

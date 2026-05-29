@@ -9,8 +9,7 @@ const dec = (/** @type {number} */ num, places = 2) => {
   else return rounded;
 };
 
-/** @param {NS} ns */
-const getCrimeTable = (ns) => {
+const getCrimeTable = (ns: NS) => {
   const { crimeStats } = getPlayerData(ns);
   const HEAD = [
     'NAME',
@@ -70,8 +69,7 @@ const getCrimeTable = (ns) => {
   );
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const [topic] = ns.args;
   if (topic === 'crimes') ns.tprint('\n' + getCrimeTable(ns));
 }

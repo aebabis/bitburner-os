@@ -16,9 +16,7 @@ const PORTIONS = new Array(count + 1)
   .map((_, i) => i / count)
   .map((x) => 1 - 1 / (1 + e ** (-1 * k * (x - x_0))));
 
-/** @param {NS} ns
- *  @param {string} target */
-const getTimes = (ns, target) => {
+const getTimes = (ns: NS, target: string) => {
   if (ns.fileExists('Formulas.exe', 'home')) {
     const server = /** @type {Server} */ {
       ...ns.formulas.mockServer(),
@@ -48,11 +46,7 @@ const getWThreads = (ns, targetDecrease, cores = 1) => {
   return threads;
 };
 
-/** @param {NS} ns
- *  @param {string} target
- *  @param {number} portion
- */
-const computeThreads = (ns, target, portion) => {
+const computeThreads = (ns: NS, target: string, portion: number) => {
   if (portion <= 0 || portion >= 1)
     throw new Error(`Invalid theft portion: ${portion}`);
 
@@ -79,8 +73,7 @@ const computeThreads = (ns, target, portion) => {
 };
 
 class Batch {
-  /** @param {NS} ns @param {string} target */
-  constructor(ns, target) {
+  constructor(ns: NS, target: string) {
     this.ns = ns;
     this.target = target;
     this.jobs = createBatch(ns);
@@ -342,9 +335,7 @@ class WGWBatch extends Batch {
 }
 
 export default class Thief {
-  /** @param {NS} ns
-   *  @param {string} server */
-  constructor(ns, server) {
+  constructor(ns: NS, server: string) {
     this.ns = ns;
     this.server = server;
     this.batches = /** @type {Batch[]} */ [];

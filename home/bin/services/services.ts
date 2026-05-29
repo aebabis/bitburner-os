@@ -25,7 +25,7 @@ const mostRootRam = (/** @type {NS} */ ns) => {
 /** @param {NS} ns
  *  @param {((ns: NS) => Player)} [player]
  **/
-export const getViableServices = (ns, player) => {
+export const getViableServices = (ns: NS, player) => {
   ns.disableLog('ALL');
   const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);

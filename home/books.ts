@@ -1,8 +1,7 @@
 import { nmap } from './lib/nmap';
 import { table } from './lib/table';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   const [query] = ns.args;
   let bin = 1;

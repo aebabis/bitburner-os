@@ -10,8 +10,7 @@ import { STR, GRAY } from '../lib/colors';
 const canRunCode = (/** @type {NS} */ ns) => (/** @type {string} */ hostname) =>
   ns.getServerMaxRam(hostname) >= 1.6;
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   tprint(ns)(STR.BOLD + 'CONFIGURING NETWORK');
 

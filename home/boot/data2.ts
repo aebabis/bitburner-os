@@ -4,8 +4,7 @@ import { getBitNodeMultipliers } from './cheaty-data';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const { currentNode, ownedSF } = getStaticData(ns).resetInfo;
   tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 

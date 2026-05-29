@@ -1,7 +1,6 @@
 import { putCorpReports } from '../../../lib/data-store';
 
-/** @param {NS} ns @param {string} division */
-export const startReport = (ns, division) => {
+export const startReport = (ns: NS, division: string) => {
   const entries = [[division.toUpperCase()]];
   return {
     /** @param {string[]} content */

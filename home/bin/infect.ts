@@ -1,18 +1,15 @@
 import { HACK, GROW, WEAKEN, SHARE } from '../etc/filenames';
 
-/** @param {NS} ns **/
-export const infect = (ns, /** @type {string[]} */ ...hostnames) => {
+export const infect = (ns: NS, ...hostnames: string[]) => {
   for (const hostname of hostnames)
     ns.scp([HACK, GROW, WEAKEN, SHARE], hostname, 'home');
 };
 
-/** @param {NS} ns **/
-export const fullInfect = (ns, /** @type {string[]} */ ...hostnames) => {
+export const fullInfect = (ns: NS, ...hostnames: string[]) => {
   const JS = ns.ls('home').filter((f) => f.endsWith('.ts'));
   for (const hostname of hostnames) ns.scp(JS, hostname, 'home');
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   return infect(ns, ...ns.args);
 }

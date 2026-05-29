@@ -3,8 +3,7 @@ import { logger } from '../lib/logger';
 import { getTimeToComplete } from '../lib/goals/goals';
 import { getMoneyData, putMoneyData } from '../lib/data-store';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const BUFFER_FACTOR = 1.2;
   let waitMessageShown = false;
   let lastMessageTime = 0;

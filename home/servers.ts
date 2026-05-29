@@ -3,8 +3,7 @@ import { nmap } from './lib/nmap';
 import { table } from './lib/table';
 import { THREADPOOL } from './etc/config';
 
-/** @param {NS} ns **/
-const getServers = (ns) =>
+const getServers = (ns: NS) =>
   nmap(ns)
     .filter((name) => name !== 'home' && !name.startsWith(THREADPOOL))
     .map(ns.getServer)
@@ -12,8 +11,7 @@ const getServers = (ns) =>
     .sort(by('maxRam'))
     .sort(by('requiredHackingSkill'));
 
-/** @param {NS} ns @param {Server} server **/
-const serverRow = (ns, server) => {
+const serverRow = (ns: NS, server: Server) => {
   const {
     backdoorInstalled,
     hasAdminRights,
@@ -47,8 +45,7 @@ const serverRow = (ns, server) => {
   };
 };
 
-/** @param {NS} ns **/
-const getTable = (ns) => {
+const getTable = (ns: NS) => {
   const columns = [
     '\u2796\u200b HOSTNAME' + small('ports'),
     'MONEY',
@@ -73,8 +70,7 @@ const getTable = (ns) => {
   return table(ns, [...columns, ...columns], doubled, { colors: true });
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const [command] = ns.args;

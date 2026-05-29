@@ -3,8 +3,7 @@ import { getServices } from './service-api.ts';
 import { getStaticData } from './data-store';
 import { ERROR, C } from './colors';
 
-/** @param {NS} ns @param {string} desc */
-const getExistingPid = (ns, desc) => {
+const getExistingPid = (ns: NS, desc: string) => {
   try {
     const services = getServices(ns);
     if (services != null)

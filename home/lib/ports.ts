@@ -28,8 +28,7 @@ const s = (data) => {
 /** @param {string} packet */
 const p = (packet) => JSON.parse(packet, reviver).data;
 
-/** @param {NS} ns **/
-export default (ns) => {
+export default (ns: NS) => {
   const readPort = (/** @type {number} */ handle) => {
     const packet = ns.getPortHandle(handle).read();
     if (packet === NULL) return null;

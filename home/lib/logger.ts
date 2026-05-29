@@ -23,8 +23,10 @@ const processArg = (arg) => {
 
 const process = (args) => args.map(processArg).join(' ');
 
-/** @param {NS} ns **/
-export const logger = (ns, /** @type {{debug?: boolean}} */ options = {}) => {
+export const logger = (
+  ns: NS,
+  /** @type {{debug?: boolean}} */ options = {},
+) => {
   const { debug = DEBUG } = options;
 
   const name = ns.getScriptName();

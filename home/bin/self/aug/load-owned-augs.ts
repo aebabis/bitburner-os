@@ -1,7 +1,6 @@
 import { putPlayerData } from '../../../lib/data-store';
 
-/** @param {NS} ns */
-export const getPurchasedAugmentations = (ns) => {
+export const getPurchasedAugmentations = (ns: NS) => {
   const installedAugmentations = ns.singularity.getOwnedAugmentations(false);
   const ownedAugmentations = ns.singularity.getOwnedAugmentations(true);
   const purchasedAugmentations = ownedAugmentations.slice();
@@ -10,8 +9,7 @@ export const getPurchasedAugmentations = (ns) => {
   return purchasedAugmentations;
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   putPlayerData(ns, {
     purchasedAugmentations: getPurchasedAugmentations(ns),

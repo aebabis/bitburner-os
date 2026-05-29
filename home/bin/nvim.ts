@@ -48,8 +48,7 @@ function formatMoney(n) {
   return `$${Math.round(n)}`;
 }
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   let lastCmdId = -1;
   while (true) {
     const data = /** @type {NvimData} */ { v: 1, ts: Date.now() };

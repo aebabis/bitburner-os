@@ -1,8 +1,7 @@
 import { trade } from './trade';
 import { forecaster } from './forecaster-trend';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   await trade(ns, forecaster());
 }

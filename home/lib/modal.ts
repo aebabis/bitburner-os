@@ -13,13 +13,11 @@ if (style == null) {
   doc.head.append(style);
 }
 
-/** @param {NS} ns **/
-function getCommandLine(ns) {
+function getCommandLine(ns: NS) {
   return ns.getScriptName() + ' ' + ns.args.join(' ');
 }
 
-/** @param {NS} ns **/
-export async function getTailModal(ns, retry = true) {
+export async function getTailModal(ns: NS, retry = true) {
   if (retry) ns.ui.openTail();
   const commandLine = getCommandLine(ns);
   let titlebar;
@@ -46,11 +44,9 @@ export async function getTailModal(ns, retry = true) {
   };
 }
 
-/** @param {NS} ns **/
-const charWidth = (ns) => (9.65 * ns.ui.getStyles().tailFontSize) / 16;
+const charWidth = (ns: NS) => (9.65 * ns.ui.getStyles().tailFontSize) / 16;
 
-/** @param {NS} ns **/
-export async function getModalColumnCount(ns) {
+export async function getModalColumnCount(ns: NS) {
   const tailPane = await getTailModal(ns, true);
   if (tailPane == null) return null;
   tailPane.bottom.classList.add('windower');

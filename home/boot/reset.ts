@@ -11,8 +11,7 @@ import { STR } from '../lib/colors';
 import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from '../etc/ports';
 const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   tprint(ns)(STR.BOLD + 'RESETTING PORTS AND SERVERS');
 

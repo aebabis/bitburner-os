@@ -1,5 +1,4 @@
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const MIN = 5;
   const MAX = 10;
   const count = MIN + ~~(Math.random() * (MAX - MIN));

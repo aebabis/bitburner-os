@@ -23,8 +23,7 @@ const getWorkFaction = (goals, factions, factionRep) => {
   );
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   await rmi(ns, true)('/bin/self/apply.ts');

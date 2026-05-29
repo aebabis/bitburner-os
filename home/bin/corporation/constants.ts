@@ -6,10 +6,12 @@ export const BOOST_MATERIALS = [
   'Robots',
 ];
 
-/** @type {Record<CorpIndustryName, string>} */
-export const DivisionNames = {
+export const DivisionNames: Record<CorpIndustryName, string> = {
   Agriculture: 'Rhizome Foods',
   Chemical: 'Rhizome Derivatives',
   Tobacco: 'Rhizome Reeds',
   'Water Utilities': 'Taproot Infrastructure',
-};
+} as const;
+
+type valueof<T> = T[keyof T];
+export type DivisionName = valueof<DivisionNames>;

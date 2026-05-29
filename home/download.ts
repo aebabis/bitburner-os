@@ -136,8 +136,7 @@ const FILES = [
   'update.ts',
 ];
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const { branch } = ns.flags([['branch', 'main']]);
   if (_[0] != null) {
     ns.tprint(

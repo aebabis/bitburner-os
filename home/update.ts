@@ -1,7 +1,6 @@
 import { stop } from './stop';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const { branch, wipe } = ns.flags([
     ['branch', 'main'],
     ['wipe', false],

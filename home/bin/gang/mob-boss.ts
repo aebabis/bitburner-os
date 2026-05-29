@@ -1,7 +1,6 @@
 import { rmi } from '../../lib/rmi';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   while (!ns.gang.inGang()) {
     ns.gang.createGang('Slum Snakes');

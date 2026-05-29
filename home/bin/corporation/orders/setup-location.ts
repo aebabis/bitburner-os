@@ -1,5 +1,4 @@
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const [divisionName, cityName, needsWarehouse = false] = ns.args;
 
   const { officeInitialCost, warehouseInitialCost } =

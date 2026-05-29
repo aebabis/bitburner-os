@@ -8,8 +8,7 @@ import { formulas } from '../../../lib/formulas';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   const { factions, money } = ns.getPlayer();
   putPlayerData(ns, {

@@ -40,8 +40,7 @@ const formatTime = (seconds) => {
   return coalesce(h, m, s);
 };
 
-/** @param {NS} ns */
-const getRunStats = (ns) => {
+const getRunStats = (ns: NS) => {
   const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
   const { onlineRunningTime = 0 } =
     ns.getRunningScript('/bin/scheduler.ts', 'home') || {};
@@ -64,8 +63,7 @@ const getRunStats = (ns) => {
   ].join('  ');
 };
 
-/** @param {NS} ns */
-const getPlayerLevels = (ns) => {
+const getPlayerLevels = (ns: NS) => {
   const { skills } = getPlayerData(ns).player;
   const { ownedAugmentations = [], augmentationStats = {} } = getStaticData(ns);
 
@@ -122,17 +120,13 @@ const getPlayerLevels = (ns) => {
   ]);
 };
 
-/** @param {NS} ns
- *  @param {Server} server
- */
-const threadpoolRow = (ns, server) => {
+const threadpoolRow = (ns: NS, server: Server) => {
   const { ramUsed, maxRam } = server;
   const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
   return [ram];
 };
 
-/** @param {NS} ns **/
-const threadpools = (ns) => {
+const threadpools = (ns: NS) => {
   const names = Array(ns.cloud.getServerLimit())
     .fill(null)
     .map((_, i) => (i + 1).toString().padStart(2, '0'))
@@ -153,8 +147,7 @@ const threadpools = (ns) => {
     .map((server) => threadpoolRow(ns, server));
 };
 
-/** @param {NS} ns */
-const threadpoolTable = (ns) => {
+const threadpoolTable = (ns: NS) => {
   const { purchasedServerLimit } = getStaticData(ns);
   const third = Math.ceil(purchasedServerLimit / 3);
   const data = threadpools(ns);
@@ -203,8 +196,7 @@ const moneyTable = (/** @type {NS} */ ns) => {
   return top + '\n' + table(ns, null, rows);
 };
 
-/** @param {NS} ns */
-const getWork = (ns) => {
+const getWork = (ns: NS) => {
   const { factionRep = {}, currentWork } = getPlayerData(ns);
   const { location } = getPlayerData(ns).player;
   const WORK = H('WORK');
@@ -229,8 +221,7 @@ const getWork = (ns) => {
   return ` ${WORK} ${type} ${location} `;
 };
 
-/** @param {NS} ns */
-const getExecutionTable = (ns) => {
+const getExecutionTable = (ns: NS) => {
   const { lastRuns = {}, lastCancellations = {} } = getSchedulerReportData(ns);
   const rows = Object.entries(lastCancellations)
     .filter(([script, cancelTime]) => lastRuns[script] < cancelTime)
@@ -245,8 +236,7 @@ const getExecutionTable = (ns) => {
   return ` ${H('DELAYS')} \n` + table(ns, null, rows);
 };
 
-/** @param {NS} ns */
-const getServiceTable = (ns) => {
+const getServiceTable = (ns: NS) => {
   return table(
     ns,
     ['SERVICES', '', ''],
@@ -267,8 +257,7 @@ const getServiceTable = (ns) => {
   );
 };
 
-/** @param {NS} ns */
-const getSchedulerTable = (ns) => {
+const getSchedulerTable = (ns: NS) => {
   const {
     inputFull,
     outputFull,
@@ -305,8 +294,7 @@ const getSchedulerTable = (ns) => {
   return table(ns, null, rows, { colors: true });
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   const windows = [

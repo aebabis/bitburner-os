@@ -1,8 +1,7 @@
 import { rmi } from '../../lib/rmi';
 import { getStaticData, getCorpReports } from '../../lib/data-store';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   const { resetInfo } = getStaticData(ns);

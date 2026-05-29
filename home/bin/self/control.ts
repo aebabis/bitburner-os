@@ -2,8 +2,7 @@ import { getPath } from '../../lib/backdoor.ts';
 import { getPlayerData } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   let wasInTerminal = true;
   while (true) {

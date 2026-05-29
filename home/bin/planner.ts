@@ -10,11 +10,9 @@ import {
 } from '../lib/service-api';
 import { getViableServices } from './services/services';
 
-/** @param {NS} ns **/
-const player = (ns) => ns.getPlayer(); // Makes it easier to audit getPlayer use
+const player = (ns: NS) => ns.getPlayer(); // Makes it easier to audit getPlayer use
 
-/** @param {NS} ns **/
-const go = async (ns) => {
+const go = async (ns: NS) => {
   ns.disableLog('ALL');
 
   const tasks = getViableServices(ns, player);
@@ -56,8 +54,7 @@ const go = async (ns) => {
   }
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   try {
     await go(ns);
   } catch (error) {

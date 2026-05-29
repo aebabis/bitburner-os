@@ -1,7 +1,6 @@
 import { putGangData } from '../../lib/data-store';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const [gangName] = ns.args;
 
   const otherGangInformation = ns.gang.getAllGangInformation();

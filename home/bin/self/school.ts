@@ -2,8 +2,7 @@ import { getGoals } from '../../lib/goals/goals';
 import { shouldWorkHaveFocus } from '../../lib/query-service';
 import { putPlayerData } from '../../lib/data-store';
 
-/** @param {NS} ns @param {CityName} city */
-const getSchool = (ns, city) =>
+const getSchool = (ns: NS, city: CityName) =>
   ({
     [ns.enums.CityName.Sector12]:
       ns.enums.LocationName.Sector12RothmanUniversity,
@@ -15,8 +14,7 @@ const getSchool = (ns, city) =>
       ns.enums.LocationName.VolhavenZBInstituteOfTechnology,
   })[city] || null;
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const { skills, city } = ns.getPlayer();
   const hackingGoal = getGoals(ns).find(
     (g) => g.type === 'HACKING_LEVEL' && !g.isDone(),

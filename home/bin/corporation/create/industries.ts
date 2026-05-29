@@ -1,7 +1,6 @@
 import { DivisionNames } from '../constants';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const { divisions } = ns.corporation.getCorporation();

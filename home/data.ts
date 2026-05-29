@@ -7,8 +7,8 @@ import {
   getRamData,
   getContractData,
 } from './lib/data-store.ts';
-/** @param {NS} ns */
-export async function main(ns) {
+
+export async function main(ns: NS) {
   const OPTIONS = {
     hostnames: getHostnames,
     static: getStaticData,

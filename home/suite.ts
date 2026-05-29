@@ -1,7 +1,6 @@
 import { table, transpose } from './lib/table';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const COLS = 4;
 
   const lines = ns

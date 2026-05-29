@@ -4,8 +4,7 @@ import { tprint } from './util';
 import { nmap, saveHostnames } from '../lib/nmap';
 import { STR } from '../lib/colors';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'GENERATING STATIC DATA');
 
   tprint(ns)(STR + '  Precalculating static server costs');

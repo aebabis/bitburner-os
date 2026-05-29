@@ -1,8 +1,7 @@
 import { getPath } from '../lib/backdoor.ts';
 import { BRIGHT } from '../lib/colors';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   ns.ui.resizeTail(300, 300);

@@ -15,9 +15,7 @@ const HEADINGS = {
   chaWeight: 'chaW',
 };
 
-/** @param {NS} ns
- *  @param {number | undefined} sortColumnIndex **/
-export const printTaskTable = async (ns, sortColumnIndex) => {
+export const printTaskTable = async (ns: NS, sortColumnIndex?: number) => {
   const gangData = getGangData(ns);
   if (gangData == null)
     return ns.tprint('No data to show yet. Make sure gang.js has run');
@@ -85,7 +83,6 @@ export const printTaskTable = async (ns, sortColumnIndex) => {
   ns.tprint(output);
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   await printTaskTable(ns, /** @type {number | undefined} */ ns.args[0]);
 }

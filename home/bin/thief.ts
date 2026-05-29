@@ -14,8 +14,7 @@ import { initProfiler } from '../lib/profiler';
 
 /** @typedef {{hostname: string, type?: string, jobs?: number, portion?: number, timeLeft?: string, frame?: string}} ThiefTableRow */
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   initProfiler();
   ns.disableLog('ALL');
 

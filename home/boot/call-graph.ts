@@ -26,10 +26,7 @@ const findCallees = (content) => {
   return paths;
 };
 
-/** @param {NS} ns
- *  @returns {Record<string, string[]>}
- **/
-export const getCallGraph = (ns) => {
+export const getCallGraph = (ns: NS) => {
   const cache = new Map();
   const read = (path) => {
     if (cache.has(path)) return cache.get(path);
@@ -38,19 +35,19 @@ export const getCallGraph = (ns) => {
     return content;
   };
 
-  const graph = {};
+  const graph: Record<string, string[]> = {};
   const visited = new Set();
   const queue = ['/bin/planner.ts'];
 
   while (queue.length > 0) {
-    const path = queue.shift();
+    const path = queue.shift()!;
     if (visited.has(path)) continue;
     visited.add(path);
 
     const content = read(path);
     if (!content) continue;
 
-    const callees = new Set();
+    const callees: Set<string> = new Set();
 
     for (const p of findCallees(content)) callees.add(p);
 
@@ -69,8 +66,7 @@ export const getCallGraph = (ns) => {
   return graph;
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const graph = getCallGraph(ns);
   ns.write('/tmp/call-graph.json', JSON.stringify(graph, null, 2), 'w');
   tprint(ns)(`INFO call-graph: ${Object.keys(graph).length} nodes`);

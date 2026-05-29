@@ -1,8 +1,11 @@
 typeof purchaseWseAccount; // Reserve RAM
 
-/** @param {NS} ns
- *  @param {'purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData'} funcName */
-const mayPurchase = (ns, funcName) => {
+type StockApiName =
+  | 'purchaseWseAccount'
+  | 'purchaseTixApi'
+  | 'purchase4SMarketDataTixApi'
+  | 'purchase4SMarketData';
+const mayPurchase = (ns: NS, funcName: StockApiName) => {
   if (funcName === 'purchaseWseAccount') {
     return true;
   } else if (funcName.includes('urchaseTixApi')) {
@@ -12,8 +15,7 @@ const mayPurchase = (ns, funcName) => {
   }
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const [funcName] =
     /** @type {('purchaseWseAccount' | 'purchaseTixApi' | 'purchase4SMarketDataTixApi' | 'purchase4SMarketData')[]} */ ns.args;
   if (mayPurchase(ns, funcName)) {

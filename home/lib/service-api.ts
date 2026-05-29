@@ -28,8 +28,7 @@ export const getTableString = (ns, taskData) => {
   );
 };
 
-/** @param {NS} ns */
-export const getServices = (ns) => {
+export const getServices = (ns: NS) => {
   return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 

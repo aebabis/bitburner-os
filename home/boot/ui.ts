@@ -2,8 +2,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   // const FONT = 'https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap';

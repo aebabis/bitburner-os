@@ -2,8 +2,7 @@ import { getConfig } from './lib/config';
 import { table } from './lib/table';
 import { by } from './lib/util';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const [prop, value] = /** @type {[string?, number?]} */ ns.args;

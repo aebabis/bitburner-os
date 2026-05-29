@@ -19,8 +19,7 @@ import { logger } from '../lib/logger';
 
 const SCHEDULER_HOME = 'home';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   if (ns.getHostname() !== SCHEDULER_HOME) {
@@ -67,8 +66,7 @@ export async function main(ns) {
     };
   };
 
-  /** @param {NS} ns **/
-  const getRamData = (ns) => {
+  const getRamData = (ns: NS) => {
     const hostnames = getHostnames(ns);
     const rootServers = hostnames
       .filter(ns.hasRootAccess)

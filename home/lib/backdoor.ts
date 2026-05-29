@@ -10,8 +10,7 @@ const PRIORITIES = [
   'w0r1d_d43m0n',
 ];
 
-/** @param {NS} ns @param {string} hostname **/
-const getPathTo = (ns, hostname) => {
+const getPathTo = (ns: NS, hostname: string) => {
   if (ns.getServer(hostname).isConnectedTo) return [];
   const next = /** @type {Record<string, string>} */ {};
   const visited = [hostname];
@@ -29,8 +28,7 @@ const getPathTo = (ns, hostname) => {
   }
 };
 
-/** @param {NS} ns **/
-export const getPath = (ns) => {
+export const getPath = (ns: NS) => {
   const skill = ns.getHackingLevel();
   const backdoorableServers = nmap(ns)
     .map(ns.getServer)

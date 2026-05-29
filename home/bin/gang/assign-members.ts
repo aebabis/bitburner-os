@@ -4,8 +4,7 @@ import { getGangData, putGangData, putMoneyData } from '../../lib/data-store';
 import { logger } from '../../lib/logger';
 import { isRepBound } from '../../lib/goals/goals';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   try {
     const gangInfo = ns.gang.getGangInformation();

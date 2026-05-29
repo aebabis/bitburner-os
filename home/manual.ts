@@ -1,7 +1,6 @@
 import { liquidate } from './bin/liquidate';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   await liquidate(ns);
 }

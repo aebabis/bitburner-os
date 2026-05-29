@@ -1,14 +1,11 @@
 import { getStaticData } from '../../lib/data-store';
 
-/** @param {number} a
- *  @param {number} b */
-const sum = (a, b) => a + b;
+const sum = (a: number, b: number) => a + b;
 
-/** @param {number} S
- * @param {[number, number][]} csPairs
- * @return {number[]}
- */
-export const solveBoost = (S, ...csPairs) => {
+export const solveBoost = (
+  S: number,
+  ...csPairs: [number, number][]
+): number[] => {
   const cs = csPairs.map(([c]) => c).reduce(sum, 0);
   const amounts = csPairs.map(([c, s], i) => {
     const others = csPairs.filter((_, idx) => idx !== i);
@@ -26,11 +23,11 @@ export const solveBoost = (S, ...csPairs) => {
   return amounts;
 };
 
-/** @param {NS} ns
- *  @param {CorpIndustryName} industryName
- *  @param {number} S
- */
-export const getBoostTargets = (ns, industryName, S) => {
+export const getBoostTargets = (
+  ns: NS,
+  industryName: CorpIndustryName,
+  S: number,
+) => {
   const staticData = getStaticData(ns);
   /** @type {Record<CorpMaterialName, CorpMaterialConstantData>} */
   const materialData = staticData.materialData;

@@ -105,8 +105,7 @@ export const getMockFormulas = (staticData, sharePower = 1) => {
   };
 };
 
-/** @param {NS} ns */
-export const formulas = (ns) => {
+export const formulas = (ns: NS) => {
   if (ns.fileExists('Formulas.exe', 'home')) {
     return ns.formulas;
   } else {

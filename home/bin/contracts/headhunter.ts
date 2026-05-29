@@ -10,8 +10,7 @@ const isContract = (/** @type {string} */ file) => file.endsWith('.cct');
 
 const encode = (data) => (typeof data === 'bigint' ? `${data}n` : data);
 
-/** @param {NS} ns */
-const findContracts = (ns) => {
+const findContracts = (ns: NS) => {
   const { contracts = /** @type {StoredContract[]} */ [] } =
     getContractData(ns);
   return getHostnames(ns)
@@ -36,8 +35,7 @@ const findContracts = (ns) => {
     .flat();
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   try {
     const contracts = findContracts(ns);
     putContractData(ns, { contracts });

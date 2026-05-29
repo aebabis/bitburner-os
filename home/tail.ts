@@ -1,7 +1,6 @@
 import { nmap } from './lib/nmap';
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const flags = ns.flags([['find', false]]);
   if (!flags.find) {
     ns.ui.openTail(.../** @type {string[]} */ ns.args);

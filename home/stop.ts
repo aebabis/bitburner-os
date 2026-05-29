@@ -1,8 +1,7 @@
 import { nmap } from './lib/nmap';
 import { HACK } from './etc/filenames';
 
-/** @param {NS} ns **/
-export const stop = async (ns) => {
+export const stop = async (ns: NS) => {
   const processes = () =>
     nmap(ns)
       .flatMap((hostname) => ns.ps(hostname))
@@ -27,8 +26,7 @@ export const stop = async (ns) => {
   }
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   await stop(ns);
   if (ns.args.length > 0) {
     ns.run(.../** @type {[string, ...ScriptArg[]]} */ ns.args);

@@ -11,18 +11,15 @@ import {
   PORT_CORP_REPORTS,
 } from '../etc/ports.ts';
 
-/** @param {NS} ns @param {number} port */
-const readData = (ns, port) => Ports(ns).getPortHandle(port).peek();
+const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
 
-/** @param {NS} ns @param {number} portId */
-const replaceData = (ns, portId, data) => {
+const replaceData = (ns: NS, portId: number, data) => {
   const port = Ports(ns).getPortHandle(portId);
   port.clear();
   port.write(data);
 };
 
-/** @param {NS} ns @param {number} portId */
-const putData = (ns, portId, data) => {
+const putData = (ns: NS, portId: number, data) => {
   const oldData = readData(ns, portId) || {};
   const newData = Object.assign(oldData, data);
   const port = Ports(ns).getPortHandle(portId);
@@ -30,55 +27,39 @@ const putData = (ns, portId, data) => {
   port.write(newData);
 };
 
-/** @param {NS} ns
- *  @returns {string[]} */
-export const getHostnames = (ns) => readData(ns, PORT_HOSTNAMES);
-/** @param {NS} ns
- *  @param {string[]} hostnames */
-export const putHostnames = (ns, hostnames) =>
+export const getHostnames = (ns: NS): string[] => readData(ns, PORT_HOSTNAMES);
+export const putHostnames = (ns: NS, hostnames: string[]) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
-/** @param {NS} ns */
-export const getSchedulerReportData = (ns) =>
+export const getSchedulerReportData = (ns: NS) =>
   readData(ns, PORT_SCH_REPORTING) || {};
-/** @param {NS} ns */
-export const putSchedulerReportData = (ns, data) =>
+export const putSchedulerReportData = (ns: NS, data) =>
   putData(ns, PORT_SCH_REPORTING, data);
 
-/** @param {NS} ns */
-export const getStaticData = (ns) => readData(ns, PORT_STATIC_DATA) || {};
-/** @param {NS} ns */
-export const putStaticData = (ns, data) => putData(ns, PORT_STATIC_DATA, data);
+export const getStaticData = (ns: NS) => readData(ns, PORT_STATIC_DATA) || {};
+export const putStaticData = (ns: NS, data) =>
+  putData(ns, PORT_STATIC_DATA, data);
 
-/** @param {NS} ns */
-export const getGangData = (ns) => readData(ns, PORT_GANG_DATA);
-/** @param {NS} ns */
-export const putGangData = (ns, data) => putData(ns, PORT_GANG_DATA, data);
+export const getGangData = (ns: NS) => readData(ns, PORT_GANG_DATA);
+export const putGangData = (ns: NS, data) => putData(ns, PORT_GANG_DATA, data);
 
-/** @param {NS} ns */
-export const getRamData = (ns) => readData(ns, PORT_SCH_RAM_DATA);
-/** @param {NS} ns */
-export const putRamData = (ns, data) =>
+export const getRamData = (ns: NS) => readData(ns, PORT_SCH_RAM_DATA);
+export const putRamData = (ns: NS, data) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 
-/** @param {NS} ns */
-export const getPlayerData = (ns) => readData(ns, PORT_PLAYER_DATA) || {};
-/** @param {NS} ns */
-export const putPlayerData = (ns, data) => putData(ns, PORT_PLAYER_DATA, data);
+export const getPlayerData = (ns: NS) => readData(ns, PORT_PLAYER_DATA) || {};
+export const putPlayerData = (ns: NS, data) =>
+  putData(ns, PORT_PLAYER_DATA, data);
 
-/** @param {NS} ns */
-export const getMoneyData = (ns) => readData(ns, PORT_MONEY_DATA) || {};
-/** @param {NS} ns */
-export const putMoneyData = (ns, data) => putData(ns, PORT_MONEY_DATA, data);
+export const getMoneyData = (ns: NS) => readData(ns, PORT_MONEY_DATA) || {};
+export const putMoneyData = (ns: NS, data) =>
+  putData(ns, PORT_MONEY_DATA, data);
 
-/** @param {NS} ns */
-export const getContractData = (ns) => readData(ns, PORT_CONTRACT_DATA) || {};
-/** @param {NS} ns */
-export const putContractData = (ns, data) =>
+export const getContractData = (ns: NS) =>
+  readData(ns, PORT_CONTRACT_DATA) || {};
+export const putContractData = (ns: NS, data) =>
   putData(ns, PORT_CONTRACT_DATA, data);
 
-/** @param {NS} ns */
-export const getCorpReports = (ns) => readData(ns, PORT_CORP_REPORTS) || {};
-/** @param {NS} ns */
-export const putCorpReports = (ns, data) =>
+export const getCorpReports = (ns: NS) => readData(ns, PORT_CORP_REPORTS) || {};
+export const putCorpReports = (ns: NS, data) =>
   putData(ns, PORT_CORP_REPORTS, data);

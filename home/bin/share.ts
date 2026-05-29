@@ -8,11 +8,9 @@ const sum = (/** @type {number} */ a, /** @type {number} */ b) => a + b;
 let MIN_WAIT = 50;
 let MAX_WAIT = 10000;
 
-/** @param {NS} ns **/
-export const getTotalRam = (ns) => getRamData(ns).totalMaxRam;
+export const getTotalRam = (ns: NS) => getRamData(ns).totalMaxRam;
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   const config = getConfig(ns);
   const RAM_PER_SHARE = getStaticData(ns).scriptRam[SHARE.slice(1)];

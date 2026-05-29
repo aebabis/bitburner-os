@@ -4,8 +4,7 @@ import { getTailModal } from './lib/modal';
 import * as d3 from './lib/d3';
 import { THREADPOOL } from './etc/config';
 
-/** @param {NS} ns **/
-async function showChart(ns, element, nodes, links) {
+async function showChart(ns: NS, element, nodes, links) {
   const width = 1000;
   const height = 1000;
   const font = [
@@ -226,8 +225,7 @@ async function showChart(ns, element, nodes, links) {
   }
 }
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   // ns.tprint(nmap(ns));
   const servers = nmap(ns).filter((x) => !x.startsWith(THREADPOOL));
   const nodes = servers.map((hostname) => {

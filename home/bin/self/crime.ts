@@ -1,9 +1,13 @@
 import { getPlayerData, putPlayerData } from '../../lib/data-store';
 
-/** @typedef {{name: string, chance: number, time: number, expectedValue: number}} CrimeStat */
+type CrimStat = {
+  name: string;
+  chance: number;
+  time: number;
+  expectedValue: number;
+};
 
-/** @param {NS} ns @param {number|null} maxDuration */
-const selectCrime = (ns, maxDuration) => {
+const selectCrime = (ns: NS, maxDuration: number | null) => {
   const { crimeStats } = getPlayerData(ns);
   if (crimeStats == null) return 'Shoplift';
 
@@ -30,8 +34,7 @@ const selectCrime = (ns, maxDuration) => {
   return bestCrime.name;
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const crime =

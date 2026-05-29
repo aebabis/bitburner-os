@@ -38,8 +38,7 @@ const attemptContract = (
   }
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   try {
     const { contracts = [], failedContractNames = [] } = getContractData(ns);
     const remainingContracts = [];

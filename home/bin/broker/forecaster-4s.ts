@@ -1,5 +1,4 @@
-/** @param {NS} ns */
-export const forecaster = (ns) => {
+export const forecaster = (ns: NS) => {
   return {
     record: () => {},
     getStockForecast: ns.stock.getForecast,

@@ -1,28 +1,38 @@
 import { getStaticData } from '../../lib/data-store';
 import { table } from '../../lib/table';
 
-/** @typedef {{sym: string, maxShares: number, position: [number, number, number, number], price: number, forecast: number | null | undefined, getPurchaseCost: (shares: number) => number, getSaleGain: (shares?: number) => number, buy: (shares: number) => number, sell: (shares: number) => number}} Stock */
+type StockPosition = {
+  sym: string;
+  maxShares: number;
+  position: [number, number, number, number];
+  price: number;
+  forecast: number | null | undefined;
+  getPurchaseCost: (shares: number) => number;
+  getSaleGain: (shares?: number) => number;
+  buy: (shares: number) => number;
+  sell: (shares: number) => number;
+};
 
-/** @param {NS} ns **/
-export const getStocks = (ns) =>
-  getStaticData(ns).stocks.map(
-    (/** @type {{sym: string, maxShares: number}} */ { sym, maxShares }) => ({
-      sym,
-      maxShares,
-      position: ns.stock.getPosition(sym),
-      price: ns.stock.getPrice(sym),
-      getPurchaseCost: (/** @type {number} */ shares) =>
-        ns.stock.getPurchaseCost(sym, shares, 'L'),
-      getSaleGain: (
-        /** @type {number} */ shares = ns.stock.getPosition(sym)[0],
-      ) => ns.stock.getSaleGain(sym, shares, 'L'),
-      buy: (/** @type {number} */ shares) => ns.stock.buyStock(sym, shares),
-      sell: (/** @type {number} */ shares) => ns.stock.sellStock(sym, shares),
-    }),
-  );
+export const getStocks = (ns: NS) =>
+  getStaticData(ns).stocks.map(({ sym, maxShares }: StockPosition) => ({
+    sym,
+    maxShares,
+    position: ns.stock.getPosition(sym),
+    price: ns.stock.getPrice(sym),
+    getPurchaseCost: (shares: number) =>
+      ns.stock.getPurchaseCost(sym, shares, 'L'),
+    getSaleGain: (shares = ns.stock.getPosition(sym)[0]) =>
+      ns.stock.getSaleGain(sym, shares, 'L'),
+    buy: (shares: number) => ns.stock.buyStock(sym, shares),
+    sell: (shares: number) => ns.stock.sellStock(sym, shares),
+  }));
 
-/** @param {NS} ns @param {Stock} stock @param {number} maxPurchase @param {number} money **/
-export const optimizeShares = (ns, stock, maxPurchase, money) => {
+export const optimizeShares = (
+  ns: NS,
+  stock: StockPosition,
+  maxPurchase: number,
+  money: number,
+) => {
   let min = 0;
   let max = maxPurchase;
   while (true) {
@@ -34,14 +44,12 @@ export const optimizeShares = (ns, stock, maxPurchase, money) => {
   }
 };
 
-/** @param {Stock[]} stocks */
-export const getHoldings = (stocks) =>
+export const getHoldings = (stocks: StockPosition[]) =>
   stocks
     .map((stock) => stock.position[0] * stock.position[1])
-    .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+    .reduce((a: number, b: number) => a + b, 0);
 
-/** @param {NS} ns @param {Stock[]} stocks **/
-export const getTableString = (ns, stocks) => {
+export const getTableString = (ns: NS, stocks: StockPosition[]) => {
   const HEAD = ['SYM', 'Shares', '+/-', 'Price'];
   const rows = stocks
     .filter((stock) => stock.position[0] > 0)

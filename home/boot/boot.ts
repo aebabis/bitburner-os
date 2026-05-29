@@ -2,8 +2,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
-/** @param {NS} ns */
-const getBootSequence = (ns) => {
+const getBootSequence = (ns: NS) => {
   if (ns.getServerMaxRam('home') < ns.getScriptRam('/boot/data2.ts')) {
     return [
       '/boot/reset.ts',
@@ -26,8 +25,7 @@ const getBootSequence = (ns) => {
   }
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'STARTING BOOT SEQUENCE');
 
   const BOOT_SEQUENCE = getBootSequence(ns);

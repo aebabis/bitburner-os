@@ -1,7 +1,6 @@
 import { disableService } from '../../lib/service-api';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   if (ns.singularity.purchaseTor()) {
     if (

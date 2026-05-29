@@ -1,5 +1,4 @@
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   // TODO: Apply to multiple jobs and
   // account for reputation instead of
   // just money.

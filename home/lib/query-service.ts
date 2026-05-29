@@ -5,8 +5,7 @@ import { getStaticData, getRamData, getPlayerData } from './data-store';
 const cache = (func) => {
   /** @type {T | undefined} */
   let data;
-  /** @param {NS} ns */
-  return (ns) => {
+  return (ns: NS) => {
     if (data === undefined) data = func(ns);
     return data;
   };
@@ -45,22 +44,19 @@ const getPoolRamStatus = (ns) => {
   return { homeRam, pool1Ram };
 };
 
-/** @param {NS} ns */
-export const needsJobRam = (ns) => {
+export const needsJobRam = (ns: NS) => {
   const { requiredJobRam } = getStaticData(ns);
   const { homeRam, pool1Ram } = getPoolRamStatus(ns);
   return homeRam < requiredJobRam * 2 && pool1Ram < requiredJobRam;
 };
 
-/** @param {NS} ns */
-export const needsAugRam = (ns) => {
+export const needsAugRam = (ns: NS) => {
   const { requiredAugRam } = getStaticData(ns);
   const { homeRam, pool1Ram } = getPoolRamStatus(ns);
   return homeRam < requiredAugRam * 2 && pool1Ram < requiredAugRam;
 };
 
-/** @param {NS} ns */
-export const shouldWorkHaveFocus = (ns) => {
+export const shouldWorkHaveFocus = (ns: NS) => {
   const { isPlayerActive } = getPlayerData(ns);
   const { installedAugmentations } = getStaticData(ns);
   if (installedAugmentations.includes('Neuroreceptor Management Implant'))
@@ -68,9 +64,7 @@ export const shouldWorkHaveFocus = (ns) => {
   return !isPlayerActive;
 };
 
-/** @param {NS} ns
- *  @param {number} bn */
-export const hasBitNode = (ns, bn) => {
+export const hasBitNode = (ns: NS, bn: number) => {
   const { resetInfo } = getStaticData(ns);
   return resetInfo.currentNode === bn || resetInfo.ownedSF.has(bn);
 };

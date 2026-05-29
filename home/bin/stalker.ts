@@ -11,8 +11,7 @@ const MAIN_FUNCTION_ERROR =
 const DYNAMIC_LOAD_ERROR = 'loading dynamically imported module';
 const ERRORS = [MAIN_FUNCTION_ERROR, DYNAMIC_LOAD_ERROR];
 
-/** @param {NS} ns */
-const autoClosePopUps = (ns) => {
+const autoClosePopUps = (ns: NS) => {
   let timer = /** @type {ReturnType<typeof setTimeout>} */ 0;
   let timeout = 1;
   const check = () => {
@@ -37,8 +36,7 @@ const autoClosePopUps = (ns) => {
   return stop;
 };
 
-/** @param {NS} ns */
-const afkTracker = (ns) => {
+const afkTracker = (ns: NS) => {
   let lastActivity = Date.now();
   const track = () => (lastActivity = Date.now());
   win.addEventListener('mousemove', track, true);
@@ -52,8 +50,7 @@ const afkTracker = (ns) => {
   return () => lastActivity;
 };
 
-/** @param {NS} ns */
-const terminalTracker = (ns) => {
+const terminalTracker = (ns: NS) => {
   let lastTerminalActivity = Date.now();
 
   const update = (/** @type {KeyboardEvent} */ event) => {
@@ -70,8 +67,7 @@ const terminalTracker = (ns) => {
   return () => lastTerminalActivity;
 };
 
-/** @param {NS} ns */
-const createIndicator = (ns) => {
+const createIndicator = (ns: NS) => {
   const indicator = doc.createElement('div');
   indicator.innerText = '●';
   indicator.style.position = 'fixed';
@@ -84,15 +80,13 @@ const createIndicator = (ns) => {
   return indicator;
 };
 
-/** @param {NS} ns @param {boolean} focus */
-const setFocus = (ns, focus) => {
+const setFocus = (ns: NS, focus: boolean) => {
   try {
     ns.singularity.setFocus(focus);
   } catch (error) {}
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   const hasSingularity = hasBitNode(ns, 4);
 
   autoClosePopUps(ns);

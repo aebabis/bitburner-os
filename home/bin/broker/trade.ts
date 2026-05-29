@@ -5,10 +5,7 @@ import { getConfig } from '../../lib/config';
 import { getStocks, optimizeShares, getHoldings, getTableString } from './api';
 import { getServices } from '../../lib/service-api';
 
-/** @typedef {{sym: string, maxShares: number, position: [number, number, number, number], price: number, forecast: number | null | undefined, getPurchaseCost: (shares: number) => number, getSaleGain: (shares?: number) => number, buy: (shares: number) => number, sell: (shares: number) => number}} Stock */
-
-/** @param {NS} ns @param {Stock[]} stocks **/
-const getSpendableFunds = (ns, stocks) => {
+const getSpendableFunds = (ns: NS, stocks) => {
   const reserveParam = getConfig(ns).get('reserved-funds');
   const money = ns.getServerMoneyAvailable('home');
   if (reserveParam > 1) {
@@ -71,9 +68,8 @@ const tick = (
   return stocks;
 };
 
-/** @param {NS} ns **/
 export const trade = async (
-  ns,
+  ns: NS,
   /** @type {{record: (data: {sym: string, price: number}) => void, getStockForecast: (sym: string) => number | null}} */ forecaster,
 ) => {
   while (true) {

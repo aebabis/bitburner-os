@@ -1,14 +1,13 @@
 import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
 import { THREADPOOL } from '../../etc/config.ts';
-import { jobRamGoal, installGoal } from './nodes.ts';
+import { jobRamGoal, installGoal, type Goal } from './nodes.ts';
 import { buildFactionGoalTree, isRepBound as isRepBoundPure } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
 import { needsAugRam, needsJobRam } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 
-/** @param {NS} ns @returns {import('./nodes.ts').Goal[]} */
-export const getGoals = (ns) => {
+export const getGoals = (ns: NS): Goal[] => {
   const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -113,8 +112,7 @@ export const getGoals = (ns) => {
   return [jrg, installGoal([jrg])];
 };
 
-/** @param {NS} ns @returns {number | null} */
-export const getTimeToComplete = (ns) => {
+export const getTimeToComplete = (ns: NS): number | null => {
   const goals = getGoals(ns);
   const installGoals = goals.filter((g) => g.type === 'INSTALL');
   const roots =
@@ -124,7 +122,7 @@ export const getTimeToComplete = (ns) => {
   if (roots.length === 0) return null;
   const times = roots.map((g) => g.timeToComplete());
   if (times.some((t) => t == null)) return null;
-  return Math.max(.../** @type {number[]} */ times);
+  return Math.max(...times);
 };
 
 /**

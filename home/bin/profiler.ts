@@ -413,8 +413,7 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   }
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
 

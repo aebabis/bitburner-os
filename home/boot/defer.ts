@@ -1,9 +1,8 @@
 import { tprint } from './util';
 import { GRAY } from '../lib/colors';
 
-/** @param {NS} ns */
 export const defer =
-  (ns) =>
+  (ns: NS) =>
   async (/** @type {ScriptArg[]} */ ...args) => {
     tprint(ns)(GRAY + '  Deferring execution:        ' + ns.args.join(', '));
     const sent = args.map((s) =>
@@ -13,8 +12,7 @@ export const defer =
     ns.run('/boot/defer.ts', 1, ...sent);
   };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   tprint(ns)(GRAY + '  Deferred execution resumed: ' + ns.args.join(', '));
   await ns.sleep(50);
   const [nextProgram, ...remainder] = ns.args;

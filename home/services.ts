@@ -8,8 +8,7 @@ import {
 
 /** @typedef {{id: number | string, name: string, status: string, pid: number, desc: string}} ServiceEntry */
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const flags = ns.flags([['force', false]]);
   const [command, target] = /** @type {string[]} */ flags._;
   const force = /** @type {boolean} */ flags.force;

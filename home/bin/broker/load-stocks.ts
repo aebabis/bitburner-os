@@ -1,7 +1,6 @@
 import { putStaticData } from '../../lib/data-store';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const stocks = ns.stock.getSymbols().map((sym) => ({
     sym,
     maxShares: ns.stock.getMaxShares(sym),

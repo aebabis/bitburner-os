@@ -5,8 +5,7 @@ import { getCallGraph } from './call-graph';
 import { STR } from '../lib/colors';
 import { getViableServices } from '../bin/services/services';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'Determining required job RAM');
 
   const { scriptRam } = getStaticData(ns);

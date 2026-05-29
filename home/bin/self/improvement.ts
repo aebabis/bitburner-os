@@ -9,8 +9,7 @@ const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ [
   'agility',
 ];
 
-/** @param {NS} ns @param {number} levelReq */
-const getStatToTrain = (ns, levelReq) => {
+const getStatToTrain = (ns: NS, levelReq: number) => {
   const { skills } = ns.getPlayer();
   const possibleStats = COMBAT_STATS.filter((stat) => levelReq > skills[stat]);
   let stat = possibleStats[0];
@@ -20,8 +19,7 @@ const getStatToTrain = (ns, levelReq) => {
   return stat;
 };
 
-/** @param {NS} ns */
-const getTargetLevel = (ns) => {
+const getTargetLevel = (ns: NS) => {
   if (ns.args.length > 0) {
     const stat = /** @type {keyof GymEnumType} */ ns.args[0];
     const level = ns.args[1];
@@ -47,8 +45,7 @@ const getTargetLevel = (ns) => {
   }
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const { stat, level } = getTargetLevel(ns);
   if (stat) {
     const focus = shouldWorkHaveFocus(ns);

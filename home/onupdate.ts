@@ -1,5 +1,4 @@
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   for (const ps of ns.ps('home')) {
     if (ps.filename === 'bin/profiler.ts') {
       ns.kill(ps.pid);

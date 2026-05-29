@@ -4,8 +4,7 @@ import { getBoostTargets } from '../boost-solver';
 import { getActions } from '../orders/actions';
 import { getDivision } from './get-division';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const INDUSTRY = 'Chemical';

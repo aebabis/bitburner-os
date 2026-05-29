@@ -2,8 +2,7 @@ import { getPlayerData, putPlayerData } from '../../lib/data-store';
 import { FACTIONS } from '../../lib/factions';
 import { table } from '../../lib/table';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   const { factionRep = /** @type {Record<string, number>} */ {} } =
     getPlayerData(ns);

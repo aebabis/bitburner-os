@@ -29,3 +29,4 @@
 - Make purchase-augs use a findOptimalBatch variation that takes available money as a target spend.
 - Account for augs with prereqs in utility calculation (ensure all prereqs are in batch or owned, and make purchase order factor into price)
 - Multiple target factions
+- Migrate from `@eslint/js` + `@typescript-eslint/parser` to `typescript-eslint` unified plugin (once JS→TS migration is further along)

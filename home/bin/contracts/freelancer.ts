@@ -23,8 +23,7 @@ const showContracts = (/** @type {NS} */ ns) => {
   }
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   while (true) {
     await ns.sleep(10000);

@@ -1,8 +1,7 @@
 import { putStaticData } from '../../../lib/data-store';
 import { FACTIONS } from '../../../lib/factions';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const factionFavorGain = /** @type {Record<string, number>} */ {};

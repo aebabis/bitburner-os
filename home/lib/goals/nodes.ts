@@ -1,27 +1,37 @@
 import { C } from '../colors.ts';
 
 const fmt = new Intl.NumberFormat('en', { notation: 'compact' });
-const fmtMoney = (/** @type {number} */ n) => '$' + fmt.format(n);
-const fmtRep = (/** @type {number} */ n) => fmt.format(n);
+const fmtMoney = (n: number) => '$' + fmt.format(n);
+const fmtRep = (n: number) => fmt.format(n);
 
-/**
- * @typedef {'JOB_RAM' | 'INSTALL' | 'FACTION_JOIN' | 'FACTION_REP' | 'FACTION_FAVOR' | 'BUY_REP' | 'AUGMENTATION' | 'COMBAT_LEVELS' | 'HACKING_LEVEL' | 'KILLS' | 'KARMA' | 'LOCATION' | 'MONEY' | 'AUG_MONEY'} GoalType
- */
+type GoalType =
+  | 'JOB_RAM'
+  | 'INSTALL'
+  | 'FACTION_JOIN'
+  | 'FACTION_REP'
+  | 'FACTION_FAVOR'
+  | 'BUY_REP'
+  | 'AUGMENTATION'
+  | 'COMBAT_LEVELS'
+  | 'HACKING_LEVEL'
+  | 'KILLS'
+  | 'KARMA'
+  | 'LOCATION'
+  | 'MONEY'
+  | 'AUG_MONEY';
 
-/**
- * @typedef {{
- *   type: GoalType,
- *   desc: string,
- *   isDone: () => boolean,
- *   toString: () => string,
- *   requirement: number | undefined,
- *   faction: string | undefined,
- *   deps: Goal[],
- *   value: number,
- *   ownTime: () => number | null,
- *   timeToComplete: () => number | null,
- * }} Goal
- */
+export type Goal = {
+  type: GoalType;
+  desc: string;
+  isDone: () => boolean;
+  toString: () => string;
+  requirement: number | undefined;
+  faction: string | undefined;
+  deps: Goal[];
+  value: number;
+  ownTime: () => number | null;
+  timeToComplete: () => number | null;
+};
 
 export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ [
   'strength',

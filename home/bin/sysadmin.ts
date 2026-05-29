@@ -16,16 +16,14 @@ import {
 import { getTimeToComplete } from '../lib/goals/goals';
 import { infect, fullInfect } from './infect';
 
-/** @param {number} maxServers */
-const getServerNames = (maxServers) => {
+const getServerNames = (maxServers: number) => {
   return new Array(maxServers)
     .fill(null)
     .map((_, i) => (i + 1).toString().padStart(2, '0'))
     .map((n) => `${THREADPOOL}-${n}`);
 };
 
-/** @param {NS} ns @param {number} maxServers */
-const getPurchasedServerRams = (ns, maxServers) => {
+const getPurchasedServerRams = (ns: NS, maxServers: number) => {
   return getServerNames(maxServers)
     .filter(ns.serverExists)
     .map((hostname) => ({
@@ -34,12 +32,10 @@ const getPurchasedServerRams = (ns, maxServers) => {
     }));
 };
 
-/** @param {NS} ns @param {number} maxServers */
-const getNextServerName = (ns, maxServers) =>
+const getNextServerName = (ns: NS, maxServers: number) =>
   getServerNames(maxServers).find((hostname) => !ns.serverExists(hostname));
 
-/** @param {NS} ns **/
-const atCapacity = (ns) => {
+const atCapacity = (ns: NS) => {
   const ramData = getRamData(ns);
   if (ramData == null) return false;
 
@@ -49,8 +45,7 @@ const atCapacity = (ns) => {
   return totalRamUsed + ramQueued > totalMaxRam * 0.8;
 };
 
-/** @param {NS} ns **/
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const {

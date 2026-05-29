@@ -2,8 +2,7 @@ import { disableService } from '../lib/service-api';
 import { hasBitNode } from '../lib/query-service';
 import { rmi } from '../lib/rmi';
 
-/** @param {NS} ns */
-export const liquidate = async (ns) => {
+export const liquidate = async (ns: NS) => {
   // Prevent money from being spent
   await disableService(ns, 'hacknet');
   await disableService(ns, 'sysadmin');
@@ -17,8 +16,7 @@ export const liquidate = async (ns) => {
   if (ns.stock.hasTixApiAccess()) await rmi(ns)('/bin/broker/dump.ts');
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   await liquidate(ns);
 }

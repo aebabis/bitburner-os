@@ -4,8 +4,7 @@ const getRamUpgradeCost = (ns, ram = ns.getServerMaxRam('home')) => {
   return ram * 32000 * 1.58 ** lg2;
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   while (true) {
     const money = ns.getServerMoneyAvailable('home');
     if (getRamUpgradeCost(ns) < money) ns.toast('Buy RAM', 'info', 1000);

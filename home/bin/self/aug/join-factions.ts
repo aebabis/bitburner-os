@@ -2,8 +2,7 @@ import { getGangData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
 import { CITY_FACTIONS } from '../../../lib/factions';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
   const factionTargets = getGoals(ns)
     .filter((goal) => goal.type === 'FACTION_JOIN')

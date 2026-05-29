@@ -1,15 +1,13 @@
 import { formulas as getFormulas } from './formulas';
 
-/** @param {NS} ns **/
-export const getNodes = (ns) => {
+export const getNodes = (ns: NS) => {
   const numNodes = ns.hacknet.numNodes();
   return new Array(numNodes)
     .fill(null)
     .map((_, i) => ns.hacknet.getNodeStats(i));
 };
 
-/** @param {NS} ns **/
-const getNodeData = (ns) => {
+const getNodeData = (ns: NS) => {
   const formulas = getFormulas(ns);
   const { moneyGainRate } = formulas.hacknetNodes;
   const levelUpgradeProfit = (
@@ -78,8 +76,7 @@ const getNodeData = (ns) => {
   });
 };
 
-/** @param {NS} ns **/
-const getBestUpgrade = (ns) => {
+const getBestUpgrade = (ns: NS) => {
   const upgrades = getNodeData(ns).map((stats) => stats.upgrades.getBest());
   return upgrades.reduce(
     (a, b) => (a.profitPerCost > b.profitPerCost ? a : b),
@@ -87,8 +84,7 @@ const getBestUpgrade = (ns) => {
   );
 };
 
-/** @param {NS} ns **/
-export const getBestPurchase = (ns) => {
+export const getBestPurchase = (ns: NS) => {
   const bestUpgrade = getBestUpgrade(ns);
   const nodeCost = ns.hacknet.getPurchaseNodeCost();
   if (bestUpgrade == null || nodeCost < bestUpgrade.cost) {

@@ -1,8 +1,7 @@
 import { getHostnames } from '../lib/data-store';
 import { fullInfect } from './infect';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const hostnames = getHostnames(ns);
   const [home, n00dles] = hostnames;
   while (ns.getHackingLevel() < 5) {

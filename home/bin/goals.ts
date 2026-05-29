@@ -6,8 +6,7 @@ import { getMockFormulas, formulas as getFormulas } from '../lib/formulas';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
-/** @param {NS} ns */
-const getAugTableData = (ns) => {
+const getAugTableData = (ns: NS) => {
   const {
     augmentations = /** @type {string[]} */ [],
     augmentationStats = /** @type {Record<string, Multipliers>} */ {},
@@ -33,8 +32,7 @@ const getAugTableData = (ns) => {
   };
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const [command, ...rest] = ns.args;
 
   if (command === undefined) {

@@ -31,10 +31,9 @@ const TicketItem = (
   };
 };
 
-/** @typedef {ReturnType<typeof TicketItem>} TicketEntry */
+type TicketEntry = ReturnType<typeof TicketItem>;
 
-/** @param {NS} ns @param {TicketEntry[]} queue **/
-export const checkPort = async (ns, queue) => {
+export const checkPort = async (ns: NS, queue: TicketEntry[]) => {
   const delegated = await getDelegatedTasks(ns);
   for (const taskData of delegated) {
     const { script, ticket } = taskData;

@@ -1,7 +1,6 @@
 import { putStaticData } from '../../../lib/data-store';
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const { materialNames } = ns.corporation.getConstants();
   const materialData = Object.fromEntries(
     materialNames.map((material) => [
