@@ -110,6 +110,10 @@ export async function main(ns) {
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     if (referenceIncome == null) return;
     const timeToGoal = getTimeToComplete(ns) ?? Infinity;
+    // TODO: Make threshold time based on urgency of joining faction.
+    // If goal tree is rep-bound, then the threshold time should be
+    // based on join money rather than aug money so that the player
+    // can join as sooner.
     const money = ns.getServerMoneyAvailable('home');
 
     const servers = getPurchasedServerRams(ns, purchasedServerLimit);
