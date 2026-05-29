@@ -3,21 +3,21 @@ import { getTableString } from '../../lib/service-api';
 import { getGoals } from '../../lib/goals/goals';
 import { rmi } from '../../lib/rmi';
 
-const isTixViable = (/** @type {NS} */ ns) => {
+const isTixViable = (ns: NS) => {
   const money = ns.getServerMoneyAvailable('home');
   const amg = getGoals(ns).find((g) => g.type === 'AUG_MONEY');
   if (amg == null || amg.isDone()) return money > 5e9;
   return money - (amg.requirement ?? 0) > 5e9;
 };
 
-const is4SViable = (/** @type {NS} */ ns) => {
+const is4SViable = (ns: NS) => {
   const money = ns.getServerMoneyAvailable('home');
   const amg = getGoals(ns).find((g) => g.type === 'AUG_MONEY');
   if (amg == null || amg.isDone()) return money > 25e9;
   return money - (amg.requirement ?? 0) > 25e9;
 };
 
-const getTixApiAccess = async (/** @type {NS} */ ns) => {
+const getTixApiAccess = async (ns: NS) => {
   while (!ns.stock.hasTixApiAccess()) {
     while (!isTixViable(ns)) await ns.sleep(1000);
     if (!ns.stock.hasWseAccount())
@@ -26,21 +26,20 @@ const getTixApiAccess = async (/** @type {NS} */ ns) => {
   }
 };
 
-const loadStaticStockData = (/** @type {NS} */ ns) =>
+const loadStaticStockData = (ns: NS) =>
   rmi(ns, true)('/bin/broker/load-stocks.ts');
 
-const attempt4SApiAccess = async (/** @type {NS} */ ns) => {
+const attempt4SApiAccess = async (ns: NS) => {
   if (is4SViable(ns))
     await rmi(ns)('/bin/broker/purchase.ts', 1, 'purchase4SMarketDataTixApi');
 };
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   ns.disableLog('ALL');
 
-  const isTrendTrader = (/** @type {NS} */ ns) =>
+  const isTrendTrader = () =>
     ns.stock.hasTixApiAccess() && !ns.stock.has4SDataTixApi();
-  const isFourSTrader = (/** @type {NS} */ ns) =>
+  const isFourSTrader = () =>
     ns.stock.hasTixApiAccess() && ns.stock.has4SDataTixApi();
 
   const trendTraderSubservice = AnyHostService(
