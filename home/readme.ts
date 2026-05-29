@@ -17,7 +17,7 @@ const SHORTHAND = {
 
 const UTILITIES = {
   'aug-table': {
-    command: 'dispatch ./bin/goals.js aug-table',
+    command: 'dispatch ./bin/goals.ts aug-table',
     desc: 'Show augmentation scoring table',
   },
   config: {
@@ -64,8 +64,8 @@ const UTILITY_DESCRIPTIONS = Object.fromEntries(
 const ALIASES = {
   // Main
   start: 'home; ./start.ts',
-  stop: 'home; kill /bin/scheduler.js; ./stop.ts',
-  restart: 'home; kill /bin/scheduler.js; ./stop.js start.ts',
+  stop: 'home; kill /bin/scheduler.ts; ./stop.ts',
+  restart: 'home; kill /bin/scheduler.ts; ./stop.ts start.ts',
   services: './services.ts',
 
   // Shorthand
@@ -101,8 +101,7 @@ const getAliases = (/** @type {NS} */ ns) =>
     .map(([alias, command]) => `alias ${alias}=${JSON.stringify(command)}`)
     .join(';');
 
-/** @param {NS} ns */
-export async function main(ns) {
+export async function main(ns: NS) {
   const [command] = ns.args;
   if (command == null) ns.tprint('\n' + getHelp(ns) + '\n\n');
   else if (command === 'aliases') ns.tprint(getAliases(ns));
