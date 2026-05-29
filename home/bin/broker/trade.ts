@@ -4,6 +4,7 @@ import { putMoneyData } from '../../lib/data-store';
 import { getConfig } from '../../lib/config';
 import { getStocks, optimizeShares, getHoldings, getTableString } from './api';
 import { getServices } from '../../lib/service-api';
+import { type Forecaster } from './forecaster';
 
 const getSpendableFunds = (ns: NS, stocks) => {
   const reserveParam = getConfig(ns).get('reserved-funds');
@@ -20,12 +21,9 @@ const getSpendableFunds = (ns: NS, stocks) => {
   }
 };
 
-const tick = (
-  /** @type {NS} */ ns,
-  /** @type {{record: (data: {sym: string, price: number}) => void, getStockForecast: (sym: string) => number | null}} */ forecaster,
-) => {
+const tick = (ns: NS, forecaster: Forecaster) => {
   ns.clearLog();
-  const stocks = /** @type {Stock[]} */ getStocks(ns);
+  const stocks = getStocks(ns);
 
   for (const stock of stocks) {
     forecaster.record(stock);
@@ -45,7 +43,7 @@ const tick = (
   const eligiblePurchases = stocks
     .filter((stock) => stock.forecast > 0.51)
     .filter((stock) => stock.position[0] < stock.maxShares)
-    .sort(by((/** @type {Stock} */ stock) => -stock.forecast));
+    .sort(by((stock) => -stock.forecast));
 
   let moneyToSpend = getSpendableFunds(ns, stocks);
   while (moneyToSpend > 1e9 && eligiblePurchases.length > 0) {
@@ -56,9 +54,9 @@ const tick = (
     moneyToSpend -= shares * price;
   }
 
-  const estimatedStockValue = /** @type {Stock[]} */ getStocks(ns)
+  const estimatedStockValue = getStocks(ns)
     .map((stock) => stock.getSaleGain())
-    .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+    .reduce((a, b) => a + b, 0);
   putMoneyData(ns, { estimatedStockValue });
 
   ns.print('EARMARKED FUNDS: $' + ns.format.number(moneyToSpend, 3));
@@ -68,15 +66,9 @@ const tick = (
   return stocks;
 };
 
-export const trade = async (
-  ns: NS,
-  /** @type {{record: (data: {sym: string, price: number}) => void, getStockForecast: (sym: string) => number | null}} */ forecaster,
-) => {
+export const trade = async (ns: NS, forecaster: Forecaster) => {
   while (true) {
-    const broker = getServices(ns).find(
-      (/** @type {{name: string, pid: number | null}} */ s) =>
-        s.name === 'broker',
-    );
+    const broker = getServices(ns).find((s) => s.name === 'broker');
     if (broker == null || broker.pid == null) return;
     try {
       const stocks = tick(ns, forecaster);
@@ -85,7 +77,7 @@ export const trade = async (
       )
         await ns.sleep(250);
     } catch (error) {
-      ns.tprint(ERROR + error);
+      ns.tprint(ERROR + error.toString());
       await ns.sleep(10000);
     }
   }

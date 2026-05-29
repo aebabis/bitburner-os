@@ -2,7 +2,12 @@ import { getMoneyData, putMoneyData } from '../lib/data-store';
 import { Timeline } from '../lib/timeline';
 
 class Timer {
-  constructor(/** @type NS */ ns, interval = 50, maxInterval = null) {
+  ns: NS;
+  interval: number;
+  maxInterval: number | null;
+  nextProc: number;
+
+  constructor(ns: NS, interval = 50, maxInterval = null) {
     this.ns = ns;
     this.interval = +interval;
     this.maxInterval = maxInterval && +maxInterval;

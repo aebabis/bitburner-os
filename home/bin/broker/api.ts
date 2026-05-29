@@ -13,7 +13,18 @@ type StockPosition = {
   sell: (shares: number) => number;
 };
 
-export const getStocks = (ns: NS) =>
+type StockController = {
+  sym: string;
+  maxShares: number;
+  position: [number, number, number, number];
+  price: number;
+  getPurchaseCost: (shares: number) => number;
+  getSaleGain: (shares?: number) => number;
+  buy: (shares: number) => number;
+  sell: (shares: number) => number;
+};
+
+export const getStocks = (ns: NS): StockController[] =>
   getStaticData(ns).stocks.map(({ sym, maxShares }: StockPosition) => ({
     sym,
     maxShares,
@@ -28,7 +39,7 @@ export const getStocks = (ns: NS) =>
   }));
 
 export const optimizeShares = (
-  ns: NS,
+  _ns: NS,
   stock: StockPosition,
   maxPurchase: number,
   money: number,

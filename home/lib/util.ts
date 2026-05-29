@@ -1,45 +1,36 @@
 // export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
 const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
-/** @template T @param {((item: T) => (number | string)) | string | number} prop @returns {(a: T, b: T) => number} */
-export const by = (prop) => {
-  let val = prop;
-  if (typeof val !== 'function') {
-    val = /** @type {(item: T) => (number | string)} */ (
-      /** @type {T} */ obj,
-    ) => {
-      const ret =
-        /** @type {Record<string, number | string>} */ /** @type {unknown} */ obj[
-          /** @type {string} */ prop
-        ];
-      if (typeof ret === 'undefined') {
-        throw new Error(`invalid prop ${prop}`);
-      }
-      return ret;
+export const by = <T>(prop: ((elem: T) => string | number) | keyof T) => {
+  if (typeof prop === 'function') {
+    return (a: T, b: T) => {
+      const va = prop(a);
+      const vb = prop(b);
+      if (va < vb) return -1;
+      else if (va > vb) return 1;
+      else return 0;
     };
   }
-  return (a, b) => {
-    const va = val(a);
-    const vb = val(b);
+  return (a: T, b: T) => {
+    const va = a[prop];
+    const vb = b[prop];
     if (va < vb) return -1;
     else if (va > vb) return 1;
     else return 0;
   };
 };
 
-/** @param {string} str */
-export const length = (str) =>
+export const length = (str: string) =>
   str.toString().replaceAll(COLOR_REGEX, '').length;
 
-/** @param {string | number} number */
-export const small = (number) =>
+export const small = (number: string | number) =>
   number
     .toString()
     .toLowerCase()
     .split('')
     .map(
-      /** @param {string} n */ (n) =>
-        '₀₁₂₃₄₅₆₇₈₉'[/** @type {number} */ /** @type {unknown} */ n] ||
+      (n: string) =>
+        '₀₁₂₃₄₅₆₇₈₉'[+n] ||
         'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ'[n.charCodeAt(0) - 97] ||
         ' ',
     )

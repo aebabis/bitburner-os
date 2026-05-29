@@ -2,7 +2,7 @@ import { INFECT } from '../etc/filenames';
 import { delegateAny } from '../lib/scheduler-delegate';
 import { getHostnames } from '../lib/data-store';
 
-export const access = (ns: NS) => (/** @type string */ target) => {
+export const access = (ns: NS) => (target: string) => {
   if (ns.fileExists('BruteSSH.exe', 'home')) ns.brutessh(target);
   if (ns.fileExists('FTPCrack.exe', 'home')) ns.ftpcrack(target);
   if (ns.fileExists('relaySMTP.exe', 'home')) ns.relaysmtp(target);
@@ -13,11 +13,13 @@ export const access = (ns: NS) => (/** @type string */ target) => {
 
 export async function main(ns: NS) {
   if (ns.args[0] != null) {
+    if (typeof ns.args[0] !== 'string')
+      throw new Error('Param if given, must be string. Got: ' + ns.args[0]);
     return access(ns)(ns.args[0]);
   }
 
   let hostnames = getHostnames(ns).filter(
-    (/** @type string */ hostname) => !ns.hasRootAccess(hostname),
+    (hostname) => !ns.hasRootAccess(hostname),
   );
 
   while (hostnames.length > 0) {

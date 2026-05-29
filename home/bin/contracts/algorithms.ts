@@ -1,4 +1,4 @@
-export const computeSumPermutations = (/** @type {number} */ MAX) => {
+export const computeSumPermutations = (MAX: number) => {
   const arr = () => new Array(MAX + 1).fill(1);
   const table = arr().map(arr);
 
@@ -17,10 +17,10 @@ export const computeSumPermutations = (/** @type {number} */ MAX) => {
 };
 
 export const computeSumPermutationsII = (
-  /** @type {number} */ target,
-  /** @type {number[]} */ set,
+  target: number,
+  set: number,
   max = set.length - 1,
-  /** @type {Record<string, number>} */ cache = {},
+  cache: Record<string, number> = {},
 ) => {
   let key = `${target},${max}`;
   if (cache[key] != null) return cache[key];
@@ -38,7 +38,7 @@ export const computeSumPermutationsII = (
   return outcomes;
 };
 
-export const countPaths = (/** @type {number[][]} */ grid) => {
+export const countPaths = (grid: number[][]) => {
   const h = grid.length;
   const w = grid[0].length;
   grid[h - 1][w - 1] = 1;
@@ -61,13 +61,13 @@ export const countPaths = (/** @type {number[][]} */ grid) => {
 };
 
 export const generateIPs = (() => {
-  const isValid = (/** @type {string} */ seq) => {
+  const isValid = (seq: string) => {
     const badZero = seq[0] === '0' && seq.length > 1;
     return seq.length > 0 && !badZero && +seq <= 255;
   };
 
   /** @returns {Generator<string>} */
-  function* getIPs(/** @type {string} */ input, sections = 4) {
+  function* getIPs(input: string, sections = 4) {
     if (sections === 1) {
       if (isValid(input)) yield input;
       return;
@@ -82,10 +82,10 @@ export const generateIPs = (() => {
     }
   }
 
-  return (/** @type {string} */ numerals) => [...getIPs(numerals)];
+  return (numerals: string) => [...getIPs(numerals)];
 })();
 
-export const maximumSubarraySum = (/** @type {number[]} */ arr) => {
+export const maximumSubarraySum = (arr: number[]) => {
   let cur = -Infinity;
   let sum = -Infinity;
   for (const num of arr) {

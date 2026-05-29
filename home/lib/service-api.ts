@@ -5,36 +5,37 @@ import { table } from './table';
 export const DISABLE = 'DISABLE';
 export const ENABLE = 'ENABLE';
 
-const getServiceName = (/** @type {string} */ script) =>
+type ServiceData = {
+  id: number | string;
+  name: string;
+  status: string;
+  pid: number;
+  desc: string;
+};
+
+const getServiceName = (script: string) =>
   script.split('/').pop()?.split('.').shift();
 
-/** @typedef {{id: number | string, name: string, status: string, pid: number, desc: string}} ServiceData */
-/** @param {NS} ns @param {ServiceData[]} taskData */
-export const getTableString = (ns, taskData) => {
+export const getTableString = (ns: NS, taskData: ServiceData[]) => {
   return table(
     ns,
     ['ID', 'NAME', '', 'PID', 'DESC'],
-    taskData.map(
-      (
-        /** @type {{id: number | string, name: string, status: string, pid: number, desc: string}} */ {
-          id,
-          name,
-          status,
-          pid,
-          desc,
-        },
-      ) => [id, name, status, pid, desc],
-    ),
+    taskData.map(({ id, name, status, pid, desc }) => [
+      id,
+      name,
+      status,
+      pid,
+      desc,
+    ]),
   );
 };
 
-export const getServices = (ns: NS) => {
+export const getServices = (ns: NS): ServiceData[] => {
   return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 
-/** @param {NS} ns */
 export const disableService = async (
-  ns,
+  ns: NS,
   idOrName = getServiceName(ns.getScriptName()),
 ) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
@@ -43,10 +44,9 @@ export const disableService = async (
   });
 };
 
-/** @param {NS} ns */
 export const enableService = async (
-  ns,
-  /** @type {string | number} */ idOrName,
+  ns: NS,
+  idOrName: string | number,
   override = false,
 ) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
@@ -57,15 +57,13 @@ export const enableService = async (
   // TODO: Await response?
 };
 
-/** @param {NS} ns */
-export const writeServices = (ns, /** @type {ServiceData[]} */ services) => {
+export const writeServices = (ns: NS, services: ServiceData[]) => {
   const handle = Ports(ns).getPortHandle(PORT_SERVICES_LIST);
   handle.clear();
   handle.write(services);
 };
 
-/** @param {NS} ns */
-export const checkQueue = (ns) => {
+export const checkQueue = (ns: NS) => {
   const port = Ports(ns).getPortHandle(PORT_SERVICES_REPL);
   const tasks = [];
   while (!port.empty()) {
