@@ -24,6 +24,7 @@
   "homepage": "https://github.com/aebabis/bitburner-os#readme",
   "description": "",
   "devDependencies": {
+    "@typescript-eslint/parser": "^8.60.0",
     "d3-drag": "^3.0.0",
     "d3-force": "^3.0.0",
     "d3-selection": "^3.0.0",

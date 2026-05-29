@@ -1,10 +1,15 @@
 {
   "compilerOptions": {
-    "target":"ES2022",
-    "checkJs":true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
     "strict": true,
-    "lib":["ES2022","dom"],
-    "noUnusedLocals": true
+    "lib": ["ES2022", "dom"],
+    "noUnusedLocals": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
-  "include":[".bitburner/**/*.d.ts","**/*"]
+  "include": [".bitburner/**/*.d.ts", "**/*"]
 }
