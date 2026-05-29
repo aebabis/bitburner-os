@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node make-download.js",
+    "lint": "tsc --noEmit",
     "bundle:d3": "node scripts/bundle-d3.js",
     "check-data-deps": "node scripts/check-data-deps.js",
     "knip": "knip",
@@ -42,6 +43,7 @@
     "*.{js,ts,json}": "prettier --write"
   },
   "dependencies": {
-    "acorn": "^8.16.0"
+    "acorn": "^8.16.0",
+    "tsc": "^2.0.4"
   }
 }
