@@ -5,6 +5,7 @@ import { buildFactionGoalTree, isRepBound as isRepBoundPure } from './tree.js';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.js';
 import { formulas as getFormulas } from '../formulas.js';
 import { needsAugRam, needsJobRam } from '../query-service.js';
+import { recordGoalSnapshot } from '../goal-tracker.js';
 
 /** @param {NS} ns @returns {import('./nodes.js').Goal[]} */
 export const getGoals = (ns) => {
@@ -43,6 +44,10 @@ export const getGoals = (ns) => {
           a.utility(overhead) >= b.utility(overhead) ? a : b,
         )
       : null;
+
+  const selectedFaction =
+    bestPlan?.goals.find((g) => g.type === 'FACTION_JOIN')?.faction ?? null;
+  recordGoalSnapshot(plans, selectedFaction, overhead);
 
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;

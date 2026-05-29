@@ -1,20 +1,11 @@
 import { putPlayerData, getStaticData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
 import { by } from '../../../lib/util';
+import { getPurchasedAugmentations } from './load-owned-augs';
 import { nmap } from '../../../lib/nmap';
 import { dump } from '../../../bin/broker/dump';
 
 const NEUROFLUX = 'NeuroFlux Governor';
-
-/** @param {NS} ns */
-const getPurchasedAugmentations = (ns) => {
-  const installedAugmentations = ns.singularity.getOwnedAugmentations(false);
-  const ownedAugmentations = ns.singularity.getOwnedAugmentations(true);
-  const purchasedAugmentations = ownedAugmentations.slice();
-  for (const aug of installedAugmentations)
-    purchasedAugmentations.splice(purchasedAugmentations.indexOf(aug), 1);
-  return purchasedAugmentations;
-}
 
 /** @param {NS} ns */
 export async function main(ns) {

@@ -280,6 +280,7 @@ export const factionFavorGoal = (
     `${fmtRep(remaining)} rep for favor (${faction})`,
     () => currentFavor + favorGain >= favorToDonate,
     {
+      requirement: repForFavor,
       faction,
       deps: [dep],
       ownTime: () => (repRate > 0 ? remaining / repRate : null),
