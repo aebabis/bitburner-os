@@ -10,24 +10,14 @@ export const getNodes = (ns: NS) => {
 const getNodeData = (ns: NS) => {
   const formulas = getFormulas(ns);
   const { moneyGainRate } = formulas.hacknetNodes;
-  const levelUpgradeProfit = (
-    /** @type {number} */ level,
-    /** @type {number} */ ram,
-    /** @type {number} */ cores,
-  ) => moneyGainRate(level + 1, ram, cores) - moneyGainRate(level, ram, cores);
-  const ramUpgradeProfit = (
-    /** @type {number} */ level,
-    /** @type {number} */ ram,
-    /** @type {number} */ cores,
-  ) => moneyGainRate(level, ram + 1, cores) - moneyGainRate(level, ram, cores);
-  const coreUpgradeProfit = (
-    /** @type {number} */ level,
-    /** @type {number} */ ram,
-    /** @type {number} */ cores,
-  ) => moneyGainRate(level, ram, cores + 1) - moneyGainRate(level, ram, cores);
+  const levelUpgradeProfit = (level: number, ram: number, cores: number) =>
+    moneyGainRate(level + 1, ram, cores) - moneyGainRate(level, ram, cores);
+  const ramUpgradeProfit = (level: number, ram: number, cores: number) =>
+    moneyGainRate(level, ram + 1, cores) - moneyGainRate(level, ram, cores);
+  const coreUpgradeProfit = (level: number, ram: number, cores: number) =>
+    moneyGainRate(level, ram, cores + 1) - moneyGainRate(level, ram, cores);
 
-  const m = (/** @type {number | null | undefined} */ n) =>
-    n && '$' + ns.format.number(n, 0);
+  const m = (n?: number | null) => n && '$' + ns.format.number(n, 0);
   return getNodes(ns).map((stats, i) => {
     const lp = levelUpgradeProfit(stats.level, stats.ram, stats.cores);
     const rp = ramUpgradeProfit(stats.level, stats.ram, stats.cores);
@@ -89,7 +79,7 @@ export const getBestPurchase = (ns: NS) => {
   const nodeCost = ns.hacknet.getPurchaseNodeCost();
   if (bestUpgrade == null || nodeCost < bestUpgrade.cost) {
     const profit =
-      ns.hacknet.numNodes > 0 ? ns.hacknet.getNodeStats(0).production : 0;
+      ns.hacknet.numNodes() > 0 ? ns.hacknet.getNodeStats(0).production : 0;
     const profitPerCost = profit / nodeCost;
     const breakEvenTime = profit === 0 ? 0 : nodeCost / profit;
     return {
