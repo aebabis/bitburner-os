@@ -12,7 +12,14 @@ import {
 import Thief, { HORIZON_MS } from '../lib/thief';
 import { initProfiler } from '../lib/profiler';
 
-/** @typedef {{hostname: string, type?: string, jobs?: number, portion?: number, timeLeft?: string, frame?: string}} ThiefTableRow */
+type ThiefTableRow = {
+  hostname: string;
+  type?: string;
+  jobs?: number;
+  portion?: number;
+  timeLeft?: string;
+  frame?: string;
+};
 
 export async function main(ns: NS) {
   initProfiler();
@@ -26,35 +33,30 @@ export async function main(ns: NS) {
   ns.ui.resizeTail(WIDTH, HEIGHT);
   ns.ui.moveTail(x - 2, y - 30);
 
-  const feed = /** @type {string[]} */ [];
-  const log = (/** @type {string} */ message) => {
+  const feed: string[] = [];
+  const log = (message: string) => {
     feed.push(message);
     while (feed.length > 10) feed.shift();
   };
 
   const hostnames = getHostnames(ns);
   const possibleTargets = hostnames.filter(
-    (/** @type {string} */ hostname) =>
+    (hostname: string) =>
       hostname !== 'home' &&
       !hostname.startsWith(THREADPOOL) &&
       ns.getServerMaxMoney(hostname) > 0,
   );
 
   const thieves = possibleTargets.map(
-    (/** @type {string} */ hostname) => new Thief(ns, hostname),
+    (hostname: string) => new Thief(ns, hostname),
   );
 
-  const prioritize = (/** @type {number} */ ram) =>
+  const prioritize = (ram: number) =>
     thieves
-      .filter((/** @type {Thief} */ thief) => thief.canHack())
-      .sort(
-        by(
-          (/** @type {Thief} */ thief) =>
-            -thief.getDesirability(HORIZON_MS, ram),
-        ),
-      );
+      .filter((thief) => thief.canHack())
+      .sort(by((thief) => -thief.getDesirability(HORIZON_MS, ram)));
 
-  let viableThieves = /** @type {Thief[]} */ [];
+  let viableThieves: Thief[] = [];
   let lastPrioritization = 0;
 
   while (true) {
@@ -68,8 +70,8 @@ export async function main(ns: NS) {
       }
 
       const reservedThreads = viableThieves
-        .map((/** @type {Thief} */ thief) => thief.getReservedThreads())
-        .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+        .map((thief) => thief.getReservedThreads())
+        .reduce((a, b) => a + b, 0);
 
       // let ramAvailable = ramData.totalRamUnused - reservedThreads * 1.75;
       let ramAvailable =
@@ -85,39 +87,28 @@ export async function main(ns: NS) {
         topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
 
       ns.clearLog();
-      const secStr = (/** @type {string} */ hostname) =>
+      const secStr = (hostname: string) =>
         `${+ns.getServerSecurityLevel(hostname).toFixed(1)}/${ns.getServerMinSecurityLevel(hostname)}`;
-      const moneyStr = (/** @type {string} */ hostname) =>
+      const moneyStr = (hostname: string) =>
         `${ns.format.number(ns.getServerMoneyAvailable(hostname), 2)}/${ns.format.number(ns.getServerMaxMoney(hostname), 2)}`;
       const rows = viableThieves
         .filter(
-          (/** @type {Thief} */ thief) =>
+          (thief) =>
             thief.currentBatch != null && !thief.currentBatch.hasEnded(),
         )
-        .flatMap((/** @type {Thief} */ thief) => thief.getTableData())
-        .map(
-          (
-            /** @type {ThiefTableRow} */ {
-              hostname,
-              type,
-              frame,
-              portion,
-              jobs,
-              timeLeft,
-            },
-          ) => {
-            return [
-              hostname,
-              moneyStr(hostname),
-              secStr(hostname),
-              type,
-              frame,
-              portion,
-              jobs,
-              timeLeft,
-            ];
-          },
-        )
+        .flatMap((thief) => thief.getTableData())
+        .map(({ hostname, type, frame, portion, jobs, timeLeft }) => {
+          return [
+            hostname,
+            moneyStr(hostname),
+            secStr(hostname),
+            type,
+            frame,
+            portion,
+            jobs,
+            timeLeft,
+          ];
+        })
         .sort(by(0));
       const tString = table(
         ns,
@@ -129,14 +120,10 @@ export async function main(ns: NS) {
         ` RAM AVAILABLE: ${ramAvailable.toFixed(2)}  MODE: ${godMode ? 'GOD' : 'FOCUS'}`,
       );
 
-      const stealing = viableThieves.filter((/** @type {Thief} */ thief) =>
-        thief.isStealing(),
-      );
-      const grooming = viableThieves.filter((/** @type {Thief} */ thief) =>
-        thief.isGrooming(),
-      );
+      const stealing = viableThieves.filter((thief) => thief.isStealing());
+      const grooming = viableThieves.filter((thief) => thief.isGrooming());
       const mayGroom = grooming.length <= stealing.length;
-      const mayStart = (/** @type {Thief} */ thief) =>
+      const mayStart = (thief: Thief) =>
         thief.canStartNextBatch() &&
         (thief.isGroomed() || thief.isPipelining() || mayGroom);
 

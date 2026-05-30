@@ -36,11 +36,7 @@ const getTimes = (ns: NS, target: string) => {
   };
 };
 
-/** @param {NS} ns
- *  @param {number} targetDecrease
- *  @param {number} [cores]
- */
-const getWThreads = (ns, targetDecrease, cores = 1) => {
+const getWThreads = (ns: NS, targetDecrease: number, cores = 1) => {
   let threads = 1;
   while (ns.weakenAnalyze(threads, cores) < targetDecrease) threads++;
   return threads;
@@ -73,21 +69,38 @@ const computeThreads = (ns: NS, target: string, portion: number) => {
 };
 
 class Batch {
+  _profilerRecords: [string, string, string, string, number, number, number][];
+
+  ns: NS;
+  target: string;
+  jobs: ReturnType<typeof createBatch>;
+  type: string;
+  threads: number;
+  endAfter: number | null;
+  frame?: number[];
+  portion?: number;
+
   constructor(ns: NS, target: string) {
     this.ns = ns;
     this.target = target;
     this.jobs = createBatch(ns);
     this.type = this.constructor.name.replace('Batch', '');
     this.threads = 0;
-    this._profilerRecords =
-      /** @type {[string, string, string, string, number, number, number][]} */ [];
+    this._profilerRecords = [];
     this.endAfter = /** @type {number | null} */ null;
     this.frame = /** @type {number[] | undefined} */ undefined;
     this.portion = /** @type {number | undefined} */ undefined;
   }
 
-  /** @param {string} frameId @param {string} jobId @param {string} target @param {string} label @param {number} threads @param {number} startTime @param {number} endTime */
-  _queueProfiler(frameId, jobId, target, label, threads, startTime, endTime) {
+  _queueProfiler(
+    frameId: string,
+    jobId: string,
+    target: string,
+    label: string,
+    threads: number,
+    startTime: number,
+    endTime: number,
+  ) {
     this._profilerRecords.push([
       frameId,
       jobId,
@@ -99,8 +112,13 @@ class Batch {
     ]);
   }
 
-  /** @param {string} script @param {number} threads @param {string} target @param {number} startTime @param {string} jobId */
-  addJob(script, threads, target, startTime, jobId = crypto.randomUUID()) {
+  addJob(
+    script: string,
+    threads: number,
+    target: string,
+    startTime: number,
+    jobId = crypto.randomUUID(),
+  ) {
     this.jobs.delegateAny(startTime)(script, threads, target, jobId);
     this.threads += threads;
   }
@@ -132,12 +150,11 @@ class Batch {
 }
 
 class HWGWBatch extends Batch {
-  /** @param {NS} ns @param {string} target @param {number} portion @param {number} ram @param {number} startAfter @param {number} maxFrames */
   constructor(
-    ns,
-    target,
-    portion,
-    ram,
+    ns: NS,
+    target: string,
+    portion: number,
+    ram: number,
     startAfter = Date.now(),
     maxFrames = Infinity,
   ) {
@@ -244,8 +261,7 @@ class HWGWBatch extends Batch {
 }
 
 class WGWBatch extends Batch {
-  /** @param {NS} ns @param {string} target @param {number} ram @param {number} startAfter */
-  constructor(ns, target, ram, startAfter = Date.now()) {
+  constructor(ns: NS, target: string, ram: number, startAfter = Date.now()) {
     super(ns, target);
 
     const minSecurity = ns.getServerMinSecurityLevel(target);
@@ -335,10 +351,15 @@ class WGWBatch extends Batch {
 }
 
 export default class Thief {
+  ns: NS;
+  server: string;
+  batches: Batch[];
+  currentBatch?: Batch | null;
+
   constructor(ns: NS, server: string) {
     this.ns = ns;
     this.server = server;
-    this.batches = /** @type {Batch[]} */ [];
+    this.batches = [];
   }
 
   getHostname = () => this.server;
@@ -374,8 +395,7 @@ export default class Thief {
   isPipelining = () =>
     this.currentBatch != null && !this.currentBatch.hasEnded();
 
-  /** @param {number} ram @param {number} maxRamPerJob */
-  async startNextBatch(ram, maxRamPerJob) {
+  async startNextBatch(ram: number, maxRamPerJob: number) {
     const { ns, server, currentBatch } = this;
     const endAfter = Math.max(currentBatch?.endAfter ?? Date.now(), Date.now());
 
@@ -424,8 +444,7 @@ export default class Thief {
       });
   }
 
-  /** @param {number} ramAvailable */
-  estimateGroomTime(ramAvailable) {
+  estimateGroomTime(ramAvailable: number) {
     const { ns, server } = this;
     const minSec = ns.getServerMinSecurityLevel(server);
     const curSec = ns.getServerSecurityLevel(server);
@@ -442,7 +461,6 @@ export default class Thief {
     return minPasses * ns.getWeakenTime(server);
   }
 
-  /** @param {number} timeToAug @param {number} ramAvailable */
   getDesirability(timeToAug = HORIZON_MS, ramAvailable = Infinity) {
     const { ns, server } = this;
 

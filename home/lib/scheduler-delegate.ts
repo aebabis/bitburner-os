@@ -4,25 +4,15 @@ import { logger } from './logger';
 import { getSchedulerReportData, putSchedulerReportData } from './data-store';
 
 const desc = (
-  /** @type {string} */ script,
+  script: string,
   host = null,
-  /** @type {number} */ numThreads = 1,
-  /** @type {ScriptArg[]} */ ...args
+  numThreads = 1,
+  ...args: ScriptArg[]
 ) => `${script} ${host || '*'} ${numThreads} ${args.join(' ')}`;
 
 const Job =
-  (
-    /** @type {NS} */ ns,
-    /** @type {boolean} */ response,
-    /** @type {number} */ startTime,
-    /** @type {boolean} */ highPriority = false,
-  ) =>
-  (
-    /** @type {string} */ script,
-    host = null,
-    /** @type {number} */ numThreads = 1,
-    /** @type {ScriptArg[]} */ ...args
-  ) => {
+  (ns: NS, response: boolean, startTime: number, highPriority = false) =>
+  (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
     if (script.startsWith('.') || !script.endsWith('.ts'))
       throw new Error(
         `Illegal script name in ${desc(script, host, numThreads, ...args)}`,
@@ -45,19 +35,14 @@ const Job =
     };
   };
 
-/** @param {NS} ns **/
+type DelegateOptions = {
+  startTime?: number;
+  highPriority?: boolean;
+};
+
 export const delegate =
-  (
-    ns,
-    /** @type {boolean} */ response,
-    /** @type {{startTime?: number, highPriority?: boolean}} */ options = {},
-  ) =>
-  async (
-    /** @type {string} */ script,
-    host = null,
-    /** @type {number} */ numThreads = 1,
-    /** @type {ScriptArg[]} */ ...args
-  ) => {
+  (ns: NS, response: boolean, options: DelegateOptions = {}) =>
+  async (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
     const { startTime = Date.now(), highPriority = false } = options;
     const job = Job(ns, response, startTime, highPriority)(
       script,
@@ -88,43 +73,24 @@ export const delegate =
     }
   };
 
-/** @param {NS} ns **/
 export const delegateAny =
-  (
-    ns,
-    /** @type {boolean} */ response = false,
-    /** @type {{startTime?: number, highPriority?: boolean}} */ options = {},
-  ) =>
-  async (
-    /** @type {string} */ script,
-    numThreads = 1,
-    /** @type {ScriptArg[]} */ ...args
-  ) =>
+  (ns: NS, response = false, options: DelegateOptions = {}) =>
+  async (script: string, numThreads = 1, ...args: ScriptArg[]) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
 
-/** @param {NS} ns */
-export const createBatch = (ns) => {
-  const jobs = /** @type {ReturnType<ReturnType<typeof Job>>[]} */ [];
+export const createBatch = (ns: NS) => {
+  const jobs: ReturnType<ReturnType<typeof Job>>[] = [];
   const delegate =
-    (/** @type {number} */ startTime) =>
-    (
-      /** @type {string} */ script,
-      host = null,
-      /** @type {number} */ numThreads = 1,
-      /** @type {ScriptArg[]} */ ...args
-    ) =>
+    (startTime: number) =>
+    (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) =>
       jobs.push(
         Job(ns, false, startTime, false)(script, host, numThreads, ...args),
       );
   return {
     delegate,
     delegateAny:
-      (/** @type {number} */ startTime) =>
-      (
-        /** @type {string} */ script,
-        /** @type {number} */ numThreads = 1,
-        /** @type {ScriptArg[]} */ ...args
-      ) =>
+      (startTime: number) =>
+      (script: string, numThreads = 1, ...args: ScriptArg[]) =>
         delegate(startTime)(script, null, numThreads, ...args),
     getSize: () => jobs.length,
     send: async () =>
@@ -132,8 +98,7 @@ export const createBatch = (ns) => {
   };
 };
 
-/** @param {NS} ns **/
-export const getDelegatedTasks = async (ns) => {
+export const getDelegatedTasks = async (ns: NS) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
   const tasks = [];
   while (!port.empty()) {
@@ -149,14 +114,13 @@ export const getDelegatedTasks = async (ns) => {
 
 const TICKET_TTL = 30_000;
 
-/** @param {NS} ns **/
 export const closeTicket =
-  (ns) =>
+  (ns: NS) =>
   async (
-    /** @type {string} */ ticket,
-    /** @type {number} */ pid = 0,
-    /** @type {string | null} */ hostname = null,
-    /** @type {number} */ threads = 0,
+    ticket: string,
+    pid = 0,
+    hostname: string | null = null,
+    threads = 0,
   ) => {
     const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
     const timestamp = Date.now();
