@@ -3,9 +3,9 @@ import { nmap } from './lib/nmap';
 export async function main(ns: NS) {
   const flags = ns.flags([['find', false]]);
   if (!flags.find) {
-    ns.ui.openTail(.../** @type {string[]} */ ns.args);
+    ns.ui.openTail(...ns.args);
   } else {
-    const [script, ...args] = /** @type {string[]} */ flags._;
+    const [script, ...args] = flags._;
     ns.tprint(script + ' ' + args);
     nmap(ns).forEach((hostname) => {
       if (ns.scriptRunning(script, hostname)) {

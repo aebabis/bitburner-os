@@ -4,15 +4,14 @@ import { table } from '../../lib/table';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  const { factionRep = /** @type {Record<string, number>} */ {} } =
-    getPlayerData(ns);
+  const { factionRep = {} } = getPlayerData(ns);
 
   while (true) {
     for (const faction of FACTIONS) {
       factionRep[faction] = ns.singularity.getFactionRep(faction);
     }
 
-    const n = (/** @type {number} */ num) => ns.format.number(num || 0, 1);
+    const n = (num: number) => ns.format.number(num || 0, 1);
     const tableData = FACTIONS.slice()
       .sort()
       .map((faction) => [faction, n(factionRep[faction])]);

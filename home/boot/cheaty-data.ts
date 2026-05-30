@@ -14,8 +14,6 @@ const HACKNET_MONEY = [
   1 / 1.02,
 ];
 
-export const getBitNodeMultipliers = (/** @type {number} */ currentNode) => {
-  return {
-    HacknetNodeMoney: HACKNET_MONEY[currentNode],
-  };
-};
+export const getBitNodeMultipliers = (currentNode: number) => ({
+  HacknetNodeMoney: HACKNET_MONEY[currentNode],
+});

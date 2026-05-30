@@ -42,6 +42,11 @@ type BackdoorRequirement = {
   numPortsRequired: number;
 };
 
+type StaticStockData = {
+  sym: string;
+  maxShares: number;
+};
+
 type StaticData = {
   resetInfo: ResetInfo;
   installedAugmentations: string[];
@@ -52,7 +57,13 @@ type StaticData = {
   purchasedServerCosts: Record<number, number>;
   requiredJobRam: number;
   requiredAugRam: number;
+  bitNodeMultipliers: { HacknetNodeMoney: number | null };
+  hacknetMultipliers: HacknetMultipliers;
 
+  materialData?: Record<CorpMaterialName, CorpMaterialConstantData>;
+  industryData?: Record<CorpIndustryName, CorpIndustryData>;
+
+  stocks?: StaticStockData[];
   factionFavor?: Record<FactionName, number>;
   augmentations?: string[];
   augmentationPrices?: Record<string, number>;

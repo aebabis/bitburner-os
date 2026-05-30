@@ -7,10 +7,7 @@ const getExistingPid = (ns: NS, desc: string) => {
   try {
     const services = getServices(ns);
     if (services != null)
-      return services.find(
-        (/** @type {{desc: string, pid: number}} */ service) =>
-          service.desc === desc,
-      )?.pid;
+      return services.find((service) => service.desc === desc)?.pid;
   } catch (error) {
     ns.tprint(error);
   }
@@ -18,19 +15,9 @@ const getExistingPid = (ns: NS, desc: string) => {
 
 let count = 1;
 
-/** @param {NS} ns */
 const Service =
-  (
-    ns,
-    /** @type {(ns: NS) => boolean} */ condition = () => true,
-    /** @type {number} */ interval = 5000,
-  ) =>
-  (
-    /** @type {string} */ script,
-    target = null,
-    /** @type {number} */ numThreads = 1,
-    /** @type {ScriptArg[]} */ ...args
-  ) => {
+  (ns: NS, condition = () => true, interval = 5000) =>
+  (script: string, target = null, numThreads = 1, ...args: ScriptArg[]) => {
     const id = count++;
     const desc =
       target == null
@@ -60,9 +47,7 @@ const Service =
       else return '○';
     };
 
-    const check = async (
-      /** @type {(() => void) | undefined} */ beforeRun = undefined,
-    ) => {
+    const check = async (beforeRun?: () => void) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
       if (!running && shouldBe) {
@@ -93,7 +78,7 @@ const Service =
       }
     };
 
-    const matches = (/** @type {string | number} */ identifier) =>
+    const matches = (identifier: string | number) =>
       identifier == id || identifier === shortname;
     const toData = () => ({
       id,
@@ -120,16 +105,7 @@ const Service =
     };
   };
 
-/** @param {NS} ns */
 export const AnyHostService =
-  (
-    ns,
-    /** @type {(ns: NS) => boolean} */ condition = () => true,
-    /** @type {number} */ interval = 5000,
-  ) =>
-  (
-    /** @type {string} */ script,
-    /** @type {number} */ numThreads = 1,
-    /** @type {ScriptArg[]} */ ...args
-  ) =>
+  (ns: NS, condition: () => boolean = () => true, interval = 5000) =>
+  (script: string, numThreads = 1, ...args: ScriptArg[]) =>
     Service(ns, condition, interval)(script, null, numThreads, ...args);

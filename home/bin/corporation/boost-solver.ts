@@ -29,10 +29,8 @@ export const getBoostTargets = (
   S: number,
 ) => {
   const staticData = getStaticData(ns);
-  /** @type {Record<CorpMaterialName, CorpMaterialConstantData>} */
-  const materialData = staticData.materialData;
-  /** @type {Record<CorpIndustryName, CorpIndustryData>} */
-  const industryData = staticData.industryData;
+  const materialData = staticData.materialData!;
+  const industryData = staticData.industryData!;
   const {
     aiCoreFactor = 0,
     hardwareFactor = 0,

@@ -53,8 +53,8 @@ const afkTracker = (ns: NS) => {
 const terminalTracker = (ns: NS) => {
   let lastTerminalActivity = Date.now();
 
-  const update = (/** @type {KeyboardEvent} */ event) => {
-    if (/** @type {HTMLElement | null} */ event.target?.id === 'terminal-input')
+  const update = (event: KeyboardEvent) => {
+    if (event.target?.id === 'terminal-input')
       lastTerminalActivity = Date.now();
   };
 

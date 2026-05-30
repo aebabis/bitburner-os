@@ -14,9 +14,7 @@ export async function main(ns: NS) {
       ns.print(' (no available servers) ');
     } else {
       const rows = [
-        ...path.map((/** @type {string} */ s) =>
-          s === 'home' ? ' home' : ` connect ${s} `,
-        ),
+        ...path.map((s: string) => (s === 'home' ? ' home' : ` connect ${s} `)),
         ' backdoor',
       ];
       while (rows.length < 15) {

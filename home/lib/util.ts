@@ -1,4 +1,3 @@
-// export const uuid = () => (+Math.random().toString().slice(2)).toString(16);
 const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
 export const by = <T>(prop: ((elem: T) => string | number) | keyof T) => {
