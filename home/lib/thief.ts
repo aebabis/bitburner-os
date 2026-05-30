@@ -484,6 +484,12 @@ export default class Thief {
     return getTimes(ns, server).weakenTime;
   }
 
+  getBatchDuration() {
+    const numJobs = this.currentBatch?.jobs.getSize() ?? 0;
+    const jobTime = numJobs * SUBTASK_SPACING;
+    return this.getWeakenTime() + jobTime;
+  }
+
   getReservedThreads = () =>
     this.currentBatch == null ? 0 : this.currentBatch.getReservedThreads();
 

@@ -137,11 +137,15 @@ export async function main(ns: NS) {
         ? (ramAvailable / Math.max(candidates.length, 1)) * 0.9
         : ramAvailable * 0.9;
 
-      const weakenTimes = viableThieves
+      const thiefReferenceTimes = viableThieves
         .filter((thief) => thief.isPipelining())
-        .map((thief) => thief.getWeakenTime() / 1000);
-      if (weakenTimes.length > 0) {
-        const thiefReferenceWindow = 4 * Math.max(...weakenTimes);
+        .map(
+          (thief) =>
+            Math.max(4 * thief.getWeakenTime(), thief.getBatchDuration()) /
+            1000,
+        );
+      if (thiefReferenceTimes.length > 0) {
+        const thiefReferenceWindow = Math.max(...thiefReferenceTimes);
         const moneyData = getMoneyData(ns);
         putMoneyData(ns, {
           ...moneyData,
