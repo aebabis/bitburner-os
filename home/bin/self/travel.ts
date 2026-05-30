@@ -3,11 +3,11 @@ export async function main(ns: NS) {
   const [location] = ns.args;
   if (
     typeof location !== 'string' ||
-    !Object.values(ns.enums.CityName).includes(location)
+    !Object.values(ns.enums.CityName).includes(location as CityName)
   ) {
     throw new Error('Expected location parameter. Got ' + location);
   }
   // Safety check prevents continuous cash drain
   if (ns.getPlayer().location !== location)
-    ns.singularity.travelToCity(location);
+    ns.singularity.travelToCity(location as CityName);
 }

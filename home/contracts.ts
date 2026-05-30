@@ -1,23 +1,28 @@
 import { nmap } from './lib/nmap';
 import { table } from './lib/table';
 
+type Contract = {
+  filename: string;
+  hostname: string;
+  id: number;
+  type: string;
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   const [query] = ns.args;
   let id = 1;
-  const contracts = nmap(ns)
-    .map((hostname) => {
-      const serverContracts = ns
-        .ls(hostname)
-        .filter((file) => file.endsWith('.cct'));
-      return serverContracts.map((filename) => ({
-        filename,
-        hostname,
-        id: id++,
-        type: ns.codingcontract.getContractType(filename, hostname),
-      }));
-    })
-    .flat();
+  const contracts: Contract[] = nmap(ns).flatMap((hostname) => {
+    const serverContracts = ns
+      .ls(hostname)
+      .filter((file) => file.endsWith('.cct'));
+    return serverContracts.map((filename) => ({
+      filename,
+      hostname,
+      id: id++,
+      type: ns.codingcontract.getContractType(filename, hostname),
+    }));
+  });
 
   if (query == null) {
     const rows = contracts.map(({ id, hostname, filename, type }) => [
@@ -28,13 +33,16 @@ export async function main(ns: NS) {
     ]);
     ns.tprint('\n' + table(ns, ['ID', 'HOST', 'FILE', ''], rows));
   } else {
-    /** @typedef {{filename: string, hostname: string, id: number, type: string}} Contract */
-    const match = isNaN(/** @type {number} */ query)
-      ? (/** @type {Contract} */ cct) =>
-          cct.filename.includes(/** @type {string} */ query)
-      : (/** @type {Contract} */ cct) => cct.id == query;
-    const { filename, hostname, type } =
-      /** @type {Contract} */ contracts.find(match);
+    const match =
+      typeof query === 'string'
+        ? (cct: Contract) => cct.filename.includes(/** @type {string} */ query)
+        : (cct: Contract) => cct.id == query;
+    const contract = contracts.find(match);
+    if (contract == null) {
+      ns.tprint('No contracts match ' + query);
+      return;
+    }
+    const { filename, hostname, type } = contract;
     const data = ns.codingcontract.getData(filename, hostname);
     const desc = ns.codingcontract.getDescription(filename, hostname);
     const tries = ns.codingcontract.getNumTriesRemaining(filename, hostname);
