@@ -312,20 +312,23 @@ export const vigenereCypher = ([plaintext, password]: [string, string]) => {
 export const rle = (text: string) =>
   text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x, a) => x.length + a);
 
-export const twoColor = (
-  /** @type {[number, number[][]]} */ [numVertices, edges],
-) => {
+export const twoColor = ([numVertices, edges]: [number, number[][]]) => {
   const arr = new Array(numVertices);
+  arr[0] = true;
   edges.sort((a, b) => a[0] - b[0]);
   for (const [a, b] of edges) {
-    if (arr[a] == null) arr[a] = true;
-    if (arr[b] == null) arr[b] = !arr[a];
+    if (arr[a] == null && arr[b] == null) {
+      edges.push([a, b]);
+      continue;
+    }
     if (arr[a] === arr[b]) return [];
+    if (arr[a] == null) arr[a] = !arr[b];
+    if (arr[b] == null) arr[b] = !arr[a];
   }
   return arr.map(Number);
 };
 
-export const squareRoot = (/** @type {bigint} */ bigInt) => {
+export const squareRoot = (bigInt: bigint) => {
   if (bigInt < 0n) {
     return NaN;
   }

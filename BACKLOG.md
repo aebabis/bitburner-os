@@ -11,8 +11,6 @@
 - See if you can use an editable iterator type to make the scheduler queue less bug prone. Refactor scheduler
 - Make accountant sell stocks to meet goals.
 - Make augData required in singularity goals. Have a separate non-singularity goal process be called before augData loads
-- Figure out why this contract failed: `twoColor([9,[[0,5],[1,7],[1,4],[1,2],[3,4],[3,7],[3,4],[4,8],[4,5],[6,8],[7,8]]]) => []`
-- twoColor([11,[[0,10],[0,4],[0,5],[0,10],[1,9],[1,6],[2,10],[2,8],[2,5],[2,3],[3,9],[3,6],[4,6],[5,6],[5,9],[6,7]]]) => []
 - Finish tests in test-goal-tree.js
 - Make gang runs try to buy Neuroflux
 - Use `ns.getResetInfo` instead of singularity API where possible
