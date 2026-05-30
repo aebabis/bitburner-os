@@ -1,26 +1,32 @@
 import { BRIGHT } from './colors';
 import { length } from './util';
 
-/** @typedef {{ name?: string, align?: string, process?: (x: string | number) => (string | null | undefined), empty?: string }} ColumnSpec */
-/** @typedef {{ name: string, process: (x: string | number) => string, pad: (c: string | number, a: number) => string }} TableColumn */
+type ColumnSpec = {
+  name?: string;
+  align?: string;
+  process?: (x: string | number) => string | null | undefined;
+  empty?: string;
+};
+type TableColumn = {
+  name: string;
+  process: (x: string | number) => string;
+  pad: (c: string | number, a: number) => string;
+};
 
-/** @param {string | ColumnSpec} column @returns {TableColumn} */
-const headData = (column) => {
+const headData = (column: ColumnSpec): TableColumn => {
   const spec =
     /** @type {ColumnSpec} */ typeof column === 'string' ? {} : column;
   const name = spec.name != null ? spec.name : /** @type {string} */ column;
   const align = spec.align || 'left';
-  const process =
-    spec.process ||
-    ((/** @type {string | number} */ x) => /** @type {string} */ x);
+  const process = spec.process || ((x: string | number) => x);
   const empty = spec.empty || '-';
   return {
     name,
-    process: (/** @type {string | number} */ x) => {
+    process: (x: string | number) => {
       const str = process(x);
       return str == null ? empty : str;
     },
-    pad: (/** @type {string | number} */ c, /** @type {number} */ a) => {
+    pad: (c: string | number, a) => {
       const str = c.toString();
       if (str === 'empty') {
         const left = Math.floor(a / 2);
