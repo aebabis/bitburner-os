@@ -4,8 +4,7 @@ import {
   CRIMINAL_ORGANIZATIONS,
 } from './factions.ts';
 
-/** @type {Record<keyof Multipliers, number>} */
-export const DEFAULT_AUG_WEIGHTS = {
+export const DEFAULT_AUG_WEIGHTS: Record<keyof Multipliers, number> = {
   // High — stats that increase reputation gain
   hacking: 10,
   hacking_chance: 10,
@@ -134,8 +133,18 @@ export const augValueFromStats = (aug, augmentationStats) => {
  * @param {{ augmentationRepReqs?: Record<string,number> }} staticData
  * @returns {number}
  */
-export const computeRepReq = (augs, staticData) =>
-  Math.max(...augs.map((aug) => staticData.augmentationRepReqs?.[aug] ?? 0), 0);
+export const computeRepReq = (augs, staticData) => {
+  const nfBaseRep = staticData.augmentationRepReqs?.[NEUROFLUX] ?? 0;
+  let nfLevelOffset = 0;
+  return Math.max(
+    ...augs.map((aug) =>
+      aug === NEUROFLUX
+        ? nfBaseRep * 1.14 ** nfLevelOffset++
+        : (staticData.augmentationRepReqs?.[aug] ?? 0),
+    ),
+    0,
+  );
+};
 
 /**
  * Total cost to purchase all augs in the batch, accounting for the 1.9× queue
