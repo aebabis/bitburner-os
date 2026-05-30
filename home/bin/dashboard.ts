@@ -65,12 +65,12 @@ const getRunStats = (ns: NS) => {
 
 const getPlayerLevels = (ns: NS) => {
   const { skills } = getPlayerData(ns).player;
-  const { ownedAugmentations = [], augmentationStats = {} } = getStaticData(ns);
+  const { resetInfo, augmentationStats = {} } = getStaticData(ns);
 
-  const stat = (/** @type {string} */ stat) => {
+  const stat = (stat: keyof Multipliers) => {
     let p = 1;
-    for (const aug of ownedAugmentations)
-      p *= augmentationStats[aug]?.[/** @type {keyof Multipliers} */ stat] ?? 1;
+    for (const [aug, count] of resetInfo.ownedAugs.entries())
+      p *= (augmentationStats[aug]?.[stat] ?? 1) ** count;
     return p;
   };
 
@@ -78,7 +78,7 @@ const getPlayerLevels = (ns: NS) => {
   const W = C(251);
   const M = MEDIUM;
 
-  const fmt = (/** @type {number} */ v) => M('x' + v.toFixed(3));
+  const fmt = (v: number) => M('x' + v.toFixed(3));
   return table(ns, null, [
     ['', '', M('mult'), M('exp')],
     [

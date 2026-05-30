@@ -250,13 +250,13 @@ export const buildFactionGoalTree = (
   );
   if (batch.length === 0) return null;
 
-  const stillNeeds = (/** @type {string} */ aug) => !ownedAugs.includes(aug);
-  const sortedByPriceDesc = (/** @type {string[]} */ augs) =>
+  const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
+  const sortedByPriceDesc = (augs: string[]) =>
     [...augs].sort(
       (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
     );
 
-  const getPurchaseOrder = (/** @type {string[]} */ augs) => {
+  const getPurchaseOrder = (augs: string[]) => {
     const nfCount = augs.filter((a) => a === NEUROFLUX).length;
     const order = new Set(/** @type {string[]} */ []);
     for (const aug of sortedByPriceDesc(augs.filter((a) => a !== NEUROFLUX))) {

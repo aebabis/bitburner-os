@@ -25,24 +25,19 @@ const s = (data) => {
     throw new Error('Cannot write null. This interface uses null for "empty"');
   return JSON.stringify({ data }, replacer);
 };
-/** @param {string} packet */
-const p = (packet) => JSON.parse(packet, reviver).data;
+const p = (packet: string) => JSON.parse(packet, reviver).data;
 
 export default (ns: NS) => {
-  const readPort = (/** @type {number} */ handle) => {
+  const readPort = (handle: number) => {
     const packet = ns.getPortHandle(handle).read();
     if (packet === NULL) return null;
     return p(packet);
   };
-  const writePort = (/** @type {number} */ handle, data) =>
+  const writePort = (handle: number, data) =>
     ns.getPortHandle(handle).write(s(data));
-  const tryWritePort = (/** @type {number} */ handle, data) =>
+  const tryWritePort = (handle: number, data) =>
     ns.getPortHandle(handle).tryWrite(s(data));
-  const blockingWritePort = async (
-    /** @type {number} */ handle,
-    data,
-    timeout = 60000,
-  ) => {
+  const blockingWritePort = async (handle: number, data, timeout = 60000) => {
     let start = Date.now();
     let outcome = false;
     while (true) {
@@ -52,18 +47,15 @@ export default (ns: NS) => {
     }
     return outcome;
   };
-  const clearPort = (/** @type {number} */ handle) =>
-    ns.getPortHandle(handle).clear();
+  const clearPort = (handle: number) => ns.getPortHandle(handle).clear();
 
-  const peek = (/** @type {number} */ handle) => {
+  const peek = (handle: number) => {
     const packet = ns.getPortHandle(handle).peek();
     if (packet === NULL) return null;
     return p(packet);
   };
-  const full = (/** @type {number} */ handle) =>
-    ns.getPortHandle(handle).full();
-  const empty = (/** @type {number} */ handle) =>
-    ns.getPortHandle(handle).empty();
+  const full = (handle: number) => ns.getPortHandle(handle).full();
+  const empty = (handle: number) => ns.getPortHandle(handle).empty();
 
   return {
     readPort,
@@ -71,11 +63,11 @@ export default (ns: NS) => {
     tryWritePort,
     blockingWritePort,
     clearPort,
-    getPortHandle: (/** @type {number} */ handle) => ({
+    getPortHandle: (handle: number) => ({
       read: () => readPort(handle),
       write: (data) => writePort(handle, data),
       tryWrite: (data) => tryWritePort(handle, data),
-      blockingWrite: (data, /** @type {number} */ timeout = 60000) =>
+      blockingWrite: (data, timeout = 60000) =>
         blockingWritePort(handle, data, timeout),
       clear: () => clearPort(handle),
       peek: () => peek(handle),

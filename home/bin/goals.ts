@@ -2,7 +2,7 @@ import { getStaticData, getPlayerData, getMoneyData } from '../lib/data-store';
 import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
-import { getMockFormulas, formulas as getFormulas } from '../lib/formulas';
+import { formulas as getFormulas } from '../lib/formulas';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -12,16 +12,16 @@ const getAugTableData = (ns: NS) => {
     augmentationStats = /** @type {Record<string, Multipliers>} */ {},
     augmentationPrices = /** @type {Record<string, number>} */ {},
     augmentationRepReqs = /** @type {Record<string, number>} */ {},
-    ownedAugmentations = /** @type {string[]} */ [],
+    installedAugmentations = /** @type {string[]} */ [],
     resetInfo = /** @type {any} */ {},
   } = getStaticData(ns);
   const { purchasedAugmentations = /** @type {string[]} */ [] } =
     getPlayerData(ns);
   const alreadyHave = new Set([
-    ...ownedAugmentations,
+    ...installedAugmentations,
     ...purchasedAugmentations,
   ]);
-  const installedNFCount = resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
+  const installedNFCount = resetInfo.ownedAugs?.get(NEUROFLUX) ?? 0;
   return {
     augmentations,
     augmentationStats,
@@ -210,7 +210,7 @@ export async function main(ns: NS) {
         const { referenceIncome = 0 } = getMoneyData(ns);
         const formulas = getFormulas(ns);
         const ownedAugs = [
-          ...(staticData.ownedAugmentations ?? []),
+          ...(staticData.installedAugmentations ?? []),
           ...purchasedAugmentations,
         ];
         const moneyRate = referenceIncome || Infinity;

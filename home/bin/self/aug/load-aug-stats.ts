@@ -5,9 +5,9 @@ export async function main(ns: NS) {
   ns.tprint('Loading Augmentation Stats');
 
   const { augmentations } = getStaticData(ns);
-  const augmentationStats = /** @type {Record<string, Multipliers>} */ {};
+  const augmentationStats: Record<string, Multipliers> = {};
 
-  for (const aug of augmentations)
+  for (const aug of augmentations!)
     augmentationStats[aug] = ns.singularity.getAugmentationStats(aug);
 
   putStaticData(ns, { augmentationStats });

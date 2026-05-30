@@ -36,8 +36,35 @@ export const getSchedulerReportData = (ns: NS) =>
 export const putSchedulerReportData = (ns: NS, data) =>
   putData(ns, PORT_SCH_REPORTING, data);
 
-export const getStaticData = (ns: NS) => readData(ns, PORT_STATIC_DATA) || {};
-export const putStaticData = (ns: NS, data) =>
+type BackdoorRequirement = {
+  hostname: string;
+  requiredHackingLevel: number;
+  numPortsRequired: number;
+};
+
+type StaticData = {
+  resetInfo: ResetInfo;
+  installedAugmentations: string[];
+  scriptRam: Record<string, number>;
+  serverBackdoorRequirements: BackdoorRequirement[];
+  purchasedServerLimit: number;
+  purchasedServerMaxRam: number;
+  purchasedServerCosts: Record<number, number>;
+  requiredJobRam: number;
+  requiredAugRam: number;
+
+  factionFavor?: Record<FactionName, number>;
+  augmentations?: string[];
+  augmentationPrices?: Record<string, number>;
+  augmentationRepReqs?: Record<string, number>;
+  augmentationStats?: Record<string, Multipliers>;
+  purchasedAugmentations?: string[];
+  factionRequirements?: Record<FactionName, PlayerRequirement[]>;
+  factionFavorGain?: Record<FactionName, number>;
+};
+export const getStaticData = (ns: NS): StaticData =>
+  readData(ns, PORT_STATIC_DATA) || {};
+export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
 export const getGangData = (ns: NS) => readData(ns, PORT_GANG_DATA);
