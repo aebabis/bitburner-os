@@ -93,9 +93,17 @@ export const getMoneyData = (ns: NS) => readData(ns, PORT_MONEY_DATA) || {};
 export const putMoneyData = (ns: NS, data) =>
   putData(ns, PORT_MONEY_DATA, data);
 
-export const getContractData = (ns: NS) =>
+export type StoredContract = {
+  hostname: string;
+  filename: string;
+  type: string;
+  tries: number;
+  maxTries: number;
+};
+type ContractData = { contracts: StoredContract[] };
+export const getContractData = (ns: NS): ContractData =>
   readData(ns, PORT_CONTRACT_DATA) || {};
-export const putContractData = (ns: NS, data) =>
+export const putContractData = (ns: NS, data: ContractData) =>
   putData(ns, PORT_CONTRACT_DATA, data);
 
 export const getCorpReports = (ns: NS) => readData(ns, PORT_CORP_REPORTS) || {};

@@ -11,5 +11,7 @@ export const fullInfect = (ns: NS, ...hostnames: string[]) => {
 };
 
 export async function main(ns: NS) {
-  return infect(ns, ...ns.args);
+  if (ns.args.some((arg) => typeof arg !== 'string'))
+    throw new Error('Args list contains a non string: ' + ns.args);
+  return infect(ns, ...(ns.args as string[]));
 }

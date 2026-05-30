@@ -7,8 +7,7 @@ export const stop = async (ns: NS) => {
       .flatMap((hostname) => ns.ps(hostname))
       .filter((ps) => ps.pid !== ns.pid);
 
-  /** @param {number} pid **/
-  const kill = (pid) => {
+  const kill = (pid: number) => {
     ns.ui.closeTail(pid);
     ns.kill(pid);
   };
@@ -28,7 +27,8 @@ export const stop = async (ns: NS) => {
 
 export async function main(ns: NS) {
   await stop(ns);
+  const [script, numThreads, ...args] = ns.args;
   if (ns.args.length > 0) {
-    ns.run(.../** @type {[string, ...ScriptArg[]]} */ ns.args);
+    ns.run(script as string, numThreads as number, ...args);
   }
 }

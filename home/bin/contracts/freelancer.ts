@@ -2,20 +2,16 @@ import { rmi } from '../../lib/rmi';
 import { table } from '../../lib/table';
 import { getContractData } from '../../lib/data-store';
 
-const showContracts = (/** @type {NS} */ ns) => {
+const showContracts = (ns: NS) => {
   try {
     const { contracts } = getContractData(ns);
-    const rows = contracts.map(
-      (
-        /** @type {{id: number, hostname: string, filename: string, type: string, tries: number}} */ {
-          id,
-          hostname,
-          filename,
-          type,
-          tries,
-        },
-      ) => [id, hostname, filename, type, tries],
-    );
+    const rows = contracts.map(({ id, hostname, filename, type, tries }) => [
+      id,
+      hostname,
+      filename,
+      type,
+      tries,
+    ]);
     ns.clearLog();
     ns.print(table(ns, ['ID', 'HOST', 'FILE', '', 'TRIES'], rows));
   } catch (error) {

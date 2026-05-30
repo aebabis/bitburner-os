@@ -1,4 +1,4 @@
-const getRamUpgradeCost = (ns, ram = ns.getServerMaxRam('home')) => {
+const getRamUpgradeCost = (ns: NS, ram = ns.getServerMaxRam('home')) => {
   let lg2 = 1;
   while (1 << lg2 < ram) lg2++;
   return ram * 32000 * 1.58 ** lg2;

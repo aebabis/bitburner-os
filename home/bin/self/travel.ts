@@ -1,13 +1,7 @@
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  const [location] = ns.args;
-  if (
-    typeof location !== 'string' ||
-    !Object.values(ns.enums.CityName).includes(location as CityName)
-  ) {
-    throw new Error('Expected location parameter. Got ' + location);
-  }
+  const [destination] = ns.args;
   // Safety check prevents continuous cash drain
-  if (ns.getPlayer().location !== location)
-    ns.singularity.travelToCity(location as CityName);
+  if (ns.getPlayer().location !== destination)
+    ns.singularity.travelToCity(destination as CityName);
 }

@@ -7,7 +7,7 @@ import { getHostnames } from '../lib/data-store';
 import { tprint } from './util';
 import { STR, GRAY } from '../lib/colors';
 
-const canRunCode = (/** @type {NS} */ ns) => (/** @type {string} */ hostname) =>
+const canRunCode = (ns: NS) => (hostname: string) =>
   ns.getServerMaxRam(hostname) >= 1.6;
 
 export async function main(ns: NS) {
@@ -25,7 +25,7 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Uploading batch files');
   for (const hostname of hostnames) {
     if (hostname !== 'home' && canRunCode(ns)(hostname)) {
-      await infect(ns, hostname);
+      infect(ns, hostname);
     }
   }
 
@@ -40,9 +40,9 @@ export async function main(ns: NS) {
     .sort(by(ns.getServerRequiredHackingLevel))
     .slice(0, SERVERS_NEEDED);
   tprint(ns)(STR + '  Infecting zombies: ' + GRAY + zombies.join(', '));
-  await fullInfect(ns, ...zombies);
+  fullInfect(ns, ...zombies);
   try {
-    await fullInfect(ns, `${THREADPOOL}-01`, `${THREADPOOL}-02`);
+    fullInfect(ns, `${THREADPOOL}-01`, `${THREADPOOL}-02`);
   } catch {
     /*Do nothing*/
   }

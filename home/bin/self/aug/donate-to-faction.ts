@@ -1,3 +1,4 @@
 export async function main(ns: NS) {
-  ns.singularity.donateToFaction(...ns.args);
+  const [factionName, amount] = ns.args;
+  ns.singularity.donateToFaction(factionName as FactionName, amount as number);
 }
