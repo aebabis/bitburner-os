@@ -1,9 +1,6 @@
-/** @param {string} code
- *  @returns {string & ((str: string|number) => string)} */
-const builder = (code) => {
-  /** @param {string|number} str
-   *  @returns {string} */
-  const func = (str) => {
+type Color = string & ((str: string | number) => string);
+const builder = (code: string): Color => {
+  const func = (str: string | number): string => {
     const result = code + str + RESET;
     return {
       length: str.toString().length,
@@ -15,16 +12,15 @@ const builder = (code) => {
   func.toString = func.valueOf = func.toJSON = () => code;
   return func;
 };
-/** @param {number} n
- *  @returns {ReturnType<typeof builder> & { BOLD: ReturnType<typeof builder> }} */
-export const COLOR = (n) => {
-  const func = builder(`\u001b[38;5;${n}m`);
+
+type TermColor = Color & { BOLD: Color };
+export const COLOR = (n: number): TermColor => {
+  const func = builder(`\u001b[38;5;${n}m`) as TermColor;
   func.BOLD = builder(`\u001b[1;38;5;${n}m`);
   return func;
 };
 export const C = COLOR;
-/** @param {number} n */
-export const BG = (n) => builder(`\u001b[48;5;${n}m`);
+export const BG = (n: number) => builder(`\u001b[48;5;${n}m`);
 
 export const KEYWORD = C(69);
 export const GRAY = C(236);

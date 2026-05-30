@@ -1,10 +1,6 @@
 import { nmap } from '../lib/nmap';
 import { defer } from './defer';
-import {
-  putHostnames,
-  putStaticData,
-  putContractData,
-} from '../lib/data-store';
+import { putHostnames, putContractData } from '../lib/data-store';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
