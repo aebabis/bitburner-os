@@ -153,7 +153,8 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
     });
 
-    const moneyGoal = tree.goals.find((g) => g.type === 'AUG_MONEY');
+    assert.ok(tree);
+    const moneyGoal = tree.goals.find((g: any) => g.type === 'AUG_MONEY');
     // correct: requirement = 1.9^1 × price = 1.9M ≤ money (2M) → isDone
     // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
     assert.ok(
@@ -183,10 +184,11 @@ describe('buildFactionGoalTree', () => {
       formulas: mockFormulas,
       karma: 0,
     });
-    const joinGoal = tree.goals.find((g) => g.type === 'FACTION_JOIN');
+    assert.ok(tree);
+    const joinGoal = tree.goals.find((g: any) => g.type === 'FACTION_JOIN');
     assert.ok(joinGoal, 'join goal should exist');
     assert.ok(
-      joinGoal.deps.some((d) => d.type === 'HACKING_LEVEL'),
+      joinGoal.deps.some((d: any) => d.type === 'HACKING_LEVEL'),
       'join goal should have a HACKING_LEVEL dep',
     );
   });
@@ -220,14 +222,15 @@ describe('buildFactionGoalTree', () => {
       formulas: mockFormulas,
       karma: 0,
     });
-    const repGoal = tree.goals.find((g) => g.type === 'FACTION_REP');
+    assert.ok(tree);
+    const repGoal = tree.goals.find((g: any) => g.type === 'FACTION_REP');
     assert.equal(repGoal.requirement, 3000);
   });
 
   // Shared setup for utility/value tests: aug A with hacking:1.5 → value=(1.5-1)*10=5.0
   // repRate=N requires hacking = N * 195: factionGains(player,'hacking',0).reputation = hacking/975,
   // effectiveRepRate = reputation * 5 = N when hacking = N * 195.
-  const valueTestData = (repRate) => ({
+  const valueTestData = (repRate: number) => ({
     player: {
       factions: ['F'],
       skills: { hacking: repRate * 195 },
@@ -253,11 +256,13 @@ describe('buildFactionGoalTree', () => {
 
   it('tree.value equals sum of terminal aug values', () => {
     const tree = buildFactionGoalTree('F', valueTestData(1));
+    assert.ok(tree);
     assert.equal(tree.value, 5.0); // (1.5-1)*10 = 5.0
   });
 
   it('utility returns value / (eta + overhead)', () => {
     const tree = buildFactionGoalTree('F', valueTestData(1));
+    assert.ok(tree);
     // repReq=100, repRate=1 → eta=100s; value=5.0; overhead=50
     assert.equal(tree.utility(50), 5.0 / (100 + 50));
   });
@@ -265,6 +270,8 @@ describe('buildFactionGoalTree', () => {
   it('utility is higher for a faster plan (same value, shorter eta)', () => {
     const fast = buildFactionGoalTree('F', valueTestData(2)); // eta=50s
     const slow = buildFactionGoalTree('F', valueTestData(1)); // eta=100s
+    assert.ok(fast);
+    assert.ok(slow);
     assert.ok(fast.utility(0) > slow.utility(0));
   });
 });
@@ -421,13 +428,14 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
   it('produces a BUY_REP goal when faction has enough favor', () => {
     const tree = buildFactionGoalTree('F', donationData());
     assert.ok(tree, 'tree should not be null');
-    const repGoal = tree.goals.find((g) => g.type === 'BUY_REP');
+    const repGoal = tree.goals.find((g: any) => g.type === 'BUY_REP');
     assert.ok(repGoal, 'should have a BUY_REP goal');
   });
 
   it('money goal includes donation cost', () => {
     const tree = buildFactionGoalTree('F', donationData());
-    const moneyGoal = tree.goals.find((g) => g.type === 'AUG_MONEY');
+    assert.ok(tree);
+    const moneyGoal = tree.goals.find((g: any) => g.type === 'AUG_MONEY');
     // donationForRep(50000, player) = 50000 * 1e6 / 1 = 5e10; augCost = 1e6
     const expectedDonation = mockFormulas.reputation.donationForRep(50_000, {});
     assert.equal(moneyGoal.requirement, 1_000_000 + expectedDonation);

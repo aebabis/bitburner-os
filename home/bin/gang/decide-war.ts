@@ -4,9 +4,8 @@ export async function main(ns: NS) {
   const [gangName] = ns.args;
 
   const otherGangInformation = ns.gang.getAllGangInformation();
-  const { power, territory } =
-    otherGangInformation[/** @type {string} */ gangName];
-  delete otherGangInformation[/** @type {string} */ gangName];
+  const { power, territory } = otherGangInformation[gangName as string];
+  delete otherGangInformation[gangName as string];
 
   const enemyInfo = Object.entries(otherGangInformation).map(
     ([faction, info]) => ({

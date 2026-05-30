@@ -7,9 +7,9 @@
     "start": "node make-download.js",
     "lint": "tsc --noEmit",
     "bundle:d3": "node scripts/bundle-d3.js",
-    "check-data-deps": "node scripts/check-data-deps.js",
+    "check-data-deps": "node --import tsx/esm scripts/check-data-deps.ts",
     "knip": "knip",
-    "test": "node --test scripts/test-*.js",
+    "test": "node --import tsx/esm --test scripts/test-*.ts",
     "prepare": "husky"
   },
   "repository": {
@@ -26,6 +26,7 @@
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/node": "^25.9.1",
     "@typescript-eslint/parser": "^8.60.0",
     "d3-drag": "^3.0.0",
     "d3-force": "^3.0.0",
@@ -37,6 +38,7 @@
     "knip": "^6.12.2",
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3"
   },
   "lint-staged": {

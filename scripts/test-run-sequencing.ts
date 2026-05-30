@@ -14,7 +14,11 @@ import { getMockFormulas } from '../home/lib/formulas.js';
 const MONEY_RATE = 10e3;
 const NEUROFLUX = 'NeuroFlux Governor';
 
-const select = (owned, factionRep = {}, moneyRate = MONEY_RATE) => {
+const select = (
+  owned: string[],
+  factionRep: Record<string, number> = {},
+  moneyRate = MONEY_RATE,
+) => {
   const numNeuroflux = owned.filter((aug) => aug === NEUROFLUX).length;
   const data = structuredClone(staticData);
   data.augmentationRepReqs[NEUROFLUX] *= 1.14 ** numNeuroflux;
@@ -23,12 +27,12 @@ const select = (owned, factionRep = {}, moneyRate = MONEY_RATE) => {
   const player = { skills: { hacking: 585 }, factions: [] };
   const formulas = getMockFormulas(data);
   const batchOpts = { moneyRate };
-  const stillNeeds = (/** @type {string} */ aug) => !owned.includes(aug);
+  const stillNeeds = (aug: string) => !owned.includes(aug);
 
-  let bestFaction = /** @type {string|null} */ (null),
+  let bestFaction: string | null = null,
     bestUtility = -Infinity;
   for (const faction of getAccessibleFactions(data, player, owned)) {
-    const faugs = data.factionAugmentations[faction] ?? [];
+    const faugs: string[] = data.factionAugmentations[faction] ?? [];
     if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0)
       continue;
     const { utility } = findOptimalBatch(
@@ -45,9 +49,9 @@ const select = (owned, factionRep = {}, moneyRate = MONEY_RATE) => {
       bestUtility = utility;
     }
   }
-  if (!bestFaction) return { faction: null, augmentations: [] };
+  if (!bestFaction) return { faction: null, augmentations: [] as string[] };
 
-  const { batch } = findOptimalBatch(
+  const { batch }: { batch: string[] } = findOptimalBatch(
     bestFaction,
     data,
     player,
@@ -56,16 +60,19 @@ const select = (owned, factionRep = {}, moneyRate = MONEY_RATE) => {
     owned,
     batchOpts,
   );
-  const { augmentationPrices, augmentationPrereqs } = data;
+  const augmentationPrices = data.augmentationPrices as Record<string, number>;
+  const { augmentationPrereqs } = data;
   const nfCount = batch.filter((a) => a === NEUROFLUX).length;
-  const unique = batch
+  const unique: string[] = batch
     .filter((a) => a !== NEUROFLUX)
     .sort(
       (a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0),
     );
-  const order = new Set(/** @type {string[]} */ ([]));
+  const order = new Set<string>();
   for (const aug of unique) {
-    for (const prereq of (augmentationPrereqs[aug] ?? [])
+    for (const prereq of (
+      (augmentationPrereqs as Record<string, string[]>)[aug] ?? []
+    )
       .filter(stillNeeds)
       .reverse())
       order.add(prereq);
@@ -110,7 +117,7 @@ describe('selectAugmentations', () => {
 
     it('should eventually buy DataJack', () => {
       let run = 0;
-      let augsObtained = [];
+      let augsObtained: string[] = [];
       while (true) {
         const moneyRate = 10 * 10 ** run;
         const aug = select(augsObtained, {}, moneyRate);
@@ -119,8 +126,8 @@ describe('selectAugmentations', () => {
         augsObtained = [...augsObtained, ...aug.augmentations];
         run++;
         if (aug.augmentations.includes('DataJack')) {
-          const uniqueLeft = staticData.augmentations.filter(
-            (a) => a !== 'NeuroFlux Governor',
+          const uniqueLeft = (staticData as any).augmentations.filter(
+            (a: string) => a !== 'NeuroFlux Governor',
           );
           console.log(
             'Got to DataJack with ' + uniqueLeft.length + ' augs to buy',

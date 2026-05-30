@@ -24,8 +24,8 @@ const STORES = {
 
 // ── AST helpers ───────────────────────────────────────────────────────────────
 
-function getAllJsFiles(dir) {
-  const result = [];
+function getAllJsFiles(dir: string): string[] {
+  const result: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) result.push(...getAllJsFiles(full));
@@ -35,7 +35,7 @@ function getAllJsFiles(dir) {
 }
 
 /** Visit every AST node depth-first. */
-function walk(node, fn) {
+function walk(node: any, fn: (node: any) => void): void {
   if (!node || typeof node !== 'object') return;
   if (Array.isArray(node)) {
     node.forEach((n) => walk(n, fn));
@@ -49,7 +49,7 @@ function walk(node, fn) {
 }
 
 /** True if `node` is a direct call `funcName(ns, ...)`. */
-function isCallTo(node, funcName) {
+function isCallTo(node: any, funcName: string): boolean {
   return (
     node?.type === 'CallExpression' &&
     node.callee?.type === 'Identifier' &&
@@ -63,7 +63,7 @@ function isCallTo(node, funcName) {
  * True if `node` is an expression whose value comes from a direct call to
  * `getFn(ns)`. Handles `getFn(ns) || {}` and `getFn(ns) ?? {}` fallbacks.
  */
-function isStoreInit(node, getFn) {
+function isStoreInit(node: any, getFn: string): boolean {
   if (!node) return false;
   if (isCallTo(node, getFn)) return true;
   if (node.type === 'LogicalExpression')
@@ -72,8 +72,8 @@ function isStoreInit(node, getFn) {
 }
 
 /** Extract property keys from an ObjectExpression or ObjectPattern node. */
-function keysOf(node) {
-  const keys = new Set();
+function keysOf(node: any): Set<string> {
+  const keys = new Set<string>();
   for (const prop of node?.properties ?? []) {
     if (prop.type === 'SpreadElement' || prop.type === 'RestElement') continue;
     if (prop.key?.type === 'Identifier') keys.add(prop.key.name);
@@ -84,20 +84,24 @@ function keysOf(node) {
 
 // ── Per-file analysis ─────────────────────────────────────────────────────────
 
-function analyzeFile(src, getFn, putFn) {
+function analyzeFile(src: string, getFn: string, putFn: string) {
   let ast;
   try {
     ast = parse(src, { ecmaVersion: 2022, sourceType: 'module' });
   } catch {
-    return { written: new Set(), read: new Set(), warnings: new Set() };
+    return {
+      written: new Set<string>(),
+      read: new Set<string>(),
+      warnings: new Set<string>(),
+    };
   }
 
-  const written = new Set();
-  const read = new Set();
-  const warnings = new Set();
+  const written = new Set<string>();
+  const read = new Set<string>();
+  const warnings = new Set<string>();
 
   // Pass 1: collect written keys and variable aliases for the store.
-  const aliases = new Set(); // names of variables assigned directly from getFn(ns)
+  const aliases = new Set<string>(); // names of variables assigned directly from getFn(ns)
 
   walk(ast, (node) => {
     // putFn(ns, { k: v, k2 }) — record every property key
@@ -170,10 +174,21 @@ function analyzeFile(src, getFn, putFn) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const files = getAllJsFiles(HOME);
-const stats = Object.fromEntries(
+const stats: Record<
+  string,
+  {
+    written: Map<string, string[]>;
+    read: Map<string, string[]>;
+    warnings: string[];
+  }
+> = Object.fromEntries(
   Object.keys(STORES).map((s) => [
     s,
-    { written: new Map(), read: new Map(), warnings: [] },
+    {
+      written: new Map<string, string[]>(),
+      read: new Map<string, string[]>(),
+      warnings: [] as string[],
+    },
   ]),
 );
 
@@ -187,11 +202,11 @@ for (const file of files) {
 
     for (const k of written) {
       if (!s.written.has(k)) s.written.set(k, []);
-      s.written.get(k).push(rel);
+      s.written.get(k)!.push(rel);
     }
     for (const k of read) {
       if (!s.read.has(k)) s.read.set(k, []);
-      s.read.get(k).push(rel);
+      s.read.get(k)!.push(rel);
     }
     for (const w of warnings) s.warnings.push(`    ${rel}: ${w}`);
   }
@@ -213,7 +228,7 @@ for (const [store, { written, read, warnings }] of Object.entries(stats)) {
     console.log('\n  Written but never read:');
     for (const k of orphaned) {
       console.log(`\n    ${k}`);
-      for (const f of written.get(k)) console.log(`      ← ${f}`);
+      for (const f of written.get(k)!) console.log(`      ← ${f}`);
     }
   }
 

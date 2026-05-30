@@ -9,7 +9,8 @@
     "lib": ["ES2022", "dom"],
     "noUnusedLocals": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
   "files": [".bitburner/bitburner-globals.d.ts"],
   "include": ["**/*"]
