@@ -131,6 +131,13 @@ export const getGoals = (ns: NS): Goal[] => {
   return [jrg, installGoal([jrg])];
 };
 
+export const getTimeToMilestone = (ns: NS): number | null => {
+  const goals = getGoals(ns);
+  const joinGoal = goals.find((goal) => goal.type === 'FACTION_JOIN');
+  if (joinGoal) return joinGoal.timeToComplete();
+  else return getTimeToComplete(ns);
+};
+
 export const getTimeToComplete = (ns: NS): number | null => {
   const goals = getGoals(ns);
   const installGoals = goals.filter((g) => g.type === 'INSTALL');

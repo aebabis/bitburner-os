@@ -1,6 +1,6 @@
 import { getNodes, getBestPurchase } from '../lib/hacknet';
 import { logger } from '../lib/logger';
-import { getTimeToComplete } from '../lib/goals/goals';
+import { getTimeToMilestone } from '../lib/goals/goals';
 import { getMoneyData, putMoneyData } from '../lib/data-store';
 
 export async function main(ns: NS) {
@@ -21,7 +21,7 @@ export async function main(ns: NS) {
 
     try {
       const purchase = await getBestPurchase(ns);
-      const timeToGoal = getTimeToComplete(ns);
+      const timeToGoal = getTimeToMilestone(ns);
       if (timeToGoal != null && purchase.breakEvenTime > timeToGoal) {
         const hours = (purchase.breakEvenTime / 60 / 60).toFixed(2);
         ns.print(`Not purchasing hacknet upgrade. Break even time: ${hours}h`);

@@ -55,7 +55,7 @@ const getRunStats = (ns: NS) => {
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH') + C(217)(` $${ns.format.number(money, 1)}`),
+    H('CASH') + C(217)(` $${ns.format.number(money, 1).padEnd(6)}`),
     H('PORTFOLIO') + C(217)(` $${stock}`),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
