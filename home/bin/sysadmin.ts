@@ -102,7 +102,8 @@ export async function main(ns: NS) {
     else infect(ns, hostname);
   };
 
-  const attemptPurchase = async (/** @type {NS} */ ns) => {
+  const attemptPurchase = async (ns: NS) => {
+    const { resetInfo } = getStaticData(ns);
     const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
     if (referenceIncome == null) return;
     const timeToGoal = getTimeToComplete(ns) ?? Infinity;
@@ -111,11 +112,12 @@ export async function main(ns: NS) {
     // based on join money rather than aug money so that the player
     // can join as sooner.
     const money = ns.getServerMoneyAvailable('home');
+    if (resetInfo.currentNode === 8 && money < 1e9) return;
 
     const servers = getPurchasedServerRams(ns, purchasedServerLimit);
     const atMaxServers = servers.length === purchasedServerLimit;
 
-    const profit = (/** @type {number} */ ram) => {
+    const profit = (ram: number) => {
       const ramProfit = timeToGoal * theftRatePerGB * ram;
       return ramProfit - purchasedServerCosts[ram];
     };

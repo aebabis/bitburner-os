@@ -4,7 +4,7 @@ import { putMoneyData } from '../../lib/data-store';
 import { getConfig } from '../../lib/config';
 import { getStocks, optimizeShares, getHoldings, getTableString } from './api';
 import { getServices } from '../../lib/service-api';
-import { type Forecaster } from './forecaster';
+import type { Forecaster } from './forecaster.d.ts';
 
 const getSpendableFunds = (ns: NS, stocks) => {
   const reserveParam = getConfig(ns).get('reserved-funds');
@@ -71,13 +71,10 @@ export const trade = async (ns: NS, forecaster: Forecaster) => {
     const broker = getServices(ns).find((s) => s.name === 'broker');
     if (broker == null || broker.pid == null) return;
     try {
-      const stocks = tick(ns, forecaster);
-      while (
-        stocks.every((stock) => ns.stock.getPrice(stock.sym) === stock.price)
-      )
-        await ns.sleep(250);
+      tick(ns, forecaster);
+      await ns.stock.nextUpdate();
     } catch (error) {
-      ns.tprint(ERROR + error.toString());
+      ns.tprint(ERROR + `${error}`);
       await ns.sleep(10000);
     }
   }
