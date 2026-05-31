@@ -1,4 +1,4 @@
-import { table, transpose } from './lib/table';
+import { table, transpose } from '../lib/table';
 
 export async function main(ns: NS) {
   const COLS = 4;
