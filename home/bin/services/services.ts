@@ -12,30 +12,30 @@ const isRemoteApiConnected = () => {
   }
 };
 
-const mostRootRam = (/** @type {NS} */ ns) => {
+const mostRootRam = (ns: NS) => {
   const { rootServers = [] } = getRamData(ns);
   return Math.max(
     0,
-    ...rootServers.map(
-      (/** @type {{maxRam: number}} */ server) => server.maxRam,
-    ),
+    ...rootServers.map((server: { maxRam: number }) => server.maxRam),
   );
 };
 
-/** @param {NS} ns
- *  @param {((ns: NS) => Player)} [player]
- **/
-export const getViableServices = (ns: NS, player) => {
+export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
   ns.disableLog('ALL');
   const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);
 
-  /** @param {number} num */
-  const hasNode = (num) =>
+  const hasNode = (num: number) =>
     resetInfo.currentNode === num || resetInfo.ownedSF.has(num);
-  const gangsAvailable = hasNode(2) && !resetInfo.bitNodeOptions.disableGang;
+  const hacknetAvailable = ![8].includes(resetInfo.currentNode);
+  const gangsAvailable =
+    hasNode(2) &&
+    !resetInfo.bitNodeOptions.disableGang &&
+    ![8].includes(resetInfo.currentNode);
   const corpAvailable =
-    hasNode(3) && !resetInfo.bitNodeOptions.disableCorporation;
+    hasNode(3) &&
+    !resetInfo.bitNodeOptions.disableCorporation &&
+    ![8].includes(resetInfo.currentNode);
   const hasSingularity = hasNode(4);
 
   const money = () => (player && player(ns).money) ?? 0;
@@ -44,7 +44,7 @@ export const getViableServices = (ns: NS, player) => {
   const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= 5.2e9;
   const canAutopilot = () =>
     hasSingularity && requiredAugRam <= mostRootRam(ns);
-  const isCriminal = (/** @type {string} */ faction) =>
+  const isCriminal = (faction: FactionName) =>
     CRIMINAL_ORGANIZATIONS.includes(faction);
   const inCriminalFaction = () => factions().some(isCriminal);
   const corpReady = () => {
@@ -56,10 +56,8 @@ export const getViableServices = (ns: NS, player) => {
     );
   };
 
-  /* eslint-disable no-unexpected-multiline */
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
-    AnyHostService(ns)('/bin/hacknet.ts'),
     AnyHostService(ns)('/bin/thief.ts'),
     AnyHostService(ns, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
@@ -68,8 +66,9 @@ export const getViableServices = (ns: NS, player) => {
     AnyHostService(ns)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
     AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'),
-    AnyHostService(ns, isRemoteApiConnected)('/bin/nvim.ts'),
   ];
+
+  if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
 
   if (gangsAvailable)
     tasks.push(AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.ts'));
@@ -93,5 +92,8 @@ export const getViableServices = (ns: NS, player) => {
       AnyHostService(ns)('/bin/trailblazer.ts'),
     );
   }
+
+  tasks.push(AnyHostService(ns, isRemoteApiConnected)('/bin/nvim.ts'));
+
   return tasks;
 };
