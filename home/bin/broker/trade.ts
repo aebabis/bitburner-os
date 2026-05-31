@@ -22,6 +22,9 @@ const getSpendableFunds = (ns: NS, stocks) => {
 };
 
 const tick = (ns: NS, forecaster: Forecaster) => {
+  const { StockMarketCommission } = ns.stock.getConstants();
+  const MIN_ORDER = StockMarketCommission * 100;
+
   ns.clearLog();
   const stocks = getStocks(ns);
 
@@ -46,7 +49,7 @@ const tick = (ns: NS, forecaster: Forecaster) => {
     .sort(by((stock) => -stock.forecast));
 
   let moneyToSpend = getSpendableFunds(ns, stocks);
-  while (moneyToSpend > 1e9 && eligiblePurchases.length > 0) {
+  while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
     const stock = eligiblePurchases.shift();
     const maxPurchase = stock.maxShares - stock.position[0];
     const shares = optimizeShares(ns, stock, maxPurchase, moneyToSpend);
