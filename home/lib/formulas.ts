@@ -1,4 +1,4 @@
-import { getStaticData } from './data-store.ts';
+import { getStaticData, StaticData } from './data-store.ts';
 
 const WORK_STATS = {
   agiExp: 0,
@@ -12,15 +12,12 @@ const WORK_STATS = {
   strExp: 0,
 };
 
-/** @param {number} [favor] */
 const favorMult = (favor = 0) => 1 + favor / 100;
 
-/** @param {number} exp @param {number} [mult] */
-const calculateSkill = (exp, mult = 1) =>
+const calculateSkill = (exp: number, mult = 1) =>
   Math.max(Math.floor(mult * (32 * Math.log(exp + 534.5) - 200)), 1);
 
-/** @param {number} skill @param {number} [mult] */
-const calculateExp = (skill, mult = 1) =>
+const calculateExp = (skill: number, mult = 1) =>
   Math.exp((skill / mult + 200) / 32) - 534.6;
 
 /**
@@ -33,15 +30,10 @@ const calculateExp = (skill, mult = 1) =>
  *   bitNodeMultipliers?: BitNodeMultipliers
  * }} staticData
  */
-export const getMockFormulas = (staticData, sharePower = 1) => {
-  const getAugMult = (/** @type {string} */ stat) =>
+export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
+  const getAugMult = (stat: string) =>
     staticData.installedAugmentations
-      .map(
-        (aug) =>
-          /** @type {keyof Multipliers} */ staticData.augmentationStats?.[
-            aug
-          ]?.[stat] ?? 1,
-      )
+      .map((aug: string) => staticData.augmentationStats?.[aug]?.[stat] ?? 1)
       .reduce((a, b) => a * b, 1);
 
   const {
@@ -58,31 +50,29 @@ export const getMockFormulas = (staticData, sharePower = 1) => {
   return {
     skills: { calculateExp, calculateSkill },
     reputation: {
-      /** @param {number} favor */
-      calculateFavorToRep: (favor) => 25000 * (1.02 ** favor - 1),
-      /** @param {number} rep */
-      calculateRepToFavor: (rep) =>
+      calculateFavorToRep: (favor: number) => 25000 * (1.02 ** favor - 1),
+      calculateRepToFavor: (rep: number) =>
         Math.floor(Math.log(rep / 25000 + 1) / Math.log(1.02)),
-      /** @param {number} amount @param {Person} _player */
-      repFromDonation: (amount, _player) => (amount / 1e6) * factionRepMult(),
-      /** @param {number} reputation @param {Person} _player */
-      donationForRep: (reputation, _player) =>
+      repFromDonation: (amount: number, _player: Person) =>
+        (amount / 1e6) * factionRepMult(),
+      donationForRep: (reputation: number, _player: Person) =>
         (reputation * 1e6) / factionRepMult(),
     },
     hacking: {
-      /** @param {{requiredHackingSkill?: number}} server @param {Person} _player */
-      hackExp: (server, _player) =>
+      hackExp: (server: Server, _player: Person) =>
         Math.max(1, (server.requiredHackingSkill ?? 1) / 30) *
         getAugMult('hacking_exp'),
-      /** @param {{hackDifficulty?: number}} server @param {Person} player */
-      hackTime: (server, player) =>
+      hackTime: (server: Server, player: Person) =>
         ((5 * (server.hackDifficulty ?? 1)) /
           ((player.skills?.hacking ?? 1) * getAugMult('hacking_speed'))) *
         1000,
     },
     work: {
-      /** @param {Person} player @param {FactionWorkType} workType @param {number} [favor] */
-      factionGains: (player, workType, favor) => {
+      factionGains: (
+        player: Person,
+        workType: FactionWorkType,
+        favor: number,
+      ) => {
         if (workType === 'hacking') {
           return {
             ...WORK_STATS,
@@ -94,13 +84,54 @@ export const getMockFormulas = (staticData, sharePower = 1) => {
               sharePower,
           };
         }
+        if (workType === 'field') {
+          const skill =
+            (player.skills.strength ?? 0) +
+            (player.skills.defense ?? 0) +
+            (player.skills.dexterity ?? 0) +
+            (player.skills.agility ?? 0) +
+            (player.skills.charisma ?? 0) +
+            (player.skills.hacking ?? 0) * sharePower;
+          return {
+            ...WORK_STATS,
+            hackExp: (1 / 5) * getAugMult('hacking_exp') * FactionWorkExpGain,
+            strExp: (1 / 5) * getAugMult('str_exp') * FactionWorkExpGain,
+            defExp: (1 / 5) * getAugMult('def_exp') * FactionWorkExpGain,
+            dexExp: (1 / 5) * getAugMult('dex_exp') * FactionWorkExpGain,
+            agiExp: (1 / 5) * getAugMult('agi_exp') * FactionWorkExpGain,
+            chaExp: (1 / 5) * getAugMult('cha_exp') * FactionWorkExpGain,
+            reputation:
+              ((0.9 * skill) / 975 / 5.5) * factionRepMult() * favorMult(favor),
+          };
+        }
+        if (workType === 'security') {
+          const skill =
+            (player.skills.strength ?? 0) +
+            (player.skills.defense ?? 0) +
+            (player.skills.dexterity ?? 0) +
+            (player.skills.agility ?? 0) +
+            (player.skills.hacking ?? 0) * sharePower;
+          return {
+            ...WORK_STATS,
+            hackExp: (0.5 / 5) * getAugMult('hacking_exp') * FactionWorkExpGain,
+            strExp: (1.5 / 5) * getAugMult('str_exp') * FactionWorkExpGain,
+            defExp: (1.5 / 5) * getAugMult('def_exp') * FactionWorkExpGain,
+            dexExp: (1.5 / 5) * getAugMult('dex_exp') * FactionWorkExpGain,
+            agiExp: (1.5 / 5) * getAugMult('agi_exp') * FactionWorkExpGain,
+            reputation:
+              ((0.9 * skill) / 975 / 4.5) * factionRepMult() * favorMult(favor),
+          };
+        }
         throw new Error(`Not yet implemented: ${workType}`);
       },
     },
     hacknetNodes: {
-      /** @param {number} level @param {number} ram @param {number} cores @param {number} [prodMult] */
-      moneyGainRate: (level, ram, cores, prodMult = defaultProdMult) =>
-        prodMult * (level * 1.5) * 1.035 ** (ram - 1) * ((cores + 5) / 6),
+      moneyGainRate: (
+        level: number,
+        ram: number,
+        cores: number,
+        prodMult = defaultProdMult,
+      ) => prodMult * (level * 1.5) * 1.035 ** (ram - 1) * ((cores + 5) / 6),
     },
   };
 };
@@ -122,7 +153,7 @@ export const formulas = (ns: NS) => {
  * @param {{ skills?: Partial<Skills>, mults?: Partial<Multipliers> }} [overrides]
  * @returns {Person}
  */
-export const speculativePerson = (ns, { skills, mults } = {}) => {
+export const speculativePerson = (ns: NS, { skills, mults } = {}) => {
   const base = ns.formulas.mockPerson();
   return {
     ...base,
