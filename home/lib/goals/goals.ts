@@ -1,7 +1,11 @@
 import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
 import { THREADPOOL } from '../../etc/config.ts';
 import { jobRamGoal, installGoal, type Goal } from './nodes.ts';
-import { buildFactionGoalTree, isRepBound as isRepBoundPure } from './tree.ts';
+import {
+  buildFactionGoalTree,
+  buildJoinSubtree,
+  isRepBound as isRepBoundPure,
+} from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
 import { needsAugRam, needsJobRam } from '../query-service.ts';
@@ -31,6 +35,21 @@ export const getGoals = (ns: NS): Goal[] => {
     formulas,
     karma,
   };
+
+  if (
+    staticData.resetInfo.currentNode === 2 &&
+    !player.factions?.includes('Slum Snakes')
+  ) {
+    const { joinPrereqs, joinGoal } = buildJoinSubtree('Slum Snakes', {
+      player,
+      staticData,
+      money,
+      referenceIncome,
+      karma,
+      formulas,
+    });
+    return [...joinPrereqs, joinGoal];
+  }
 
   const overhead = computeResetOverhead(staticData);
 
