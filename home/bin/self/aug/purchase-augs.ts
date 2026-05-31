@@ -88,7 +88,7 @@ export async function main(ns: NS) {
     const buyRepGoal = goals.find((goal) => goal.type === 'BUY_REP');
     if (buyRepGoal != null) {
       print('Buying ' + ns.format.number(buyRepGoal.requirement) + ' rep');
-      const donationRate = ns.formulas.reputation.donationForRep(
+      const donationRate = formulas(ns).reputation.donationForRep(
         1,
         ns.getPlayer(),
       );
