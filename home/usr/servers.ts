@@ -1,7 +1,7 @@
-import { by, small } from './lib/util';
-import { nmap } from './lib/nmap';
-import { table } from './lib/table';
-import { THREADPOOL } from './etc/config';
+import { by, small } from '../lib/util';
+import { nmap } from '../lib/nmap';
+import { table } from '../lib/table';
+import { THREADPOOL } from '../etc/config';
 
 const getServers = (ns: NS) =>
   nmap(ns)
