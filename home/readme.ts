@@ -45,7 +45,7 @@ const UTILITIES = {
     desc: 'View this help',
   },
   servers: {
-    command: 'dispatch servers.ts',
+    command: 'dispatch usr/servers.ts',
     desc: 'List non-purchased servers',
   },
   update: {
