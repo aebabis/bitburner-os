@@ -39,14 +39,15 @@ export async function main(ns: NS) {
       ns.tprint(...args);
       ns.write(LOGFILE, args.join(' ') + '\n', 'a');
     };
+    print(new Date().toLocaleDateString());
+
     for (const goal of goals) {
       print(
         goal.desc.padEnd(40) + ' ' + goal.type.padEnd(15) + ' ' + goal.isDone(),
       );
     }
 
-    print(new Date().toDateString('YYYY-MM-DD HH:MM'));
-
+    print('Stopping all programs');
     for (const hostname of nmap(ns))
       for (const { pid } of ns.ps(hostname))
         if (pid !== ns.pid) {
@@ -54,7 +55,6 @@ export async function main(ns: NS) {
           ns.kill(pid);
         }
 
-    print(`I'm the scheduler now!`);
     const finisher = ['home', 'THREADPOOL-01']
       .filter((hostname) => ns.serverExists(hostname))
       .sort(
@@ -67,37 +67,41 @@ export async function main(ns: NS) {
       `Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`,
     );
 
-    /** @param {string} script
-     *  @param {number} threads
-     *  @param { ...ScriptArg} args*/
-    const run = async (script, threads, ...args) => {
+    const run = async (
+      script: string,
+      threads: number,
+      ...args: ScriptArg[]
+    ) => {
       print(`${script} ${args.join(' ')}`);
       const pid = ns.exec(script, finisher, threads, ...args);
-      print(pid);
       if (pid === 0) {
         print(' failed to run');
       } else {
         while (ns.isRunning(pid)) await ns.sleep(50);
-        print(' done');
       }
     };
 
+    // Sell all stocks
+    print('Dumping stocks');
+    if (ns.stock.hasTixApiAccess()) dump(ns);
+
     const buyRepGoal = goals.find((goal) => goal.type === 'BUY_REP');
     if (buyRepGoal != null) {
+      print('Buying ' + ns.format.number(buyRepGoal.requirement) + ' rep');
       const donationRate = ns.formulas.reputation.donationForRep(
         1,
         ns.getPlayer(),
       );
+      const cost = buyRepGoal.requirement * donationRate;
+      print('Cost:  $' + ns.format.number(cost));
+      print('Avail: $' + ns.format.number(ns.getPlayer().money));
       await run(
         '/bin/self/aug/donate-to-faction.ts',
         1,
         buyRepGoal.faction,
-        buyRepGoal.requirement * donationRate,
+        cost,
       );
     }
-
-    // Sell all stocks
-    if (ns.stock.hasTixApiAccess()) dump(ns);
 
     print(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
