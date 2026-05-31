@@ -41,20 +41,26 @@ export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ [
 ];
 export const NEUROFLUX = 'NeuroFlux Governor';
 
-/**
- * @param {GoalType} type
- * @param {string} desc
- * @param {() => boolean} isDone
- * @param {{ requirement?: number, faction?: string, deps?: Goal[], value?: number, ownTime?: () => number | null }} [opts]
- * @returns {Goal}
- */
+interface GoalProps {
+  requirement?: number;
+  faction?: string;
+  deps?: Goal[];
+  value?: number;
+  ownTime?: () => number | null;
+}
 const goal = (
-  type,
-  desc,
-  isDone,
-  { requirement, faction, deps = [], value = 0, ownTime = () => null } = {},
+  type: GoalType,
+  desc: string,
+  isDone: () => boolean,
+  {
+    requirement,
+    faction,
+    deps = [],
+    value = 0,
+    ownTime = () => null,
+  }: GoalProps = {},
 ) => {
-  let _ttc;
+  let _ttc: number;
   return {
     type,
     desc,
@@ -78,14 +84,13 @@ const goal = (
   };
 };
 
-/** @param {string} poolServer @param {number} currentRam @param {number} requiredJobRam @param {number} jobRamCost @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
 export const jobRamGoal = (
-  poolServer,
-  currentRam,
-  requiredJobRam,
-  jobRamCost,
-  currentMoney,
-  referenceIncome,
+  poolServer: string,
+  currentRam: number,
+  requiredJobRam: number,
+  jobRamCost: number,
+  currentMoney: number,
+  referenceIncome: number,
 ) =>
   goal(
     'JOB_RAM',
@@ -100,19 +105,17 @@ export const jobRamGoal = (
     },
   );
 
-/** @param {import('./nodes.ts').Goal[]} deps @param {string} [desc] @returns {Goal} */
-export const installGoal = (deps, desc = 'Run augmentation suite') =>
+export const installGoal = (deps: Goal[], desc = 'Run augmentation suite') =>
   goal('INSTALL', desc, () => false, {
     deps,
     value: deps.reduce((s, d) => s + d.value, 0),
     ownTime: () => 0,
   });
 
-/** @param {number} hackReq @param {number} currentHacking @param {number|null} [trainingTime] @returns {Goal} */
 export const hackingLevelGoal = (
-  hackReq,
-  currentHacking,
-  trainingTime = null,
+  hackReq: number,
+  currentHacking: number,
+  trainingTime: number | null = null,
 ) =>
   goal(
     'HACKING_LEVEL',
@@ -121,11 +124,10 @@ export const hackingLevelGoal = (
     { requirement: hackReq, ownTime: () => trainingTime },
   );
 
-/** @param {number} combatReq @param {Skills} currentSkills @param {number|null} [trainingTime] @returns {Goal} */
 export const combatLevelsGoal = (
-  combatReq,
-  currentSkills,
-  trainingTime = null,
+  combatReq: number,
+  currentSkills: number,
+  trainingTime: number | null = null,
 ) =>
   goal(
     'COMBAT_LEVELS',
@@ -134,8 +136,7 @@ export const combatLevelsGoal = (
     { requirement: combatReq, ownTime: () => trainingTime },
   );
 
-/** @param {number} killsRequired @param {number} numPeopleKilled @returns {Goal} */
-export const killsGoal = (killsRequired, numPeopleKilled) =>
+export const killsGoal = (killsRequired: number, numPeopleKilled: number) =>
   goal(
     'KILLS',
     `Kill ${killsRequired} people`,
@@ -146,15 +147,17 @@ export const killsGoal = (killsRequired, numPeopleKilled) =>
     },
   );
 
-/** @param {number} karmaRequired @param {number} karma @returns {Goal} */
-export const karmaGoal = (karmaRequired, karma) =>
+export const karmaGoal = (karmaRequired: number, karma: number) =>
   goal('KARMA', `Have ${karmaRequired} karma`, () => karmaRequired >= karma, {
     requirement: karmaRequired,
     ownTime: () => -(karmaRequired - karma),
   });
 
-/** @param {number} moneyTarget @param {number} currentMoney @param {number} referenceIncome @returns {Goal} */
-export const moneyPrereqGoal = (moneyTarget, currentMoney, referenceIncome) =>
+export const moneyPrereqGoal = (
+  moneyTarget: number,
+  currentMoney: number,
+  referenceIncome: number,
+) =>
   goal(
     'MONEY',
     `Have ${fmtMoney(moneyTarget)}`,
@@ -168,35 +171,29 @@ export const moneyPrereqGoal = (moneyTarget, currentMoney, referenceIncome) =>
     },
   );
 
-/** @param {string} location @param {string} currentLocation @returns {Goal} */
-export const locationGoal = (location, currentLocation) =>
+export const locationGoal = (location: CityName, currentLocation: CityName) =>
   goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
-    requirement: /** @type {any} */ location,
+    requirement: location,
     ownTime: () => 0,
   });
 
-/** @param {string} faction @param {string[]} factions @param {Goal[]} [deps] @returns {Goal} */
-export const factionJoinGoal = (faction, factions, deps = []) =>
+export const factionJoinGoal = (
+  faction: FactionName,
+  factions: FactionName[],
+  deps: Goal[] = [],
+) =>
   goal('FACTION_JOIN', 'Join ' + faction, () => factions.includes(faction), {
     faction,
     deps,
     ownTime: () => 0,
   });
 
-/**
- * @param {string} faction
- * @param {number} requirement
- * @param {number} currentRep
- * @param {Goal} dep
- * @param {number|undefined} repRate
- * @returns {Goal}
- */
 export const factionRepGoal = (
-  faction,
-  requirement,
-  currentRep,
-  dep,
-  repRate,
+  faction: FactionName,
+  requirement: number,
+  currentRep: number,
+  dep: Goal,
+  repRate?: number,
 ) =>
   goal(
     'FACTION_REP',
@@ -211,8 +208,11 @@ export const factionRepGoal = (
     },
   );
 
-/** @param {number | undefined} costToAug @param {number} liquidAssets @param {number} referenceIncome @returns {Goal} */
-export const augMoneyGoal = (costToAug, liquidAssets, referenceIncome) =>
+export const augMoneyGoal = (
+  costToAug: number | undefined,
+  liquidAssets: number,
+  referenceIncome: number,
+) =>
   goal(
     'AUG_MONEY',
     'Save ' +
@@ -228,12 +228,11 @@ export const augMoneyGoal = (costToAug, liquidAssets, referenceIncome) =>
     },
   );
 
-/** @param {string} aug @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @param {number} [value] @returns {Goal} */
 export const augmentationGoal = (
-  aug,
-  faction,
-  purchasedAugmentations,
-  deps,
+  aug: string,
+  faction: FactionName,
+  purchasedAugmentations: string[],
+  deps: Goal[],
   value = 0,
 ) =>
   goal('AUGMENTATION', aug, () => purchasedAugmentations.includes(aug), {
@@ -246,13 +245,12 @@ export const augmentationGoal = (
 /**
  * One level of Neuroflux Governor. isDone when the player has purchased at least
  * `ordinal` levels total (counting from 1).
- * @param {number} ordinal @param {string} faction @param {string[]} purchasedAugmentations @param {Goal[]} deps @param {number} [value] @returns {Goal}
  */
 export const neurofluxGoal = (
-  ordinal,
-  faction,
-  purchasedAugmentations,
-  deps,
+  ordinal: number,
+  faction: FactionName,
+  purchasedAugmentations: string[],
+  deps: Goal[],
   value = 0,
 ) =>
   goal(
@@ -284,14 +282,12 @@ export const factionFavorGoal = (
   );
 };
 
-/**
- * @param {string} faction
- * @param {number} repRequired
- * @param {number} currentRep
- * @param {Goal[]} deps
- * @returns {Goal}
- */
-export const buyRepGoal = (faction, repRequired, currentRep, deps) =>
+export const buyRepGoal = (
+  faction: FactionName,
+  repRequired: number,
+  currentRep: number,
+  deps: Goal[],
+) =>
   goal(
     'BUY_REP',
     `Buy ${fmtRep(repRequired)} rep (${faction})`,
