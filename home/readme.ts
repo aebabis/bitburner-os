@@ -17,7 +17,7 @@ const SHORTHAND = {
 
 const UTILITIES = {
   'aug-table': {
-    command: 'dispatch ./bin/goals.ts aug-table',
+    command: 'dispatch bin/goals.ts aug-table',
     desc: 'Show augmentation scoring table',
   },
   config: {
@@ -29,11 +29,11 @@ const UTILITIES = {
     desc: 'View stored by various services',
   },
   dispatch: {
-    command: './dispatch.ts',
+    command: 'bin/dispatch.ts',
     desc: 'Tell scheduler to run a program',
   },
   liquidate: {
-    command: 'dispatch ./bin/liquidate.ts',
+    command: 'dispatch bin/liquidate.ts',
     desc: 'Sell all stocks and stop spending',
   },
   nmap: {
@@ -49,7 +49,7 @@ const UTILITIES = {
     desc: 'List non-purchased servers',
   },
   update: {
-    command: 'home; killall; ./update.ts',
+    command: 'home; killall; update.ts',
     desc: 'Download most recent code from GitHub',
   },
 };
