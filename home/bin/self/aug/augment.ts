@@ -10,6 +10,7 @@ export async function main(ns: NS) {
   await rmi(ns, retry)('/bin/self/aug/load-aug-reps.ts');
   await rmi(ns, retry)('/bin/self/aug/load-aug-prereqs.ts');
   await rmi(ns, retry)('/bin/self/aug/load-aug-stats.ts');
+  await rmi(ns, retry)('/bin/self/aug/load-faction-work-types.ts');
   await rmi(ns, retry)('/bin/self/aug/load-faction-reqs.ts');
 
   while (true) {

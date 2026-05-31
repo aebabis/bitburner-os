@@ -47,7 +47,7 @@ type StaticStockData = {
   maxShares: number;
 };
 
-type StaticData = {
+export type StaticData = {
   resetInfo: ResetInfo;
   installedAugmentations: string[];
   scriptRam: Record<string, number>;
@@ -71,6 +71,7 @@ type StaticData = {
   augmentationStats?: Record<string, Multipliers>;
   purchasedAugmentations?: string[];
   factionRequirements?: Record<FactionName, PlayerRequirement[]>;
+  factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
   factionFavorGain?: Record<FactionName, number>;
 };
 export const getStaticData = (ns: NS): StaticData =>

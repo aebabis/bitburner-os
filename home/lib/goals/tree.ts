@@ -25,6 +25,7 @@ import {
   shouldPursueFavor,
   computeResetOverhead,
 } from '../aug-select.ts';
+import { StaticData } from '../data-store.ts';
 
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.
@@ -192,22 +193,23 @@ export const isRepBound = (goals) => {
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
  * @param {string} faction
- * @param {{
- *   player: Player,
- *   staticData: ReturnType<import('../data-store.ts').getStaticData>,
- *   factionRep: Record<string, number>,
- *   purchasedAugmentations: string[],
- *   ownedAugs: string[],
- *   money: number,
- *   estimatedStockValue: number,
- *   referenceIncome: number,
- *   formulas: ReturnType<import('../formulas.ts').getMockFormulas>,
- *   karma: number,
- * }} data
+ @param {} data
  * @returns {{ goals: import('./nodes.ts').Goal[], terminalGoals: import('./nodes.ts').Goal[], value: number, utility: (overhead: number) => number, installDesc?: string } | null}
  */
+interface FactionGoalTreeProps {
+  player: Player;
+  staticData: StaticData;
+  factionRep: Record<string, number>;
+  purchasedAugmentations: string[];
+  ownedAugs: string[];
+  money: number;
+  estimatedStockValue: number;
+  referenceIncome: number;
+  formulas: Formulas; // TODO: Use ReturnType<formulas>
+  karma: number;
+}
 export const buildFactionGoalTree = (
-  faction,
+  faction: FactionName,
   {
     player,
     staticData,
@@ -219,12 +221,15 @@ export const buildFactionGoalTree = (
     referenceIncome,
     formulas,
     karma,
-  },
+  }: FactionGoalTreeProps,
 ) => {
-  const { augmentationPrices, augmentationPrereqs, augmentationStats } =
-    staticData;
-  const augValue = (/** @type {string} */ aug) =>
-    augValueFromStats(aug, augmentationStats);
+  const {
+    augmentationPrices,
+    augmentationPrereqs,
+    augmentationStats,
+    factionWorkTypes = {},
+  } = staticData;
+  const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
 
   const moneyRate = referenceIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
@@ -272,12 +277,17 @@ export const buildFactionGoalTree = (
 
   const augs = getPurchaseOrder(batch);
   const repReq = computeRepReq(augs, staticData);
-  const repRate =
-    formulas?.work.factionGains(
-      player,
-      'hacking',
-      staticData.factionFavor?.[faction] ?? 0,
-    )?.reputation * 5;
+  const repRate = Math.max(
+    0,
+    ...(factionWorkTypes[faction] ?? ['hacking']).map(
+      (workType) =>
+        formulas?.work.factionGains(
+          player,
+          workType,
+          staticData.factionFavor?.[faction] ?? 0,
+        )?.reputation * 5,
+    ),
+  );
 
   const installedSet = new Set(staticData.installedAugmentations);
   const numQueued = purchasedAugmentations.filter(
