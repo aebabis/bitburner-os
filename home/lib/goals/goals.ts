@@ -133,7 +133,9 @@ export const getGoals = (ns: NS): Goal[] => {
 
 export const getTimeToMilestone = (ns: NS): number | null => {
   const goals = getGoals(ns);
-  const joinGoal = goals.find((goal) => goal.type === 'FACTION_JOIN');
+  const joinGoal = goals.find(
+    (goal) => !goal.isDone() && goal.type === 'FACTION_JOIN',
+  );
   if (joinGoal) return joinGoal.timeToComplete();
   else return getTimeToComplete(ns);
 };
