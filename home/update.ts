@@ -12,7 +12,7 @@ export async function main(ns: NS) {
     'download.ts',
     'home',
   );
-  const pid = ns.exec('download.ts', 'home', 1, '--branch', branch);
+  const pid = ns.exec('download.ts', 'home', 1, '--branch', branch as string);
   while (ns.isRunning(pid)) await ns.sleep(50);
   ns.exec('start.ts', 'home');
 }

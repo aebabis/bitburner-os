@@ -1,13 +1,13 @@
-import { resolve, relative } from "path";
-import { writeFile, readdir } from "fs/promises";
-import EventEmitter from "events";
+import { resolve, relative } from 'path';
+import { writeFile, readdir } from 'fs/promises';
+import EventEmitter from 'events';
 
 /** @param {string} dir @returns {AsyncGenerator<string>} */
 async function* getFiles(dir) {
   const dirents = await readdir(dir, { withFileTypes: true });
   for (const dirent of dirents) {
     const res = resolve(dir, dirent.name);
-    if (dirent.isDirectory()) {
+    if (dirent.isDirectory() && !['log', 'tmp'].includes(dirent.name)) {
       yield* getFiles(res);
     } else {
       yield res;
@@ -18,23 +18,23 @@ async function* getFiles(dir) {
 const eventEmitter = new EventEmitter();
 
 const toBitburnerPath = (/** @type {string} */ file) => {
-  const fullpath = relative("home", file).replace(/\\/g, "/");
-  if (fullpath.includes("/")) return "/" + fullpath;
+  const fullpath = relative('home', file).replace(/\\/g, '/');
+  if (fullpath.includes('/')) return '/' + fullpath;
   return fullpath;
 };
 
 async function go() {
   const files = [];
-  for await (const f of getFiles("home")) {
+  for await (const f of getFiles('home')) {
     const bitburnerPath = toBitburnerPath(f);
     const item = `  '${bitburnerPath}',`;
     files.push(item);
   }
   const program = `const FILES = [
-${files.join("\n")}
+${files.join('\n')}
 ];
 
-/** @param {NS} ns **/\nexport async function main(ns) {
+export async function main(ns: NS) {
   const { branch } = ns.flags([['branch', 'main']]);
   if (_[0] != null) {
     ns.tprint('\\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
@@ -47,13 +47,13 @@ ${files.join("\n")}
   }
   ns.tprint('Download complete');
 }`;
-  await writeFile("home/download.js", program);
+  await writeFile('home/download.ts', program);
 
-  eventEmitter.emit("done");
+  eventEmitter.emit('done');
 }
 
-eventEmitter.on("done", () => {
-  console.log("done");
+eventEmitter.on('done', () => {
+  console.log('done');
 });
 
 go();
