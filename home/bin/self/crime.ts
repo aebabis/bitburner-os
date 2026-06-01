@@ -1,6 +1,6 @@
 import { getPlayerData, putPlayerData } from '../../lib/data-store';
 
-type CrimStat = {
+type CrimeStat = {
   name: string;
   chance: number;
   time: number;
@@ -14,21 +14,16 @@ const selectCrime = (ns: NS, maxDuration: number | null) => {
   const PATIENCE = 90 * 1000;
   const allowedCrimes = crimeStats
     .filter(
-      (/** @type {CrimeStat} */ c) =>
-        maxDuration == null || c.time * 1000 <= maxDuration,
+      (c: CrimeStat) => maxDuration == null || c.time * 1000 <= maxDuration,
     )
-    .filter(
-      (/** @type {CrimeStat} */ c) =>
-        c.chance === 1 || c.chance >= c.time / PATIENCE,
-    );
+    .filter((c: CrimeStat) => c.chance === 1 || c.chance >= c.time / PATIENCE);
 
   if (allowedCrimes.length === 0) {
     return 'Shoplift';
   }
 
-  const bestCrime = allowedCrimes.reduce(
-    (/** @type {CrimeStat} */ a, /** @type {CrimeStat} */ b) =>
-      a.expectedValue > b.expectedValue ? a : b,
+  const bestCrime = allowedCrimes.reduce((a: CrimeStat, b: CrimeStat) =>
+    a.expectedValue > b.expectedValue ? a : b,
   );
 
   return bestCrime.name;

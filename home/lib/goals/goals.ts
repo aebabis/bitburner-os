@@ -51,6 +51,22 @@ export const getGoals = (ns: NS): Goal[] => {
     return [...joinPrereqs, joinGoal];
   }
 
+  const universityGains = ns.formulas.work.universityGains(
+    player,
+    'Algorithms',
+    ns.enums.LocationName.Sector12RothmanUniversity,
+  );
+  const xpRate = universityGains.hackExp * 5;
+  const targetHackingXp = xpRate * 10;
+  if (player.exp.hacking < targetHackingXp)
+    return [
+      hackingXpGoal(
+        targetHackingXp,
+        player.exp.hacking,
+        (targetHackingXp - player.exp.hacking) / xpRate,
+      ),
+    ];
+
   const overhead = computeResetOverhead(staticData);
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)

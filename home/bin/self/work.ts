@@ -93,8 +93,12 @@ export async function main(ns: NS) {
         (g) => g.type === 'KILLS' && !g.isDone(),
       )?.requirement;
       if (combatGoal != null) {
+        const { skills } = ns.getPlayer();
+        const lowestStat = (
+          ['strength', 'defense', 'dexterity', 'agility'] as const
+        ).reduce((s1, s2) => (skills[s1] < skills[s2] ? s1 : s2));
         await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
-        await rmi(ns)('/bin/self/improvement.ts', 1);
+        await rmi(ns)('/bin/self/improvement.ts', 1, lowestStat);
       } else if (locationGoal) {
         await rmi(ns)('/bin/self/travel.ts', 1, locationGoal);
       } else if (killsGoal) {
@@ -103,6 +107,6 @@ export async function main(ns: NS) {
         await makeMoney();
       }
     }
-    await ns.sleep(100);
+    await ns.sleep(200);
   }
 }

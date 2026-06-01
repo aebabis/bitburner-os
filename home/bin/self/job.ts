@@ -6,5 +6,4 @@ export async function main(ns: NS) {
   const focus = shouldWorkHaveFocus(ns);
   ns.singularity.workForCompany("Joe's Guns", focus);
   putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
-  await ns.sleep(10000);
 }
