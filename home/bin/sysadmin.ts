@@ -57,12 +57,9 @@ export async function main(ns: NS) {
   } = getStaticData(ns);
 
   const buyServer = async (
-    /** @type {number} */ minRam,
-    /** @type {number} */ maxRam,
-    /** @type {string} */ hostname = /** @type {string} */ getNextServerName(
-      ns,
-      purchasedServerLimit,
-    ),
+    minRam: number,
+    maxRam: number,
+    hostname = getNextServerName(ns, purchasedServerLimit),
   ) => {
     const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 
@@ -73,10 +70,9 @@ export async function main(ns: NS) {
       : 0;
 
     const purchase = isUpgrade
-      ? /** @param {string} hostname @param {number} ram */
-        (hostname, ram) => ns.cloud.upgradeServer(hostname, ram)
-      : /** @param {string} hostname @param {number} ram */
-        (hostname, ram) => ns.cloud.purchaseServer(hostname, ram);
+      ? (hostname: string, ram: number) => ns.cloud.upgradeServer(hostname, ram)
+      : (hostname: string, ram: number) =>
+          ns.cloud.purchaseServer(hostname, ram);
 
     let ram = maxRam;
     while (!purchase(hostname, ram)) {

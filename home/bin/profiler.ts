@@ -4,7 +4,7 @@ import { getSnapshot } from '../lib/profiler';
 const doc = eval('document');
 const win = eval('window');
 
-const COLORS = /** @type {Record<string, string>} */ {
+const COLORS = {
   H: '#e5c07b',
   W1: '#56b6c2',
   G: '#98c379',
@@ -27,15 +27,14 @@ const TIMELINE_H = AXIS_H + TYPES.length * (LANE_H + LANE_GAP);
 
 // -- Shared panel helpers --
 
-/**
- * @param {CanvasRenderingContext2D} ctx
- * @param {(t: number) => number} toX
- * @param {{y: number, w: number}} bounds
- * @param {number} now
- * @param {number} tMin
- * @param {number} tMax
- */
-const drawTimeAxis = (ctx, toX, bounds, now, tMin, tMax) => {
+const drawTimeAxis = (
+  ctx: CanvasRenderingContext2D,
+  toX: (t: number) => number,
+  bounds: (t: number) => number,
+  now: number,
+  tMin: number,
+  tMax: number,
+) => {
   ctx.fillStyle = '#222';
   ctx.fillRect(LABEL_W, bounds.y, bounds.w - LABEL_W, AXIS_H);
   ctx.font = '9px monospace';
@@ -61,13 +60,12 @@ const drawTimeAxis = (ctx, toX, bounds, now, tMin, tMax) => {
   }
 };
 
-/**
- * @param {CanvasRenderingContext2D} ctx
- * @param {(t: number) => number} toX
- * @param {number} now
- * @param {{y: number, h: number}} bounds
- */
-const drawNowLine = (ctx, toX, now, bounds) => {
+const drawNowLine = (
+  ctx: CanvasRenderingContext2D,
+  toX: (t: number) => number,
+  now: number,
+  bounds: (y: number, h: number) => number,
+) => {
   const nowX = Math.round(toX(now));
   ctx.strokeStyle = 'rgba(255,255,255,0.25)';
   ctx.setLineDash([3, 4]);
@@ -80,16 +78,15 @@ const drawNowLine = (ctx, toX, now, bounds) => {
 
 // -- Timeline panel --
 
-/**
- * @param {CanvasRenderingContext2D} ctx
- * @param {NonNullable<ReturnType<typeof getSnapshot>>} snapshot
- * @param {(t: number) => number} toX
- * @param {{y: number, w: number, h: number}} bounds
- * @param {number} now
- * @param {number} tMin
- * @param {number} tMax
- */
-const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
+const drawTimeline = (
+  ctx: CanvasRenderingContext2D,
+  snapshot: NonNullable<ReturnType<typeof getSnapshot>>,
+  toX: (t: number) => number,
+  bounds: { y: number; w: number; h: number },
+  now: number,
+  tMin: number,
+  tMax: number,
+) => {
   drawTimeAxis(ctx, toX, bounds, now, tMin, tMax);
   drawNowLine(ctx, toX, now, { y: bounds.y + AXIS_H, h: bounds.h - AXIS_H });
 
@@ -164,8 +161,7 @@ const drawTimeline = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 
 // -- Drift panel --
 
-/** @param {number} ms */
-const fmtMs = (ms) =>
+const fmtMs = (ms: number) =>
   Math.abs(ms) >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms.toFixed(0)}ms`;
 
 /**
@@ -180,16 +176,16 @@ const fmtMs = (ms) =>
  *   2. Mean start delay per type (isolates scheduling latency from duration error)
  *   3. Within-frame W/H and G/H ratios (frames where all 4 types completed)
  *      — if these match 1:3.2:4, the cross-frame mean is a sampling artifact
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {NonNullable<ReturnType<typeof getSnapshot>>} snapshot
- * @param {(t: number) => number} toX
- * @param {{y: number, w: number, h: number}} bounds
- * @param {number} now
- * @param {number} tMin
- * @param {number} tMax
  */
-const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
+const drawDriftPanel = (
+  ctx: CanvasRenderingContext2D,
+  snapshot: NonNullable<ReturnType<typeof getSnapshot>>,
+  toX: (t: number) => number,
+  bounds: { y: number; w: number; h: number },
+  now: number,
+  tMin: number,
+  tMax: number,
+) => {
   drawTimeAxis(ctx, toX, bounds, now, tMin, tMax);
 
   const plotY = bounds.y + AXIS_H;
@@ -230,8 +226,7 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   const dRange = Math.max(1, dHi - dLo);
 
   // Positive drift up (smaller canvas Y), negative down (larger canvas Y).
-  const toYDrift = (/** @type {number} */ d) =>
-    plotY + plotH - ((d - dLo) / dRange) * plotH;
+  const toYDrift = (d: number) => plotY + plotH - ((d - dLo) / dRange) * plotH;
 
   // Y-axis grid ticks
   const mag = Math.pow(10, Math.floor(Math.log10(dRange / 4)));
@@ -266,7 +261,7 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
 
   // Dots: dim marker at startDelay, bright marker at totalDrift, line between them.
   for (const job of completedJobs) {
-    const drift = /** @type {number} */ job.actualEnd - job.scheduledEnd;
+    const drift = job.actualEnd - job.scheduledEnd;
     const delay =
       job.actualStart != null ? job.actualStart - job.scheduledStart : null;
     const x = Math.round(toX(/** @type {number} */ job.actualEnd));
@@ -308,9 +303,8 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   ctx.font = '10px monospace';
   ctx.textBaseline = 'top';
 
-  /** @param {(j: typeof completedJobs[0]) => number} fn @returns {Record<string, number>} */
-  const meanByType = (fn) => {
-    /** @type {Record<string, number>} */ const out = {};
+  const meanByType = (fn: (j: (typeof completedJobs)[0]) => number) => {
+    const out: Record<string, number> = {};
     for (const type of TYPES) {
       const jobs = completedJobs.filter((j) => j.type === type);
       if (jobs.length === 0) continue;
@@ -319,8 +313,11 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
     return out;
   };
 
-  /** @param {Record<string, number>} means @param {number} rowY @param {string} label */
-  const drawStatsRow = (means, rowY, label) => {
+  const drawStatsRow = (
+    means: Record<string, number>,
+    rowY: number,
+    label: string,
+  ) => {
     const hVal = means['H'];
     let x = LABEL_W + 8;
     ctx.fillStyle = '#555';
@@ -365,8 +362,9 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
   );
   const frameRatioRow = statsY0 + STATS_LINE_H * 2;
   if (completedFrames.length > 0) {
-    /** @type {Record<string, number[]>} */
-    const ratiosByType = Object.fromEntries(TYPES.map((t) => [t, []]));
+    const ratiosByType: Record<string, number[]> = Object.fromEntries(
+      TYPES.map((t) => [t, []]),
+    );
     for (const { jobs } of completedFrames) {
       const hJob = jobs.find(
         (j) => j != null && j.type === 'H' && j.actualEnd != null,
@@ -378,13 +376,10 @@ const drawDriftPanel = (ctx, snapshot, toX, bounds, now, tMin, tMax) => {
         const j = jobs.find(
           (jj) => jj != null && jj.type === type && jj.actualEnd != null,
         );
-        if (j)
-          ratiosByType[type].push(
-            /** @type {number} */ (j.actualEnd - j.scheduledEnd) / hDrift,
-          );
+        if (j) ratiosByType[type].push((j.actualEnd - j.scheduledEnd) / hDrift);
       }
     }
-    const frameMeans = /** @type {Record<string, number>} */ {};
+    const frameMeans: Record<string, number> = {};
     for (const type of TYPES) {
       const rs = ratiosByType[type];
       if (rs.length > 0)
@@ -451,7 +446,7 @@ export async function main(ns: NS) {
   buttons.appendChild(zoomOut);
   content.appendChild(buttons);
 
-  let /** @type {number} */ rafId = 0;
+  let rafId = 0;
 
   const render = () => {
     const snapshot = getSnapshot();
@@ -476,8 +471,7 @@ export async function main(ns: NS) {
     const tMin = now + startTime;
     const tMax = now + endTime;
     const tRange = Math.max(tMax - tMin, 1);
-    const toX = (/** @type {number} */ t) =>
-      ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
+    const toX = (t: number) => ((t - tMin) / tRange) * (w - LABEL_W) + LABEL_W;
 
     const driftY = TIMELINE_H + PANEL_GAP;
     const driftH = h - driftY;
