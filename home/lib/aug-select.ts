@@ -1,3 +1,4 @@
+import { StaticData } from './data-store.ts';
 import {
   STORY_FACTIONS,
   CITY_FACTIONS,
@@ -54,12 +55,10 @@ const UNITY_AUGS = {
   'The Red Pill': 10,
 };
 
-/**
- * @param {Multipliers} stats
- * @param {Record<keyof Multipliers, number>} weights
- * @returns {number}
- */
-export const scoreAug = (stats, weights) =>
+export const scoreAug = (
+  stats: Multipliers,
+  weights: Record<keyof Multipliers, number>,
+) =>
   Object.entries(stats)
     .map(([key, stat = 1]) => {
       const mult = stat >= 1 ? stat : 1 / stat;
@@ -70,14 +69,7 @@ export const scoreAug = (stats, weights) =>
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
 
-/**
- * Estimate reset overhead (seconds) for plan comparison — how long the next run will take to
- * reach this productive state. Uses actual run elapsed time as proxy (reproducible runs),
- * with a conservative floor for early-run estimates.
- * @param {{ resetInfo: any, installedAugmentations: string[] }} staticData
- * @returns {number}
- */
-export const computeResetOverhead = (staticData) => {
+export const computeResetOverhead = (staticData: StaticData) => {
   const installedAugs = staticData.installedAugmentations ?? [];
   const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
   const timeSinceInstall =
@@ -91,20 +83,12 @@ export const computeResetOverhead = (staticData) => {
 // TODO: use formulas to estimate re-leveling time and replace the constant.
 const INSTALL_OVERHEAD_SEC = 60;
 
-/**
- * @param {number} numQueued - augs purchased but not yet installed
- * @param {number} numTargeted - augs in the next planned batch
- * @param {number} costToAug - total money needed for the next batch
- * @param {number} liquidAssets - available money
- * @param {number} referenceIncome - current income rate ($/s)
- * @returns {boolean}
- */
 export const shouldEarlyInstall = (
-  numQueued,
-  numTargeted,
-  costToAug,
-  liquidAssets,
-  referenceIncome,
+  numQueued: number,
+  numTargeted: number,
+  costToAug: number,
+  liquidAssets: number,
+  referenceIncome: number,
 ) => {
   if (numQueued === 0 || numTargeted === 0) return false;
   const timeToMoneyGoal =
@@ -117,23 +101,16 @@ export const shouldEarlyInstall = (
 export const MAX_AUGS = 6;
 const NEUROFLUX = 'NeuroFlux Governor';
 
-/**
- * @param {string} aug
- * @param {Record<string, Multipliers> | undefined} augmentationStats
- * @returns {number}
- */
-export const augValueFromStats = (aug, augmentationStats) => {
+export const augValueFromStats = (
+  aug: string,
+  augmentationStats: Record<string, Multipliers>,
+) => {
   if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
-  const stats = augmentationStats?.[aug];
+  const stats = augmentationStats[aug];
   return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
 };
 
-/**
- * @param {string[]} augs
- * @param {{ augmentationRepReqs?: Record<string,number> }} staticData
- * @returns {number}
- */
-export const computeRepReq = (augs, staticData) => {
+export const computeRepReq = (augs: string[], staticData: StaticData) => {
   const nfBaseRep = staticData.augmentationRepReqs?.[NEUROFLUX] ?? 0;
   let nfLevelOffset = 0;
   return Math.max(
@@ -146,16 +123,11 @@ export const computeRepReq = (augs, staticData) => {
   );
 };
 
-/**
- * Total cost to purchase all augs in the batch, accounting for the 1.9× queue
- * multiplier (from already-queued augs) and the 1.14× per-level NF base scaling.
- * Augs are costed most-expensive-first so the queue multiplier compounds correctly.
- * @param {string[]} augs - purchase-ordered batch (NF may appear multiple times)
- * @param {{ augmentationPrices?: Record<string,number>, resetInfo?: any }} staticData
- * @param {number} numQueued - augs already purchased but not yet installed
- * @returns {number}
- */
-export const computeAugCost = (augs, staticData, numQueued) => {
+export const computeAugCost = (
+  augs: string[],
+  staticData: StaticData,
+  numQueued: number,
+) => {
   const { augmentationPrices } = staticData;
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
   const sorted = [...augs].sort(
@@ -172,38 +144,13 @@ export const computeAugCost = (augs, staticData, numQueued) => {
   return cost;
 };
 
-/**
- * Find the optimal batch of up to MAX_AUGS augs from a faction.
- * Cost is time (seconds): (max(moneyTime, marginalRepTime) + resetOverhead + trainingTime)
- * Marginal rep excludes the cheapest aug's rep since that cost is committed once
- * the faction is targeted. Tries every aug as the binding rep tier — O(n²).
- * When the faction has donation access, rep cost folds into money cost via donationForRep.
- * @param {string} faction
- * @param {{
- *   augmentationPrices?: Record<string,number>,
- *   augmentationRepReqs?: Record<string,number>,
- *   augmentationStats?: Record<string,Multipliers>,
- *   factionAugmentations?: Record<string,string[]>,
- *   factionRequirements?: Record<string,any[]>,
- *   factionFavor?: Record<string,number>,
- *   favorToDonate?: number,
- *   serverBackdoorRequirements: any[],
- *   installedAugmentations: string[],
- * }} staticData
- * @param {Player} player
- * @param {ReturnType<import('./formulas.ts').getMockFormulas>} formulas
- * @param {Record<string, number>} factionRep
- * @param {string[]} ownedAugmentations - installed + purchased (for stillNeeds filter)
- * @param {{ moneyRate?: number, joinTime?: number }} [opts]
- * @returns {{ utility: number, batch: string[] }}
- */
 export const findOptimalBatch = (
-  faction,
-  staticData,
-  player,
-  formulas,
-  factionRep,
-  ownedAugmentations,
+  faction: FactionName,
+  staticData: StaticData,
+  player: Player,
+  formulas: Formulas,
+  factionRep: Record<FactionName, number>,
+  ownedAugmentations: string[],
   { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
   const {
@@ -223,15 +170,13 @@ export const findOptimalBatch = (
   // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
 
-  const stillNeeds = (/** @type {string} */ aug) =>
-    !ownedAugmentations.includes(aug);
-  const getNeededAugs = (/** @type {string} */ fac) =>
+  const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
+  const getNeededAugs = (fac: string) =>
     (factionAugmentations?.[fac] ?? [])
       .filter(stillNeeds)
       .filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (/** @type {string} */ aug) =>
-    augValueFromStats(aug, augmentationStats);
+  const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = formulas.work.factionGains(
@@ -313,31 +258,19 @@ export const findOptimalBatch = (
  * rep grinding for the given faction and aug batch parameters.
  * augTimeWithFavor: t_favor + t_reset + t_N1 (favor grind → softReset → donate next cycle)
  * augTimeWithoutFavor: max(t_rep, t_money) (direct grind this cycle)
- * @param {string} faction
- * @param {number} repRequired - total rep requirement for the batch (rep resets after softReset)
- * @param {number} augCost - money needed for the batch
- * @param {number} currentRep - current faction rep
- * @param {number} currentFavor - current faction favor
- * @param {number} repRate - rep/s
- * @param {number} moneyRate - $/s
- * @param {number} liquidAssets
- * @param {Player} player
- * @param {ReturnType<import('./formulas.ts').getMockFormulas>} formulas,
- * @param {{ installedAugmentations: string[], resetInfo: any, favorToDonate?: number }} staticData
- * @returns {boolean}
  */
 export const shouldPursueFavor = (
-  faction,
-  repRequired,
-  augCost,
-  currentRep,
-  currentFavor,
-  repRate,
-  moneyRate,
-  liquidAssets,
-  player,
-  formulas,
-  staticData,
+  faction: FactionName,
+  repRequired: number,
+  augCost: number,
+  currentRep: number,
+  currentFavor: number,
+  repRate: number,
+  moneyRate: number,
+  liquidAssets: number,
+  player: Player,
+  formulas: Formulas,
+  staticData: StaticData,
 ) => {
   const { favorToDonate } = staticData;
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
@@ -361,19 +294,10 @@ export const shouldPursueFavor = (
   return augTimeWithFavor < augTimeWithoutFavor;
 };
 
-/**
- * Hard gates: numAugmentations (can't install more augs mid-run) and city exclusivity.
- * Skill requirements are NOT hard gates — they become a cost multiplier in findOptimalBatch
- * so that harder-to-join factions are penalised but never completely excluded.
- * @param {{ factionRequirements: Record<string,any[]> }} staticData
- * @param {Player} player
- * @param {string[]} ownedAugmentations
- * @returns {string[]}
- */
 export const getAccessibleFactions = (
-  staticData,
-  player,
-  ownedAugmentations,
+  staticData: StaticData,
+  player: Player,
+  ownedAugmentations: string[],
 ) => {
   const { factionRequirements } = staticData;
   return [
@@ -386,8 +310,8 @@ export const getAccessibleFactions = (
       .filter((req) => req.type === 'not')
       .map((req) => req.condition);
     const requiredAugCount =
-      reqs.find((/** @type {any} */ req) => req.type === 'numAugmentations')
-        ?.numAugmentations ?? 0;
+      reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ??
+      0;
     if (ownedAugmentations.length < requiredAugCount) return false;
     if (
       CITY_FACTIONS.includes(faction) &&
