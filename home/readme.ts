@@ -40,6 +40,10 @@ const UTILITIES = {
     command: 'dispatch nmap-gui.ts',
     desc: 'Graphical network map',
   },
+  read: {
+    command: './read.ts',
+    desc: 'Open a file in a live reader',
+  },
   readme: {
     command: './readme.ts',
     desc: 'View this help',
