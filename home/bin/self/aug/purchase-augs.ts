@@ -33,7 +33,7 @@ export async function main(ns: NS) {
   const hasEnoughRep = repGoals.every((goal) => goal.isDone());
 
   if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {
-    const LOGFILE = `/tmp/reset-${Date.now()}.txt`;
+    const LOGFILE = `/log/reset-${Date.now()}.txt`;
 
     const print = (...args: (string | boolean | number)[]) => {
       ns.tprint(...args);
@@ -184,7 +184,7 @@ export async function main(ns: NS) {
 
     print(getPurchasedAugmentations(ns).join('\n'));
 
-    ns.write('/tmp/last-reset.txt', ns.read(LOGFILE), 'w');
+    ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
 
     // Start all over
     await run('/bin/self/aug/install.ts', 1);
