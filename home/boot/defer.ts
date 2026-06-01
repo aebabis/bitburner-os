@@ -3,31 +3,8 @@ import { GRAY } from '../lib/colors';
 
 export const defer =
   (ns: NS) =>
-  async (/** @type {ScriptArg[]} */ ...args) => {
+  async (...args: ScriptArg[]) => {
     tprint(ns)(GRAY + '  Deferring execution:        ' + ns.args.join(', '));
-    const sent = args.map((s) =>
-      typeof s === 'string' ? s : JSON.stringify(s),
-    );
-    await ns.sleep(50);
-    ns.run('/boot/defer.ts', 1, ...sent);
+    const [script, ...rest] = args as string[];
+    ns.spawn(script, { threads: 1, spawnDelay: 0 }, ...rest);
   };
-
-export async function main(ns: NS) {
-  tprint(ns)(GRAY + '  Deferred execution resumed: ' + ns.args.join(', '));
-  await ns.sleep(50);
-  const [nextProgram, ...remainder] = ns.args;
-  const nextProgramStr = /** @type {string} */ nextProgram;
-  let pid;
-  if (nextProgramStr[0] === '[') {
-    const [script, ...rest] = JSON.parse(nextProgramStr);
-    pid = ns.run(script, 1, ...rest, ...remainder);
-  } else {
-    pid = ns.run(nextProgramStr, 1, ...remainder);
-  }
-  if (pid === 0) {
-    ns.tprint('Skipping ' + nextProgram + ' because of RAM constraints');
-    await defer(ns)(
-      ...remainder.map((p) => JSON.parse(/** @type {string} */ p)),
-    );
-  }
-}
