@@ -14,6 +14,7 @@ type GoalType =
   | 'AUGMENTATION'
   | 'COMBAT_LEVELS'
   | 'HACKING_LEVEL'
+  | 'HACKING_XP'
   | 'KILLS'
   | 'KARMA'
   | 'LOCATION'
@@ -123,6 +124,16 @@ export const hackingLevelGoal = (
     () => currentHacking >= hackReq,
     { requirement: hackReq, ownTime: () => trainingTime },
   );
+
+export const hackingXpGoal = (
+  xpReq: number,
+  currentXp: number,
+  trainingTime: number | null = null,
+) =>
+  goal('HACKING_XP', `Hacking XP ≥ ${xpReq}`, () => currentXp >= xpReq, {
+    requirement: xpReq,
+    ownTime: () => trainingTime,
+  });
 
 export const combatLevelsGoal = (
   combatReq: number,

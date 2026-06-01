@@ -17,23 +17,15 @@ export async function main(ns: NS) {
   });
 
   const goals = getGoals(ns);
-  const joinGoals = goals.filter((goal) => goal.type === 'FACTION_JOIN');
-  const repGoals = goals.filter((goal) =>
-    ['FACTION_REP', 'FACTION_FAVOR'].includes(goal.type),
-  );
-  const moneyGoals = goals.filter((goal) =>
-    ['MONEY', 'AUG_MONEY'].includes(goal.type),
+  const resetGoal = goals.find(
+    (goal) => goal.type === 'INSTALL' || goal.type === 'AUGMENTATION',
   );
 
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
 
-  const inTargetFactions = joinGoals.every((goal) => goal.isDone());
-  const hasEnoughMoney = moneyGoals.every((goal) => goal.isDone());
-  const hasEnoughRep = repGoals.every((goal) => goal.isDone());
-
-  if (inTargetFactions && hasEnoughMoney && hasEnoughRep) {
+  if (resetGoal?.deps.every((goal) => goal.isDone())) {
     const LOGFILE = `/log/reset-${Date.now()}.txt`;
 
     const print = (...args: (string | boolean | number)[]) => {

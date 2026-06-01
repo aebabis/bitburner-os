@@ -1,6 +1,6 @@
 import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
 import { THREADPOOL } from '../../etc/config.ts';
-import { jobRamGoal, installGoal, type Goal } from './nodes.ts';
+import { jobRamGoal, installGoal, type Goal, hackingXpGoal } from './nodes.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,

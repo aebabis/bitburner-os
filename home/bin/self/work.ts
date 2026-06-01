@@ -2,18 +2,18 @@ import { getPlayerData } from '../../lib/data-store';
 import { getGoals, isRepBound } from '../../lib/goals/goals';
 import { rmi } from '../../lib/rmi';
 import { getConfig } from '../../lib/config';
+import { Goal } from '../../lib/goals/nodes';
 
 /**
  * Returns the faction with the largest remaining rep gap that the player
  * is already a member of, or null if no rep work is needed.
- * @param {ReturnType<typeof getGoals>} goals
- * @param {string[]} factions
- * @param {Record<string, number>} factionRep
- * @returns {string | null}
  */
-const getWorkFaction = (goals, factions, factionRep) => {
-  const gap = (/** @type {import("../../lib/goals/nodes").Goal} */ g) =>
-    (g.requirement ?? 0) - (factionRep[/** @type {string} */ g.faction] ?? 0);
+const getWorkFaction = (
+  goals: Goal[],
+  factions: FactionName[],
+  factionRep: Record<FactionName, number>,
+) => {
+  const gap = (g: Goal) => (g.requirement ?? 0) - (factionRep[g.faction] ?? 0);
   return (
     goals
       .filter((g) => !g.isDone())
@@ -31,9 +31,20 @@ export async function main(ns: NS) {
   while (true) {
     const { player, isPlayerActive, factionRep = {} } = getPlayerData(ns);
 
+    const statForCrimeTraining = [
+      'strength',
+      'defense',
+      'dexterity',
+      'agility',
+    ].find((stat) => player.skills[stat] < 5);
+
     const makeMoney = async () => {
       if (isPlayerActive) {
         await rmi(ns)('/bin/self/job.ts', 1);
+      } else if (statForCrimeTraining != null) {
+        if (player.money > 5000)
+          await rmi(ns)('/bin/self/improvement.ts', 1, statForCrimeTraining, 5);
+        else await rmi(ns)('/bin/self/job.ts', 1);
       } else {
         await rmi(ns)('/bin/self/crime-stats.ts');
         await rmi(ns)('/bin/self/crime-chance.ts');
@@ -49,24 +60,15 @@ export async function main(ns: NS) {
 
     const goals = getGoals(ns);
     const workFaction = getWorkFaction(goals, player.factions, factionRep);
-    const statForCrimeTraining = [
-      'strength',
-      'defense',
-      'dexterity',
-      'agility',
-    ].find(
-      (/** @type {string} */ stat) =>
-        player.skills[/** @type {keyof Skills} */ stat] < 5,
-    );
     const hackLevelGoal =
       goals.find((goal) => goal.type === 'HACKING_LEVEL')?.requirement ?? 0;
+    const hackXpGoal =
+      goals.find((goal) => goal.type === 'HACKING_XP')?.requirement ?? 0;
     const killsGoal = goals.find((goal) => goal.type === 'KILLS');
     getConfig(ns).set('share', 0);
 
-    if (statForCrimeTraining != null) {
-      if (player.money > 5000)
-        await rmi(ns)('/bin/self/improvement.ts', 1, statForCrimeTraining, 5);
-      else await rmi(ns)('/bin/self/job.ts', 1);
+    if (hackXpGoal) {
+      await rmi(ns)('/bin/self/school.ts', 1);
     } else if (player.money < 0) {
       await makeMoney();
     } else if (player.skills.hacking < hackLevelGoal) {
