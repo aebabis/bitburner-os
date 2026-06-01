@@ -7,6 +7,6 @@ export async function main(ns: NS) {
       industry,
       ns.corporation.getIndustryData(industry),
     ]),
-  );
+  ) as Record<CorpIndustryName, CorpIndustryData>;
   putStaticData(ns, { industryData });
 }

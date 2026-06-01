@@ -7,6 +7,6 @@ export async function main(ns: NS) {
       material,
       ns.corporation.getMaterialData(material),
     ]),
-  );
+  ) as Record<CorpMaterialName, CorpMaterialConstantData>;
   putStaticData(ns, { materialData });
 }
