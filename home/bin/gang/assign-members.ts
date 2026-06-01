@@ -3,6 +3,7 @@ import { delegateAny } from '../../lib/scheduler-delegate';
 import { getGangData, putGangData, putMoneyData } from '../../lib/data-store';
 import { logger } from '../../lib/logger';
 import { isRepBound } from '../../lib/goals/goals';
+import { needsPower } from './util';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -15,6 +16,8 @@ export async function main(ns: NS) {
 
     putMoneyData(ns, { gangIncome });
     putGangData(ns, { gangInfo, memberNames });
+    const gangData = getGangData(ns);
+    if (!gangData.isReady) throw new Error('Gang data not loaded');
 
     const assignNext = (members: string[], task: string) => {
       if (members.length > 0) {
@@ -29,16 +32,6 @@ export async function main(ns: NS) {
     const totalLevels = (name: string) => {
       const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
       return str + def + dex + agi;
-    };
-    const needsPower = () => {
-      const { enemyInfo } = getGangData(ns) || {};
-      return (
-        enemyInfo &&
-        enemyInfo.some(
-          (/** @type {{territory: number, clashWinChance: number}} */ enemy) =>
-            enemy.territory > 0 && enemy.clashWinChance < 0.8,
-        )
-      );
     };
     const respect = (name: string) =>
       ns.gang.getMemberInformation(name).earnedRespect;
@@ -74,7 +67,10 @@ export async function main(ns: NS) {
     } else {
       readyMembers.sort(by(totalLevels));
       assignNext(readyMembers, 'Train Combat');
-      if (gangInfo.territory < 1 && needsPower()) {
+      if (
+        gangInfo.territory < 1 &&
+        needsPower(gangInfo.faction, gangData.allGangInfo)
+      ) {
         if (memberNames.length === 12)
           assignNext(readyMembers, 'Human Trafficking');
         assignAll(readyMembers, 'Territory Warfare');

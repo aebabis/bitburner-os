@@ -80,8 +80,17 @@ export const getStaticData = (ns: NS): StaticData =>
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
-export const getGangData = (ns: NS) => readData(ns, PORT_GANG_DATA);
-export const putGangData = (ns: NS, data) => putData(ns, PORT_GANG_DATA, data);
+type GangData =
+  | { isReady: false }
+  | {
+      isReady: true;
+      gangInfo: GangGenInfo;
+      allGangInfo: Record<string, GangOtherInfoObject>;
+      memberNames: string[];
+    };
+export const getGangData = (ns: NS): GangData => readData(ns, PORT_GANG_DATA);
+export const putGangData = (ns: NS, data: Partial<GangData>) =>
+  putData(ns, PORT_GANG_DATA, data);
 
 export const getRamData = (ns: NS) => readData(ns, PORT_SCH_RAM_DATA);
 export const putRamData = (ns: NS, data) =>

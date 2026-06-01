@@ -1,26 +1,17 @@
 import { putGangData } from '../../lib/data-store';
+import { getAverageClashWinChance } from './util';
 
 export async function main(ns: NS) {
-  const [gangName] = ns.args;
+  const [gangName] = ns.args as string[];
 
-  const otherGangInformation = ns.gang.getAllGangInformation();
-  const { power, territory } = otherGangInformation[gangName as string];
-  delete otherGangInformation[gangName as string];
+  const allGangInfo = ns.gang.getAllGangInformation();
 
-  const enemyInfo = Object.entries(otherGangInformation).map(
-    ([faction, info]) => ({
-      faction,
-      ...info,
-      clashWinChance: power / (power + info.power),
-    }),
-  );
-  const livingEnemies = enemyInfo.filter((e) => e.territory > 0);
-  const averageWinChance =
-    livingEnemies.map((e) => e.clashWinChance).reduce((a, b) => a + b, 0) /
-    livingEnemies.length;
-  putGangData(ns, { power, territory, enemyInfo });
+  putGangData(ns, { allGangInfo });
 
-  if (territory < 0.99 && averageWinChance > 0.55) {
+  const { territory } = allGangInfo[gangName];
+  const clashWinChance = getAverageClashWinChance(gangName, allGangInfo);
+
+  if (territory < 0.99 && clashWinChance > 0.55) {
     ns.gang.setTerritoryWarfare(true);
     await ns.sleep(11000);
   } else {
