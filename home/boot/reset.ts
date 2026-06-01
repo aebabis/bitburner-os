@@ -21,29 +21,20 @@ export async function main(ns: NS) {
   const hostnames = nmap(ns);
   putHostnames(ns, hostnames);
 
-  // Erase old versions of files, then upload
-  // the batchable files to every server
+  // Erase old versions of files
+  // Batchable files are copied later in boot sequence
   tprint(ns)(STR + '  Wiping old scripts');
-  for (const hostname of hostnames) {
-    if (hostname !== 'home') {
-      const scripts = ns.ls(hostname, '.ts');
-      for (const script of scripts) {
-        ns.rm(script, hostname);
-      }
-    }
-  }
+  for (const hostname of hostnames)
+    if (hostname !== 'home')
+      for (const script of ns.ls(hostname, '.ts')) ns.rm(script, hostname);
 
-  tprint(ns)(STR + '  Cataloging all local scripts');
+  // Wipe tmp files
+  tprint(ns)(STR + '  Wiping tmp/');
+  for (const file of ns.ls('home'))
+    if (file.startsWith('tmp')) ns.rm(file, 'home');
 
-  tprint(ns)(STR + '  Cataloging coding contracts');
-  const contracts = hostnames
-    .map((hostname) => {
-      const ccts = ns.ls(hostname).filter((f) => f.endsWith('.cct'));
-      return ccts.map((filename) => ({ filename, hostname }));
-    })
-    .flat();
-
-  putContractData(ns, { contracts });
+  tprint(ns)(STR + '  Wiping coding contract references');
+  putContractData(ns, { contracts: [] });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);
