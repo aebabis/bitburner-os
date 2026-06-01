@@ -75,7 +75,7 @@ const makeRecordStart =
 
 const makeRecordActual =
   (p: ProfilerState) =>
-  (jobId: string, actualStart: number, actualEnd: number, result) => {
+  (jobId: string, actualStart: number, actualEnd: number, result: number) => {
     const job = p.jobs.get(jobId);
     if (job) {
       job.actualStart = actualStart;
@@ -95,10 +95,20 @@ const makeRecordReaped = (p: ProfilerState) => (jobId: string) => {
   }
 };
 
+type Profiler = {
+  recordScheduled: ReturnType<typeof makeRecordScheduled>;
+  recordStart: ReturnType<typeof makeRecordStart>;
+  recordActual: ReturnType<typeof makeRecordActual>;
+  recordReaped: ReturnType<typeof makeRecordReaped>;
+};
 let _profilerState: ProfilerState | null = null;
+declare global {
+  var __profiler: Profiler;
+}
+export {};
 
 export const initProfiler = () => {
-  const p = /** @type {ProfilerState} */ {
+  const p: ProfilerState = {
     jobs: new Map(),
     frameIds: new Set(),
     frames: [],
