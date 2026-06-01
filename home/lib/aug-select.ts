@@ -103,10 +103,10 @@ const NEUROFLUX = 'NeuroFlux Governor';
 
 export const augValueFromStats = (
   aug: string,
-  augmentationStats: Record<string, Multipliers>,
+  augmentationStats?: Record<string, Multipliers>,
 ) => {
   if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
-  const stats = augmentationStats[aug];
+  const stats = augmentationStats?.[aug];
   return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
 };
 

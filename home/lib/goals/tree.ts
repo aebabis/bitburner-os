@@ -32,22 +32,13 @@ import { StaticData } from '../data-store.ts';
 const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
 const EXP_PER_SECOND = 10;
 
-/**
- * @param {number} requirement
- * @param {number} currentLevel
- * @param {string} stat
- * @param {string[]} installedAugs
- * @param {Record<string,any>|undefined} augmentationStats
- * @param {any} formulas
- * @returns {number|null}
- */
 const skillTrainingTime = (
-  requirement,
-  currentLevel,
-  stat,
-  installedAugs,
-  augmentationStats,
-  formulas,
+  requirement: number,
+  currentLevel: number,
+  stat: string,
+  installedAugs: string[],
+  augmentationStats: Record<string, Multipliers>,
+  formulas: Formulas,
 ) => {
   if (!formulas) return null;
   let levelMult = 1,
@@ -65,20 +56,24 @@ const skillTrainingTime = (
 /**
  * Build the join prereq subtree for a faction.
  * Returns early (already-joined short-circuit) when player is already a member.
- * @param {string} faction
- * @param {{
- *   player: Player,
- *   staticData: any,
- *   money: number,
- *   referenceIncome: number,
- *   karma: number,
- *   formulas?: any,
- * }} data
- * @returns {{ joinPrereqs: Goal[], joinGoal: import('./nodes.ts').Goal }}
  */
 export const buildJoinSubtree = (
-  faction,
-  { player, staticData, money, referenceIncome, karma, formulas = null },
+  faction: FactionName,
+  {
+    player,
+    staticData,
+    money,
+    referenceIncome,
+    karma,
+    formulas = null,
+  }: {
+    player: Player;
+    staticData: StaticData;
+    money: number;
+    referenceIncome: number;
+    karma: number;
+    formulas: Formulas;
+  },
 ) => {
   const { factions, skills, city } = player;
   const {
@@ -424,9 +419,7 @@ export const buildFactionGoalTree = (
     utility(overhead) {
       const times = augGoals.map((g) => g.timeToComplete());
       if (times.some((t) => t == null) || treeValue === 0) return 0;
-      return (
-        treeValue / (Math.max(.../** @type {number[]} */ times) + overhead)
-      );
+      return treeValue / (Math.max(...times) + overhead);
     },
   };
 };
