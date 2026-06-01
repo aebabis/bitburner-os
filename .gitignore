@@ -3,5 +3,6 @@
 /.vscode
 /.bitburner.json
 /.bitburner/
+/home/log
 /home/tmp
 TODO.md
