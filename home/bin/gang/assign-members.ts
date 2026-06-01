@@ -16,23 +16,17 @@ export async function main(ns: NS) {
     putMoneyData(ns, { gangIncome });
     putGangData(ns, { gangInfo, memberNames });
 
-    const assignNext = (
-      /** @type {string[]} */ members,
-      /** @type {string} */ task,
-    ) => {
+    const assignNext = (members: string[], task: string) => {
       if (members.length > 0) {
-        ns.gang.setMemberTask(/** @type {string} */ members.shift(), task);
+        ns.gang.setMemberTask(members.shift()!, task);
         return true;
       }
       return false;
     };
-    const assignAll = (
-      /** @type {string[]} */ members,
-      /** @type {string} */ task,
-    ) => {
+    const assignAll = (members: string[], task: string) => {
       while (assignNext(members, task));
     };
-    const totalLevels = (/** @type {string} */ name) => {
+    const totalLevels = (name: string) => {
       const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
       return str + def + dex + agi;
     };
@@ -46,23 +40,16 @@ export async function main(ns: NS) {
         )
       );
     };
-    const respect = (/** @type {string} */ name) =>
+    const respect = (name: string) =>
       ns.gang.getMemberInformation(name).earnedRespect;
-    const needsTraining = (/** @type {string} */ name) => {
+    const needsTraining = (name: string) => {
       const { str, def, dex, agi } = ns.gang.getMemberInformation(name);
       return [str, def, dex, agi].some((x) => x < 1000);
     };
-    const readyForAscension = (/** @type {string} */ name) => {
+    const readyForAscension = (name: string) => {
       const ascension = ns.gang.getAscensionResult(name);
       if (ascension == null) return false;
-      const skills = /** @type {(keyof GangMemberAscension)[]} */ [
-        'agi',
-        'cha',
-        'def',
-        'dex',
-        'hack',
-        'str',
-      ];
+      const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'] as const;
       if (!skills.some((s) => ascension[s] >= 1.1)) return false;
       return ascension.respect / gangInfo.respect < 0.15;
     };
@@ -78,7 +65,7 @@ export async function main(ns: NS) {
       gangInfo.faction,
       gangInfo.territoryClashChance,
     );
-    readyMembers.sort(by((/** @type {string} */ name) => -respect(name)));
+    readyMembers.sort(by((name) => -respect(name)));
     if (gangInfo.territory < 1) assignNext(readyMembers, 'Territory Warfare');
     if (gangInfo.wantedPenalty > 1) {
       assignAll(readyMembers, 'Vigilante Justice');
