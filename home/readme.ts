@@ -41,7 +41,7 @@ const UTILITIES = {
     desc: 'Graphical network map',
   },
   read: {
-    command: './read.ts',
+    command: 'usr/read.ts',
     desc: 'Open a file in a live reader',
   },
   readme: {
