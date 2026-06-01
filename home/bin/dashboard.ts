@@ -41,17 +41,23 @@ const formatTime = (seconds) => {
 };
 
 const getRunStats = (ns: NS) => {
+  const { resetInfo } = getStaticData(ns);
   const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
   const { onlineRunningTime = 0 } =
     ns.getRunningScript('/bin/scheduler.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
   const karma = Math.trunc(ns.heart.break());
-  const BN = `BN${ns.getResetInfo().currentNode}`;
-  const time = formatTime(onlineRunningTime);
+  const BN = `BN${resetInfo.currentNode}`;
+  const uptime = formatTime(onlineRunningTime);
+  const augRunningTime = (Date.now() - resetInfo.lastAugReset) / 1000;
+  const hasFullUptime = augRunningTime - onlineRunningTime < 10;
+  const bnTime = formatTime((Date.now() - resetInfo.lastNodeReset) / 1000);
+  const augTime = formatTime(augRunningTime);
+  const time = hasFullUptime ? uptime : uptime + '/' + augTime;
   const stock = ns.format.number(estimatedStockValue, 1);
   return [
-    ' ' + H(BN),
+    ' ' + H(BN) + ' ' + bnTime,
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),

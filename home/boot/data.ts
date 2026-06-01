@@ -3,6 +3,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { nmap, saveHostnames } from '../lib/nmap';
 import { STR } from '../lib/colors';
+import { AUG_LOG_FILE } from '../etc/config';
 
 export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'GENERATING STATIC DATA');
@@ -22,6 +23,8 @@ export async function main(ns: NS) {
   saveHostnames(ns);
 
   const resetInfo = ns.getResetInfo();
+  if (resetInfo.lastAugReset === resetInfo.lastNodeReset)
+    ns.rm(AUG_LOG_FILE, 'home');
 
   const serverBackdoorRequirements = nmap(ns).map((hostname) => ({
     hostname,

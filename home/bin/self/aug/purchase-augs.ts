@@ -5,6 +5,7 @@ import { getPurchasedAugmentations } from './load-owned-augs';
 import { nmap } from '../../../lib/nmap';
 import { dump } from '../../../bin/broker/dump';
 import { formulas } from '../../../lib/formulas';
+import { AUG_LOG_FILE } from '../../../etc/config';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -39,6 +40,10 @@ export async function main(ns: NS) {
       ns.tprint(...args);
       ns.write(LOGFILE, args.join(' ') + '\n', 'a');
     };
+
+    // Go home so file logging works
+    ns.singularity.connect('home');
+
     print(new Date().toLocaleDateString());
 
     for (const goal of goals) {
@@ -184,6 +189,12 @@ export async function main(ns: NS) {
     print(getPurchasedAugmentations(ns).join('\n'));
 
     ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
+    ns.write(
+      AUG_LOG_FILE,
+      `${new Date().toLocaleDateString()}----------------------------`,
+      'a',
+    );
+    ns.write(AUG_LOG_FILE, getPurchasedAugmentations(ns).join('\n'), 'a');
 
     // Start all over
     await run('/bin/self/aug/install.ts', 1);
