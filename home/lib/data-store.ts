@@ -73,6 +73,7 @@ export type StaticData = {
   factionRequirements?: Record<FactionName, PlayerRequirement[]>;
   factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
   factionFavorGain?: Record<FactionName, number>;
+  favorToDonate?: number;
 };
 export const getStaticData = (ns: NS): StaticData =>
   readData(ns, PORT_STATIC_DATA) || {};
