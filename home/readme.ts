@@ -37,7 +37,7 @@ const UTILITIES = {
     desc: 'Sell all stocks and stop spending',
   },
   nmap: {
-    command: 'dispatch nmap-gui.ts',
+    command: 'dispatch usr/nmap-gui.ts',
     desc: 'Graphical network map',
   },
   read: {
@@ -86,14 +86,14 @@ const ALIASES = {
   ...UTILITY_ALIASES,
 };
 
-const getLines = (/** @type {Record<string, string>} */ commands) => {
+const getLines = (commands: Record<string, string>) => {
   const lines = [];
   for (const [command, desc] of Object.entries(commands))
     lines.push(KEYWORD.BOLD + command, NORMAL + '  ' + desc);
   return lines;
 };
 
-const getHelp = (/** @type {NS} */ ns) => {
+const getHelp = (ns: NS) => {
   const column1 = [...getLines(MAIN), ' ', ...getLines(SHORTHAND)];
   const column2 = getLines(UTILITY_DESCRIPTIONS);
   const iters = Math.max(column1.length, column2.length);
@@ -103,7 +103,7 @@ const getHelp = (/** @type {NS} */ ns) => {
   return table(ns, ['', ''], rows);
 };
 
-const getAliases = (/** @type {NS} */ ns) =>
+const getAliases = () =>
   KEYWORD.BOLD +
   Object.entries(ALIASES)
     .map(([alias, command]) => `alias ${alias}=${JSON.stringify(command)}`)
@@ -112,5 +112,5 @@ const getAliases = (/** @type {NS} */ ns) =>
 export async function main(ns: NS) {
   const [command] = ns.args;
   if (command == null) ns.tprint('\n' + getHelp(ns) + '\n\n');
-  else if (command === 'aliases') ns.tprint(getAliases(ns));
+  else if (command === 'aliases') ns.tprint(getAliases());
 }

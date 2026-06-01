@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { nmap } from './lib/nmap';
-import { getTailModal } from './lib/modal';
-import * as d3 from './lib/d3';
-import { THREADPOOL } from './etc/config';
+import { nmap } from '../lib/nmap';
+import { getTailModal } from '../lib/modal';
+import * as d3 from '../lib/d3';
+import { THREADPOOL } from '../etc/config';
 
 async function showChart(ns: NS, element, nodes, links) {
   const width = 1000;
