@@ -1,24 +1,21 @@
 {
   "$schema": "https://unpkg.com/knip/schema.json",
   "entry": [
-    "scripts/**/*.js",
-    "home/**/*.js",
-    "!home/lib/**/*.js",
-    "!home/etc/**/*.js",
-    "!home/bin/broker/api.js",
-    "!home/bin/broker/forecaster-4s.js",
-    "!home/bin/broker/forecaster-trend.js",
-    "!home/bin/broker/trade.js",
-    "!home/bin/contracts/algorithms.js",
-    "!home/bin/contracts/mapper.js",
-    "!home/bin/self/aug/factions.js",
-    "!home/boot/cheaty-data.js",
-    "!home/boot/util.js"
+    "scripts/**/*.ts",
+    "home/**/*.ts",
+    "!home/lib/**/*.ts",
+    "!home/etc/**/*.ts",
+    "!home/bin/broker/api.ts",
+    "!home/bin/broker/forecaster-4s.ts",
+    "!home/bin/broker/forecaster-trend.ts",
+    "!home/bin/broker/trade.ts",
+    "!home/bin/contracts/algorithms.ts",
+    "!home/bin/contracts/mapper.ts",
+    "!home/bin/self/aug/factions.ts",
+    "!home/boot/cheaty-data.ts",
+    "!home/boot/util.ts"
   ],
-  "project": [
-    "scripts/**/*.js",
-    "home/**/*.js"
-  ],
+  "project": ["scripts/**/*.ts", "home/**/*.ts"],
   "ignoreDependencies": ["d3-drag", "d3-force", "d3-selection", "prettier"],
-  "ignore": ["home/lib/d3.js", "home/lib/colors.js"]
+  "ignore": ["home/lib/d3.ts", "home/lib/colors.ts"]
 }
