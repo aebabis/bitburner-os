@@ -135,9 +135,8 @@ export async function main(ns: NS) {
       getStaticData(ns);
     const highestFavorFaction = ns
       .getPlayer()
-      .factions.reduce((f1, f2) =>
-        factionFavor[f1] > factionFavor[f2] ? f1 : f2,
-      );
+      .factions.filter((faction) => faction !== 'Slum Snakes')
+      .reduce((f1, f2) => (factionFavor[f1] > factionFavor[f2] ? f1 : f2));
     print(
       'Buying favor and NFG from highest favor faction: ' + highestFavorFaction,
     );
