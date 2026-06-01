@@ -1,10 +1,10 @@
-import { KEYWORD } from './lib/colors.ts';
+import { KEYWORD } from '../lib/colors.ts';
 import {
   getServices,
   enableService,
   disableService,
   getTableString,
-} from './lib/service-api.ts';
+} from '../lib/service-api.ts';
 
 const HELP = [
   ['services enable <name|id> [--force]', 'enables a service'],

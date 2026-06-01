@@ -48,6 +48,10 @@ const UTILITIES = {
     command: 'dispatch usr/servers.ts',
     desc: 'List non-purchased servers',
   },
+  services: {
+    command: 'bin/services.ts',
+    desc: 'List installed services and start/stop them',
+  },
   update: {
     command: 'home; killall; update.ts',
     desc: 'Download most recent code from GitHub',
