@@ -27,7 +27,7 @@ export const main = async (ns: NS) => {
       [10, 12],
       [11, 12],
     ],
-  ] as const;
+  ] as [number, number[][]];
   const result = twoColor(problem);
   ns.tprint(result);
 };
