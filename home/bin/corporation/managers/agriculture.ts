@@ -9,6 +9,8 @@ export async function main(ns: NS) {
 
   const INDUSTRY = 'Agriculture';
   const { materialData, industryData } = getStaticData(ns);
+  if (materialData == null || industryData == null)
+    throw new Error('Static data not properly initialized');
 
   const divisionName = DivisionNames[INDUSTRY];
   const { requiredMaterials } = industryData[INDUSTRY];
@@ -16,8 +18,7 @@ export async function main(ns: NS) {
 
   if (division == null) return;
 
-  /** @type {CorpMaterialName[]} */
-  const materialNames = Object.keys(requiredMaterials);
+  const materialNames = Object.keys(requiredMaterials) as CorpMaterialName[];
 
   for (const city of division.cities) {
     const { buy, sell, transfer } = getActions(ns, divisionName, city);
