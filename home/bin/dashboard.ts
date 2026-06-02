@@ -46,6 +46,12 @@ const getRunStats = (ns: NS) => {
     ns.getRunningScript('/bin/scheduler.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
+  const getSF = () => {
+    const prevSF = resetInfo.ownedSF.get(resetInfo.currentNode) ?? 0;
+    const maxSF = resetInfo.currentNode === 12 ? Infinity : 3;
+    return Math.min(prevSF + 1, maxSF);
+  };
+
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${resetInfo.currentNode}`;
   const uptime = formatTime(onlineRunningTime);
@@ -56,7 +62,7 @@ const getRunStats = (ns: NS) => {
   const time = hasFullUptime ? uptime : uptime + '/' + augTime;
   const stock = ns.format.number(estimatedStockValue, 1);
   return [
-    ' ' + H(BN) + ' ' + bnTime,
+    ' ' + H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
@@ -320,7 +326,7 @@ export async function main(ns: NS) {
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1200;
-  const HEIGHT = 400;
+  const HEIGHT = 500;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
   if (clientWidth) ns.ui.moveTail(clientWidth - WIDTH - 2, 2);
