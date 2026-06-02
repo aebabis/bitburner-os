@@ -124,6 +124,39 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
         }
         throw new Error(`Not yet implemented: ${workType}`);
       },
+      universityGains: (
+        _player: Person,
+        classType: UniversityClassType,
+        locationName: LocationName,
+      ) => {
+        const gameCPS = 5;
+        const classes: Record<
+          string,
+          { hackExp?: number; chaExp?: number; money: number }
+        > = {
+          'Computer Science': { hackExp: 0.5, money: 0 },
+          'Data Structures': { hackExp: 1, money: -40 },
+          Networks: { hackExp: 2, money: -80 },
+          Algorithms: { hackExp: 4, money: -320 },
+          Management: { chaExp: 2, money: -160 },
+          Leadership: { chaExp: 4, money: -320 },
+        };
+        const locations: Record<string, { expMult: number; costMult: number }> =
+          {
+            'Rothman University': { expMult: 2, costMult: 3 },
+            'Summit University': { expMult: 3, costMult: 4 },
+            'ZB Institute of Technology': { expMult: 4, costMult: 5 },
+          };
+        const classs = classes[classType];
+        const location = locations[locationName];
+        const expScale = location.expMult / gameCPS;
+        return {
+          ...WORK_STATS,
+          hackExp: (classs.hackExp ?? 0) * expScale * getAugMult('hacking_exp'),
+          chaExp: (classs.chaExp ?? 0) * expScale * getAugMult('cha_exp'),
+          money: (classs.money * location.costMult) / gameCPS,
+        };
+      },
     },
     hacknetNodes: {
       moneyGainRate: (

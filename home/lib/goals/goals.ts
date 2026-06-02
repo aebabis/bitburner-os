@@ -57,7 +57,7 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  const universityGains = ns.formulas.work.universityGains(
+  const universityGains = formulas.work.universityGains(
     player,
     'Algorithms',
     ns.enums.LocationName.Sector12RothmanUniversity,
