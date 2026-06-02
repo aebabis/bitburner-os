@@ -11,11 +11,19 @@ import {
   moneyPrereqGoal,
   locationGoal,
   factionFavorGoal,
+  installGoal,
   COMBAT_STATS,
   NEUROFLUX,
   type Action,
   type Goal,
+  type Plan,
 } from './nodes.ts';
+
+const plan = (
+  deps: Goal[],
+  actions: Action[],
+  utility: (overhead: number) => number,
+): Plan => Object.assign(installGoal(deps, actions), { utility });
 import {
   findOptimalBatch,
   MAX_AUGS,
@@ -187,9 +195,6 @@ export const isRepBound = (root: Goal) => {
 /**
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
- * @param {string} faction
- @param {} data
- * @returns {{ faction: FactionName, terminalGoals: import('./nodes.ts').Goal[], augActions: import('./nodes.ts').Action[], utility: (overhead: number) => number } | null}
  */
 interface FactionGoalTreeProps {
   player: Player;
@@ -217,7 +222,7 @@ export const buildFactionGoalTree = (
     formulas,
     karma,
   }: FactionGoalTreeProps,
-) => {
+): Plan | null => {
   const {
     augmentationPrices,
     augmentationPrereqs,
@@ -308,14 +313,9 @@ export const buildFactionGoalTree = (
       (aug) => !installedSet.has(aug),
     );
     const earlyValue = queuedAugs.reduce((s, aug) => s + augValue(aug), 0);
-    return {
-      faction,
-      terminalGoals: [],
-      augActions: queuedAugs.map(buyAugAction),
-      utility(overhead: number) {
-        return earlyValue > 0 ? earlyValue / overhead : 0;
-      },
-    };
+    return plan([], queuedAugs.map(buyAugAction), (overhead) =>
+      earlyValue > 0 ? earlyValue / overhead : 0,
+    );
   }
 
   const canDonate = currentFavor >= (staticData.favorToDonate ?? Infinity);
@@ -349,21 +349,15 @@ export const buildFactionGoalTree = (
       repRate,
       joinGoal,
     );
-    return {
-      faction,
-      terminalGoals: [favorGoal],
-      augActions: [],
-      utility(overhead: number) {
-        const tFavor = favorGoal.timeToComplete();
-        if (tFavor == null || treeValue === 0) return 0;
-        const donationRate = formulas.reputation.donationForRep(1, player);
-        const tN1 = (repReq * donationRate + costToAug) / referenceIncome;
-        return (
-          treeValue /
-          (tFavor + computeResetOverhead(staticData) + tN1 + overhead)
-        );
-      },
-    };
+    return plan([favorGoal], [], (overhead) => {
+      const tFavor = favorGoal.timeToComplete();
+      if (tFavor == null || treeValue === 0) return 0;
+      const donationRate = formulas.reputation.donationForRep(1, player);
+      const tN1 = (repReq * donationRate + costToAug) / referenceIncome;
+      return (
+        treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead)
+      );
+    });
   }
 
   // Path 3: Donation — faction has enough favor; buy remaining rep with money
@@ -398,14 +392,9 @@ export const buildFactionGoalTree = (
     augActions = augs.map(buyAugAction);
   }
 
-  return {
-    faction,
-    terminalGoals: prereqGoals,
-    augActions,
-    utility(overhead: number) {
-      const times = prereqGoals.map((g) => g.timeToComplete());
-      if (times.some((t) => t == null) || treeValue === 0) return 0;
-      return treeValue / (Math.max(...(times as number[])) + overhead);
-    },
-  };
+  return plan(prereqGoals, augActions, (overhead) => {
+    const times = prereqGoals.map((g) => g.timeToComplete());
+    if (times.some((t) => t == null) || treeValue === 0) return 0;
+    return treeValue / (Math.max(...(times as number[])) + overhead);
+  });
 };

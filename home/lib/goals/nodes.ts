@@ -23,6 +23,8 @@ export type Action =
   | { type: 'BUY_REP'; faction: FactionName; amount: number }
   | { type: 'BUY_AUG'; name: string };
 
+export type Plan = Goal & { utility: (overhead: number) => number };
+
 export type Goal = {
   type: GoalType;
   desc: string;

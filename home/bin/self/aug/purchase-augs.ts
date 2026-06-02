@@ -179,7 +179,11 @@ export async function main(ns: NS) {
       `${new Date().toLocaleDateString()}----------------------------\n`,
       'a',
     );
-    ns.write(AUG_LOG_FILE, getPurchasedAugmentations(ns).join('\n'), 'a');
+    ns.write(
+      AUG_LOG_FILE,
+      getPurchasedAugmentations(ns).join('\n') + '\n',
+      'a',
+    );
 
     // Start all over
     await run('/bin/self/aug/install.ts', 1);

@@ -16,7 +16,7 @@ const getState = () => {
 };
 
 /**
- * @param {{ faction: string, terminalGoals: import('./goals/nodes.ts').Goal[], utility: (overhead: number) => number }[]} plans
+ * @param {import('./goals/nodes.ts').Plan[]} plans
  * @param {string | null} selectedFaction
  * @param {number} overhead
  */
@@ -30,9 +30,9 @@ export const recordGoalSnapshot = (plans, selectedFaction, overhead) => {
     ts,
     selectedFaction,
     plans: plans.map((p) => {
-      const ttcValues = p.terminalGoals.map((g) => g.timeToComplete());
+      const ttcValues = p.deps.map((g) => g.timeToComplete());
       return {
-        faction: p.faction ?? '?',
+        faction: p.prerequisites('FACTION_JOIN')[0]?.faction ?? '?',
         utility: p.utility(overhead),
         timeToComplete:
           ttcValues.length === 0

@@ -85,7 +85,8 @@ export const getGoals = (ns: NS): Goal => {
         )
       : null;
 
-  const selectedFaction = bestPlan?.faction ?? null;
+  const selectedFaction =
+    bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
   recordGoalSnapshot(plans, selectedFaction, overhead);
 
   const POOL1 = `${THREADPOOL}-01`;
@@ -110,7 +111,7 @@ export const getGoals = (ns: NS): Goal => {
 
     if (needsJobRam(ns) && referenceIncome > 0) {
       const baselineTTC = Math.max(
-        ...bestPlan.terminalGoals.map((g) => g.timeToComplete() ?? Infinity),
+        ...bestPlan.deps.map((g) => g.timeToComplete() ?? Infinity),
       );
       const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
       if (jobRamCost / referenceIncome < baselineTTC)
@@ -126,10 +127,7 @@ export const getGoals = (ns: NS): Goal => {
         );
     }
 
-    return installGoal(
-      [...bestPlan.terminalGoals, ...ramGoals],
-      bestPlan.augActions,
-    );
+    return installGoal([...bestPlan.deps, ...ramGoals], bestPlan.actions);
   }
 
   const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;

@@ -244,7 +244,7 @@ export async function main(ns: NS) {
               0,
             );
             const tree = buildFactionGoalTree(faction, planData);
-            const times = tree?.terminalGoals.map((g) => g.timeToComplete());
+            const times = tree?.deps.map((g) => g.timeToComplete());
             const eta =
               times == null || times.some((t) => t == null)
                 ? null
