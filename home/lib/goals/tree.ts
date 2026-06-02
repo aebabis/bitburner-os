@@ -1,8 +1,8 @@
 import {
   factionRepGoal,
   augMoneyGoal,
-  augmentationGoal,
-  neurofluxGoal,
+  buyAugAction,
+  buyRepAction,
   factionJoinGoal,
   hackingLevelGoal,
   combatLevelsGoal,
@@ -11,9 +11,10 @@ import {
   moneyPrereqGoal,
   locationGoal,
   factionFavorGoal,
-  buyRepGoal,
   COMBAT_STATS,
   NEUROFLUX,
+  type Action,
+  type Goal,
 } from './nodes.ts';
 import {
   findOptimalBatch,
@@ -169,17 +170,16 @@ export const buildJoinSubtree = (
   return { joinPrereqs, joinGoal };
 };
 
-/** @param {import('./nodes.ts').Goal[]} goals @returns {boolean} */
-export const isRepBound = (goals) => {
-  const unmetRepGoals = goals.filter(
-    (g) => g.type === 'FACTION_REP' && !g.isDone(),
-  );
+export const isRepBound = (root: Goal) => {
+  const unmetRepGoals = root
+    .prerequisites('FACTION_REP')
+    .filter((g) => !g.isDone());
   if (unmetRepGoals.find((g) => g.timeToComplete() == null)) return true;
   const maxRepTime =
     unmetRepGoals.length > 0
       ? Math.max(...unmetRepGoals.map((g) => g.timeToComplete() ?? 0))
       : 0;
-  const amg = goals.find((g) => g.type === 'AUG_MONEY');
+  const [amg] = root.prerequisites('AUG_MONEY');
   const moneyTime = amg != null ? amg.timeToComplete() : null;
   return moneyTime == null || moneyTime <= maxRepTime;
 };
@@ -189,7 +189,7 @@ export const isRepBound = (goals) => {
  * Returns null if findOptimalBatch finds nothing worth pursuing.
  * @param {string} faction
  @param {} data
- * @returns {{ goals: import('./nodes.ts').Goal[], terminalGoals: import('./nodes.ts').Goal[], value: number, utility: (overhead: number) => number, installDesc?: string } | null}
+ * @returns {{ goals: import('./nodes.ts').Goal[], terminalGoals: import('./nodes.ts').Goal[], augActions: import('./nodes.ts').Action[], utility: (overhead: number) => number } | null}
  */
 interface FactionGoalTreeProps {
   player: Player;
@@ -307,16 +307,12 @@ export const buildFactionGoalTree = (
     const queuedAugs = purchasedAugmentations.filter(
       (aug) => !installedSet.has(aug),
     );
-    const queuedAugGoals = queuedAugs.map((aug) =>
-      augmentationGoal(aug, faction, purchasedAugmentations, [], augValue(aug)),
-    );
-    const earlyValue = queuedAugGoals.reduce((s, g) => s + g.value, 0);
+    const earlyValue = queuedAugs.reduce((s, aug) => s + augValue(aug), 0);
     return {
-      goals: [...joinPrereqs, joinGoal, ...queuedAugGoals],
-      terminalGoals: queuedAugGoals,
-      value: earlyValue,
-      installDesc: 'Run augmentation suite',
-      utility(overhead) {
+      goals: [...joinPrereqs, joinGoal],
+      terminalGoals: [],
+      augActions: queuedAugs.map(buyAugAction),
+      utility(overhead: number) {
         return earlyValue > 0 ? earlyValue / overhead : 0;
       },
     };
@@ -356,9 +352,8 @@ export const buildFactionGoalTree = (
     return {
       goals: [...joinPrereqs, joinGoal, favorGoal],
       terminalGoals: [favorGoal],
-      value: treeValue,
-      installDesc: 'Soft reset for favor',
-      utility(overhead) {
+      augActions: [],
+      utility(overhead: number) {
         const tFavor = favorGoal.timeToComplete();
         if (tFavor == null || treeValue === 0) return 0;
         const donationRate = formulas.reputation.donationForRep(1, player);
@@ -371,55 +366,46 @@ export const buildFactionGoalTree = (
     };
   }
 
-  const nfBaseOrdinal =
-    purchasedAugmentations.filter((a) => a === NEUROFLUX).length + 1;
-  let nfOrdinal = nfBaseOrdinal;
-
   // Path 3: Donation — faction has enough favor; buy remaining rep with money
   // Path 4: Normal — grind faction rep
-  // Both paths share augGoals construction and utility; only rep/money goal types differ.
-  let repGoal, moneyGoal;
+  let prereqGoals: Goal[];
+  let augActions: Action[];
+
   if (canDonate) {
     const donationRate =
       formulas?.reputation?.donationForRep(1, player) ?? Infinity;
     const donationCost = Math.max(0, repReq - currentRep) * donationRate;
-    moneyGoal = augMoneyGoal(
+    const moneyGoal = augMoneyGoal(
       costToAug + donationCost,
       liquidAssets,
       referenceIncome,
     );
-    repGoal = buyRepGoal(faction, repReq, currentRep, [moneyGoal]);
+    prereqGoals = [moneyGoal];
+    augActions = [
+      buyRepAction(faction, repReq - currentRep),
+      ...augs.map(buyAugAction),
+    ];
   } else {
-    repGoal = factionRepGoal(faction, repReq, currentRep, joinGoal, repRate);
-    moneyGoal = augMoneyGoal(costToAug, liquidAssets, referenceIncome);
+    const repGoal = factionRepGoal(
+      faction,
+      repReq,
+      currentRep,
+      joinGoal,
+      repRate,
+    );
+    const moneyGoal = augMoneyGoal(costToAug, liquidAssets, referenceIncome);
+    prereqGoals = [repGoal, moneyGoal];
+    augActions = augs.map(buyAugAction);
   }
 
-  const augGoals = augs.map((aug) =>
-    aug === NEUROFLUX
-      ? neurofluxGoal(
-          nfOrdinal++,
-          faction,
-          purchasedAugmentations,
-          [repGoal, moneyGoal],
-          augValue(aug),
-        )
-      : augmentationGoal(
-          aug,
-          faction,
-          purchasedAugmentations,
-          [repGoal, moneyGoal],
-          augValue(aug),
-        ),
-  );
-  const prereqGoals = canDonate ? [moneyGoal, repGoal] : [repGoal, moneyGoal];
   return {
-    goals: [...joinPrereqs, joinGoal, ...prereqGoals, ...augGoals],
-    terminalGoals: augGoals,
-    value: treeValue,
-    utility(overhead) {
-      const times = augGoals.map((g) => g.timeToComplete());
+    goals: [...joinPrereqs, joinGoal, ...prereqGoals],
+    terminalGoals: prereqGoals,
+    augActions,
+    utility(overhead: number) {
+      const times = prereqGoals.map((g) => g.timeToComplete());
       if (times.some((t) => t == null) || treeValue === 0) return 0;
-      return treeValue / (Math.max(...times) + overhead);
+      return treeValue / (Math.max(...(times as number[])) + overhead);
     },
   };
 };

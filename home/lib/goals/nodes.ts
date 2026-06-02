@@ -2,16 +2,14 @@ import { C } from '../colors.ts';
 
 const fmt = new Intl.NumberFormat('en', { notation: 'compact' });
 const fmtMoney = (n: number) => '$' + fmt.format(n);
-const fmtRep = (n: number) => fmt.format(n);
 
-type GoalType =
+export type GoalType =
   | 'JOB_RAM'
   | 'INSTALL'
+  | 'REEVALUATE'
   | 'FACTION_JOIN'
   | 'FACTION_REP'
   | 'FACTION_FAVOR'
-  | 'BUY_REP'
-  | 'AUGMENTATION'
   | 'COMBAT_LEVELS'
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
@@ -21,6 +19,10 @@ type GoalType =
   | 'MONEY'
   | 'AUG_MONEY';
 
+export type Action =
+  | { type: 'BUY_REP'; faction: FactionName; amount: number }
+  | { type: 'BUY_AUG'; name: string };
+
 export type Goal = {
   type: GoalType;
   desc: string;
@@ -29,9 +31,10 @@ export type Goal = {
   requirement: number | undefined;
   faction: string | undefined;
   deps: Goal[];
-  value: number;
+  actions: Action[];
   ownTime: () => number | null;
   timeToComplete: () => number | null;
+  prerequisites: (typeFilter?: GoalType) => Goal[];
 };
 
 export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ [
@@ -46,7 +49,7 @@ interface GoalProps {
   requirement?: number;
   faction?: string;
   deps?: Goal[];
-  value?: number;
+  actions?: Action[];
   ownTime?: () => number | null;
 }
 const goal = (
@@ -57,7 +60,7 @@ const goal = (
     requirement,
     faction,
     deps = [],
-    value = 0,
+    actions = [],
     ownTime = () => null,
   }: GoalProps = {},
 ) => {
@@ -69,9 +72,23 @@ const goal = (
     requirement,
     faction,
     deps,
-    value,
+    actions,
     ownTime,
     toString: () => (isDone() ? desc : C(57)(desc)),
+    prerequisites(typeFilter?: GoalType): Goal[] {
+      const seen = new Set<Goal>();
+      const result: Goal[] = [];
+      const walk = (goalDeps: Goal[]) => {
+        for (const dep of goalDeps) {
+          if (seen.has(dep)) continue;
+          seen.add(dep);
+          if (typeFilter == null || dep.type === typeFilter) result.push(dep);
+          walk(dep.deps);
+        }
+      };
+      walk(deps);
+      return result;
+    },
     timeToComplete() {
       if (_ttc !== undefined) return _ttc;
       if (isDone()) return (_ttc = 0);
@@ -106,10 +123,19 @@ export const jobRamGoal = (
     },
   );
 
-export const installGoal = (deps: Goal[], desc = 'Run augmentation suite') =>
-  goal('INSTALL', desc, () => false, {
+export const installGoal = (deps: Goal[], actions: Action[]) => {
+  const isInstall = actions.find((action) => action.type === 'BUY_AUG');
+  const desc = isInstall ? 'Install augmentations' : 'Reset for favor';
+  return goal('INSTALL', desc, () => false, {
     deps,
-    value: deps.reduce((s, d) => s + d.value, 0),
+    actions,
+    ownTime: () => 0,
+  });
+};
+
+export const reevaluateGoal = (dep: Goal) =>
+  goal('REEVALUATE', 'Re-evaluate plan', () => false, {
+    deps: [dep],
     ownTime: () => 0,
   });
 
@@ -239,38 +265,16 @@ export const augMoneyGoal = (
     },
   );
 
-export const augmentationGoal = (
-  aug: string,
-  faction: FactionName,
-  purchasedAugmentations: string[],
-  deps: Goal[],
-  value = 0,
-) =>
-  goal('AUGMENTATION', aug, () => purchasedAugmentations.includes(aug), {
-    faction,
-    deps,
-    value,
-    ownTime: () => 0,
-  });
+export const buyAugAction = (name: string): Action => ({
+  type: 'BUY_AUG',
+  name,
+});
 
-/**
- * One level of Neuroflux Governor. isDone when the player has purchased at least
- * `ordinal` levels total (counting from 1).
- */
-export const neurofluxGoal = (
-  ordinal: number,
-  faction: FactionName,
-  purchasedAugmentations: string[],
-  deps: Goal[],
-  value = 0,
-) =>
-  goal(
-    'AUGMENTATION',
-    NEUROFLUX,
-    () =>
-      purchasedAugmentations.filter((a) => a === NEUROFLUX).length >= ordinal,
-    { faction, deps, value, ownTime: () => 0 },
-  );
+export const buyRepAction = (faction: FactionName, amount: number): Action => ({
+  type: 'BUY_REP',
+  faction,
+  amount,
+});
 
 export const factionFavorGoal = (
   faction: FactionName,
@@ -292,16 +296,3 @@ export const factionFavorGoal = (
     },
   );
 };
-
-export const buyRepGoal = (
-  faction: FactionName,
-  repRequired: number,
-  currentRep: number,
-  deps: Goal[],
-) =>
-  goal(
-    'BUY_REP',
-    `Buy ${fmtRep(repRequired)} rep (${faction})`,
-    () => currentRep >= repRequired,
-    { faction, deps, requirement: repRequired - currentRep, ownTime: () => 0 },
-  );

@@ -5,7 +5,7 @@ const MAX_SNAPSHOTS = 600;
 const MIN_INTERVAL_MS = Math.floor(HISTORY_MS / MAX_SNAPSHOTS); // 1s — keeps buffer spanning the full history window
 
 /**
- * @typedef {{ faction: string, utility: number, value: number, timeToComplete: number | null }} GoalPlanEntry
+ * @typedef {{ faction: string, utility: number, timeToComplete: number | null }} GoalPlanEntry
  * @typedef {{ ts: number, selectedFaction: string | null, plans: GoalPlanEntry[] }} GoalSnapshot
  */
 
@@ -16,7 +16,7 @@ const getState = () => {
 };
 
 /**
- * @param {{ goals: import('./goals/nodes.ts').Goal[], terminalGoals: import('./goals/nodes.ts').Goal[], value: number, utility: (overhead: number) => number }[]} plans
+ * @param {{ goals: import('./goals/nodes.ts').Goal[], terminalGoals: import('./goals/nodes.ts').Goal[], utility: (overhead: number) => number }[]} plans
  * @param {string | null} selectedFaction
  * @param {number} overhead
  */
@@ -34,12 +34,14 @@ export const recordGoalSnapshot = (plans, selectedFaction, overhead) => {
       return {
         faction: p.goals.find((g) => g.type === 'FACTION_JOIN')?.faction ?? '?',
         utility: p.utility(overhead),
-        value: p.value,
-        timeToComplete: ttcValues.some(
-          (t) => t == null || !isFinite(/** @type {any} */ t),
-        )
-          ? null
-          : Math.max(.../** @type {number[]} */ ttcValues),
+        timeToComplete:
+          ttcValues.length === 0
+            ? 0
+            : ttcValues.some(
+                  (t) => t == null || !isFinite(/** @type {any} */ t),
+                )
+              ? null
+              : Math.max(.../** @type {number[]} */ ttcValues),
       };
     }),
   });

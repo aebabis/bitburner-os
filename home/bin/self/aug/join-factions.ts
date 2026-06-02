@@ -5,8 +5,8 @@ import { CITY_FACTIONS } from '../../../lib/factions';
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   const factionTargets = getGoals(ns)
-    .filter((goal) => goal.type === 'FACTION_JOIN')
-    .map((goal) => goal.faction);
+    .prerequisites('FACTION_JOIN')
+    .map((g) => g.faction);
   const gang = getGangData(ns)?.gangInfo?.faction;
   const invites = ns.singularity.checkFactionInvitations();
   for (const faction of invites) {

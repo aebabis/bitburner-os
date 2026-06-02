@@ -9,13 +9,14 @@ import { Goal } from '../../lib/goals/nodes';
  * is already a member of, or null if no rep work is needed.
  */
 const getWorkFaction = (
-  goals: Goal[],
+  root: Goal,
   factions: FactionName[],
   factionRep: Record<FactionName, number>,
 ) => {
   const gap = (g: Goal) => (g.requirement ?? 0) - (factionRep[g.faction] ?? 0);
   return (
-    goals
+    root
+      .prerequisites()
       .filter((g) => !g.isDone())
       .filter((g) => g.type === 'FACTION_REP' || g.type === 'FACTION_FAVOR')
       .filter((g) => g.faction && factions.includes(g.faction))
@@ -58,13 +59,14 @@ export async function main(ns: NS) {
     // This is possible because crimes no longer require explicit
     // restarting when done.
 
-    const goals = getGoals(ns);
-    const workFaction = getWorkFaction(goals, player.factions, factionRep);
+    const root = getGoals(ns);
+    const prereqs = root.prerequisites();
+    const workFaction = getWorkFaction(root, player.factions, factionRep);
     const hackLevelGoal =
-      goals.find((goal) => goal.type === 'HACKING_LEVEL')?.requirement ?? 0;
+      prereqs.find((g) => g.type === 'HACKING_LEVEL')?.requirement ?? 0;
     const hackXpGoal =
-      goals.find((goal) => goal.type === 'HACKING_XP')?.requirement ?? 0;
-    const killsGoal = goals.find((goal) => goal.type === 'KILLS');
+      prereqs.find((g) => g.type === 'HACKING_XP')?.requirement ?? 0;
+    const killsGoal = prereqs.find((g) => g.type === 'KILLS');
     getConfig(ns).set('share', 0);
 
     if (hackXpGoal) {
@@ -76,22 +78,22 @@ export async function main(ns: NS) {
       await rmi(ns)('/bin/self/school.ts', 1);
     } else if (killsGoal && !killsGoal.isDone()) {
       await rmi(ns)('/bin/self/crime.ts', 1, 'Homicide');
-    } else if (!isRepBound(ns, goals)) {
+    } else if (!isRepBound(ns, root)) {
       await makeMoney();
     } else if (workFaction != null) {
       getConfig(ns).set('share', 0.1);
       await rmi(ns)('/bin/self/faction-work.ts', 1, workFaction);
     } else {
-      const combatGoal = goals.find(
-        (g) => g.type === 'COMBAT_LEVELS' && !g.isDone(),
-      );
-      const locationGoal = goals.find(
-        (g) => g.type === 'LOCATION' && !g.isDone(),
-      )?.requirement;
+      const combatGoal = root
+        .prerequisites('COMBAT_LEVELS')
+        .find((g) => !g.isDone());
+      const locationGoal = root
+        .prerequisites('LOCATION')
+        .find((g) => !g.isDone())?.requirement;
       ns.print(locationGoal);
-      const killsGoal = goals.find(
-        (g) => g.type === 'KILLS' && !g.isDone(),
-      )?.requirement;
+      const killsRequirement = root
+        .prerequisites('KILLS')
+        .find((g) => !g.isDone())?.requirement;
       if (combatGoal != null) {
         const { skills } = ns.getPlayer();
         const lowestStat = (
@@ -101,7 +103,7 @@ export async function main(ns: NS) {
         await rmi(ns)('/bin/self/improvement.ts', 1, lowestStat);
       } else if (locationGoal) {
         await rmi(ns)('/bin/self/travel.ts', 1, locationGoal);
-      } else if (killsGoal) {
+      } else if (killsRequirement) {
         await rmi(ns)('/bin/self/crime.ts');
       } else {
         await makeMoney();

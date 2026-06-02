@@ -5,14 +5,14 @@ import { rmi } from '../../lib/rmi';
 
 const isTixViable = (ns: NS) => {
   const money = ns.getServerMoneyAvailable('home');
-  const amg = getGoals(ns).find((g) => g.type === 'AUG_MONEY');
+  const amg = getGoals(ns).prerequisites('AUG_MONEY')[0];
   if (amg == null || amg.isDone()) return money > 5e9;
   return money - (amg.requirement ?? 0) > 5e9;
 };
 
 const is4SViable = (ns: NS) => {
   const money = ns.getServerMoneyAvailable('home');
-  const amg = getGoals(ns).find((g) => g.type === 'AUG_MONEY');
+  const amg = getGoals(ns).prerequisites('AUG_MONEY')[0];
   if (amg == null || amg.isDone()) return money > 25e9;
   return money - (amg.requirement ?? 0) > 25e9;
 };

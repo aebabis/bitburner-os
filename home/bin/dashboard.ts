@@ -166,17 +166,27 @@ const threadpoolTable = (ns: NS) => {
   return BRIGHT.BOLD(' SERVERS ') + '\n' + table(ns, null, rows);
 };
 
-const goalsTable = (/** @type {NS} */ ns) => {
-  const goals = getGoals(ns);
-  return table(
-    ns,
-    ['GOALS', { name: '', align: 'right' }],
-    goals.map((goal) => [
-      goal.toString(),
+const goalsTable = (ns: NS) => {
+  const root = getGoals(ns);
+  const rows = [];
+  const walk = (goal, depth) => {
+    for (const dep of goal.deps) walk(dep, depth + 1);
+    rows.push([
+      '  '.repeat(depth) + goal.toString(),
       MEDIUM(formatTime(goal.timeToComplete())),
-    ]),
-    { colors: true },
-  );
+    ]);
+  };
+  walk(root, 0);
+  for (const action of root.actions) {
+    const desc =
+      action.type === 'BUY_AUG'
+        ? action.name
+        : `Buy ${ns.format.number(action.amount)} rep (${action.faction})`;
+    rows.push([MEDIUM('•' + desc), '']);
+  }
+  return table(ns, ['GOALS', { name: '', align: 'right' }], rows, {
+    colors: true,
+  });
 };
 
 const moneyTable = (/** @type {NS} */ ns) => {

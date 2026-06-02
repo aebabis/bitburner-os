@@ -16,16 +16,14 @@ export async function main(ns: NS) {
     purchasedAugmentations: getPurchasedAugmentations(ns),
   });
 
-  const goals = getGoals(ns);
-  const installGoals = goals.filter(
-    (goal) => !['INSTALL', 'AUGMENTATION', 'BUY_REP'].includes(goal.type),
+  const root = getGoals(ns);
+  const actions = root.type === 'INSTALL' ? root.actions : [];
+
+  const targetAugmentations = actions.flatMap((a) =>
+    a.type === 'BUY_AUG' ? [a.name] : [],
   );
 
-  const targetAugmentations = goals
-    .filter((goal) => goal.type === 'AUGMENTATION')
-    .map((goal) => goal.desc);
-
-  if (installGoals.every((goal) => goal.isDone())) {
+  if (root.type === 'INSTALL' && root.deps.every((g) => g.isDone())) {
     const LOGFILE = `/log/reset-${Date.now()}.txt`;
 
     const print = (...args: (string | boolean | number)[]) => {
@@ -38,7 +36,7 @@ export async function main(ns: NS) {
 
     print(new Date().toLocaleDateString());
 
-    for (const goal of goals) {
+    for (const goal of [root, ...root.prerequisites()]) {
       print(
         goal.desc.padEnd(40) + ' ' + goal.type.padEnd(15) + ' ' + goal.isDone(),
       );
@@ -82,22 +80,17 @@ export async function main(ns: NS) {
     print('Dumping stocks');
     if (ns.stock.hasTixApiAccess()) dump(ns);
 
-    const buyRepGoal = goals.find((goal) => goal.type === 'BUY_REP');
-    if (buyRepGoal != null) {
-      print('Buying ' + ns.format.number(buyRepGoal.requirement) + ' rep');
+    const buyRep = actions.find((a) => a.type === 'BUY_REP');
+    if (buyRep?.type === 'BUY_REP') {
+      print('Buying ' + ns.format.number(buyRep.amount) + ' rep');
       const donationRate = formulas(ns).reputation.donationForRep(
         1,
         ns.getPlayer(),
       );
-      const cost = buyRepGoal.requirement * donationRate;
+      const cost = buyRep.amount * donationRate;
       print('Cost:  $' + ns.format.number(cost));
       print('Avail: $' + ns.format.number(ns.getPlayer().money));
-      await run(
-        '/bin/self/aug/donate-to-faction.ts',
-        1,
-        buyRepGoal.faction,
-        cost,
-      );
+      await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
     }
 
     print(`Attempting to purchase ${targetAugmentations.length} augmentations`);

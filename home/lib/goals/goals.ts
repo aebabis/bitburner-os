@@ -1,6 +1,12 @@
 import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
 import { THREADPOOL } from '../../etc/config.ts';
-import { jobRamGoal, installGoal, type Goal, hackingXpGoal } from './nodes.ts';
+import {
+  jobRamGoal,
+  installGoal,
+  reevaluateGoal,
+  type Goal,
+  hackingXpGoal,
+} from './nodes.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
@@ -11,7 +17,7 @@ import { formulas as getFormulas } from '../formulas.ts';
 import { needsAugRam, needsJobRam } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 
-export const getGoals = (ns: NS): Goal[] => {
+export const getGoals = (ns: NS): Goal => {
   const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -40,7 +46,7 @@ export const getGoals = (ns: NS): Goal[] => {
     staticData.resetInfo.currentNode === 2 &&
     !player.factions?.includes('Slum Snakes')
   ) {
-    const { joinPrereqs, joinGoal } = buildJoinSubtree('Slum Snakes', {
+    const { joinGoal } = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,
       money,
@@ -48,7 +54,7 @@ export const getGoals = (ns: NS): Goal[] => {
       karma,
       formulas,
     });
-    return [...joinPrereqs, joinGoal];
+    return reevaluateGoal(joinGoal);
   }
 
   const universityGains = ns.formulas.work.universityGains(
@@ -59,13 +65,13 @@ export const getGoals = (ns: NS): Goal[] => {
   const xpRate = universityGains.hackExp * 5;
   const targetHackingXp = xpRate * 10;
   if (player.exp.hacking < targetHackingXp)
-    return [
+    return reevaluateGoal(
       hackingXpGoal(
         targetHackingXp,
         player.exp.hacking,
         (targetHackingXp - player.exp.hacking) / xpRate,
       ),
-    ];
+    );
 
   const overhead = computeResetOverhead(staticData);
 
@@ -121,18 +127,10 @@ export const getGoals = (ns: NS): Goal[] => {
         );
     }
 
-    if ('installDesc' in bestPlan) {
-      const install = installGoal(
-        [...bestPlan.terminalGoals, ...ramGoals],
-        bestPlan.installDesc,
-      );
-      return [...ramGoals, ...bestPlan.goals, install];
-    }
-    if (ramGoals.length > 0) {
-      return [...ramGoals, ...bestPlan.goals];
-    }
-
-    return bestPlan.goals;
+    return installGoal(
+      [...bestPlan.terminalGoals, ...ramGoals],
+      bestPlan.augActions,
+    );
   }
 
   const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
@@ -144,34 +142,23 @@ export const getGoals = (ns: NS): Goal[] => {
     money,
     referenceIncome,
   );
-  return [jrg, installGoal([jrg])];
+  return reevaluateGoal(jrg);
 };
 
 export const getTimeToMilestone = (ns: NS): number | null => {
-  const goals = getGoals(ns);
-  const joinGoal = goals.find(
-    (goal) => !goal.isDone() && goal.type === 'FACTION_JOIN',
-  );
+  const root = getGoals(ns);
+  const joinGoal = root.prerequisites('FACTION_JOIN').find((g) => !g.isDone());
   if (joinGoal) return joinGoal.timeToComplete();
-  else return getTimeToComplete(ns);
+  return root.timeToComplete();
 };
 
 export const getTimeToComplete = (ns: NS): number | null => {
-  const goals = getGoals(ns);
-  const installGoals = goals.filter((g) => g.type === 'INSTALL');
-  const roots =
-    installGoals.length > 0
-      ? installGoals
-      : goals.filter((g) => g.type === 'AUGMENTATION');
-  if (roots.length === 0) return null;
-  const times = roots.map((g) => g.timeToComplete());
-  if (times.some((t) => t == null)) return null;
-  return Math.max(...times);
+  return getGoals(ns).timeToComplete();
 };
 
 /**
  * @param {NS} ns
- * @param {import('./nodes.ts').Goal[]} [goals]
+ * @param {import('./nodes.ts').Goal} [root]
  * @returns {boolean}
  */
-export const isRepBound = (ns, goals = getGoals(ns)) => isRepBoundPure(goals);
+export const isRepBound = (ns, root = getGoals(ns)) => isRepBoundPure(root);
