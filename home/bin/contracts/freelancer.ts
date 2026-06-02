@@ -5,15 +5,14 @@ import { getContractData } from '../../lib/data-store';
 const showContracts = (ns: NS) => {
   try {
     const { contracts } = getContractData(ns);
-    const rows = contracts.map(({ id, hostname, filename, type, tries }) => [
-      id,
+    const rows = contracts.map(({ hostname, filename, type, tries }) => [
       hostname,
       filename,
       type,
       tries,
     ]);
     ns.clearLog();
-    ns.print(table(ns, ['ID', 'HOST', 'FILE', '', 'TRIES'], rows));
+    ns.print(table(ns, ['HOST', 'FILE', '', 'TRIES'], rows));
   } catch (error) {
     ns.tprint(error);
   }
