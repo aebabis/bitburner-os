@@ -91,22 +91,15 @@ export const getGoals = (ns: NS): Goal => {
 
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
+  const makeRamGoal = (size: number, cost: number) =>
+    jobRamGoal(POOL1, pool1Ram, size, cost, money, referenceIncome);
 
   if (bestPlan) {
     const ramGoals = [];
 
     if (needsAugRam(ns)) {
       const augRamCost = purchasedServerCosts?.[requiredAugRam] ?? 0;
-      ramGoals.push(
-        jobRamGoal(
-          POOL1,
-          pool1Ram,
-          requiredAugRam,
-          augRamCost,
-          money,
-          referenceIncome,
-        ),
-      );
+      ramGoals.push(makeRamGoal(requiredAugRam, augRamCost));
     }
 
     if (needsJobRam(ns) && referenceIncome > 0) {
@@ -115,16 +108,7 @@ export const getGoals = (ns: NS): Goal => {
       );
       const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
       if (jobRamCost / referenceIncome < baselineTTC)
-        ramGoals.push(
-          jobRamGoal(
-            POOL1,
-            pool1Ram,
-            requiredJobRam,
-            jobRamCost,
-            money,
-            referenceIncome,
-          ),
-        );
+        ramGoals.push(makeRamGoal(requiredJobRam, jobRamCost));
     }
 
     return installGoal([...bestPlan.deps, ...ramGoals], bestPlan.actions);

@@ -18,12 +18,6 @@ import {
   type Goal,
   type Plan,
 } from './nodes.ts';
-
-const plan = (
-  deps: Goal[],
-  actions: Action[],
-  utility: (overhead: number) => number,
-): Plan => Object.assign(installGoal(deps, actions), { utility });
 import {
   findOptimalBatch,
   MAX_AUGS,
@@ -35,6 +29,12 @@ import {
   computeResetOverhead,
 } from '../aug-select.ts';
 import { StaticData } from '../data-store.ts';
+
+const plan = (
+  deps: Goal[],
+  actions: Action[],
+  utility: (overhead: number) => number,
+): Plan => Object.assign(installGoal(deps, actions), { utility });
 
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.
@@ -192,6 +192,49 @@ export const isRepBound = (root: Goal) => {
   return moneyTime == null || moneyTime <= maxRepTime;
 };
 
+const getPurchaseOrder = (
+  augs: string[],
+  augmentationPrereqs: Record<string, string[]>,
+  augmentationPrices: Record<string, number>,
+  ownedAugs: string[],
+): string[] => {
+  const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
+  const sortedByPriceDesc = (xs: string[]) =>
+    [...xs].sort(
+      (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
+    );
+  const nfCount = augs.filter((a) => a === NEUROFLUX).length;
+  const order = new Set<string>();
+  for (const aug of sortedByPriceDesc(augs.filter((a) => a !== NEUROFLUX))) {
+    for (const prereq of (augmentationPrereqs?.[aug] ?? [])
+      .filter(stillNeeds)
+      .reverse())
+      order.add(prereq);
+    order.add(aug);
+  }
+  // Neuroflux goes last (cheap, always available) and may appear multiple times
+  return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
+};
+
+const computeRepRate = (
+  faction: FactionName,
+  factionWorkTypes: Record<string, string[]>,
+  factionFavor: Record<string, number>,
+  player: Player,
+  formulas: Formulas,
+): number =>
+  Math.max(
+    0,
+    ...(factionWorkTypes[faction] ?? ['hacking']).map(
+      (workType) =>
+        formulas?.work.factionGains(
+          player,
+          workType,
+          factionFavor?.[faction] ?? 0,
+        )?.reputation * 5,
+    ),
+  );
+
 /**
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
@@ -255,38 +298,19 @@ export const buildFactionGoalTree = (
   );
   if (batch.length === 0) return null;
 
-  const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
-  const sortedByPriceDesc = (augs: string[]) =>
-    [...augs].sort(
-      (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
-    );
-
-  const getPurchaseOrder = (augs: string[]) => {
-    const nfCount = augs.filter((a) => a === NEUROFLUX).length;
-    const order = new Set(/** @type {string[]} */ []);
-    for (const aug of sortedByPriceDesc(augs.filter((a) => a !== NEUROFLUX))) {
-      const prereqs = (augmentationPrereqs?.[aug] ?? [])
-        .filter(stillNeeds)
-        .reverse();
-      for (const prereq of prereqs) order.add(prereq);
-      order.add(aug);
-    }
-    // Neuroflux goes last (cheap, always available) and may appear multiple times
-    return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
-  };
-
-  const augs = getPurchaseOrder(batch);
+  const augs = getPurchaseOrder(
+    batch,
+    augmentationPrereqs,
+    augmentationPrices,
+    ownedAugs,
+  );
   const repReq = computeRepReq(augs, staticData);
-  const repRate = Math.max(
-    0,
-    ...(factionWorkTypes[faction] ?? ['hacking']).map(
-      (workType) =>
-        formulas?.work.factionGains(
-          player,
-          workType,
-          staticData.factionFavor?.[faction] ?? 0,
-        )?.reputation * 5,
-    ),
+  const repRate = computeRepRate(
+    faction,
+    factionWorkTypes,
+    staticData.factionFavor ?? {},
+    player,
+    formulas,
   );
 
   const installedSet = new Set(staticData.installedAugmentations);
