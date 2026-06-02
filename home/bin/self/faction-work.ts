@@ -3,11 +3,15 @@ import { putPlayerData } from '../../lib/data-store';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  const faction = /** @type {string} */ ns.args[0];
+  const [faction] = ns.args as FactionName[];
   const focus = shouldWorkHaveFocus(ns);
-  if (ns.singularity.getCurrentWork()?.factionName === faction) {
+  const currentWork = ns.singularity.getCurrentWork();
+  if (
+    currentWork != null &&
+    'factionName' in currentWork &&
+    currentWork.factionName === faction
+  )
     return;
-  }
   if (
     ns.singularity.workForFaction(faction, 'hacking', focus) ||
     ns.singularity.workForFaction(faction, 'field', focus) ||
