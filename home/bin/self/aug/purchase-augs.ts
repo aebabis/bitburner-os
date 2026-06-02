@@ -17,15 +17,15 @@ export async function main(ns: NS) {
   });
 
   const goals = getGoals(ns);
-  const resetGoal = goals.find(
-    (goal) => goal.type === 'INSTALL' || goal.type === 'AUGMENTATION',
+  const installGoals = goals.filter(
+    (goal) => !['INSTALL', 'AUGMENTATION', 'BUY_REP'].includes(goal.type),
   );
 
   const targetAugmentations = goals
     .filter((goal) => goal.type === 'AUGMENTATION')
     .map((goal) => goal.desc);
 
-  if (resetGoal?.deps.every((goal) => goal.isDone())) {
+  if (installGoals.every((goal) => goal.isDone())) {
     const LOGFILE = `/log/reset-${Date.now()}.txt`;
 
     const print = (...args: (string | boolean | number)[]) => {
@@ -183,7 +183,7 @@ export async function main(ns: NS) {
     ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
     ns.write(
       AUG_LOG_FILE,
-      `${new Date().toLocaleDateString()}----------------------------`,
+      `${new Date().toLocaleDateString()}----------------------------\n`,
       'a',
     );
     ns.write(AUG_LOG_FILE, getPurchasedAugmentations(ns).join('\n'), 'a');
