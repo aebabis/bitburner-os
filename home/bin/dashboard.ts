@@ -176,12 +176,16 @@ const goalsTable = (ns: NS) => {
     ]);
   };
   walk(root, 0);
-  for (const action of root.actions) {
-    const desc =
-      action.type === 'BUY_AUG'
-        ? action.name
-        : `Buy ${ns.format.number(action.amount)} rep (${action.faction})`;
-    rows.push([C(57)(desc), '']);
+  const actionItems = root.actions.map((action) =>
+    action.type === 'BUY_AUG'
+      ? action.name
+      : `Buy ${ns.format.number(action.amount)} rep (${action.faction})`,
+  );
+  for (let i = 0; i < actionItems.length; i++) {
+    const isLast = i === actionItems.length - 1;
+    const lead = !isLast ? '├' : '└';
+    const item = actionItems[i];
+    rows.push([C(236)(lead) + ' ' + C(57)(item), '']);
   }
   return table(ns, ['GOALS', { name: '', align: 'right' }], rows, {
     colors: true,
