@@ -185,7 +185,7 @@ const goalsTable = (ns: NS) => {
     const isLast = i === actionItems.length - 1;
     const lead = !isLast ? '├' : '└';
     const item = actionItems[i];
-    rows.push([C(236)(lead) + ' ' + C(57)(item), '']);
+    rows.push([C(236)(lead) + ' ' + C(56)(item), '']);
   }
   return table(ns, ['GOALS', { name: '', align: 'right' }], rows, {
     colors: true,

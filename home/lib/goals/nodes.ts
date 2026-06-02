@@ -76,7 +76,7 @@ const goal = (
     deps,
     actions,
     ownTime,
-    toString: () => (isDone() ? desc : C(57)(desc)),
+    toString: () => (isDone() ? desc : C(56)(desc)),
     prerequisites(typeFilter?: GoalType): Goal[] {
       const seen = new Set<Goal>();
       const result: Goal[] = [];
