@@ -385,11 +385,7 @@ export const buildFactionGoalTree = (
   }
 
   // Path 3: Donation — faction has enough favor; buy remaining rep with money
-  // Path 4: Normal — grind faction rep
-  let prereqGoals: Goal[];
-  let augActions: Action[];
-
-  if (canDonate) {
+  const donationPath = (): [Goal[], Action[]] => {
     const donationRate =
       formulas?.reputation?.donationForRep(1, player) ?? Infinity;
     const donationCost = Math.max(0, repReq - currentRep) * donationRate;
@@ -398,12 +394,14 @@ export const buildFactionGoalTree = (
       liquidAssets,
       referenceIncome,
     );
-    prereqGoals = [moneyGoal];
-    augActions = [
-      buyRepAction(faction, repReq - currentRep),
-      ...augs.map(buyAugAction),
+    return [
+      [moneyGoal],
+      [buyRepAction(faction, repReq - currentRep), ...augs.map(buyAugAction)],
     ];
-  } else {
+  };
+
+  // Path 4: Normal — grind faction rep
+  const normalPath = (): [Goal[], Action[]] => {
     const repGoal = factionRepGoal(
       faction,
       repReq,
@@ -412,10 +410,10 @@ export const buildFactionGoalTree = (
       repRate,
     );
     const moneyGoal = augMoneyGoal(costToAug, liquidAssets, referenceIncome);
-    prereqGoals = [repGoal, moneyGoal];
-    augActions = augs.map(buyAugAction);
-  }
+    return [[repGoal, moneyGoal], augs.map(buyAugAction)];
+  };
 
+  const [prereqGoals, augActions] = canDonate ? donationPath() : normalPath();
   return plan(prereqGoals, augActions, (overhead) => {
     const times = prereqGoals.map((g) => g.timeToComplete());
     if (times.some((t) => t == null) || treeValue === 0) return 0;
