@@ -124,6 +124,38 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
         }
         throw new Error(`Not yet implemented: ${workType}`);
       },
+      gymGains: (
+        _player: Person,
+        gymType: GymType,
+        locationName: LocationName,
+      ) => {
+        const gameCPS = 5;
+        const gymMap: Record<
+          string,
+          { expField: keyof typeof WORK_STATS; augStat: string }
+        > = {
+          str: { expField: 'strExp', augStat: 'str_exp' },
+          def: { expField: 'defExp', augStat: 'def_exp' },
+          dex: { expField: 'dexExp', augStat: 'dex_exp' },
+          agi: { expField: 'agiExp', augStat: 'agi_exp' },
+        };
+        const locations: Record<string, { expMult: number; costMult: number }> =
+          {
+            'Iron Gym': { expMult: 1, costMult: 1 },
+            'Crush Fitness Gym': { expMult: 2, costMult: 3 },
+            'Millenium Fitness Gym': { expMult: 4, costMult: 7 },
+            'Snap Fitness Gym': { expMult: 5, costMult: 10 },
+            'Powerhouse Gym': { expMult: 10, costMult: 20 },
+          };
+        const gym = gymMap[gymType];
+        const location = locations[locationName];
+        const expScale = location.expMult / gameCPS;
+        return {
+          ...WORK_STATS,
+          [gym.expField]: expScale * getAugMult(gym.augStat),
+          money: (-120 * location.costMult) / gameCPS,
+        };
+      },
       universityGains: (
         _player: Person,
         classType: UniversityClassType,
