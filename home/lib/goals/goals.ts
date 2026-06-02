@@ -85,8 +85,7 @@ export const getGoals = (ns: NS): Goal => {
         )
       : null;
 
-  const selectedFaction =
-    bestPlan?.goals.find((g) => g.type === 'FACTION_JOIN')?.faction ?? null;
+  const selectedFaction = bestPlan?.faction ?? null;
   recordGoalSnapshot(plans, selectedFaction, overhead);
 
   const POOL1 = `${THREADPOOL}-01`;

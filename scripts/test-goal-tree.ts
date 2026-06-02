@@ -120,7 +120,9 @@ describe('buildFactionGoalTree', () => {
     });
 
     assert.ok(tree);
-    const moneyGoal = tree.goals.find((g: any) => g.type === 'AUG_MONEY');
+    const moneyGoal = tree.terminalGoals.find(
+      (g: any) => g.type === 'AUG_MONEY',
+    );
     // correct: requirement = 1.9^1 × price = 1.9M ≤ money (2M) → isDone
     // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
     assert.ok(
@@ -151,7 +153,9 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
     });
     assert.ok(tree);
-    const joinGoal = tree.goals.find((g: any) => g.type === 'FACTION_JOIN');
+    const joinGoal = tree.terminalGoals.flatMap((g: any) =>
+      g.prerequisites('FACTION_JOIN'),
+    )[0];
     assert.ok(joinGoal, 'join goal should exist');
     assert.ok(
       joinGoal.deps.some((d: any) => d.type === 'HACKING_LEVEL'),
@@ -189,7 +193,9 @@ describe('buildFactionGoalTree', () => {
       karma: 0,
     });
     assert.ok(tree);
-    const repGoal = tree.goals.find((g: any) => g.type === 'FACTION_REP');
+    const repGoal = tree.terminalGoals.find(
+      (g: any) => g.type === 'FACTION_REP',
+    );
     assert.equal(repGoal.requirement, 3000);
   });
 
@@ -396,7 +402,9 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
   it('money goal includes donation cost', () => {
     const tree = buildFactionGoalTree('F', donationData());
     assert.ok(tree);
-    const moneyGoal = tree.goals.find((g: any) => g.type === 'AUG_MONEY');
+    const moneyGoal = tree.terminalGoals.find(
+      (g: any) => g.type === 'AUG_MONEY',
+    );
     // donationForRep(50000, player) = 50000 * 1e6 / 1 = 5e10; augCost = 1e6
     const expectedDonation = mockFormulas.reputation.donationForRep(50_000, {});
     assert.equal(moneyGoal.requirement, 1_000_000 + expectedDonation);

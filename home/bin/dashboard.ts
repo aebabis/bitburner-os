@@ -16,8 +16,7 @@ import { by } from '../lib/util';
 
 const H = BRIGHT.BOLD;
 
-/** @param {number|null} seconds */
-const formatTime = (seconds) => {
+const formatTime = (seconds: number | null) => {
   if (seconds == null) {
     return '?';
   }
@@ -182,14 +181,14 @@ const goalsTable = (ns: NS) => {
       action.type === 'BUY_AUG'
         ? action.name
         : `Buy ${ns.format.number(action.amount)} rep (${action.faction})`;
-    rows.push([MEDIUM('•' + desc), '']);
+    rows.push([C(57)(desc), '']);
   }
   return table(ns, ['GOALS', { name: '', align: 'right' }], rows, {
     colors: true,
   });
 };
 
-const moneyTable = (/** @type {NS} */ ns) => {
+const moneyTable = (ns: NS) => {
   const moneyData = getMoneyData(ns);
   if (moneyData == null) {
     return ` ${H('INCOME')} \n ${MEDIUM(loading)} `;
@@ -256,19 +255,11 @@ const getServiceTable = (ns: NS) => {
   return table(
     ns,
     ['SERVICES', '', ''],
-    getServices(ns).map(
-      (
-        /** @type {{name: string, status: string, ram: number}} */ {
-          name,
-          status,
-          ram,
-        },
-      ) => [
-        name,
-        status,
-        '  ' + (ram ? MEDIUM(ram.toFixed(2) + 'GB') : ERROR('error')),
-      ],
-    ),
+    getServices(ns).map(({ name, status, ram }) => [
+      name,
+      status,
+      '  ' + (ram ? MEDIUM(ram.toFixed(2) + 'GB') : ERROR('error')),
+    ]),
     { colors: true },
   );
 };
@@ -338,9 +329,7 @@ export async function main(ns: NS) {
         const textField = renderWindows(windows, width);
 
         ns.clearLog();
-        textField
-          .split('\n')
-          .forEach((/** @type {string} */ line) => ns.print(line));
+        textField.split('\n').forEach((line) => ns.print(line));
         await ns.sleep(1);
       }
     } catch (error) {

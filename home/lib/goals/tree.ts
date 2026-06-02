@@ -189,7 +189,7 @@ export const isRepBound = (root: Goal) => {
  * Returns null if findOptimalBatch finds nothing worth pursuing.
  * @param {string} faction
  @param {} data
- * @returns {{ goals: import('./nodes.ts').Goal[], terminalGoals: import('./nodes.ts').Goal[], augActions: import('./nodes.ts').Action[], utility: (overhead: number) => number } | null}
+ * @returns {{ faction: FactionName, terminalGoals: import('./nodes.ts').Goal[], augActions: import('./nodes.ts').Action[], utility: (overhead: number) => number } | null}
  */
 interface FactionGoalTreeProps {
   player: Player;
@@ -229,7 +229,7 @@ export const buildFactionGoalTree = (
   const moneyRate = referenceIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
 
-  const { joinPrereqs, joinGoal } = buildJoinSubtree(faction, {
+  const { joinGoal } = buildJoinSubtree(faction, {
     player,
     staticData,
     money,
@@ -309,7 +309,7 @@ export const buildFactionGoalTree = (
     );
     const earlyValue = queuedAugs.reduce((s, aug) => s + augValue(aug), 0);
     return {
-      goals: [...joinPrereqs, joinGoal],
+      faction,
       terminalGoals: [],
       augActions: queuedAugs.map(buyAugAction),
       utility(overhead: number) {
@@ -350,7 +350,7 @@ export const buildFactionGoalTree = (
       joinGoal,
     );
     return {
-      goals: [...joinPrereqs, joinGoal, favorGoal],
+      faction,
       terminalGoals: [favorGoal],
       augActions: [],
       utility(overhead: number) {
@@ -399,7 +399,7 @@ export const buildFactionGoalTree = (
   }
 
   return {
-    goals: [...joinPrereqs, joinGoal, ...prereqGoals],
+    faction,
     terminalGoals: prereqGoals,
     augActions,
     utility(overhead: number) {
