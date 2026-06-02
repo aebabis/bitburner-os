@@ -93,10 +93,7 @@ export const buildJoinSubtree = (
   } = staticData;
 
   if (factions.includes(faction)) {
-    return {
-      joinPrereqs: [],
-      joinGoal: factionJoinGoal(faction, factions, []),
-    };
+    return factionJoinGoal(faction, factions, []);
   }
 
   const joinPrereqs = [];
@@ -174,8 +171,7 @@ export const buildJoinSubtree = (
   const [loc] = locationReqs;
   if (loc) joinPrereqs.push(locationGoal(loc, city));
 
-  const joinGoal = factionJoinGoal(faction, factions, joinPrereqs);
-  return { joinPrereqs, joinGoal };
+  return factionJoinGoal(faction, factions, joinPrereqs);
 };
 
 export const isRepBound = (root: Goal) => {
@@ -277,7 +273,7 @@ export const buildFactionGoalTree = (
   const moneyRate = referenceIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
 
-  const { joinGoal } = buildJoinSubtree(faction, {
+  const joinGoal = buildJoinSubtree(faction, {
     player,
     staticData,
     money,

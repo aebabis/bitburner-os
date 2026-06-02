@@ -46,7 +46,7 @@ export const getGoals = (ns: NS): Goal => {
     staticData.resetInfo.currentNode === 2 &&
     !player.factions?.includes('Slum Snakes')
   ) {
-    const { joinGoal } = buildJoinSubtree('Slum Snakes', {
+    const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,
       money,
