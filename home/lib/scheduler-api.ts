@@ -4,15 +4,17 @@ import { HACK, GROW, WEAKEN, SHARE } from '../etc/filenames';
 import { ERROR } from './colors';
 const WORKERS = [HACK, GROW, WEAKEN, SHARE];
 
-const TicketItem = (
-  /** @type {{script: string, host: string | null, numThreads: number, args: string[], ticket?: string, startTime?: number, highPriority?: boolean}} */ {
-    script,
-    host,
-    numThreads,
-    args,
-    ...rest
-  },
-) => {
+export type Job = {
+  script: string;
+  host: string | null;
+  numThreads: number;
+  args: string[];
+  ticket?: string;
+  startTime?: number;
+  highPriority?: boolean;
+};
+
+const TicketItem = ({ script, host, numThreads, args, ...rest }: Job) => {
   const time = rest.startTime || Date.now();
   const waitTime = () => Date.now() - time;
   const wait = () => (waitTime() / 1000).toFixed(3);
@@ -26,12 +28,12 @@ const TicketItem = (
     time,
     waitTime,
     isWorker,
-    toString: (/** @type {string | undefined} */ hostname = undefined) =>
+    toString: (hostname?: string) =>
       `${script} ${hostname || host} ${numThreads} ${args.join(' ')} (${wait()}s)`,
   };
 };
 
-type TicketEntry = ReturnType<typeof TicketItem>;
+export type TicketEntry = ReturnType<typeof TicketItem>;
 
 export const checkPort = async (ns: NS, queue: TicketEntry[]) => {
   const delegated = await getDelegatedTasks(ns);
@@ -46,14 +48,23 @@ export const checkPort = async (ns: NS, queue: TicketEntry[]) => {
   }
 };
 
-/** @type {Record<string, number>} */
-export const lastRuns = {};
-/** @type {Record<string, number>} */
-export const lastCancellations = {};
+export const lastRuns: Record<string, number> = {};
+export const lastCancellations: Record<string, number> = {};
 export let droppedTickets = 0;
 
-/** @param {NS} ns @param {TicketEntry} process @param {{hostname: string, ramAvailableTo: (process: TicketEntry) => number}} server **/
-export const fulfill = async (ns, process, server) => {
+export type ServerRamInfo = {
+  hostname: string;
+  maxRam: number;
+  ramUsed: number;
+  ramUnused: number;
+  ramAvailableTo: (process: TicketEntry) => number;
+};
+
+export const fulfill = async (
+  ns: NS,
+  process: TicketEntry,
+  server: ServerRamInfo,
+) => {
   const { hostname, ramAvailableTo } = server;
   const { script, numThreads, args, ticket } = process;
   const scriptRam = ns.getScriptRam(script, 'home');
@@ -84,12 +95,7 @@ export const fulfill = async (ns, process, server) => {
     droppedTickets++;
 };
 
-/** @param {NS} ns @param {TicketEntry} process **/
-export const reject = async (
-  ns,
-  process,
-  /** @type {string | undefined} */ reason = undefined,
-) => {
+export const reject = async (ns: NS, process: TicketEntry, reason?: string) => {
   lastCancellations[process.script] = Date.now();
   if (reason != null) ns.tprint(ERROR + reason);
   if (
