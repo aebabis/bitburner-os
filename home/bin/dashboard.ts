@@ -13,6 +13,7 @@ import { getServices } from '../lib/service-api';
 import { C, WARN, MEDIUM, BRIGHT, ERROR } from '../lib/colors';
 import { hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
+import { Goal } from '../lib/goals/nodes';
 
 const H = BRIGHT.BOLD;
 
@@ -26,7 +27,7 @@ const formatTime = (seconds: number | null) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  const coalesce = (...nums) => {
+  const coalesce = (...nums: number[]) => {
     if (nums.length === 0) {
       return '';
     }
@@ -131,7 +132,7 @@ const getPlayerLevels = (ns: NS) => {
   ]);
 };
 
-const threadpoolRow = (ns: NS, server: Server) => {
+const threadpoolRow = (ns: NS, server: { ramUsed: number; maxRam: number }) => {
   const { ramUsed, maxRam } = server;
   const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
   return [ram];
@@ -154,7 +155,7 @@ const threadpools = (ns: NS) => {
         return null;
       }
     })
-    .filter(Boolean)
+    .filter((server) => server != null)
     .map((server) => threadpoolRow(ns, server));
 };
 
@@ -174,7 +175,7 @@ const threadpoolTable = (ns: NS) => {
 const goalsTable = (ns: NS) => {
   const root = getGoals(ns);
   const rows = [];
-  const walk = (goal, depth) => {
+  const walk = (goal: Goal, depth: number) => {
     for (const dep of goal.deps) walk(dep, depth + 1);
     rows.push([
       '  '.repeat(depth) + goal.toString(),
@@ -201,7 +202,7 @@ const goalsTable = (ns: NS) => {
 const moneyTable = (ns: NS) => {
   const moneyData = getMoneyData(ns);
   if (moneyData == null) {
-    return ` ${H('INCOME')} \n ${MEDIUM(loading)} `;
+    return ` ${H('INCOME')} \n ${MEDIUM('loading')} `;
   }
   const {
     theftIncome = 0,
@@ -343,7 +344,13 @@ export async function main(ns: NS) {
         await ns.sleep(1);
       }
     } catch (error) {
-      if (error?.name === 'ScriptDeath') throw error;
+      if (
+        error != null &&
+        typeof error === 'object' &&
+        'name' in error &&
+        error?.name === 'ScriptDeath'
+      )
+        throw error;
       console.error(error);
     }
     await ns.sleep(1000);

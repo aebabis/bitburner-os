@@ -58,7 +58,7 @@ export const transpose = (lines: string[][], numCols: number) => {
 
 export const table = (
   ns: NS,
-  columns: (string | ColumnSpec)[],
+  columns: (string | ColumnSpec)[] | null,
   data: (string | number | undefined)[][],
   options: { borders?: boolean; colors?: boolean } = {},
 ) => {

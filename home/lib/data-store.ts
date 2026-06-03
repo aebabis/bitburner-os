@@ -32,9 +32,19 @@ export const getHostnames = (ns: NS): string[] => readData(ns, PORT_HOSTNAMES);
 export const putHostnames = (ns: NS, hostnames: string[]) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
-export const getSchedulerReportData = (ns: NS) =>
+type SchedulerReportData = {
+  inputFull: boolean;
+  outputFull: boolean;
+  heartbeat: number;
+  maxWaitTime: number;
+  enqueueFails: number;
+  droppedTickets: number;
+  lastRuns: Record<string, number>;
+  lastCancellations: Record<string, number>;
+};
+export const getSchedulerReportData = (ns: NS): SchedulerReportData =>
   readData(ns, PORT_SCH_REPORTING) || {};
-export const putSchedulerReportData = (ns: NS, data) =>
+export const putSchedulerReportData = (ns: NS, data: SchedulerReportData) =>
   putData(ns, PORT_SCH_REPORTING, data);
 
 type BackdoorRequirement = {
@@ -43,7 +53,7 @@ type BackdoorRequirement = {
   numPortsRequired: number;
 };
 
-type StaticStockData = {
+export type StaticStockData = {
   sym: string;
   maxShares: number;
 };
