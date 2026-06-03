@@ -1,4 +1,4 @@
-import { AnyHostService } from '../../lib/service';
+import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData, getRamData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 
@@ -93,7 +93,7 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
     );
   }
 
-  tasks.push(AnyHostService(ns, isRemoteApiConnected)('/bin/nvim.ts'));
+  tasks.push(Service(ns, isRemoteApiConnected)('/bin/nvim.ts', 'home'));
 
   return tasks;
 };

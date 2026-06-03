@@ -15,9 +15,14 @@ const getExistingPid = (ns: NS, desc: string) => {
 
 let count = 1;
 
-const Service =
+export const Service =
   (ns: NS, condition = () => true, interval = 5000) =>
-  (script: string, target = null, numThreads = 1, ...args: ScriptArg[]) => {
+  (
+    script: string,
+    target: string | null = null,
+    numThreads = 1,
+    ...args: ScriptArg[]
+  ) => {
     const id = count++;
     const desc =
       target == null
