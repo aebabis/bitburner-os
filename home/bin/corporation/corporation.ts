@@ -3,13 +3,13 @@ import { getStaticData, getCorpReports } from '../../lib/data-store';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.ui.openTail();
   const { resetInfo } = getStaticData(ns);
 
   while (!ns.corporation.hasCorporation()) {
     const selfFund = resetInfo.currentNode !== 3;
     await rmi(ns)('/bin/corporation/create/corporation.ts', 1, selfFund);
   }
+  ns.ui.openTail();
 
   while (getStaticData(ns).materialData == null)
     await rmi(ns)('/bin/corporation/orders/load-material-data.ts');
@@ -34,9 +34,9 @@ export async function main(ns: NS) {
     const reports = getCorpReports(ns);
     ns.clearLog();
     for (const report of Object.values(reports)) {
-      ns.print(report.shift()[0]);
+      ns.print(report.shift()![0]);
       while (report.length) {
-        const row = report.shift();
+        const row = report.shift()!;
         ns.print(row.join(' '));
       }
     }

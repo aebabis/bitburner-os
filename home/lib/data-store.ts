@@ -10,6 +10,7 @@ import {
   PORT_CONTRACT_DATA,
   PORT_CORP_REPORTS,
 } from '../etc/ports.ts';
+import { DivisionName } from '../bin/corporation/constants.ts';
 
 const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
 
@@ -117,6 +118,8 @@ export const getContractData = (ns: NS): ContractData =>
 export const putContractData = (ns: NS, data: ContractData) =>
   putData(ns, PORT_CONTRACT_DATA, data);
 
-export const getCorpReports = (ns: NS) => readData(ns, PORT_CORP_REPORTS) || {};
-export const putCorpReports = (ns: NS, data) =>
+type CorpReports = Record<DivisionName, string[][]>;
+export const getCorpReports = (ns: NS): CorpReports =>
+  readData(ns, PORT_CORP_REPORTS) || {};
+export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
   putData(ns, PORT_CORP_REPORTS, data);
