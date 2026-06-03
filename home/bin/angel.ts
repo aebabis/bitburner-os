@@ -66,8 +66,7 @@ export async function main(ns: NS) {
     ns.print(endTime - growTime);
     ns.print(endTime - weakTime);
 
-    let offsetCounter = 0;
-    const offset = () => 0; //(offsetCounter++);
+    let offset = 0;
 
     while (true) {
       const hostname = ns.cloud
@@ -82,13 +81,14 @@ export async function main(ns: NS) {
       let ramLeft =
         ns.getServer(hostname).maxRam - ns.getServer(hostname).ramUsed;
       while (ramLeft > ramPerFrame) {
+        offset++;
         if (
           ns.exec(
             'bin/workers/hackshot.ts',
             hostname,
             hackThreads,
             target,
-            endTime - hackTime,
+            endTime - hackTime - offset - 0.0001,
             workerId++,
           ) &&
           ns.exec(
@@ -96,7 +96,7 @@ export async function main(ns: NS) {
             hostname,
             growThreads,
             target,
-            endTime - growTime,
+            endTime - growTime - offset - 0.0001,
             workerId++,
           ) &&
           ns.exec(
@@ -104,7 +104,7 @@ export async function main(ns: NS) {
             hostname,
             weakThreads,
             target,
-            endTime - weakTime,
+            endTime - weakTime - offset - 0.0001,
             workerId++,
           )
         ) {
