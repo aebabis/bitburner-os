@@ -1,18 +1,18 @@
 import { PORT_RUN_CONFIG } from '../etc/ports';
 import Ports from './ports';
 
-const PROPS = /** @type {Record<string, string>} */ {
+const PROPS = {
   share: 'Share rate',
   'share-cap': 'Max share threads',
   'reserved-funds': 'Threshold for investment',
   'reserved-home-ram': 'On-demand RAM',
 };
 
-const VALIDATORS = /** @type {Record<string, (x: number) => boolean>} */ {
-  share: (/** @type {number} */ x) => x >= 0 && x <= 1,
-  'share-cap': (/** @type {number} */ x) => x >= 0,
-  'reserved-funds': (/** @type {number} */ x) => x >= 0,
-  'reserved-home-ram': (/** @type {number} */ x) => x > 0 && x <= 1 << 20,
+const VALIDATORS = {
+  share: (x: number) => x >= 0 && x <= 1,
+  'share-cap': (x: number) => x >= 0,
+  'reserved-funds': (x: number) => x >= 0,
+  'reserved-home-ram': (x: number) => x > 0 && x <= 1 << 20,
 };
 
 const DEFAULT_VALUES = {
@@ -31,14 +31,14 @@ export const getConfig = (ns: NS) => {
     return {};
   };
 
-  const writeConfig = (/** @type {Record<string, number>} */ obj) => {
+  const writeConfig = (obj: Record<string, number>) => {
     port.clear();
     port.write(obj);
   };
 
-  const get = (/** @type {string} */ prop) => getAll()[prop];
+  const get = (prop: keyof typeof PROPS) => getAll()[prop];
 
-  const set = (/** @type {string} */ prop, /** @type {number} */ value) => {
+  const set = (prop: keyof typeof PROPS, value: number) => {
     if (PROPS[prop] == null) throw new Error(`Unrecognized prop "${prop}"`);
     if (!VALIDATORS[prop](value))
       throw new Error(`Illegal value for "${prop}": "${value}"`);
@@ -51,7 +51,7 @@ export const getConfig = (ns: NS) => {
   const getRows = () => {
     const data = getAll();
     return Object.entries(data).map(([name, value]) => {
-      const desc = PROPS[name];
+      const desc = PROPS[name as keyof typeof PROPS];
       return { name, value, desc };
     });
   };
