@@ -12,9 +12,9 @@ const PRIORITIES = [
 
 const getPathTo = (ns: NS, hostname: string) => {
   if (ns.getServer(hostname).isConnectedTo) return [];
-  const next = /** @type {Record<string, string>} */ {};
+  const next: Record<string, string> = {};
   const visited = [hostname];
-  const path = /** @type {(start: string) => string[]} */ (start) =>
+  const path = (start: string): string[] =>
     start === hostname ? [hostname] : [start, ...path(next[start])];
   for (let i = 0; i < visited.length; i++) {
     const neighbors = ns.scan(visited[i]).filter((s) => !visited.includes(s));
@@ -26,6 +26,7 @@ const getPathTo = (ns: NS, hostname: string) => {
       else if (neighbor === 'home' || backdoorInstalled) return path(neighbor);
     }
   }
+  return [];
 };
 
 export const getPath = (ns: NS) => {
