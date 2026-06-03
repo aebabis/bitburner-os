@@ -47,7 +47,7 @@ export async function main(ns: NS) {
       isWorker: boolean;
     }) => ramUnused;
     if (hostname === 'home') {
-      // On home, 32GB is unavailable to services
+      // On home, 16GB is unavailable to services
       // and batch jobs so that rmi calls can use it.
       // The last 2GB is always reserved for manual (user)
       // programs.
@@ -55,7 +55,7 @@ export async function main(ns: NS) {
       ramAvailableTo = (process) => {
         if (process.script === '/bin/access.ts') return reserve(0);
         if (process.highPriority) return reserve(2);
-        return reserve(32);
+        return reserve(16);
       };
     } else if (['foodnstuff', 'neo-net'].includes(hostname)) {
       ramAvailableTo = (process) => (process.isWorker ? 0 : ramUnused);

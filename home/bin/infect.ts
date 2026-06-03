@@ -1,8 +1,6 @@
-import { HACK, GROW, WEAKEN, SHARE } from '../etc/filenames';
-
 export const infect = (ns: NS, ...hostnames: string[]) => {
-  for (const hostname of hostnames)
-    ns.scp([HACK, GROW, WEAKEN, SHARE], hostname, 'home');
+  const workers = ns.ls('home', 'bin/workers/');
+  for (const hostname of hostnames) ns.scp(workers, hostname, 'home');
 };
 
 export const fullInfect = (ns: NS, ...hostnames: string[]) => {

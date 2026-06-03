@@ -4,17 +4,13 @@ import { rmi } from '../../lib/rmi';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  let wasInTerminal = true;
   while (true) {
     const { isPlayerUsingTerminal } = getPlayerData(ns);
-    if (isPlayerUsingTerminal) {
-      if (!wasInTerminal) ns.singularity.connect('home');
-    } else {
+    if (!isPlayerUsingTerminal) {
       const path = getPath(ns);
       if (path != null) await rmi(ns)('/bin/self/backdoor.ts', 1, ...path);
       else await rmi(ns)('/bin/self/hack.ts');
     }
-    wasInTerminal = isPlayerUsingTerminal;
     await ns.sleep(100);
   }
 }
