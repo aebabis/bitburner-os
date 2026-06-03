@@ -66,8 +66,7 @@ export const generateIPs = (() => {
     return seq.length > 0 && !badZero && +seq <= 255;
   };
 
-  /** @returns {Generator<string>} */
-  function* getIPs(input: string, sections = 4) {
+  function* getIPs(input: string, sections = 4): Generator<string> {
     if (sections === 1) {
       if (isValid(input)) yield input;
       return;
@@ -95,19 +94,19 @@ export const maximumSubarraySum = (arr: number[]) => {
   return sum;
 };
 
-export const fewestHops = (/** @type {number[]} */ track) => {
+export const fewestHops = (track: number[]) => {
   track[track.length - 1] = 0;
   for (let i = track.length - 2; i >= 0; i--)
     track[i] = 1 + Math.min(Infinity, ...track.slice(i + 1, i + 1 + track[i]));
   return ~~track[0];
 };
 
-export const mergeIntervals = (/** @type {[number, number][]} */ intervals) => {
-  const result = /** @type {[number, number][]} */ [intervals.shift()];
+export const mergeIntervals = (intervals: [number, number][]) => {
+  const result = [intervals.shift()];
   for (let [left, right] of intervals) {
     let i = 0;
     while (i < result.length) {
-      const [l2, r2] = result[i];
+      const [l2, r2] = result[i]!;
       if (!(left > r2 || right < l2)) {
         left = Math.min(left, l2);
         right = Math.max(right, r2);
@@ -301,7 +300,10 @@ export const caesarCypher = ([plaintext, shift]: [string, number]) => {
 
 export const vigenereCypher = ([plaintext, password]: [string, string]) => {
   const pw = password.split('');
-  const pwChar = () => pw.push(pw[0]) && pw.shift();
+  const pwChar = (): string => {
+    pw.push(pw[0]);
+    return pw.shift()!;
+  };
   const lookup = (c1: string, c2: string) => cypher(c2, c1.charCodeAt(0) - 65);
   return plaintext
     .split('')
