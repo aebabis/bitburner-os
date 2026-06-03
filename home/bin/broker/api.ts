@@ -1,4 +1,4 @@
-import { getStaticData } from '../../lib/data-store';
+import { getStaticData, StaticStockData } from '../../lib/data-store';
 import { table } from '../../lib/table';
 
 type StockPosition = {
@@ -24,8 +24,11 @@ type StockController = {
   sell: (shares: number) => number;
 };
 
-export const getStocks = (ns: NS): StockController[] =>
-  getStaticData(ns).stocks.map(({ sym, maxShares }: StockPosition) => ({
+export const getStocks = (ns: NS): StockController[] => {
+  const { stocks } = getStaticData(ns);
+  if (stocks == null)
+    throw new Error('Attempted to load stocks before initializing');
+  return stocks.map(({ sym, maxShares }: StaticStockData) => ({
     sym,
     maxShares,
     position: ns.stock.getPosition(sym),
@@ -37,6 +40,7 @@ export const getStocks = (ns: NS): StockController[] =>
     buy: (shares: number) => ns.stock.buyStock(sym, shares),
     sell: (shares: number) => ns.stock.sellStock(sym, shares),
   }));
+};
 
 export const optimizeShares = (
   _ns: NS,
