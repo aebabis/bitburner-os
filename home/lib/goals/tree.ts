@@ -391,7 +391,7 @@ export const buildFactionGoalTree = (
       referenceIncome,
     );
     return [
-      [moneyGoal],
+      [joinGoal, moneyGoal],
       [buyRepAction(faction, repReq - currentRep), ...augs.map(buyAugAction)],
     ];
   };

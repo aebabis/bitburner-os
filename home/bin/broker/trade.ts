@@ -1,13 +1,14 @@
 import { by } from '../../lib/util';
 import { ERROR } from '../../lib/colors';
 import { putMoneyData } from '../../lib/data-store';
-import { getConfig } from '../../lib/config';
 import { getStocks, optimizeShares, getHoldings, getTableString } from './api';
 import { getServices } from '../../lib/service-api';
 import type { Forecaster } from './forecaster.d.ts';
+import { getGoals } from '../../lib/goals/goals.ts';
 
 const getSpendableFunds = (ns: NS, stocks) => {
-  const reserveParam = getConfig(ns).get('reserved-funds');
+  const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
+  const reserveParam = requiredOnHand || 1e9;
   const money = ns.getServerMoneyAvailable('home');
   if (reserveParam > 1) {
     // reserve is flat amount;

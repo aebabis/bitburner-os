@@ -91,6 +91,7 @@ export async function main(ns: NS) {
       print('Cost:  $' + ns.format.number(cost));
       print('Avail: $' + ns.format.number(ns.getPlayer().money));
       await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
+      print('Rep:   ' + ns.singularity.getFactionRep(buyRep.faction));
     }
 
     print(`Attempting to purchase ${targetAugmentations.length} augmentations`);
