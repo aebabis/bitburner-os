@@ -14,6 +14,8 @@ export async function main(ns: NS) {
   await rmi(ns, retry)('/bin/self/aug/load-faction-reqs.ts');
 
   while (true) {
+    await rmi(ns, retry)('/bin/self/aug/load-faction-rep.ts');
+    ns.print('Loaded rep');
     await rmi(ns, retry)('/bin/self/aug/load-owned-augs.ts');
     ns.print('Loaded augs');
     await rmi(ns, retry)('/bin/self/aug/load-faction-favor-gain.ts');

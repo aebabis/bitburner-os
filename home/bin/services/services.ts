@@ -84,7 +84,6 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
       AnyHostService(ns, canAutopilot)('/bin/self/work.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/control.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/tor.ts'),
-      AnyHostService(ns, canAutopilot)('/bin/self/liaison.ts'),
     );
   } else {
     tasks.push(
