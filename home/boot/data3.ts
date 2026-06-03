@@ -17,6 +17,8 @@ export async function main(ns: NS) {
 
   const getRam = (script: string) => scriptRam[script.replace(/^\.*[/]/, '')];
   const getRamDepth = (script: string): number => {
+    if (callGraph[script] == null)
+      throw new Error(script + ' not found in call graph');
     return getRam(script) + Math.max(0, ...callGraph[script].map(getRamDepth));
   };
 

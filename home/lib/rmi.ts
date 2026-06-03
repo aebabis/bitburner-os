@@ -3,7 +3,7 @@ import { delegateAny } from './scheduler-delegate';
 
 export const rmi =
   (ns: NS, retry = false) =>
-  async (/** @type {[string, number?, ...ScriptArg[]]} */ ...args) => {
+  async (...args: [string, number?, ...ScriptArg[]]) => {
     while (true) {
       try {
         const highPriority = true;
