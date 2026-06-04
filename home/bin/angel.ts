@@ -206,8 +206,6 @@ export async function main(ns: NS) {
 
   const { hostname: target, money, time, incomeRate } = selectTarget(ns, DELAY);
 
-  ns.tprint(target);
-
   const batch = needsSetup(ns, target)
     ? getWgwBatch(ns, getHackableServer(ns, target), DELAY)
     : getHgwBatch(ns, getHackableServer(ns, target), 1);
@@ -223,11 +221,11 @@ export async function main(ns: NS) {
     script: string,
     hostname: string,
     threads: number,
-    baseStartTime: number,
+    additionalMsec: number,
   ) => {
     const jobId = `${workerId++}`;
     if (
-      !ns.exec(script, hostname, threads, target, baseStartTime, jobId, DEBUG)
+      !ns.exec(script, hostname, threads, target, additionalMsec, jobId, DEBUG)
     ) {
       throw new Error(
         `Failed to start ${script} ${hostname} ${threads} ${target}`,
@@ -243,8 +241,6 @@ export async function main(ns: NS) {
       endTime,
     );
   };
-
-  let offsetMS = 0;
 
   // TODO: Write RAM yielder
   // getNext(maxRam) => [hostname, ram]?
@@ -272,12 +268,9 @@ export async function main(ns: NS) {
   };
 
   for (const [hackThreads, growThreads, weakThreads] of batch) {
-    ns.tprint(hackThreads + ', ' + growThreads + ', ' + weakThreads);
-    if (offsetMS >= DELAY - 50) break;
-    const offset = offsetMS++ + 0.0001;
-    const hack = assign(HACK, hackThreads, endTime - hackTime - offset);
-    const grow = assign(GROW, growThreads, endTime - growTime - offset);
-    const weak = assign(WEAK, weakThreads, endTime - weakTime - offset);
+    const hack = assign(HACK, hackThreads, weakTime - hackTime);
+    const grow = assign(GROW, growThreads, weakTime - growTime);
+    const weak = assign(WEAK, weakThreads, weakTime - weakTime);
     if (hack && grow && weak) {
       hack();
       grow();
