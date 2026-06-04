@@ -314,14 +314,17 @@ const getSchedulerTable = (ns: NS) => {
 
 const getHackingTable = (ns: NS) => {
   const { theft } = getMoneyData(ns);
-  if (theft == null) return null;
-  const rows = [
-    ['HACKING'],
-    [theft.target],
-    ['$' + ns.format.number(theft.money, 1)],
-    [formatTime(Math.max(0, (theft.endTime - Date.now()) / 1000))],
-    ['$' + ns.format.number(theft.incomeRate, 1) + '/s'],
-  ];
+  const rows =
+    theft == null
+      ? [['HACKING'], [MEDIUM('(loading)')]]
+      : [
+          ['HACKING'],
+          [theft.target],
+          ['$' + ns.format.number(theft.money, 1)],
+          [formatTime(Math.max(0, (theft.endTime - Date.now()) / 1000))],
+          ['$' + ns.format.number(theft.incomeRate, 1) + '/s'],
+        ];
+  console.log(rows);
   return table(ns, null, rows, { colors: true });
 };
 
