@@ -148,6 +148,7 @@ const getPossibleTargets = (ns: NS) =>
       !hostname.startsWith(THREADPOOL) &&
       ns.getHackingLevel() >=
         getHackableServer(ns, hostname).requiredHackingSkill &&
+      getHackableServer(ns, hostname).moneyMax > 0 &&
       ns.hasRootAccess(hostname),
   );
 

@@ -17,27 +17,24 @@ import { Goal } from '../lib/goals/nodes';
 
 const H = BRIGHT.BOLD;
 
-const formatTime = (seconds: number | null) => {
+const formatTime = (seconds: number | null, emptyZero = false) => {
   if (seconds == null) {
     return '?';
   }
-  if (seconds === 0) {
+  if (emptyZero && seconds === 0) {
     return '';
   }
+  const pad = (n: number) => n.toString().padStart(2, '0');
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
-  const coalesce = (...nums: number[]) => {
-    if (nums.length === 0) {
-      return '';
-    }
-    const [first, ...rest] = nums;
-    if (first === 0) {
-      return coalesce(...rest);
-    }
-    return nums.map((n) => n.toString().padStart(2, '0')).join(':');
-  };
-  return coalesce(h, m, s);
+  if (h === 0 && m === 0) {
+    return ':' + pad(s);
+  } else if (h === 0) {
+    return `${pad(m)}:${pad(s)}`;
+  } else {
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
 };
 
 const getRunStats = (ns: NS) => {
@@ -179,7 +176,7 @@ const goalsTable = (ns: NS) => {
     for (const dep of goal.deps) walk(dep, depth + 1);
     rows.push([
       '  '.repeat(depth) + goal.toString(),
-      MEDIUM(formatTime(goal.timeToComplete())),
+      MEDIUM(formatTime(goal.timeToComplete(), true)),
     ]);
   };
   walk(root, 0);
@@ -206,14 +203,14 @@ const moneyTable = (ns: NS) => {
   }
   const {
     theftIncome = 0,
-    thiefReferenceWindow = 0,
+    // thiefReferenceWindow = 0,
     hacknetIncome = 0,
     gangIncome = 0,
     referenceIncome = 0,
   } = moneyData;
   const rows = [
     [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
-    ['', formatTime(thiefReferenceWindow)],
+    // ['', formatTime(thiefReferenceWindow)],
     [' Hacknet', `$${ns.format.number(hacknetIncome, 1)}/s`],
     [' Gang', `$${ns.format.number(gangIncome, 1)}/s`],
   ];
