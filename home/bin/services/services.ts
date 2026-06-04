@@ -13,7 +13,7 @@ const isRemoteApiConnected = () => {
 };
 
 const mostRootRam = (ns: NS) => {
-  const { rootServers = [] } = getRamData(ns);
+  const { rootServers = [] } = getRamData(ns) || {};
   return Math.max(
     0,
     ...rootServers.map((server: { maxRam: number }) => server.maxRam),
@@ -55,10 +55,13 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
         ns.corporation.canCreateCorporation(selfFund) === 'Success')
     );
   };
+  const useThief = () => mostRootRam(ns) < 256;
+  const useAngel = () => !useThief();
 
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
-    AnyHostService(ns)('/bin/thief.ts'),
+    AnyHostService(ns, useThief)('/bin/thief.ts'),
+    AnyHostService(ns, useAngel)('/bin/angel.ts'),
     AnyHostService(ns, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
     AnyHostService(ns)('/bin/accountant.ts'),

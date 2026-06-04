@@ -9,6 +9,7 @@ type ServiceData = {
   id: number | string;
   name: string;
   status: string;
+  allowed: boolean;
   pid: number;
   desc: string;
 };

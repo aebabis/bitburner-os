@@ -1,4 +1,5 @@
 import { getMoneyData, putMoneyData } from '../lib/data-store';
+import { getServices } from '../lib/service-api';
 import { Timeline } from '../lib/timeline';
 
 class Timer {
@@ -74,7 +75,10 @@ export async function main(ns: NS) {
     const moneyAtStartOfWindow = theftTimeline.findValue(
       timestamp - incomeWindow * 1000,
     );
-    const theftIncome = (moneyMade - moneyAtStartOfWindow) / incomeWindow;
+    const angel = getServices(ns).find((service) => service.name === 'angel');
+    const theftIncome = angel?.allowed
+      ? (getMoneyData(ns).theftIncome ?? 0)
+      : (moneyMade - moneyAtStartOfWindow) / incomeWindow;
     const referenceIncome = theftIncome + hacknetIncome + gangIncome;
 
     putMoneyData(ns, {

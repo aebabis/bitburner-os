@@ -16,7 +16,7 @@ const getExistingPid = (ns: NS, desc: string) => {
 let count = 1;
 
 export const Service =
-  (ns: NS, condition = () => true, interval = 5000) =>
+  (ns: NS, condition = (_ns: NS) => true, interval = 5000) =>
   (
     script: string,
     target: string | null = null,
@@ -91,6 +91,7 @@ export const Service =
       script,
       status: statusCode(),
       isRunning: isRunning(),
+      allowed: enabled && condition(ns),
       pid,
       desc,
       ram,
