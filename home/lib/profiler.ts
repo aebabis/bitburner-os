@@ -108,6 +108,7 @@ declare global {
 export {};
 
 export const initProfiler = () => {
+  if (_profilerState != null) return;
   const p: ProfilerState = {
     jobs: new Map(),
     frameIds: new Set(),

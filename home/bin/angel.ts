@@ -5,6 +5,12 @@ const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
 const WEAK = 'bin/workers/weakshot.ts';
 
+const SCRIPT_TYPE: Record<string, string> = {
+  [HACK]: 'H',
+  [GROW]: 'G',
+  [WEAK]: 'W1',
+};
+
 type HackableServer = Server & {
   moneyAvailable: number;
   moneyMax: number;
@@ -77,8 +83,10 @@ export async function main(ns: NS) {
   initProfiler();
   ns.disableLog('ALL');
 
-  const DEBUG = false;
+  const DEBUG = true;
   const DELAY = 1000;
+
+  const frame = `${Date.now()}`;
 
   let [target = 'phantasy'] = ns.args as string[];
 
@@ -101,21 +109,23 @@ export async function main(ns: NS) {
     threads: number,
     baseStartTime: number,
   ) => {
+    const jobId = `${workerId++}`;
     if (
-      !ns.exec(
-        script,
-        hostname,
-        threads,
-        target,
-        baseStartTime,
-        workerId++,
-        DEBUG,
-      )
+      !ns.exec(script, hostname, threads, target, baseStartTime, jobId, DEBUG)
     ) {
       throw new Error(
         `Failed to start ${script} ${hostname} ${threads} ${target}`,
       );
     }
+    globalThis.__profiler.recordScheduled(
+      frame,
+      jobId,
+      hostname,
+      SCRIPT_TYPE[script] ?? script,
+      threads,
+      Date.now(),
+      endTime,
+    );
   };
 
   let offsetMS = 0;
