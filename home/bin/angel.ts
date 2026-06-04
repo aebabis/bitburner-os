@@ -2,6 +2,8 @@ import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 import { initProfiler } from '../lib/profiler';
+import { table } from '../lib/table';
+import { by } from '../lib/util';
 
 const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
@@ -69,6 +71,13 @@ function* getHgwBatch(ns: NS, server: HackableServer, hackThreads: number) {
   while (true) yield [hackThreads, growThreads, weakThreads];
 }
 
+const seekGrowThreads = (ns: NS, weakThreads = 1) => {
+  const security = ns.formulas.hacking.weakenEffect(weakThreads);
+  let threads = 1;
+  while (ns.growthAnalyzeSecurity(threads) < security) threads++;
+  return threads - 1;
+};
+
 function* getWgwBatch(ns: NS, server: HackableServer, windowMs: number) {
   const initWeakThreads = getWeakThreads(
     ns,
@@ -80,7 +89,10 @@ function* getWgwBatch(ns: NS, server: HackableServer, windowMs: number) {
     ns.getPlayer(),
     server.moneyMax,
   );
-  const growThreads = Math.ceil(totalGrowThreads / windowMs);
+  const growThreads = Math.max(
+    seekGrowThreads(ns),
+    Math.ceil(totalGrowThreads / windowMs),
+  );
   const growSecurity = ns.growthAnalyzeSecurity(growThreads);
   const weakThreads = getWeakThreads(ns, growSecurity);
   const numAddlFrames = Math.ceil(totalGrowThreads / growThreads);
@@ -135,7 +147,7 @@ const evaluateTarget = (
     hostname,
     money,
     time,
-    incomeRate: time === 0 ? 0 : money / time,
+    incomeRate: time === 0 ? 0 : money / (time / 1000),
     utility,
   };
 };
@@ -152,11 +164,12 @@ const getPossibleTargets = (ns: NS) =>
       ns.hasRootAccess(hostname),
   );
 
+const getHorizon = (ns: NS) =>
+  Math.min(HORIZON_MS, (getGoals(ns).timeToComplete() || Infinity) * 1000);
+
 const selectTarget = (ns: NS, windowMs: number) => {
-  const goalTree = getGoals(ns);
-  const horizon = Math.min(HORIZON_MS, goalTree.timeToComplete() || Infinity);
   const evaluations = getPossibleTargets(ns).map((hostname) =>
-    evaluateTarget(ns, horizon, windowMs, hostname),
+    evaluateTarget(ns, getHorizon(ns), windowMs, hostname),
   );
   if (evaluations.length === 0) throw new Error('No hackable targets?!');
   return evaluations.reduce((a, b) => (a.utility > b.utility ? a : b));
@@ -171,9 +184,29 @@ export async function main(ns: NS) {
   const DEBUG = false;
   const DELAY = 1000;
 
+  if (ns.args[0]) {
+    // Print table
+    const horizon = getHorizon(ns);
+    const columns = ['HOSTNAME', '$/RUN', 's/RUN', '$/s', 'UTILITY'];
+    const rows = getPossibleTargets(ns)
+      .map((hostname) => evaluateTarget(ns, horizon, DELAY, hostname))
+      .sort(by((evaluation) => -evaluation.utility))
+      .map((evaluation) => [
+        evaluation.hostname,
+        `$${ns.format.number(evaluation.money, 1)}`,
+        Math.ceil(evaluation.time / 1000),
+        `$${ns.format.number(evaluation.incomeRate, 1)}`,
+        Math.round(evaluation.utility),
+      ]);
+    ns.tprint('\n\n' + table(ns, columns, rows, { colors: true }) + '\n\n');
+    return;
+  }
+
   const frame = `${Date.now()}`;
 
   const { hostname: target, money, time, incomeRate } = selectTarget(ns, DELAY);
+
+  ns.tprint(target);
 
   const batch = needsSetup(ns, target)
     ? getWgwBatch(ns, getHackableServer(ns, target), DELAY)
@@ -213,25 +246,45 @@ export async function main(ns: NS) {
 
   let offsetMS = 0;
 
+  // TODO: Write RAM yielder
+  // getNext(maxRam) => [hostname, ram]?
+
   const hosts = getRootServers(ns);
   const serverRam = getRootServerRam(ns);
   let totalRam = 0;
 
+  // TODO: Make this return an executor
+  const assign = (script: string, threads: number, offset: number) => {
+    if (threads === 0) return () => {};
+    const hostname = hosts.find((hostname) => serverRam[hostname] > 1.75);
+    if (hostname == null) return null;
+    const threadsToUse = Math.min(
+      threads,
+      Math.floor(serverRam[hostname] / 1.75),
+    );
+    serverRam[hostname] -= threadsToUse * 1.75;
+    const assignRemainder = assign(script, threads - threadsToUse, offset);
+    if (assignRemainder == null) return null;
+    return () => {
+      exec(script, hostname, threadsToUse, offset);
+      assignRemainder();
+    };
+  };
+
   for (const [hackThreads, growThreads, weakThreads] of batch) {
-    const frameRam =
-      hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
-    const hostname = hosts.find((hostname) => serverRam[hostname] > frameRam);
-    if (hostname == null) break;
+    ns.tprint(hackThreads + ', ' + growThreads + ', ' + weakThreads);
     if (offsetMS >= DELAY - 50) break;
     const offset = offsetMS++ + 0.0001;
-    hackThreads &&
-      exec(HACK, hostname, hackThreads, endTime - hackTime - offset);
-    growThreads &&
-      exec(GROW, hostname, growThreads, endTime - growTime - offset);
-    weakThreads &&
-      exec(WEAK, hostname, weakThreads, endTime - weakTime - offset);
-    serverRam[hostname] -= frameRam;
-    totalRam += frameRam;
+    const hack = assign(HACK, hackThreads, endTime - hackTime - offset);
+    const grow = assign(GROW, growThreads, endTime - growTime - offset);
+    const weak = assign(WEAK, weakThreads, endTime - weakTime - offset);
+    if (hack && grow && weak) {
+      hack();
+      grow();
+      weak();
+    } else {
+      break;
+    }
   }
 
   await ns.sleep(endTime - Date.now());
