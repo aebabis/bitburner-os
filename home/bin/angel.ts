@@ -79,6 +79,7 @@ const seekGrowThreads = (ns: NS, weakThreads = 1) => {
 };
 
 function* getWgwBatch(ns: NS, server: HackableServer) {
+  if (!needsSetup(ns, server.hostname)) return;
   const initWeakThreads = getWeakThreads(
     ns,
     server.hackDifficulty - server.minDifficulty,
@@ -223,7 +224,7 @@ export async function main(ns: NS) {
   initProfiler();
   ns.disableLog('ALL');
 
-  const DEBUG = false;
+  const DEBUG = true;
 
   if (ns.args[0]) {
     printTable(ns);
@@ -301,6 +302,7 @@ export async function main(ns: NS) {
       hack();
       grow();
       weak();
+      totalRam += hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
     } else {
       break;
     }
