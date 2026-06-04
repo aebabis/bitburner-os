@@ -312,6 +312,19 @@ const getSchedulerTable = (ns: NS) => {
   return table(ns, null, rows, { colors: true });
 };
 
+const getHackingTable = (ns: NS) => {
+  const { theft } = getMoneyData(ns);
+  if (theft == null) return null;
+  const rows = [
+    ['HACKING'],
+    [theft.target],
+    ['$' + ns.format.number(theft.money, 1)],
+    [formatTime(Math.max(0, (theft.endTime - Date.now()) / 1000))],
+    ['$' + ns.format.number(theft.incomeRate, 1) + '/s'],
+  ];
+  return table(ns, null, rows, { colors: true });
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -324,6 +337,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getPlayerLevels(ns)),
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => getExecutionTable(ns)),
+    new GrowingWindow(() => getHackingTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1200;

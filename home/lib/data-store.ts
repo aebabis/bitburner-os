@@ -103,8 +103,11 @@ export const getGangData = (ns: NS): GangData => readData(ns, PORT_GANG_DATA);
 export const putGangData = (ns: NS, data: Partial<GangData>) =>
   putData(ns, PORT_GANG_DATA, data);
 
-export const getRamData = (ns: NS) => readData(ns, PORT_SCH_RAM_DATA);
-export const putRamData = (ns: NS, data) =>
+type RamData = {
+  rootServers?: Server[];
+};
+export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA);
+export const putRamData = (ns: NS, data: RamData) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 
 export const getPlayerData = (ns: NS) => readData(ns, PORT_PLAYER_DATA) || {};

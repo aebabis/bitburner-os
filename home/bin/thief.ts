@@ -1,4 +1,4 @@
-import { THREADPOOL } from '../etc/config';
+import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { logger } from '../lib/logger';
 import { by } from '../lib/util';
 import { table } from '../lib/table';
@@ -9,7 +9,7 @@ import {
   putMoneyData,
 } from '../lib/data-store';
 
-import Thief, { HORIZON_MS } from '../lib/thief';
+import Thief from '../lib/thief';
 import { initProfiler } from '../lib/profiler';
 
 type ThiefTableRow = {

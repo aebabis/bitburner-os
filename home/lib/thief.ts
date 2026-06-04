@@ -1,3 +1,4 @@
+import { HORIZON_MS } from '../etc/config';
 import { WEAKEN, GROW, HACK } from '../etc/filenames';
 import { createBatch } from './scheduler-delegate';
 
@@ -5,7 +6,6 @@ const _win = globalThis;
 
 const SUBTASK_SPACING = 50;
 const FRAME_SPACING = SUBTASK_SPACING * 4;
-export const HORIZON_MS = 30 * 60 * 1000;
 
 const count = 64;
 const e = Math.E;
