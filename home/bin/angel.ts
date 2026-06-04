@@ -78,7 +78,7 @@ const seekGrowThreads = (ns: NS, weakThreads = 1) => {
   return threads - 1;
 };
 
-function* getWgwBatch(ns: NS, server: HackableServer, windowMs: number) {
+function* getWgwBatch(ns: NS, server: HackableServer) {
   const initWeakThreads = getWeakThreads(
     ns,
     server.hackDifficulty - server.minDifficulty,
@@ -89,15 +89,21 @@ function* getWgwBatch(ns: NS, server: HackableServer, windowMs: number) {
     ns.getPlayer(),
     server.moneyMax,
   );
-  const growThreads = Math.max(
-    seekGrowThreads(ns),
-    Math.ceil(totalGrowThreads / windowMs),
-  );
+  const growThreads = seekGrowThreads(ns);
   const growSecurity = ns.growthAnalyzeSecurity(growThreads);
   const weakThreads = getWeakThreads(ns, growSecurity);
   const numAddlFrames = Math.ceil(totalGrowThreads / growThreads);
   yield [0, 0, initWeakThreads];
   for (let i = 0; i < numAddlFrames; i++) yield [0, growThreads, weakThreads];
+  yield* getHgwBatch(
+    ns,
+    {
+      ...server,
+      moneyAvailable: server.moneyMax,
+      hackDifficulty: server.minDifficulty,
+    },
+    1,
+  );
 }
 
 const needsSetup = (ns: NS, hostname: string) => {
@@ -108,10 +114,32 @@ const needsSetup = (ns: NS, hostname: string) => {
   );
 };
 
+const getSetupTime = (ns: NS, hostname: string) => {
+  const server = getHackableServer(ns, hostname);
+  const threadsAvail = Object.values(getRootServerRam(ns))
+    .map((ram) => Math.floor(ram / 1.75))
+    .reduce((a, b) => a + b, 0);
+  let rtt = 0;
+  let threadsRem = 0;
+  for (const [hackThreads, growThreads, weakThreads] of getWgwBatch(
+    ns,
+    server,
+  )) {
+    if (hackThreads) break;
+    const frameThreads = growThreads + weakThreads;
+    if (frameThreads <= threadsRem) {
+      threadsRem -= frameThreads;
+    } else {
+      threadsRem = threadsAvail - frameThreads;
+      rtt++;
+    }
+  }
+  return rtt * ns.formulas.hacking.weakenTime(server, ns.getPlayer());
+};
+
 const evaluateTarget = (
   ns: NS,
   horizon = HORIZON_MS,
-  windowMs: number,
   hostname: string,
   hackThreads = 1,
 ) => {
@@ -138,10 +166,8 @@ const evaluateTarget = (
     ns.getPlayer(),
   );
   const money = server.moneyMax * hackPercent * hackThreads * numFrames;
-  const time =
-    ns.formulas.hacking.weakenTime(server, ns.getPlayer()) + windowMs;
-  const earningTime =
-    horizon - (needsSetup(ns, hostname) ? ns.getWeakenTime(hostname) : 0);
+  const time = ns.formulas.hacking.weakenTime(server, ns.getPlayer());
+  const earningTime = horizon - getSetupTime(ns, hostname);
   const utility = Math.floor(earningTime / time) * money;
   return {
     hostname,
@@ -167,12 +193,28 @@ const getPossibleTargets = (ns: NS) =>
 const getHorizon = (ns: NS) =>
   Math.min(HORIZON_MS, (getGoals(ns).timeToComplete() || Infinity) * 1000);
 
-const selectTarget = (ns: NS, windowMs: number) => {
+const selectTarget = (ns: NS) => {
   const evaluations = getPossibleTargets(ns).map((hostname) =>
-    evaluateTarget(ns, getHorizon(ns), windowMs, hostname),
+    evaluateTarget(ns, getHorizon(ns), hostname),
   );
   if (evaluations.length === 0) throw new Error('No hackable targets?!');
   return evaluations.reduce((a, b) => (a.utility > b.utility ? a : b));
+};
+
+const printTable = (ns: NS) => {
+  const horizon = getHorizon(ns);
+  const columns = ['HOSTNAME', '$/RUN', 's/RUN', '$/s', 'UTILITY'];
+  const rows = getPossibleTargets(ns)
+    .map((hostname) => evaluateTarget(ns, horizon, hostname))
+    .sort(by((evaluation) => -evaluation.utility))
+    .map((evaluation) => [
+      evaluation.hostname,
+      `$${ns.format.number(evaluation.money, 1)}`,
+      Math.ceil(evaluation.time / 1000),
+      `$${ns.format.number(evaluation.incomeRate, 1)}`,
+      Math.round(evaluation.utility),
+    ]);
+  ns.tprint('\n\n' + table(ns, columns, rows, { colors: true }) + '\n\n');
 };
 
 let workerId = 0;
@@ -182,38 +224,26 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
 
   const DEBUG = false;
-  const DELAY = 1000;
 
   if (ns.args[0]) {
-    // Print table
-    const horizon = getHorizon(ns);
-    const columns = ['HOSTNAME', '$/RUN', 's/RUN', '$/s', 'UTILITY'];
-    const rows = getPossibleTargets(ns)
-      .map((hostname) => evaluateTarget(ns, horizon, DELAY, hostname))
-      .sort(by((evaluation) => -evaluation.utility))
-      .map((evaluation) => [
-        evaluation.hostname,
-        `$${ns.format.number(evaluation.money, 1)}`,
-        Math.ceil(evaluation.time / 1000),
-        `$${ns.format.number(evaluation.incomeRate, 1)}`,
-        Math.round(evaluation.utility),
-      ]);
-    ns.tprint('\n\n' + table(ns, columns, rows, { colors: true }) + '\n\n');
+    printTable(ns);
     return;
+  } else if (DEBUG) {
+    printTable(ns);
   }
 
   const frame = `${Date.now()}`;
 
-  const { hostname: target, money, time, incomeRate } = selectTarget(ns, DELAY);
+  const { hostname: target, money, time, incomeRate } = selectTarget(ns);
 
   const batch = needsSetup(ns, target)
-    ? getWgwBatch(ns, getHackableServer(ns, target), DELAY)
+    ? getWgwBatch(ns, getHackableServer(ns, target))
     : getHgwBatch(ns, getHackableServer(ns, target), 1);
 
   const hackTime = ns.getHackTime(target);
   const growTime = ns.getGrowTime(target);
   const weakTime = ns.getWeakenTime(target);
-  const endTime = Date.now() + weakTime + DELAY;
+  const endTime = Date.now() + weakTime;
 
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
@@ -242,14 +272,10 @@ export async function main(ns: NS) {
     );
   };
 
-  // TODO: Write RAM yielder
-  // getNext(maxRam) => [hostname, ram]?
-
   const hosts = getRootServers(ns);
   const serverRam = getRootServerRam(ns);
   let totalRam = 0;
 
-  // TODO: Make this return an executor
   const assign = (script: string, threads: number, offset: number) => {
     if (threads === 0) return () => {};
     const hostname = hosts.find((hostname) => serverRam[hostname] > 1.75);
@@ -280,9 +306,9 @@ export async function main(ns: NS) {
     }
   }
 
-  await ns.sleep(endTime - Date.now());
+  await ns.sleep(weakTime + 50);
   const { onlineMoneyMade } = ns.getRunningScript()!;
-  const theftIncome = onlineMoneyMade / ((weakTime + DELAY) / 1000);
+  const theftIncome = onlineMoneyMade / (weakTime / 1000);
   ns.tprint('$' + ns.format.number(onlineMoneyMade, 1));
   putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalRam });
 }
