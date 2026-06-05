@@ -181,16 +181,18 @@ const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string) => {
 };
 
 const getPossibleTargets = (ns: NS) =>
-  getHostnames(ns).filter(
-    (hostname) =>
-      hostname !== 'home' &&
-      !hostname.startsWith('hacknet-node-') &&
-      !hostname.startsWith(THREADPOOL) &&
-      ns.getHackingLevel() >=
-        getHackableServer(ns, hostname).requiredHackingSkill &&
-      getHackableServer(ns, hostname).moneyMax > 0 &&
-      ns.hasRootAccess(hostname),
-  );
+  getHostnames(ns).filter((hostname) => {
+    if (
+      hostname === 'home' ||
+      hostname.startsWith('hacknet-node-') ||
+      hostname.startsWith(THREADPOOL) ||
+      !ns.hasRootAccess(hostname)
+    ) {
+      return false;
+    }
+    const { requiredHackingSkill, moneyMax } = getHackableServer(ns, hostname);
+    return ns.getHackingLevel() > requiredHackingSkill && moneyMax > 0;
+  });
 
 const getHorizon = (ns: NS) =>
   Math.min(HORIZON_MS, (getGoals(ns).timeToComplete() || Infinity) * 1000);
@@ -241,12 +243,17 @@ export async function main(ns: NS) {
     additionalMsec: number,
   ) => {
     const jobId = `${workerId++}`;
-    if (
-      !ns.exec(script, hostname, threads, target, additionalMsec, jobId, DEBUG)
-    ) {
-      throw new Error(
-        `Failed to start ${script} ${hostname} ${threads} ${target}`,
-      );
+    const pid = ns.exec(
+      script,
+      hostname,
+      threads,
+      target,
+      additionalMsec,
+      jobId,
+      DEBUG,
+    );
+    if (!pid) {
+      throw new Error(`exec fail: ${script} ${hostname} ${threads} ${target}`);
     }
     globalThis.__profiler.recordScheduled(
       frame,
