@@ -9,7 +9,7 @@ const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
 const WEAK = 'bin/workers/weakshot.ts';
 
-const PROC_LIMIT = 60000;
+const PROC_LIMIT = 15000;
 const FRAME_LIMIT = Math.floor(PROC_LIMIT / 3);
 
 const SCRIPT_TYPE: Record<string, string> = {
@@ -56,7 +56,7 @@ const getWeakThreads = (ns: NS, targetDecrease: number) => {
   return threads;
 };
 
-function* getHgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
+const getHgwFrame = (ns: NS, server: HackableServer, minFrameRam: number) => {
   let hackThreads = 1;
   while (true) {
     const hackPortion = ns.hackAnalyze(server.hostname) * hackThreads;
@@ -75,10 +75,14 @@ function* getHgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
     const weakThreads = getWeakThreads(ns, hackSecurity + growSecurity);
     const frameRam =
       hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
-    if (frameRam > minFrameRam)
-      while (true) yield [hackThreads, growThreads, weakThreads];
+    if (frameRam > minFrameRam) return [hackThreads, growThreads, weakThreads];
     else hackThreads++;
   }
+};
+
+function* getHgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
+  const frame = getHgwFrame(ns, server, minFrameRam);
+  while (true) yield frame;
 }
 
 const seekGrowThreads = (ns: NS, weakThreads = 1) => {
@@ -144,12 +148,7 @@ const getSetupTime = (ns: NS, hostname: string) => {
   return rtt * ns.formulas.hacking.weakenTime(server, ns.getPlayer());
 };
 
-const evaluateTarget = (
-  ns: NS,
-  horizon = HORIZON_MS,
-  hostname: string,
-  hackThreads = 1,
-) => {
+const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string) => {
   const server = getHackableServer(ns, hostname);
   if (server.moneyMax === 0) {
     return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
@@ -159,11 +158,7 @@ const evaluateTarget = (
     moneyAvailable: server.moneyMax,
     hackDifficulty: server.minDifficulty,
   };
-  const [, growThreads, weakThreads] = getHgwBatch(
-    ns,
-    whenReady,
-    hackThreads,
-  ).next().value!;
+  const [hackThreads, growThreads, weakThreads] = getHgwFrame(ns, whenReady, 0);
   const frameRam = hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
   const numFrames = Object.values(getRootServerRam(ns))
     .map((ram) => Math.floor(ram / frameRam))
