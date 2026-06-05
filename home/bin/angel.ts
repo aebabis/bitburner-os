@@ -9,7 +9,7 @@ const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
 const WEAK = 'bin/workers/weakshot.ts';
 
-const PROC_LIMIT = 100000;
+const PROC_LIMIT = 60000;
 const FRAME_LIMIT = Math.floor(PROC_LIMIT / 3);
 
 const SCRIPT_TYPE: Record<string, string> = {
@@ -89,7 +89,7 @@ const seekGrowThreads = (ns: NS, weakThreads = 1) => {
 };
 
 function* getWgwBatch(ns: NS, server: HackableServer) {
-  if (!needsSetup(ns, server.hostname)) return;
+  if (!needsSetup(server)) return;
   const initWeakThreads = getWeakThreads(
     ns,
     server.hackDifficulty - server.minDifficulty,
@@ -117,13 +117,9 @@ function* getWgwBatch(ns: NS, server: HackableServer) {
   );
 }
 
-const needsSetup = (ns: NS, hostname: string) => {
-  const server = getHackableServer(ns, hostname);
-  return (
-    (server.hackDifficulty - server.minDifficulty) / server.minDifficulty >
-      0.1 || server.moneyAvailable / server.moneyMax < 0.95
-  );
-};
+const needsSetup = (server: HackableServer) =>
+  (server.hackDifficulty - server.minDifficulty) / server.minDifficulty > 0.1 ||
+  server.moneyAvailable / server.moneyMax < 0.95;
 
 const getSetupTime = (ns: NS, hostname: string) => {
   const server = getHackableServer(ns, hostname);
@@ -278,9 +274,10 @@ export async function main(ns: NS) {
 
   const { hostname: target, money, time, incomeRate } = selectTarget(ns);
 
-  const batch = needsSetup(ns, target)
-    ? getWgwBatch(ns, getHackableServer(ns, target))
-    : getHgwBatch(ns, getHackableServer(ns, target), minFrameRam);
+  const server = getHackableServer(ns, target);
+  const batch = needsSetup(server)
+    ? getWgwBatch(ns, server)
+    : getHgwBatch(ns, server, minFrameRam);
 
   const hackTime = ns.getHackTime(target);
   const growTime = ns.getGrowTime(target);
@@ -288,8 +285,6 @@ export async function main(ns: NS) {
   const endTime = Date.now() + weakTime;
 
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
-
-  let totalRam = 0;
 
   const assign = (script: string, threads: number, offset: number) => {
     if (threads === 0) return () => {};
@@ -316,7 +311,6 @@ export async function main(ns: NS) {
       hack();
       grow();
       weak();
-      totalRam += hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
     } else {
       break;
     }
@@ -327,5 +321,5 @@ export async function main(ns: NS) {
 
   const { onlineMoneyMade } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / (weakTime / 1000);
-  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalRam });
+  putMoneyData(ns, { theftIncome });
 }
