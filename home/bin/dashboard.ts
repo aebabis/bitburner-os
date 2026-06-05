@@ -4,6 +4,7 @@ import {
   getMoneyData,
   getPlayerData,
   getSchedulerReportData,
+  getHostnames,
 } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 import { GrowingWindow, renderWindows } from '../lib/layout';
@@ -305,6 +306,10 @@ const getSchedulerTable = (ns: NS) => {
     ['Output     ' + (outputFull ? ERROR('full') : 'open')],
     ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
     ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
+    [
+      'Processes  ' +
+        getHostnames(ns).flatMap((hostname) => ns.ps(hostname)).length,
+    ],
   ];
   return table(ns, null, rows, { colors: true });
 };
@@ -321,7 +326,6 @@ const getHackingTable = (ns: NS) => {
           [formatTime(Math.max(0, (theft.endTime - Date.now()) / 1000))],
           ['$' + ns.format.number(theft.incomeRate, 1) + '/s'],
         ];
-  console.log(rows);
   return table(ns, null, rows, { colors: true });
 };
 

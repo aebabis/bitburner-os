@@ -1,7 +1,7 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
+import { ERROR } from '../lib/colors';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
-import { initProfiler } from '../lib/profiler';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
 
@@ -9,14 +9,8 @@ const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
 const WEAK = 'bin/workers/weakshot.ts';
 
-const PROC_LIMIT = 15000;
+const PROC_LIMIT = 60000;
 const FRAME_LIMIT = Math.floor(PROC_LIMIT / 3);
-
-const SCRIPT_TYPE: Record<string, string> = {
-  [HACK]: 'H',
-  [GROW]: 'G',
-  [WEAK]: 'W1',
-};
 
 type HackableServer = Server & {
   moneyAvailable: number;
@@ -75,7 +69,7 @@ const getHgwFrame = (ns: NS, server: HackableServer, minFrameRam: number) => {
     const weakThreads = getWeakThreads(ns, hackSecurity + growSecurity);
     const frameRam =
       hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
-    if (frameRam > minFrameRam) return [hackThreads, growThreads, weakThreads];
+    if (frameRam >= minFrameRam) return [hackThreads, growThreads, weakThreads];
     else hackThreads++;
   }
 };
@@ -85,28 +79,41 @@ function* getHgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
   while (true) yield frame;
 }
 
-const seekGrowThreads = (ns: NS, weakThreads = 1) => {
+const getGwFrame = (ns: NS, server: HackableServer, minFrameRam: number) => {
+  let growThreads = seekGrowThreads(ns, server.hostname);
+  while (true) {
+    const growSecurity = ns.growthAnalyzeSecurity(growThreads);
+    const weakThreads = getWeakThreads(ns, growSecurity);
+    const frameRam = (growThreads + weakThreads) * 1.75;
+    if (frameRam >= minFrameRam) return [growThreads, weakThreads];
+    else growThreads++;
+  }
+};
+
+const seekGrowThreads = (ns: NS, hostname: string, weakThreads = 1) => {
   const security = ns.formulas.hacking.weakenEffect(weakThreads);
   let threads = 1;
-  while (ns.growthAnalyzeSecurity(threads) < security) threads++;
+  while (ns.growthAnalyzeSecurity(threads, hostname) < security) threads++;
   return threads - 1;
 };
 
-function* getWgwBatch(ns: NS, server: HackableServer) {
+function* getWgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
   if (!needsSetup(server)) return;
   const initWeakThreads = getWeakThreads(
     ns,
     server.hackDifficulty - server.minDifficulty,
   );
-  const serverW = { ...server, hackDifficulty: server.minDifficulty };
+  const serverW = {
+    ...server,
+    hackDifficulty: server.minDifficulty,
+    moneyAvailable: Math.max(server.moneyAvailable, 1),
+  };
   const totalGrowThreads = ns.formulas.hacking.growThreads(
     serverW,
     ns.getPlayer(),
     server.moneyMax,
   );
-  const growThreads = seekGrowThreads(ns);
-  const growSecurity = ns.growthAnalyzeSecurity(growThreads);
-  const weakThreads = getWeakThreads(ns, growSecurity);
+  const [growThreads, weakThreads] = getGwFrame(ns, serverW, minFrameRam);
   const numAddlFrames = Math.ceil(totalGrowThreads / growThreads);
   yield [0, 0, initWeakThreads];
   for (let i = 0; i < numAddlFrames; i++) yield [0, growThreads, weakThreads];
@@ -117,7 +124,7 @@ function* getWgwBatch(ns: NS, server: HackableServer) {
       moneyAvailable: server.moneyMax,
       hackDifficulty: server.minDifficulty,
     },
-    1,
+    minFrameRam,
   );
 }
 
@@ -125,7 +132,7 @@ const needsSetup = (server: HackableServer) =>
   (server.hackDifficulty - server.minDifficulty) / server.minDifficulty > 0.1 ||
   server.moneyAvailable / server.moneyMax < 0.95;
 
-const getSetupTime = (ns: NS, hostname: string) => {
+const getSetupTime = (ns: NS, hostname: string, minFrameRam: number) => {
   const server = getHackableServer(ns, hostname);
   const threadsAvail = Object.values(getRootServerRam(ns))
     .map((ram) => Math.floor(ram / 1.75))
@@ -135,6 +142,7 @@ const getSetupTime = (ns: NS, hostname: string) => {
   for (const [hackThreads, growThreads, weakThreads] of getWgwBatch(
     ns,
     server,
+    minFrameRam,
   )) {
     if (hackThreads) break;
     const frameThreads = growThreads + weakThreads;
@@ -148,7 +156,12 @@ const getSetupTime = (ns: NS, hostname: string) => {
   return rtt * ns.formulas.hacking.weakenTime(server, ns.getPlayer());
 };
 
-const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string) => {
+const evaluateTarget = (
+  ns: NS,
+  horizon = HORIZON_MS,
+  hostname: string,
+  minFrameRam: number,
+) => {
   const server = getHackableServer(ns, hostname);
   if (server.moneyMax === 0) {
     return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
@@ -169,7 +182,7 @@ const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string) => {
   );
   const money = server.moneyMax * hackPercent * hackThreads * numFrames;
   const time = ns.formulas.hacking.weakenTime(server, ns.getPlayer());
-  const earningTime = horizon - getSetupTime(ns, hostname);
+  const earningTime = horizon - getSetupTime(ns, hostname, minFrameRam);
   const utility = Math.floor(earningTime / time) * money;
   return {
     hostname,
@@ -197,19 +210,23 @@ const getPossibleTargets = (ns: NS) =>
 const getHorizon = (ns: NS) =>
   Math.min(HORIZON_MS, (getGoals(ns).timeToComplete() || Infinity) * 1000);
 
-const selectTarget = (ns: NS) => {
+const selectTarget = (ns: NS, minFrameRam: number) => {
   const evaluations = getPossibleTargets(ns).map((hostname) =>
-    evaluateTarget(ns, getHorizon(ns), hostname),
+    evaluateTarget(ns, getHorizon(ns), hostname, minFrameRam),
   );
   if (evaluations.length === 0) throw new Error('No hackable targets?!');
   return evaluations.reduce((a, b) => (a.utility > b.utility ? a : b));
 };
 
 const printTable = (ns: NS) => {
+  const serverRam = getRootServerRam(ns);
+  const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b);
+  // Minimum ram size of HGW frame to prevent too many processes
+  const minFrameRam = totalRamAvailable / FRAME_LIMIT;
   const horizon = getHorizon(ns);
   const columns = ['HOSTNAME', '$/RUN', 's/RUN', '$/s', 'UTILITY'];
   const rows = getPossibleTargets(ns)
-    .map((hostname) => evaluateTarget(ns, horizon, hostname))
+    .map((hostname) => evaluateTarget(ns, horizon, hostname, minFrameRam))
     .sort(by((evaluation) => -evaluation.utility))
     .map((evaluation) => [
       evaluation.hostname,
@@ -224,10 +241,10 @@ const printTable = (ns: NS) => {
 let workerId = 0;
 
 export async function main(ns: NS) {
-  initProfiler();
   ns.disableLog('ALL');
 
-  const DEBUG = false;
+  const DEBUG = true;
+  const debug = DEBUG ? ns.tprint : () => {};
 
   if (ns.args[0]) {
     printTable(ns);
@@ -255,30 +272,28 @@ export async function main(ns: NS) {
     if (!pid) {
       throw new Error(`exec fail: ${script} ${hostname} ${threads} ${target}`);
     }
-    globalThis.__profiler.recordScheduled(
-      frame,
-      jobId,
-      hostname,
-      SCRIPT_TYPE[script] ?? script,
-      threads,
-      Date.now(),
-      endTime,
-    );
   };
 
   const hosts = getRootServers(ns);
   const serverRam = getRootServerRam(ns);
+  const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b);
   // Minimum ram size of HGW frame to prevent too many processes
-  const minFrameRam =
-    Object.values(serverRam).reduce((a, b) => a + b) / FRAME_LIMIT;
+  const minFrameRam = totalRamAvailable / FRAME_LIMIT;
+  debug('Total: ' + ns.format.ram(totalRamAvailable));
+  debug('Limit: ' + FRAME_LIMIT);
+  debug('Frame: ' + ns.format.ram(minFrameRam));
 
-  const frame = `${Date.now()}`;
-
-  const { hostname: target, money, time, incomeRate } = selectTarget(ns);
+  const {
+    hostname: target,
+    money,
+    time,
+    incomeRate,
+  } = selectTarget(ns, minFrameRam);
 
   const server = getHackableServer(ns, target);
+  debug(needsSetup(server));
   const batch = needsSetup(server)
-    ? getWgwBatch(ns, server)
+    ? getWgwBatch(ns, server, minFrameRam)
     : getHgwBatch(ns, server, minFrameRam);
 
   const hackTime = ns.getHackTime(target);
@@ -288,24 +303,38 @@ export async function main(ns: NS) {
 
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
+  function alloc(maxThreads: number, size: number) {
+    const hostname = hosts.find((hostname) => serverRam[hostname] > size);
+    if (hostname == null) return null;
+    const threadsAvailable = Math.floor(serverRam[hostname] / size);
+    const threadsAllocated = Math.min(maxThreads, threadsAvailable);
+    serverRam[hostname] -= threadsAllocated * size;
+    return [hostname, threadsAllocated] as [string, number];
+  }
+
   const assign = (script: string, threads: number, offset: number) => {
     if (threads === 0) return () => {};
-    const hostname = hosts.find((hostname) => serverRam[hostname] > 1.75);
-    if (hostname == null) return null;
-    const threadsToUse = Math.min(
-      threads,
-      Math.floor(serverRam[hostname] / 1.75),
-    );
-    serverRam[hostname] -= threadsToUse * 1.75;
-    const assignRemainder = assign(script, threads - threadsToUse, offset);
-    if (assignRemainder == null) return null;
+    const allocations: [string, number][] = [];
+    let threadsRemaining = threads;
+    while (threadsRemaining > 0) {
+      const allocation = alloc(threads, script === HACK ? 1.7 : 1.75);
+      if (allocation == null) return null;
+      allocations.push(allocation);
+      threadsRemaining -= allocation[1];
+    }
     return () => {
-      exec(script, hostname, threadsToUse, offset);
-      assignRemainder();
+      for (const [hostname, threads] of allocations)
+        exec(script, hostname, threads, offset);
     };
   };
 
+  let frameCount = 0;
   for (const [hackThreads, growThreads, weakThreads] of batch) {
+    frameCount++;
+    if (frameCount > FRAME_LIMIT) {
+      ns.tprint(ERROR + 'Exceeded frame limit of ' + FRAME_LIMIT);
+      break;
+    }
     const hack = assign(HACK, hackThreads, weakTime - hackTime);
     const grow = assign(GROW, growThreads, weakTime - growTime);
     const weak = assign(WEAK, weakThreads, weakTime - weakTime);
@@ -319,7 +348,7 @@ export async function main(ns: NS) {
   }
 
   await ns.sleep(1); // Wait for worker tick to finish before sleeping
-  await ns.sleep(weakTime + 50);
+  await ns.sleep(weakTime + 1000);
 
   const { onlineMoneyMade } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / (weakTime / 1000);
