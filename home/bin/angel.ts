@@ -40,7 +40,7 @@ const getRootServerRam = (ns: NS) =>
   getRootServers(ns).reduce<Record<string, number>>((ram, hostname) => {
     const { maxRam, ramUsed } = ns.getServer(hostname);
     ram[hostname] = maxRam - ramUsed;
-    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 64);
+    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 128);
     return ram;
   }, {});
 
@@ -79,22 +79,13 @@ function* getHgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
   while (true) yield frame;
 }
 
-const getGwFrame = (ns: NS, server: HackableServer, minFrameRam: number) => {
-  let growThreads = seekGrowThreads(ns, server.hostname);
-  while (true) {
+const getGwFrame = (ns: NS, minFrameRam: number) => {
+  for (let growThreads = 1; ; growThreads++) {
     const growSecurity = ns.growthAnalyzeSecurity(growThreads);
     const weakThreads = getWeakThreads(ns, growSecurity);
     const frameRam = (growThreads + weakThreads) * 1.75;
     if (frameRam >= minFrameRam) return [growThreads, weakThreads];
-    else growThreads++;
   }
-};
-
-const seekGrowThreads = (ns: NS, hostname: string, weakThreads = 1) => {
-  const security = ns.formulas.hacking.weakenEffect(weakThreads);
-  let threads = 1;
-  while (ns.growthAnalyzeSecurity(threads, hostname) < security) threads++;
-  return threads - 1;
 };
 
 function* getWgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
@@ -113,7 +104,7 @@ function* getWgwBatch(ns: NS, server: HackableServer, minFrameRam: number) {
     ns.getPlayer(),
     server.moneyMax,
   );
-  const [growThreads, weakThreads] = getGwFrame(ns, serverW, minFrameRam);
+  const [growThreads, weakThreads] = getGwFrame(ns, minFrameRam);
   const numAddlFrames = Math.ceil(totalGrowThreads / growThreads);
   yield [0, 0, initWeakThreads];
   for (let i = 0; i < numAddlFrames; i++) yield [0, growThreads, weakThreads];
