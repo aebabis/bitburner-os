@@ -133,7 +133,7 @@ const getPlayerLevels = (ns: NS) => {
 const threadpoolRow = (ns: NS, server: { ramUsed: number; maxRam: number }) => {
   const { ramUsed, maxRam } = server;
   const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
-  return [ram];
+  return [ramUsed === maxRam ? BRIGHT(ram) : MEDIUM(ram)];
 };
 
 const threadpools = (ns: NS) => {
@@ -164,9 +164,11 @@ const threadpoolTable = (ns: NS) => {
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
-  const rows = left.map((list, i) =>
-    [...list, ...(middle[i] || ['']), ...(right[i] || [''])].map(MEDIUM),
-  );
+  const rows = left.map((list, i) => [
+    ...list,
+    ...(middle[i] || ['']),
+    ...(right[i] || ['']),
+  ]);
   return BRIGHT.BOLD(' SERVERS ') + '\n' + table(ns, null, rows);
 };
 
