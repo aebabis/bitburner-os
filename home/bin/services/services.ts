@@ -22,6 +22,8 @@ const mostRootRam = (ns: NS) => {
 
 export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
   ns.disableLog('ALL');
+  const start = Date.now();
+  const upFor = (durationMs: number) => Date.now() - start > durationMs;
   const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);
 
@@ -56,7 +58,7 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
     );
   };
   const useThief = () => mostRootRam(ns) < 256;
-  const useAngel = () => !useThief();
+  const useAngel = () => !useThief() && upFor(10000);
 
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
