@@ -40,7 +40,7 @@ const getRootServerRam = (ns: NS) =>
   getRootServers(ns).reduce<Record<string, number>>((ram, hostname) => {
     const { maxRam, ramUsed } = ns.getServer(hostname);
     ram[hostname] = maxRam - ramUsed;
-    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 32);
+    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 64);
     return ram;
   }, {});
 
@@ -243,7 +243,7 @@ let workerId = 0;
 export async function main(ns: NS) {
   ns.disableLog('ALL');
 
-  const DEBUG = true;
+  const DEBUG = false;
   const debug = DEBUG ? ns.tprint : () => {};
 
   if (ns.args[0]) {
@@ -312,7 +312,7 @@ export async function main(ns: NS) {
     return [hostname, threadsAllocated] as [string, number];
   }
 
-  const assign = (script: string, threads: number, offset: number) => {
+  const assign = (script: string, threads: number, additionalMsec: number) => {
     if (threads === 0) return () => {};
     const allocations: [string, number][] = [];
     let threadsRemaining = threads;
@@ -324,7 +324,7 @@ export async function main(ns: NS) {
     }
     return () => {
       for (const [hostname, threads] of allocations)
-        exec(script, hostname, threads, offset);
+        exec(script, hostname, threads, additionalMsec);
     };
   };
 
