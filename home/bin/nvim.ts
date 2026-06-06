@@ -38,13 +38,17 @@ const getCommand = (ns: NS): string | Parameters<typeof ns.exec> | null => {
 };
 
 export async function main(ns: NS) {
-  while (true) {
-    const command = getCommand(ns);
-    if (command) {
-      if (typeof command === 'string') ns.exec(command, 'home');
-      else ns.exec(...command);
+  try {
+    while (true) {
+      const command = getCommand(ns);
+      if (command) {
+        if (typeof command === 'string') ns.exec(command, 'home');
+        else ns.exec(...command);
+      }
+      ns.write(OUTPUT_FILE, JSON.stringify({ status: getStatusLine(ns) }), 'w');
+      await ns.sleep(INTERVAL_MS);
     }
-    ns.write(OUTPUT_FILE, JSON.stringify({ status: getStatusLine(ns) }), 'w');
-    await ns.sleep(INTERVAL_MS);
+  } catch (error) {
+    console.error(error);
   }
 }

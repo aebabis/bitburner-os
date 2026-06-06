@@ -2,7 +2,7 @@ import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR } from '../lib/colors';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
-import { buildWorkerThreadAllocator, packThreads } from '../lib/ram';
+import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
 
@@ -333,7 +333,7 @@ export async function main(ns: NS) {
   }
 
   await ns.sleep(1); // Wait for worker tick to finish before sleeping
-  await ns.sleep(weakTime + 1000);
+  await ns.sleep(weakTime);
 
   const { onlineMoneyMade } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / (weakTime / 1000);
