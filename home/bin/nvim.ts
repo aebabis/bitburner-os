@@ -29,12 +29,13 @@ const getCommand = (ns: NS): string | Parameters<typeof ns.exec> | null => {
   const content = ns.read(CMD_FILE);
   if (!content) return null;
   ns.rm(CMD_FILE);
-  const { run, id } = JSON.parse(content);
-  if (seenCommandIds.has(id)) return null;
-  seenCommandIds.add(id);
-  if (run.startsWith('[') || run.startsWith('"')) return JSON.parse(run);
-  ns.tprint(`Received command (${id}) from nvim: ` + run);
-  return run;
+  const cmd = JSON.parse(content);
+  const prog = cmd['run'];
+  if (seenCommandIds.has(cmd.id)) return null;
+  seenCommandIds.add(cmd.id);
+  if (prog.startsWith('[') || prog.startsWith('"')) return JSON.parse(prog);
+  ns.tprint(`Received command (${cmd.id}) from nvim: ` + prog);
+  return prog;
 };
 
 export async function main(ns: NS) {
