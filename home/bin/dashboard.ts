@@ -15,6 +15,7 @@ import { C, WARN, MEDIUM, BRIGHT, ERROR } from '../lib/colors';
 import { hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
+import { SHARE } from '../etc/filenames';
 
 const H = BRIGHT.BOLD;
 
@@ -300,6 +301,10 @@ const getSchedulerTable = (ns: NS) => {
         : `${waitSec}s`;
   const queue = enqueueFails + ' fails';
   const tickets = droppedTickets + ' dropped';
+  const processes = getHostnames(ns).flatMap((hostname) => ns.ps(hostname));
+  const sharePs = processes.filter((ps) =>
+    ps.filename.includes(SHARE.slice(1)),
+  );
   const rows = [
     ['SCHEDULER'],
     ['Heartbeat  ' + heartbeatStr],
@@ -308,10 +313,12 @@ const getSchedulerTable = (ns: NS) => {
     ['Output     ' + (outputFull ? ERROR('full') : 'open')],
     ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
     ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
+    ['Processes  ' + processes.length],
     [
-      'Processes  ' +
-        getHostnames(ns).flatMap((hostname) => ns.ps(hostname)).length,
+      'Share Thd  ' +
+        sharePs.map((ps) => ps.threads).reduce((a, b) => a + b, 0),
     ],
+    ['Share Pwr  ' + ns.format.number(ns.getSharePower(), 3)],
   ];
   return table(ns, null, rows, { colors: true });
 };
