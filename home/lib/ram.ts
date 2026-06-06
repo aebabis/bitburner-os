@@ -10,24 +10,17 @@ export const buildWorkerThreadAllocator = (
   const weakHosts: string[] = [];
 
   const takeHackHost = () => {
-    if (hackHosts.length) return hackHosts.shift()!;
-    else {
-      let host;
-      while ((host = hostnames.shift())) {
-        if (serverIntRam[host] >= 34) return host;
-      }
+    let host;
+    while ((host = hackHosts.shift() || hostnames.shift())) {
+      if (serverIntRam[host] >= 34) return host;
     }
   };
   const takeWeakHost = () => {
-    if (weakHosts.length) {
-      return weakHosts.shift()!;
-    } else {
-      let host;
-      while ((host = hostnames.pop())) {
-        if (serverIntRam[host] >= 34) {
-          if (serverIntRam[host] >= 35) return host;
-          else hackHosts.push(host);
-        }
+    let host;
+    while ((host = weakHosts.shift() || hostnames.pop())) {
+      if (serverIntRam[host] >= 34) {
+        if (serverIntRam[host] >= 35) return host;
+        else hackHosts.push(host);
       }
     }
   };
