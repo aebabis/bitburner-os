@@ -1,13 +1,14 @@
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 import { putStaticData } from '../../../lib/data-store';
-import { FACTIONS } from '../../../lib/factions';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.tprint('Loading Faction Favor');
+  tprint(ns)(STR + '  Loading Faction Favor');
 
-  const factionFavor = /** @type {Record<string, number>} */ {};
+  const factionFavor: Record<string, number> = {};
 
-  for (const faction of FACTIONS)
+  for (const faction of Object.values(ns.enums.FactionName))
     factionFavor[faction] = ns.singularity.getFactionFavor(faction);
 
   putStaticData(ns, { factionFavor });

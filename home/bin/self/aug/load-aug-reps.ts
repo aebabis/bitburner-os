@@ -1,8 +1,10 @@
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 import { getStaticData, putStaticData } from '../../../lib/data-store';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.tprint('Loading Augmentation Rep Costs');
+  tprint(ns)(STR + '  Loading Augmentation Rep Costs');
 
   const { augmentations } = getStaticData(ns);
   const augmentationRepReqs: Record<string, number> = {};

@@ -79,6 +79,7 @@ export type StaticData = {
   augmentations?: string[];
   augmentationPrices?: Record<string, number>;
   augmentationRepReqs?: Record<string, number>;
+  augmentationPrereqs?: Record<string, string[]>;
   augmentationStats?: Record<string, Multipliers>;
   purchasedAugmentations?: string[];
   factionRequirements?: Record<FactionName, PlayerRequirement[]>;

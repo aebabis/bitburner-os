@@ -1,11 +1,16 @@
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 import { getStaticData, putStaticData } from '../../../lib/data-store';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.tprint('Loading Augmentation PreReqs');
+  tprint(ns)(STR + '  Loading Augmentation PreReqs');
 
   const { augmentations } = getStaticData(ns);
-  const augmentationPrereqs = /** @type {Record<string, string[]>} */ {};
+  if (augmentations == null) {
+    throw new Error('Aug data loader sequencing error');
+  }
+  const augmentationPrereqs: Record<string, string[]> = {};
 
   for (const aug of augmentations)
     augmentationPrereqs[aug] = ns.singularity.getAugmentationPrereq(aug);

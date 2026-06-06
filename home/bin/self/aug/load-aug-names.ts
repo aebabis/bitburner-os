@@ -1,9 +1,11 @@
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 import { putStaticData } from '../../../lib/data-store';
 import { FACTIONS } from '../../../lib/factions';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.tprint('Loading Augmentation Names');
+  tprint(ns)(STR + '  Loading Augmentation Names');
 
   const factionAugmentations = /** @type {Record<string, string[]>} */ {};
   const augSet = new Set();

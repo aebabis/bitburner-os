@@ -1,16 +1,17 @@
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 import { putStaticData } from '../../../lib/data-store';
-import { FACTIONS } from '../../../lib/factions';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.tprint('Loading Faction Requirements');
+  tprint(ns)(STR + '  Loading Faction Requirements');
 
   const factionRequirements = Object.fromEntries(
-    FACTIONS.map((faction) => [
+    Object.values(ns.enums.FactionName).map((faction) => [
       faction,
       ns.singularity.getFactionInviteRequirements(faction),
     ]),
-  );
+  ) as Record<FactionName, PlayerRequirement[]>;
 
   putStaticData(ns, { factionRequirements });
 }
