@@ -1,3 +1,4 @@
+import { replacer } from './lib/ports.ts';
 import {
   getHostnames,
   getStaticData,
@@ -33,7 +34,7 @@ export async function main(ns: NS) {
     }
     ns.disableLog('ALL');
     ns.ui.openTail();
-    ns.print(JSON.stringify(data, null, 2));
+    ns.print(JSON.stringify(data, replacer, 2));
   } else {
     usage();
   }
