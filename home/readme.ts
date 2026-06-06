@@ -48,13 +48,17 @@ const UTILITIES = {
     command: './readme.ts',
     desc: 'View this help',
   },
+  reset: {
+    command: 'usr/reset.ts',
+    desc: 'Soft reset',
+  },
   servers: {
     command: 'dispatch usr/servers.ts',
     desc: 'List non-purchased servers',
   },
   services: {
     command: 'bin/services.ts',
-    desc: 'List installed services and start/stop them',
+    desc: 'View and manage installed services',
   },
   update: {
     command: 'home; killall; update.ts',
@@ -94,8 +98,8 @@ const getLines = (commands: Record<string, string>) => {
 };
 
 const getHelp = (ns: NS) => {
-  const column1 = [...getLines(MAIN), ' ', ...getLines(SHORTHAND)];
-  const column2 = getLines(UTILITY_DESCRIPTIONS);
+  const column1 = getLines(UTILITY_DESCRIPTIONS);
+  const column2 = [...getLines(MAIN), ' ', ...getLines(SHORTHAND)];
   const iters = Math.max(column1.length, column2.length);
   const rows = [];
   for (let i = 0; i < iters; i++)
