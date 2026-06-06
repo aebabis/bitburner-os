@@ -2,7 +2,7 @@ import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR } from '../lib/colors';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
-import { packThreads } from '../lib/ram';
+import { buildWorkerThreadAllocator, packThreads } from '../lib/ram';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
 
@@ -295,57 +295,7 @@ export async function main(ns: NS) {
 
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
-  const alloc = (() => {
-    const serverRam = getRootServerRam(ns);
-    let hosts = getRootServers(ns);
-    for (const hostname of hosts) serverRam[hostname] *= 20;
-    let hackHosts: string[] = [];
-    let weakHosts: string[] = [];
-    const takeHackHost = () => {
-      if (hackHosts.length) {
-        return hackHosts.shift()!;
-      } else {
-        let host;
-        while ((host = hosts.shift())) {
-          if (serverRam[host] >= 34) return host;
-        }
-      }
-    };
-    const takeWeakHost = () => {
-      if (weakHosts.length) {
-        return weakHosts.shift()!;
-      } else {
-        let host;
-        while ((host = hosts.pop())) {
-          if (serverRam[host] >= 34) {
-            if (serverRam[host] >= 35) {
-              return host;
-            } else {
-              hackHosts.push(host);
-            }
-          }
-        }
-      }
-    };
-    return (maxThreads: number, size: 1.7 | 1.75) => {
-      const intSize = size === 1.7 ? 34 : 35;
-      const hostname = size === 1.7 ? takeHackHost() : takeWeakHost();
-      if (hostname == null) return null;
-      const threadsAvailable = packThreads(serverRam[hostname], intSize);
-      const threadsAllocated = Math.min(maxThreads, threadsAvailable);
-      serverRam[hostname] -= threadsAllocated * intSize;
-      if (serverRam[hostname] >= 34) {
-        if (threadsAllocated === threadsAvailable) {
-          if (size === 1.7) weakHosts.push(hostname);
-          else hackHosts.push(hostname);
-        } else {
-          if (size === 1.7) hosts.unshift(hostname);
-          else hosts.push(hostname);
-        }
-      }
-      return [hostname, threadsAllocated] as [string, number];
-    };
-  })();
+  const alloc = buildWorkerThreadAllocator(getRootServerRam(ns));
 
   const assign = (script: string, threads: number, additionalMsec: number) => {
     if (threads === 0) return () => {};

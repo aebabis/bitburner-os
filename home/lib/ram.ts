@@ -1,4 +1,57 @@
-export const packThreads = (intRam: number, intSize: 34 | 35) => {
+export const buildWorkerThreadAllocator = (
+  serverRam: Record<string, number>,
+) => {
+  const serverIntRam = Object.fromEntries(
+    Object.entries(serverRam).map(([hostname, ram]) => [hostname, ram * 20]),
+  );
+
+  const hostnames = Object.keys(serverRam);
+  const hackHosts: string[] = [];
+  const weakHosts: string[] = [];
+
+  const takeHackHost = () => {
+    if (hackHosts.length) return hackHosts.shift()!;
+    else {
+      let host;
+      while ((host = hostnames.shift())) {
+        if (serverIntRam[host] >= 34) return host;
+      }
+    }
+  };
+  const takeWeakHost = () => {
+    if (weakHosts.length) {
+      return weakHosts.shift()!;
+    } else {
+      let host;
+      while ((host = hostnames.pop())) {
+        if (serverIntRam[host] >= 34) {
+          if (serverIntRam[host] >= 35) return host;
+          else hackHosts.push(host);
+        }
+      }
+    }
+  };
+  return (maxThreads: number, size: 1.7 | 1.75) => {
+    const intSize = size === 1.7 ? 34 : 35;
+    const hostname = size === 1.7 ? takeHackHost() : takeWeakHost();
+    if (hostname == null) return null;
+    const threadsAvailable = packThreads(serverIntRam[hostname], intSize);
+    const threadsAllocated = Math.min(maxThreads, threadsAvailable);
+    serverIntRam[hostname] -= threadsAllocated * intSize;
+    if (serverIntRam[hostname] >= 34) {
+      if (threadsAllocated === threadsAvailable) {
+        if (size === 1.7) weakHosts.push(hostname);
+        else hackHosts.push(hostname);
+      } else {
+        if (size === 1.7) hostnames.unshift(hostname);
+        else hostnames.push(hostname);
+      }
+    }
+    return [hostname, threadsAllocated] as [string, number];
+  };
+};
+
+const packThreads = (intRam: number, intSize: 34 | 35) => {
   const intOther = 34 + 35 - intSize;
   const M = Math.floor(intRam / intSize);
   const r =
