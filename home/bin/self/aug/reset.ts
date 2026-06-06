@@ -1,4 +1,4 @@
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.singularity.installAugmentations('start.ts');
+  ns.singularity.softReset('start.ts');
 }

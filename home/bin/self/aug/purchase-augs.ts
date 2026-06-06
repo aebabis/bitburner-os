@@ -187,6 +187,6 @@ export async function main(ns: NS) {
     );
 
     // Start all over
-    await run('/bin/self/aug/install.ts', 1);
+    await run('/bin/self/aug/reset.ts', 1);
   }
 }
