@@ -318,11 +318,16 @@ export const twoColor = ([numVertices, edges]: [number, number[][]]) => {
   const arr = new Array(numVertices);
   arr[0] = true;
   edges.sort((a, b) => a[0] - b[0]);
+  // TODO: Fix this
+  let looper = 0;
   for (const [a, b] of edges) {
     if (arr[a] == null && arr[b] == null) {
       edges.push([a, b]);
+      if (looper > numVertices) return [];
+      looper++;
       continue;
     }
+    looper = 0;
     if (arr[a] === arr[b]) return [];
     if (arr[a] == null) arr[a] = !arr[b];
     if (arr[b] == null) arr[b] = !arr[a];
