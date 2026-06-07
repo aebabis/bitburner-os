@@ -20,7 +20,7 @@ const mostRootRam = (ns: NS) => {
   );
 };
 
-export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
+export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
   const start = Date.now();
   const upFor = (durationMs: number) => Date.now() - start > durationMs;
@@ -57,6 +57,7 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
         ns.corporation.canCreateCorporation(selfFund) === 'Success')
     );
   };
+  const useWolf = () => hasNode(8);
   const useThief = () => mostRootRam(ns) < 256;
   const useAngel = () => !useThief() && upFor(10000);
 
@@ -70,8 +71,10 @@ export const getViableServices = (ns: NS, player: (ns: NS) => Player) => {
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
-    AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'),
   ];
+
+  if (useWolf()) tasks.push(AnyHostService(ns)('/bin/wolf.ts'));
+  else tasks.push(AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'));
 
   if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
 

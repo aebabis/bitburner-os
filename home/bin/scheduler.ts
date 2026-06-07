@@ -35,7 +35,14 @@ export async function main(ns: NS) {
   await ns.sleep(50);
   ns.exec('/bin/planner.ts', 'home');
 
-  const { purchasedServerMaxRam, purchasedServerLimit } = getStaticData(ns);
+  const { resetInfo, purchasedServerMaxRam, purchasedServerLimit } =
+    getStaticData(ns);
+
+  if (resetInfo.currentNode === 8) {
+    // On BN8, RAM that costs less than starter
+    // cash is basically free.
+    ns.exec('/bin/self/buy-ram.ts', 'home');
+  }
 
   const getRamInfo = (hostname: string): ServerRamInfo => {
     const maxRam = ns.getServerMaxRam(hostname);
@@ -54,6 +61,7 @@ export async function main(ns: NS) {
       const reserve = (gb: number) => Math.max(0, ramUnused - gb);
       ramAvailableTo = (process) => {
         if (process.script === '/bin/access.ts') return reserve(0);
+        if (process.script === '/bin/wolf.ts') return reserve(0);
         if (process.highPriority) return reserve(2);
         return reserve(16);
       };
