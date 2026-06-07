@@ -14,6 +14,7 @@ type TickerSnapshot = {
 };
 
 const getTicker = (ns: NS) => {
+  let ticks = 0;
   const history: TickerSnapshot[][] = [];
   const getMap = (snapshot: TickerSnapshot[]) =>
     snapshot.reduce<Record<string, TickerSnapshot>>((map, entry) => {
@@ -22,6 +23,7 @@ const getTicker = (ns: NS) => {
     }, {});
   return {
     tick: () => {
+      ticks++;
       history.push(
         ns.stock.getSymbols().map((symbol) => {
           const askPrice = ns.stock.getAskPrice(symbol);
@@ -41,33 +43,40 @@ const getTicker = (ns: NS) => {
         history.shift();
       }
     },
-    getGrowth: () => {
+    getForecasts: () => {
       if (ns.stock.has4SDataTixApi()) {
         throw new Error("Don't use this algorithm if you have 4S");
       }
-      const start = getMap(history[0]);
-      const end = getMap(history[history.length - 1]);
-      if (start == null) {
-        throw new Error('getGrowth called before initial tick()');
+      if (history.length < 20) {
+        return null;
       }
-      return ns.stock
-        .getSymbols()
-        .map(
-          (symbol) =>
-            [
-              symbol,
-              (start[symbol].price - end[symbol].price) / end[symbol].price,
-            ] as [string, number],
-        )
-        .sort(by(([, growth]) => growth));
+      const old10 = history.slice(-20, -10).map(getMap);
+      const new10 = history.slice(-10).map(getMap);
+      return Object.fromEntries(
+        ns.stock.getSymbols().map((symbol) => {
+          const oldAvg =
+            old10
+              .map((snapshots) => snapshots[symbol])
+              .map((snapshot) => snapshot.price)
+              .reduce((a, b) => a + b, 0) / 10;
+          const newAvg =
+            new10
+              .map((snapshots) => snapshots[symbol])
+              .map((snapshot) => snapshot.price)
+              .reduce((a, b) => a + b, 0) / 10;
+          const change = newAvg / oldAvg;
+          return [symbol, change] as [string, number];
+        }),
+      );
     },
+    getNumTicks: () => ticks,
   };
 };
 
 const getPurchaseLimit = (
   ns: NS,
   symbol: string,
-  type = ns.enums.PositionType.Long,
+  type: PositionType = ns.enums.PositionType.Long,
 ) => {
   const money = ns.getServerMoneyAvailable('home');
   const [longShares, , shortShares] = ns.stock.getPosition(symbol);
@@ -218,48 +227,39 @@ export async function main(ns: NS) {
     if (ns.stock.has4SDataTixApi()) {
       // TODO
     } else {
-      const growth = ticker.getGrowth();
-      const hasGrowthData = growth.some(([, growth]) => growth !== 0);
-      if (hasGrowthData) {
-        for (const [symbol] of growth.slice().reverse()) {
-          const amount = getPurchaseLimit(ns, symbol);
-          if (ns.stock.getPurchaseCost(symbol, amount, 'L') > MIN_ORDER) {
-            if (ns.stock.buyStock(symbol, amount)) {
-              const [long] = ns.stock.getPosition(symbol);
-              const currentSellPrice = ns.stock.getBidPrice(symbol);
-              ns.stock.placeOrder(
-                symbol,
-                long,
-                0.99 * currentSellPrice,
-                ns.enums.OrderType.StopSell,
-                'L',
-              );
-              ns.stock.placeOrder(
-                symbol,
-                long,
-                1.02 * currentSellPrice,
-                ns.enums.OrderType.LimitSell,
-                'L',
-              );
-            }
+      // const growth = ticker.getGrowth();
+      const forecasts = ticker.getForecasts();
+      ns.print('TICK:    ' + ticker.getNumTicks());
+      if (forecasts) {
+        const changes = Object.entries(forecasts);
+        const rising = changes.filter(([, change]) => change >= 1.02);
+        const falling = changes.filter(([, change]) => change <= 0.98);
+        const doneEarning = changes.filter(([, change]) => change <= 1);
+        const doneLosing = changes.filter(([, change]) => change >= 1);
+
+        for (const [symbol] of doneEarning) {
+          const [long, ,] = ns.stock.getPosition(symbol);
+          if (long > 0) {
+            ns.stock.sellStock(symbol, long);
           }
         }
-      }
-    }
-
-    const openOrders = ns.stock.getOrders();
-    for (const symbol of ns.stock.getSymbols()) {
-      for (const order of openOrders[symbol] ?? []) {
-        const [long, , short] = ns.stock.getPosition(symbol);
-        const isOrderMoot = order.position === 'L' ? long === 0 : short === 0;
-        if (isOrderMoot) {
-          ns.stock.cancelOrder(
-            symbol,
-            order.shares,
-            order.price,
-            order.type,
-            order.position,
-          );
+        for (const [symbol] of doneLosing) {
+          const [, , short] = ns.stock.getPosition(symbol);
+          if (short > 0) {
+            ns.stock.sellShort(symbol, short);
+          }
+        }
+        for (const [symbol] of rising.sort(by(([, value]) => -value))) {
+          const amount = getPurchaseLimit(ns, symbol);
+          if (ns.stock.getPurchaseCost(symbol, amount, 'L') > MIN_ORDER) {
+            ns.stock.buyStock(symbol, amount);
+          }
+        }
+        for (const [symbol] of falling.sort(by(([, value]) => value))) {
+          const amount = getPurchaseLimit(ns, symbol, 'S');
+          if (ns.stock.getPurchaseCost(symbol, amount, 'S') > MIN_ORDER) {
+            ns.stock.buyShort(symbol, amount);
+          }
         }
       }
     }
