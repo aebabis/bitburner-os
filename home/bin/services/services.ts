@@ -73,7 +73,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/stalker.ts'),
   ];
 
-  if (useWolf()) tasks.push(AnyHostService(ns)('/bin/wolf.ts'));
+  if (useWolf()) tasks.push(AnyHostService(ns)('/bin/nerd.ts'));
   else tasks.push(AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'));
 
   if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));

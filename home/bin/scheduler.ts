@@ -61,7 +61,7 @@ export async function main(ns: NS) {
       const reserve = (gb: number) => Math.max(0, ramUnused - gb);
       ramAvailableTo = (process) => {
         if (process.script === '/bin/access.ts') return reserve(0);
-        if (process.script === '/bin/wolf.ts') return reserve(0);
+        if (process.script === '/bin/nerd.ts') return reserve(0);
         if (process.highPriority) return reserve(2);
         return reserve(16);
       };
