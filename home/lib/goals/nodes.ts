@@ -39,12 +39,12 @@ export type Goal = {
   prerequisites: (typeFilter?: GoalType) => Goal[];
 };
 
-export const COMBAT_STATS = /** @type {(keyof GymEnumType)[]} */ [
+export const COMBAT_STATS = [
   'strength',
   'defense',
   'dexterity',
   'agility',
-];
+] as const;
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 interface GoalProps {
@@ -165,7 +165,7 @@ export const hackingXpGoal = (
 
 export const combatLevelsGoal = (
   combatReq: number,
-  currentSkills: number,
+  currentSkills: Skills,
   trainingTime: number | null = null,
 ) =>
   goal(
