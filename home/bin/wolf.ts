@@ -1,3 +1,4 @@
+import { C, NORMAL } from '../lib/colors';
 import { rmi } from '../lib/rmi';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
@@ -105,6 +106,14 @@ const getPorfolioValue = (ns: NS) =>
     )
     .reduce((a, b) => a + b, 0);
 
+const getChangeColor = (change: number) => {
+  if (change > 1.01) return C(35);
+  if (change > 1.005) return C(73);
+  else if (change > 0.995) return C(177);
+  else if (change > 0.99) return C(204);
+  else return C(160);
+};
+
 const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
   const money = (n: number) => `${ns.format.number(n, 3)}`;
   const columns = [
@@ -113,25 +122,30 @@ const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
     'PRICE',
     'ASK',
     'SPREAD',
-    'SPREAD/PRICE',
+    'SPREAD%',
     'CHANGE',
   ];
-  const rows = ns.stock.getSymbols().map((symbol) => {
-    const bidPrice = ns.stock.getBidPrice(symbol);
-    const askPrice = ns.stock.getAskPrice(symbol);
-    const price = (bidPrice + askPrice) / 2;
-    const spread = askPrice - bidPrice;
-    const spreadProp = spread / price;
-    return [
-      symbol,
-      money(bidPrice),
-      money(price),
-      money(askPrice),
-      money(spread),
-      ns.format.number(spreadProp * 100) + '%',
-      ns.format.number(ticker.getRecentChange(symbol)),
-    ];
-  });
+  const rows = ns.stock
+    .getSymbols()
+    .sort(by((symbol) => -ticker.getRecentChange(symbol)))
+    .map((symbol) => {
+      const bidPrice = ns.stock.getBidPrice(symbol);
+      const askPrice = ns.stock.getAskPrice(symbol);
+      const price = (bidPrice + askPrice) / 2;
+      const spread = askPrice - bidPrice;
+      const spreadProp = spread / price;
+      const change = ticker.getRecentChange(symbol);
+      const color = getChangeColor(change);
+      return [
+        symbol,
+        money(bidPrice),
+        money(price),
+        money(askPrice),
+        money(spread),
+        ns.format.number(spreadProp * 100) + '%',
+        ns.format.number(change),
+      ].map((cell) => color(cell));
+    });
   ns.print(table(ns, columns, rows, { colors: true }) + '\n');
 };
 
