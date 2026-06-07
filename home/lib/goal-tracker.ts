@@ -1,26 +1,39 @@
+import { Plan } from './goals/nodes';
+
 const win = globalThis;
 
 const HISTORY_MS = 10 * 60 * 1000;
 const MAX_SNAPSHOTS = 600;
 const MIN_INTERVAL_MS = Math.floor(HISTORY_MS / MAX_SNAPSHOTS); // 1s — keeps buffer spanning the full history window
 
-/**
- * @typedef {{ faction: string, utility: number, timeToComplete: number | null }} GoalPlanEntry
- * @typedef {{ ts: number, selectedFaction: string | null, plans: GoalPlanEntry[] }} GoalSnapshot
- */
-
-const getState = () => {
-  if (!win.__goalTracker)
-    win.__goalTracker = { snapshots: /** @type {GoalSnapshot[]} */ [] };
-  return /** @type {{ snapshots: GoalSnapshot[] }} */ win.__goalTracker;
+type GoalPlanEntry = {
+  faction: string;
+  utility: number;
+  timeToComplete: number | null;
+};
+type GoalSnapshot = {
+  ts: number;
+  selectedFaction: string | null;
+  plans: GoalPlanEntry[];
 };
 
-/**
- * @param {import('./goals/nodes.ts').Plan[]} plans
- * @param {string | null} selectedFaction
- * @param {number} overhead
- */
-export const recordGoalSnapshot = (plans, selectedFaction, overhead) => {
+declare global {
+  var __goalTracker: {
+    snapshots: GoalSnapshot[];
+  };
+}
+export {};
+
+const getState = () => {
+  if (!win.__goalTracker) win.__goalTracker = { snapshots: [] };
+  return win.__goalTracker;
+};
+
+export const recordGoalSnapshot = (
+  plans: Plan[],
+  selectedFaction: FactionName | null,
+  overhead: number,
+) => {
   const state = getState();
   const ts = Date.now();
   const last = state.snapshots[state.snapshots.length - 1];
@@ -37,11 +50,9 @@ export const recordGoalSnapshot = (plans, selectedFaction, overhead) => {
         timeToComplete:
           ttcValues.length === 0
             ? 0
-            : ttcValues.some(
-                  (t) => t == null || !isFinite(/** @type {any} */ t),
-                )
+            : ttcValues.some((t) => t == null || !isFinite(t))
               ? null
-              : Math.max(.../** @type {number[]} */ ttcValues),
+              : Math.max(...(ttcValues as number[])),
       };
     }),
   });
@@ -52,6 +63,4 @@ export const recordGoalSnapshot = (plans, selectedFaction, overhead) => {
     state.snapshots.shift();
 };
 
-/** @returns {GoalSnapshot[]} */
-export const getGoalSnapshot = () =>
-  /** @type {any} */ win.__goalTracker?.snapshots ?? [];
+export const getGoalSnapshot = () => win.__goalTracker?.snapshots ?? [];
