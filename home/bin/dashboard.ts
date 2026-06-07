@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY } from '../lib/colors';
 import { hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
@@ -66,8 +66,8 @@ const getRunStats = (ns: NS) => {
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH') + C(217)(` $${ns.format.number(money, 1).padEnd(6)}`),
-    H('PORTFOLIO') + C(217)(` $${stock}`),
+    H('CASH') + MONEY(` $${ns.format.number(money, 1).padEnd(6)}`),
+    H('PORTFOLIO') + MONEY(` $${stock}`),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),

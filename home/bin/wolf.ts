@@ -1,4 +1,4 @@
-import { C, NORMAL } from '../lib/colors';
+import { BRIGHT as B, C, MONEY, NORMAL as N } from '../lib/colors';
 import { rmi } from '../lib/rmi';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
@@ -30,6 +30,7 @@ const getTicker = (ns: NS) => {
     }
   };
   const getRecentChange = (symbol: string) => {
+    if (ticks < 20) return 1;
     const old10 = history[symbol].slice(-20, -10);
     const new10 = history[symbol].slice(-10);
     const oldAvg =
@@ -78,9 +79,10 @@ const getTicker = (ns: NS) => {
 const getPurchaseLimit = (
   ns: NS,
   symbol: string,
+  maxSpend: number,
   type: PositionType = ns.enums.PositionType.Long,
 ) => {
-  const money = ns.getServerMoneyAvailable('home');
+  const money = Math.min(ns.getServerMoneyAvailable('home'), maxSpend);
   const [longShares, , shortShares] = ns.stock.getPosition(symbol);
   let lower = 0;
   let upper = ns.stock.getMaxShares(symbol) - longShares - shortShares;
@@ -108,10 +110,16 @@ const getPorfolioValue = (ns: NS) =>
 
 const getChangeColor = (change: number) => {
   if (change > 1.01) return C(35);
-  if (change > 1.005) return C(73);
-  else if (change > 0.995) return C(177);
-  else if (change > 0.99) return C(204);
-  else return C(160);
+  if (change > 1.005) return C(72);
+  else if (change > 0.995) return C(254);
+  else if (change > 0.99) return C(197);
+  else return C(196);
+};
+
+const printHeader = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
+  const ticks = `${ticker.getNumTicks() + 'x6'}`;
+  const value = MONEY('$' + ns.format.number(getPorfolioValue(ns)));
+  ns.print(` ${B('VALUE')} ${value}  ${B('UP')} ${N(ticks)}`);
 };
 
 const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
@@ -136,6 +144,7 @@ const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
       const spreadProp = spread / price;
       const change = ticker.getRecentChange(symbol);
       const color = getChangeColor(change);
+      const isHeld = ns.stock.getPosition(symbol).some((n) => n !== 0);
       return [
         symbol,
         money(bidPrice),
@@ -144,7 +153,7 @@ const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
         money(spread),
         ns.format.number(spreadProp * 100) + '%',
         ns.format.number(change),
-      ].map((cell) => color(cell));
+      ].map((cell) => (isHeld ? color.BOLD(cell) : color(cell)));
     });
   ns.print(table(ns, columns, rows, { colors: true }) + '\n');
 };
@@ -221,7 +230,9 @@ const printOrdersTable = (ns: NS) => {
         money(order.price),
       ]),
     );
-  ns.print(table(ns, columns, rows, { colors: true }) + '\n');
+  if (rows.length) {
+    ns.print(table(ns, columns, rows, { colors: true }) + '\n');
+  }
 };
 
 const RESET_THRESHOLD = 240e6;
@@ -234,7 +245,7 @@ export async function main(ns: NS) {
 
   ns.ui.openTail();
   ns.ui.moveTail(DRAWER_WIDTH, 2);
-  ns.ui.resizeTail(600, 400);
+  ns.ui.resizeTail(700, 800);
 
   const ticker = getTicker(ns);
 
@@ -252,8 +263,8 @@ export async function main(ns: NS) {
       // TODO
     } else {
       // const growth = ticker.getGrowth();
+      const maxSpend = getPorfolioValue(ns) / 5;
       const forecasts = ticker.getForecasts();
-      ns.print('TICK:    ' + ticker.getNumTicks());
       if (forecasts) {
         const changes = Object.entries(forecasts);
         const rising = changes.filter(([, change]) => change >= 1.02);
@@ -274,13 +285,13 @@ export async function main(ns: NS) {
           }
         }
         for (const [symbol] of rising.sort(by(([, value]) => -value))) {
-          const amount = getPurchaseLimit(ns, symbol);
+          const amount = getPurchaseLimit(ns, symbol, maxSpend);
           if (ns.stock.getPurchaseCost(symbol, amount, 'L') > MIN_ORDER) {
             ns.stock.buyStock(symbol, amount);
           }
         }
         for (const [symbol] of falling.sort(by(([, value]) => value))) {
-          const amount = getPurchaseLimit(ns, symbol, 'S');
+          const amount = getPurchaseLimit(ns, symbol, maxSpend, 'S');
           if (ns.stock.getPurchaseCost(symbol, amount, 'S') > MIN_ORDER) {
             ns.stock.buyShort(symbol, amount);
           }
@@ -288,9 +299,11 @@ export async function main(ns: NS) {
       }
     }
 
-    printSpreadTable(ns, ticker);
+    printHeader(ns, ticker);
     ns.print('\n');
     printPositionTable(ns);
+    ns.print('\n');
+    printSpreadTable(ns, ticker);
     ns.print('\n');
     printOrdersTable(ns);
 
