@@ -84,6 +84,7 @@ export type StaticData = {
   purchasedAugmentations?: string[];
   factionRequirements?: Record<FactionName, PlayerRequirement[]>;
   factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
+  // TODO: Move this to playerData; it changes
   factionFavorGain?: Record<FactionName, number>;
   favorToDonate?: number;
 };

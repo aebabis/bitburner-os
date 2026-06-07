@@ -1,4 +1,5 @@
 import { putMoneyData } from '../lib/data-store';
+import { rmi } from '../lib/rmi';
 
 // https://www.reddit.com/r/Bitburner/comments/rsqffz/bitnode_8_stockmarket_algo_trader_script_without/
 const samplingLength = 30;
@@ -90,6 +91,9 @@ export async function main(ns: NS) {
     symChanges[sym] = [];
   }
 
+  let startTime = Date.now();
+  let totalProfit = 0;
+
   while (true) {
     for (const sym of ns.stock.getSymbols()) {
       const current = ns.stock.getPrice(sym);
@@ -127,6 +131,7 @@ export async function main(ns: NS) {
         const profit = longShares * (bidPrice - longPrice) - 2 * commission;
         if (state < 0) {
           const sellPrice = ns.stock.sellStock(sym, longShares);
+          totalProfit += profit;
           if (sellPrice > 0) {
             ns.print(`SOLD (long) ${sym}. Profit: ${format(profit)}`);
           }
@@ -140,6 +145,7 @@ export async function main(ns: NS) {
         const profit = shortShares * (shortPrice - askPrice) - 2 * commission;
         if (state > 0) {
           const sellPrice = ns.stock.sellShort(sym, shortShares);
+          totalProfit += profit;
           if (sellPrice > 0) {
             ns.print(`SOLD (short) ${sym}. Profit: ${format(profit)}`);
           }
@@ -177,7 +183,8 @@ export async function main(ns: NS) {
       estimatedStockValue += ns.stock.getSaleGain(symbol, long, 'L');
       estimatedStockValue += ns.stock.getSaleGain(symbol, short, 'S');
     }
-    putMoneyData(ns, { estimatedStockValue });
+    const stockIncome = totalProfit / ((Date.now() - startTime) / 1000);
+    putMoneyData(ns, { estimatedStockValue, stockIncome });
     await ns.stock.nextUpdate();
   }
 }

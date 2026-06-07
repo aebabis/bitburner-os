@@ -6,6 +6,7 @@ import {
   reevaluateGoal,
   type Goal,
   hackingXpGoal,
+  moneyPrereqGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -55,6 +56,13 @@ export const getGoals = (ns: NS): Goal => {
       formulas,
     });
     return reevaluateGoal(joinGoal);
+  }
+
+  if (staticData.resetInfo.currentNode === 8 && !ns.stock.has4SDataTixApi()) {
+    const target = ns.stock.getConstants().MarketDataTixApi4SCost;
+    return reevaluateGoal(
+      moneyPrereqGoal(target, estimatedStockValue + money, referenceIncome),
+    );
   }
 
   const universityGains = formulas.work.universityGains(

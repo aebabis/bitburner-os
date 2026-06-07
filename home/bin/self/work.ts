@@ -1,8 +1,9 @@
-import { getPlayerData } from '../../lib/data-store';
+import { getPlayerData, getStaticData } from '../../lib/data-store';
 import { getGoals, isRepBound } from '../../lib/goals/goals';
 import { rmi } from '../../lib/rmi';
 import { getConfig } from '../../lib/config';
 import { Goal } from '../../lib/goals/nodes';
+import { by } from '../../lib/util';
 
 /**
  * Returns the faction with the largest remaining rep gap that the player
@@ -26,6 +27,9 @@ const getWorkFaction = (
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+  const { resetInfo, factionFavor = {} as Record<FactionName, number> } =
+    getStaticData(ns);
+  const canMakeMoney = resetInfo.currentNode !== 8;
 
   await rmi(ns, true)('/bin/self/apply.ts');
 
@@ -71,14 +75,14 @@ export async function main(ns: NS) {
 
     if (hackXpGoal) {
       await rmi(ns)('/bin/self/school.ts', 1);
-    } else if (player.money < 0) {
+    } else if (player.money < 0 && canMakeMoney) {
       await makeMoney();
     } else if (player.skills.hacking < hackLevelGoal) {
       await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
       await rmi(ns)('/bin/self/school.ts', 1);
     } else if (killsGoal && !killsGoal.isDone()) {
       await rmi(ns)('/bin/self/crime.ts', 1, 'Homicide');
-    } else if (!isRepBound(ns, root)) {
+    } else if (!isRepBound(ns, root) && canMakeMoney) {
       await makeMoney();
     } else if (workFaction != null) {
       getConfig(ns).set('share', 0.1);
@@ -105,8 +109,21 @@ export async function main(ns: NS) {
         await rmi(ns)('/bin/self/travel.ts', 1, locationGoal);
       } else if (killsRequirement) {
         await rmi(ns)('/bin/self/crime.ts');
-      } else {
+      } else if (canMakeMoney) {
         await makeMoney();
+      } else {
+        // In BN8, grind favor
+        const factionsByFavor = Object.entries(factionFavor)
+          .sort(by(([, favor]) => -favor))
+          .map(([faction]) => faction);
+        const grindFaction = factionsByFavor.find((faction) =>
+          player.factions.includes(faction),
+        );
+        if (grindFaction) {
+          await rmi(ns)('/bin/self/faction-work.ts', 1, grindFaction);
+        } else {
+          makeMoney(); // For stats
+        }
       }
     }
     await ns.sleep(200);

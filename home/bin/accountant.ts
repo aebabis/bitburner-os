@@ -53,6 +53,7 @@ export async function main(ns: NS) {
       thiefReferenceWindow = 60,
       hacknetIncome = 0,
       gangIncome = 0,
+      stockIncome = 0,
     } = getMoneyData(ns);
     const {
       onlineMoneyMade,
@@ -79,13 +80,15 @@ export async function main(ns: NS) {
     const theftIncome = angel?.allowed
       ? (getMoneyData(ns).theftIncome ?? 0)
       : (moneyMade - moneyAtStartOfWindow) / incomeWindow;
-    const referenceIncome = theftIncome + hacknetIncome + gangIncome;
+    const referenceIncome =
+      theftIncome + hacknetIncome + gangIncome + stockIncome || 0.01;
 
     putMoneyData(ns, {
       money,
       theftIncome,
       hacknetIncome,
       gangIncome,
+      stockIncome,
       referenceIncome,
     });
 

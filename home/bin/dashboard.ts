@@ -207,16 +207,16 @@ const moneyTable = (ns: NS) => {
   }
   const {
     theftIncome = 0,
-    // thiefReferenceWindow = 0,
     hacknetIncome = 0,
     gangIncome = 0,
     referenceIncome = 0,
+    stockIncome = 0,
   } = moneyData;
   const rows = [
     [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
-    // ['', formatTime(thiefReferenceWindow)],
     [' Hacknet', `$${ns.format.number(hacknetIncome, 1)}/s`],
     [' Gang', `$${ns.format.number(gangIncome, 1)}/s`],
+    [' Stocks', `$${ns.format.number(stockIncome, 1)}/s`],
   ];
   const top =
     H(' INCOME    ') + C(183)(`$${ns.format.number(referenceIncome, 1)}/s`);
