@@ -1,3 +1,9 @@
+/**
+ * Builds a stateful planner for distributing available RAM
+ * between hack threads and weak/grow threads based on their size.
+ * @param serverRam - A map of server names to RAM available for worker threads.
+ * @returns A stateful function that allocates threads to workers on request.
+ */
 export const buildWorkerThreadAllocator = (
   serverRam: Record<string, number>,
 ) => {
@@ -20,10 +26,20 @@ export const buildWorkerThreadAllocator = (
     while ((host = weakHosts.shift() || hostnames.pop())) {
       if (serverIntRam[host] >= 34) {
         if (serverIntRam[host] >= 35) return host;
-        else hackHosts.push(host);
+        else hackHosts.push(host); // Edge case: exactly 1.7GB left
       }
     }
   };
+
+  /**
+   * Assigns threads for the given thread size, 1.7 or 1.75.
+   * If no server can issue the amount requested, a partial amount
+   * may be given. In this case, the function should be called again.
+   * @param maxThreads - The maximum number of threads requested.
+   * @param size - The thread size of the worker
+   * @returns A number in the range (0, maxThreads] if there is a server
+   * with room remaining; null otherwise.
+   */
   return (maxThreads: number, size: 1.7 | 1.75) => {
     const intSize = size === 1.7 ? 34 : 35;
     const hostname = size === 1.7 ? takeHackHost() : takeWeakHost();
@@ -44,6 +60,16 @@ export const buildWorkerThreadAllocator = (
   };
 };
 
+/** Gets the maximum amount of worker threads of one type
+ *  that can be taken from RAM pool while still allowing
+ *  pool to be completely consumed. If no combination of
+ *  worker threads will completely consume the pool, returns
+ *  the maximum threads that will fit instead.
+ *  @param intRam - Available ram, scaled by 20 to avoid numeric issues.
+ *  @param intSize - The size of the worker thread, scaled by 20 to avoid numeric issues.
+ *  @returns Maximum number of threads that workers of the provided type
+ *  are allowed to take
+ */
 const packThreads = (intRam: number, intSize: 34 | 35) => {
   const intOther = 34 + 35 - intSize;
   const M = Math.floor(intRam / intSize);
