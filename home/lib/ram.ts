@@ -7,8 +7,13 @@
 export const buildWorkerThreadAllocator = (
   serverRam: Record<string, number>,
 ) => {
+  // Multiply each ram value by 20
+  // so allocation can use integer math.
   const serverIntRam = Object.fromEntries(
-    Object.entries(serverRam).map(([hostname, ram]) => [hostname, ram * 20]),
+    Object.entries(serverRam).map(([hostname, ram]) => [
+      hostname,
+      Math.floor(ram * 20),
+    ]),
   );
 
   const hostnames = Object.keys(serverRam);
@@ -40,7 +45,7 @@ export const buildWorkerThreadAllocator = (
    * @returns A number in the range (0, maxThreads] if there is a server
    * with room remaining; null otherwise.
    */
-  return (maxThreads: number, size: 1.7 | 1.75) => {
+  const allocator = (maxThreads: number, size: 1.7 | 1.75) => {
     const intSize = size === 1.7 ? 34 : 35;
     const hostname = size === 1.7 ? takeHackHost() : takeWeakHost();
     if (hostname == null) return null;
@@ -52,12 +57,23 @@ export const buildWorkerThreadAllocator = (
         if (size === 1.7) weakHosts.push(hostname);
         else hackHosts.push(hostname);
       } else {
+        // If server can still assign both types of threads,
+        // return it to the hostnames list. Put hacking thread
+        // servers at the front and weak/grow at the back to ensure
+        // servers are finished before moving to the next.
         if (size === 1.7) hostnames.unshift(hostname);
         else hostnames.push(hostname);
       }
     }
+    if (threadsAllocated === 0) {
+      // This is uncommon and will only happen if availableThreads
+      // is 0 the first time a server is examined. In this case,
+      // run the algorithm again to guarantee number is strictly > 0
+      return allocator(maxThreads, size);
+    }
     return [hostname, threadsAllocated] as [string, number];
   };
+  return allocator;
 };
 
 /** Gets the maximum amount of worker threads of one type
@@ -85,21 +101,37 @@ const packThreads = (intRam: number, intSize: 34 | 35) => {
   }
 };
 
-const test = (ns: NS, ram: number, type: 'HACK' | 'WEAKEN' | 'GROW') => {
+const test = (ram: number, type: 'HACK' | 'WEAKEN' | 'GROW') => {
+  const RED = `\u001b[38;5;1m`;
+  const GREEN = `\u001b[38;5;28m`;
+  const RESET = '\u001b[0m';
+
+  const color = (pass: boolean) => (pass ? GREEN : RED);
+
+  let h: number;
+  let w: number;
+
   if (type === 'HACK') {
-    const h = packThreads(ram * 20, 34);
-    const w = (ram - h * 1.7) / 1.75;
-    ns.tprint(`${h} * 1.75 + ${w} * 1.7 = ${h * 1.7 + w * 1.75}`);
+    h = packThreads(ram * 20, 34);
+    w = Math.floor((ram - h * 1.7) / 1.75);
   } else {
-    const w = packThreads(ram * 20, 35);
-    const h = (ram - w * 1.75) / 1.7;
-    ns.tprint(`${h} * 1.75 + ${w} * 1.7 = ${h * 1.7 + w * 1.75}`);
+    w = packThreads(ram * 20, 35);
+    h = Math.floor((ram - w * 1.75) / 1.7);
   }
+  const total = h * 1.7 + w * 1.75;
+  const pass = total === ram;
+  const lhs = `${h} * 1.7 + ${w} * 1.75`.padEnd(27);
+  return `${color(pass)}${ram.toString().padStart(10)}  ${lhs} = ${total.toString().padStart(10)}${RESET}`;
 };
 
 export async function main(ns: NS) {
-  test(ns, 1000, 'HACK');
-  test(ns, 1000, 'WEAKEN');
-  test(ns, ns.cloud.getRamLimit(), 'HACK');
-  test(ns, ns.cloud.getRamLimit(), 'WEAKEN');
+  const results = [] as string[];
+  for (let p = 2; p <= 30; p++) {
+    results.push(test(2 ** p, 'HACK'));
+    results.push(test(2 ** p, 'WEAKEN'));
+  }
+  const n = (num: number) => num.toString().padEnd(2);
+  ns.tprint(
+    '\n' + results.map((result, i) => `${n(i + 1)}  ${result}`).join('\n'),
+  );
 }
