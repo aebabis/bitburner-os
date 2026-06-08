@@ -1,4 +1,4 @@
-import { BN8_WEIGHTS } from './aug/bn6-weights.ts';
+import { BN6_WEIGHTS } from './aug/bn6-weights.ts';
 import { StaticData } from './data-store.ts';
 import {
   STORY_FACTIONS,
@@ -59,7 +59,7 @@ type UnityAug = keyof typeof UNITY_AUGS;
 
 const getAugWeights = (resetInfo: ResetInfo) => {
   if (resetInfo.currentNode === 6) {
-    return BN8_WEIGHTS;
+    return BN6_WEIGHTS;
   } else {
     return DEFAULT_AUG_WEIGHTS;
   }

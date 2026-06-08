@@ -1,5 +1,5 @@
-export const BN8_WEIGHTS: Record<keyof Multipliers, number> = {
-  // Hacking is mostly useful for money in BN8
+export const BN6_WEIGHTS: Record<keyof Multipliers, number> = {
+  // Hacking is mostly just useful for money in BN6
   hacking: 2,
   hacking_chance: 2,
   hacking_speed: 2,
@@ -22,10 +22,10 @@ export const BN8_WEIGHTS: Record<keyof Multipliers, number> = {
   agility_exp: 2.5,
   charisma_exp: 2.5,
 
-  bladeburner_max_stamina: 0,
-  bladeburner_stamina_gain: 0,
-  bladeburner_analysis: 0,
-  bladeburner_success_chance: 0,
+  bladeburner_max_stamina: 5,
+  bladeburner_stamina_gain: 5,
+  bladeburner_analysis: 5,
+  bladeburner_success_chance: 5,
 
   // Worthless
   crime_money: 0,
