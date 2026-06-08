@@ -7,6 +7,7 @@ import {
   type Goal,
   hackingXpGoal,
   moneyPrereqGoal,
+  combatLevelsGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -22,6 +23,7 @@ export const getGoals = (ns: NS): Goal => {
   const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
+  const { currentNode } = staticData.resetInfo;
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
   const formulas = getFormulas(ns);
@@ -43,10 +45,7 @@ export const getGoals = (ns: NS): Goal => {
     karma,
   };
 
-  if (
-    staticData.resetInfo.currentNode === 2 &&
-    !player.factions?.includes('Slum Snakes')
-  ) {
+  if (currentNode === 2 && !player.factions?.includes('Slum Snakes')) {
     const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,
@@ -58,7 +57,14 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  if (staticData.resetInfo.currentNode === 8 && !ns.stock.has4SDataTixApi()) {
+  if (currentNode === 6) {
+    const bladeburnerGoal = combatLevelsGoal(100, player.skills);
+    if (!bladeburnerGoal.isDone()) {
+      return reevaluateGoal(bladeburnerGoal);
+    }
+  }
+
+  if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
     return reevaluateGoal(
       moneyPrereqGoal(target, estimatedStockValue + money, referenceIncome),

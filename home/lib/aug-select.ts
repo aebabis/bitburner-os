@@ -1,3 +1,4 @@
+import { BN8_WEIGHTS } from './aug/bn6-weights.ts';
 import { StaticData } from './data-store.ts';
 import {
   STORY_FACTIONS,
@@ -54,6 +55,15 @@ const UNITY_AUGS = {
   'Neuroreceptor Management Implant': 1,
   'The Red Pill': 10,
 };
+type UnityAug = keyof typeof UNITY_AUGS;
+
+const getAugWeights = (resetInfo: ResetInfo) => {
+  if (resetInfo.currentNode === 6) {
+    return BN8_WEIGHTS;
+  } else {
+    return DEFAULT_AUG_WEIGHTS;
+  }
+};
 
 export const scoreAug = (
   stats: Multipliers,
@@ -102,12 +112,13 @@ export const MAX_AUGS = 6;
 const NEUROFLUX = 'NeuroFlux Governor';
 
 export const augValueFromStats = (
+  resetInfo: ResetInfo,
   aug: string,
   augmentationStats?: Record<string, Multipliers>,
 ) => {
-  if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug];
+  if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug as UnityAug];
   const stats = augmentationStats?.[aug];
-  return stats != null ? scoreAug(stats, DEFAULT_AUG_WEIGHTS) : 0;
+  return stats != null ? scoreAug(stats, getAugWeights(resetInfo)) : 0;
 };
 
 export const computeRepReq = (augs: string[], staticData: StaticData) => {
@@ -154,6 +165,7 @@ export const findOptimalBatch = (
   { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
   const {
+    resetInfo,
     augmentationPrices,
     augmentationRepReqs,
     augmentationStats,
@@ -171,12 +183,13 @@ export const findOptimalBatch = (
   const installedAugs = staticData.installedAugmentations ?? [];
 
   const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
-  const getNeededAugs = (fac: string) =>
+  const getNeededAugs = (fac: FactionName) =>
     (factionAugmentations?.[fac] ?? [])
       .filter(stillNeeds)
       .filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
+  const augValue = (aug: string) =>
+    augValueFromStats(resetInfo, aug, augmentationStats);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = formulas.work.factionGains(

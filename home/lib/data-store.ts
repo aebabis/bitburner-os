@@ -83,6 +83,7 @@ export type StaticData = {
   augmentationStats?: Record<string, Multipliers>;
   purchasedAugmentations?: string[];
   factionRequirements?: Record<FactionName, PlayerRequirement[]>;
+  factionAugmentations?: Record<FactionName, string[]>;
   factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
   // TODO: Move this to playerData; it changes
   factionFavorGain?: Record<FactionName, number>;
@@ -112,8 +113,12 @@ export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA);
 export const putRamData = (ns: NS, data: RamData) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 
-export const getPlayerData = (ns: NS) => readData(ns, PORT_PLAYER_DATA) || {};
-export const putPlayerData = (ns: NS, data) =>
+type PlayerData = {
+  player: Player;
+};
+export const getPlayerData = (ns: NS): PlayerData =>
+  readData(ns, PORT_PLAYER_DATA) || {};
+export const putPlayerData = (ns: NS, data: PlayerData) =>
   putData(ns, PORT_PLAYER_DATA, data);
 
 export const getMoneyData = (ns: NS) => readData(ns, PORT_MONEY_DATA) || {};
