@@ -61,6 +61,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useThief = () => mostRootRam(ns) < 256;
   const useAngel = () => !useThief() && upFor(10000);
   const useBlade = () => resetInfo.currentNode === 6;
+  const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
 
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
@@ -95,7 +96,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
       AnyHostService(ns, canAutopilot)('/bin/self/control.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/tor.ts'),
     );
-    if (!useBlade()) {
+    if (!useBlade() || hasSimulacrum()) {
       tasks.push(AnyHostService(ns, canAutopilot)('/bin/self/work.ts'));
     }
   } else {
