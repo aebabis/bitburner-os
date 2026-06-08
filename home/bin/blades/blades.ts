@@ -1,5 +1,10 @@
 import { rmi } from '../../lib/rmi';
 
+const start =
+  (ns: NS) =>
+  async (type: BladeburnerActionType, name: BladeburnerActionName) =>
+    rmi(ns)('/bin/blades/actions/start-action.ts', 1, type, name);
+
 const tryAction =
   (ns: NS) =>
   async (
@@ -10,7 +15,7 @@ const tryAction =
     if (ns.bladeburner.getActionCountRemaining(type, name) < 1) return false;
     const [lower] = ns.bladeburner.getActionEstimatedSuccessChance(type, name);
     if (lower < chance) return false;
-    await rmi(ns)('/bin/blades/actions/start-action.ts', 1, type, name);
+    await start(ns)(type, name);
     return true;
   };
 
@@ -41,17 +46,14 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
 
-  await rmi(ns, true)('/bin/self/apply.ts');
+  while (!ns.bladeburner.inBladeburner()) {
+    await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
+    await rmi(ns)('/bin/self/improvement.ts', 1, getLowestStat(ns));
+    await rmi(ns)('/bin/blades/actions/join-bladeburner-division.ts');
+    await ns.bladeburner.nextUpdate();
+  }
 
   while (true) {
-    if (!ns.bladeburner.inBladeburner()) {
-      await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
-      await rmi(ns)('/bin/self/improvement.ts', 1, getLowestStat(ns));
-      await rmi(ns)('/bin/blades/actions/join-bladeburner-division.ts');
-      await ns.bladeburner.nextUpdate();
-      continue;
-    }
-
     await rmi(ns)('/bin/blades/actions/travel.ts');
     const [currentStamina, maxStamina] = ns.bladeburner.getStamina();
     if (currentStamina * 2 < maxStamina) {
@@ -59,12 +61,7 @@ export async function main(ns: NS) {
     } else {
       if (!(await findContract(ns))) {
         if (needsIntel(ns)) {
-          await rmi(ns)(
-            '/bin/blades/actions/start-action.ts',
-            1,
-            'General',
-            'Field Analysis',
-          );
+          await start(ns)('General', 'Field Analysis');
         } else {
           await rmi(ns)('/bin/self/improvement.ts', 1, getLowestStat(ns));
         }
