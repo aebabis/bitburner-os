@@ -7,7 +7,6 @@ import {
   type Goal,
   hackingXpGoal,
   moneyPrereqGoal,
-  combatLevelsGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -55,13 +54,6 @@ export const getGoals = (ns: NS): Goal => {
       formulas,
     });
     return reevaluateGoal(joinGoal);
-  }
-
-  if (currentNode === 6) {
-    const bladeburnerGoal = combatLevelsGoal(100, player.skills);
-    if (!bladeburnerGoal.isDone()) {
-      return reevaluateGoal(bladeburnerGoal);
-    }
   }
 
   if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {

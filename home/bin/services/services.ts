@@ -60,6 +60,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useWolf = () => hasNode(8);
   const useThief = () => mostRootRam(ns) < 256;
   const useAngel = () => !useThief() && upFor(10000);
+  const useBlade = () => resetInfo.currentNode === 6;
 
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
@@ -78,6 +79,8 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
 
+  if (useBlade()) tasks.push(AnyHostService(ns)('/bin/blades/blades.ts'));
+
   if (gangsAvailable)
     tasks.push(AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.ts'));
 
@@ -89,10 +92,12 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   if (hasSingularity) {
     tasks.push(
       AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.ts'),
-      AnyHostService(ns, canAutopilot)('/bin/self/work.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/control.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/tor.ts'),
     );
+    if (!useBlade()) {
+      tasks.push(AnyHostService(ns, canAutopilot)('/bin/self/work.ts'));
+    }
   } else {
     tasks.push(
       AnyHostService(ns)('/bin/hinter.ts'),
