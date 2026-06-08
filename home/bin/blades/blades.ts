@@ -45,7 +45,7 @@ const tryAction =
   };
 
 const findAction = async (ns: NS, type: BladeburnerActionType) => {
-  for (const name of getActionNames(ns, type)) {
+  for (const name of getActionNames(ns, type).reverse()) {
     if (await tryAction(ns)(type, name, 0.7)) return true;
   }
   return false;
