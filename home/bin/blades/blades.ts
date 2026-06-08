@@ -1,3 +1,5 @@
+import { BRIGHT, NORMAL } from '../../lib/colors';
+import { getBladeReports } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
 
 const ACTION_NAMES = {
@@ -66,6 +68,11 @@ const needsIntel = (ns: NS, type: BladeburnerActionType) =>
     return avg > 0.7 && upper - lower > 0.1;
   });
 
+const hasStaminaPenalty = (ns: NS) => {
+  const [currentStamina, maxStamina] = ns.bladeburner.getStamina();
+  return currentStamina * 2 < maxStamina;
+};
+
 const getLowestStat = (ns: NS) => {
   const { skills } = ns.getPlayer();
   const stats = ['strength', 'defense', 'dexterity', 'agility'] as const;
@@ -74,12 +81,29 @@ const getLowestStat = (ns: NS) => {
 
 const showInfo = (ns: NS) => {
   ns.clearLog();
-  ns.print('Simulacrum: ' + hasBlade(ns));
+  ns.print(
+    BRIGHT.BOLD + '  SIMULACRUM: ' + NORMAL(hasBlade(ns) ? 'Yes' : 'No'),
+  );
+  const reports = getBladeReports(ns);
+  for (const type of ['Action', 'Locations', 'Skills'] as const) {
+    const report = reports[type];
+    if (report) {
+      ns.print('\n');
+      ns.print(
+        report
+          .split('\n')
+          .map((line) => ' ' + line)
+          .join('\n'),
+      );
+    }
+  }
+  ns.print('\n');
 };
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
+  ns.ui.resizeTail(320, 450);
 
   while (!ns.bladeburner.inBladeburner()) {
     await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
@@ -91,8 +115,7 @@ export async function main(ns: NS) {
   while (true) {
     await rmi(ns)('/bin/blades/actions/upgrade-skills.ts');
     await rmi(ns)('/bin/blades/actions/travel.ts');
-    const [currentStamina, maxStamina] = ns.bladeburner.getStamina();
-    if (currentStamina * 2 < maxStamina) {
+    if (hasStaminaPenalty(ns)) {
       await improve(ns, 'agility');
     } else {
       const missionTypes = [

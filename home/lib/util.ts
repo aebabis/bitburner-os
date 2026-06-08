@@ -1,5 +1,25 @@
 const COLOR_REGEX = /\u001b\[[0-9;]+m/g;
 
+export const formatTime = (seconds: number | null, emptyZero = false) => {
+  if (seconds == null) {
+    return '?';
+  }
+  if (emptyZero && seconds === 0) {
+    return '';
+  }
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h === 0 && m === 0) {
+    return ':' + pad(s);
+  } else if (h === 0) {
+    return `${pad(m)}:${pad(s)}`;
+  } else {
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+};
+
 export const by = <T>(prop: ((elem: T) => string | number) | keyof T) => {
   if (typeof prop === 'function') {
     return (a: T, b: T) => {

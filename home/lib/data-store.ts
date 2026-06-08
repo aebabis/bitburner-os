@@ -9,6 +9,7 @@ import {
   PORT_MONEY_DATA,
   PORT_CONTRACT_DATA,
   PORT_CORP_REPORTS,
+  PORT_BLADE_REPORTS,
 } from '../etc/ports.ts';
 import { DivisionName } from '../bin/corporation/constants.ts';
 
@@ -143,3 +144,10 @@ export const getCorpReports = (ns: NS): CorpReports =>
   readData(ns, PORT_CORP_REPORTS) || {};
 export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
   putData(ns, PORT_CORP_REPORTS, data);
+
+type BladeReportType = 'Action' | 'Skills' | 'Locations';
+type BladeReports = Record<BladeReportType, string>;
+export const getBladeReports = (ns: NS): BladeReports =>
+  readData(ns, PORT_BLADE_REPORTS) || {};
+export const putBladeReports = (ns: NS, data: Partial<BladeReports>) =>
+  putData(ns, PORT_BLADE_REPORTS, data);
