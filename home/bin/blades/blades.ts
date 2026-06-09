@@ -163,6 +163,9 @@ export async function main(ns: NS) {
       await improve(ns, 'agility');
     } else {
       const { name } = ns.bladeburner.getNextBlackOp() || {};
+      if (name == null) {
+        await rmi(ns)('/bin/self/actualize.ts', 1, 6, 'start.ts');
+      }
       if (
         name &&
         ns.bladeburner.getBlackOpRank(name) <= ns.bladeburner.getRank() &&
