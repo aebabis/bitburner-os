@@ -78,7 +78,9 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   if (useBlade()) tasks.push(AnyHostService(ns)('/bin/blades/blades.ts'));
 
-  if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
+  if (hacknetAvailable && playerLikesHacknet) {
+    tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
+  }
 
   if (gangsAvailable)
     tasks.push(AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.ts'));
