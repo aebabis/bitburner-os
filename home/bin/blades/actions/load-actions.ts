@@ -25,6 +25,7 @@ export async function main(ns: NS) {
         {
           estimatedChance: bb.getActionEstimatedSuccessChance(type, name),
           actionCountRemaining: bb.getActionCountRemaining(type, name),
+          duration: bb.getActionTime(type, name),
         },
       ]),
     ) as Record<BladeburnerActionName, BladeAction>;

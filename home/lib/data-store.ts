@@ -148,7 +148,29 @@ export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
 export type BladeAction = {
   estimatedChance: [number, number];
   actionCountRemaining: number;
+  duration: number;
 };
+export type BladeCurrentAction =
+  | {
+      type: 'General';
+      name: BladeburnerGeneralActionName;
+      time: number;
+    }
+  | {
+      type: 'Contracts';
+      name: BladeburnerContractName;
+      time: number;
+    }
+  | {
+      type: 'Operations';
+      name: BladeburnerOperationName;
+      time: number;
+    }
+  | {
+      type: 'Black Operations';
+      name: BladeburnerBlackOpName;
+      time: number;
+    };
 type BladeData = {
   actions: {
     General: Record<BladeburnerGeneralActionName, BladeAction>;
@@ -164,6 +186,7 @@ type BladeData = {
       communities: number;
     }
   >;
+  currentAction: BladeCurrentAction | null;
   skills: {
     name: BladeburnerSkillName;
     cost: number;

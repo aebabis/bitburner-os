@@ -1,8 +1,12 @@
-import { BRIGHT, C, NORMAL } from '../../lib/colors';
-import { BladeAction, getBladeData } from '../../lib/data-store';
+import { BRIGHT, C, MEDIUM, NORMAL } from '../../lib/colors';
+import {
+  BladeAction,
+  BladeCurrentAction,
+  getBladeData,
+} from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
 import { table } from '../../lib/table';
-import { by } from '../../lib/util';
+import { by, formatTime } from '../../lib/util';
 
 const hasBlade = (ns: NS) =>
   ns.getResetInfo().ownedAugs.has("The Blade's Simulacrum");
@@ -57,18 +61,51 @@ const getLowestStat = (ns: NS) => {
   return stats.reduce((s1, s2) => (skills[s1] < skills[s2] ? s1 : s2));
 };
 
+const getActionDuration = (ns: NS, action: BladeCurrentAction) => {
+  const { actions } = getBladeData(ns);
+  switch (action.type) {
+    case 'General':
+      return actions.General[action.name].duration;
+    case 'Contracts':
+      return actions.Contracts[action.name].duration;
+    case 'Operations':
+      return actions.Operations[action.name].duration;
+    case 'Black Operations':
+      return actions['Black Operations'][action.name].duration;
+  }
+};
+
 const showInfo = (ns: NS) => {
   ns.clearLog();
 
-  const { cities, skills } = getBladeData(ns);
+  const { cities, skills, currentAction } = getBladeData(ns);
   ns.print(
-    BRIGHT.BOLD + '  SIMULACRUM: ' + NORMAL(hasBlade(ns) ? 'Yes' : 'No'),
+    BRIGHT.BOLD +
+      '  SIMULACRUM: ' +
+      NORMAL(hasBlade(ns) ? 'Yes' : 'No ') +
+      MEDIUM +
+      ' '.repeat(21) +
+      '▲',
   );
+  if (currentAction) {
+    ns.print('\n');
+    const tFormat = (ms: number) => formatTime(ms).replace(/^0/, '');
+    const columns = [' ACTION', ''];
+    const rows = !currentAction
+      ? [[' (none)', '']]
+      : [
+          [
+            ' ' + currentAction.name,
+            `${tFormat(currentAction.time / 1000)}/${tFormat(getActionDuration(ns, currentAction) / 1000)}`,
+          ],
+        ];
+    ns.print(table(ns, columns, rows, { colors: true }));
+  }
   if (cities) {
     ns.print('\n');
     const columns = [
       ' CITY',
-      { name: 'EST POP' },
+      { name: '     EST POP', align: 'right' },
       { name: 'CMTY', align: 'right' },
       { name: ' CHAOS', align: 'right' },
     ];
@@ -84,12 +121,11 @@ const showInfo = (ns: NS) => {
   }
   if (skills) {
     ns.print('\n');
-    console.log(skills);
     const format = (upgraded: boolean) => (upgraded ? C(40) : NORMAL);
 
     const columns = [
       ' SKILL',
-      { name: '  COST', align: 'right' },
+      { name: '      COST', align: 'right' },
       { name: ' LEVEL', align: 'right' },
     ];
     const rows = skills
@@ -108,7 +144,7 @@ const showInfo = (ns: NS) => {
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
-  ns.ui.resizeTail(320, 450);
+  ns.ui.resizeTail(350, 440);
 
   while (!ns.bladeburner.inBladeburner()) {
     await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
@@ -118,16 +154,20 @@ export async function main(ns: NS) {
   }
 
   while (true) {
-    await rmi(ns)('/bin/blades/actions/upgrade-skills.ts');
     await rmi(ns)('/bin/blades/actions/load-actions.ts');
     await rmi(ns)('/bin/blades/actions/load-cities.ts');
+    await rmi(ns)('/bin/blades/actions/upgrade-skills.ts');
     await rmi(ns)('/bin/blades/actions/travel.ts');
     const { actions } = getBladeData(ns);
     if (hasStaminaPenalty(ns)) {
       await improve(ns, 'agility');
     } else {
       const { name } = ns.bladeburner.getNextBlackOp() || {};
-      if (name && canDo(actions['Black Operations'][name], 0.8)) {
+      if (
+        name &&
+        ns.bladeburner.getBlackOpRank(name) <= ns.bladeburner.getRank() &&
+        canDo(actions['Black Operations'][name], 0.8)
+      ) {
         await start(ns)('Black Operations', name);
       } else {
         const operation = ns.bladeburner
