@@ -18,6 +18,7 @@ import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
 import { needsAugRam, needsJobRam } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
+import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 
 export const getGoals = (ns: NS): Goal => {
   const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
@@ -60,14 +61,13 @@ export const getGoals = (ns: NS): Goal => {
   const THE_BLADE = "The Blade's Simulacrum";
   const hasBlade = staticData.resetInfo.ownedAugs.has(THE_BLADE);
   if ([6, 7].includes(currentNode) && !hasBlade) {
-    const bladeTree = getBladeburnerTree(
-      getStaticData(ns),
-      getPlayerData(ns),
-      getMoneyData(ns),
-      ns.bladeburner.inBladeburner(),
-    );
-    if (bladeTree != null) {
-      return bladeTree;
+    if (hasBladeburnerReadyMults(player)) {
+      return getBladeburnerTree(
+        getStaticData(ns),
+        getPlayerData(ns),
+        getMoneyData(ns),
+        ns.bladeburner.inBladeburner(),
+      );
     }
   }
 

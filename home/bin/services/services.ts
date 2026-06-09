@@ -1,6 +1,7 @@
 import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData, getRamData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
+import { hasBladeburnerReadyMults } from '../blades/is-ready';
 
 const isRemoteApiConnected = () => {
   const elem = eval('doc' + 'ument').querySelector(
@@ -41,8 +42,8 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
     ![8].includes(resetInfo.currentNode);
   const hasSingularity = hasNode(4);
 
-  const money = () => (player && player(ns).money) ?? 0;
-  const factions = () => (player && player(ns).factions) ?? [];
+  const money = () => player(ns).money ?? 0;
+  const factions = () => player(ns).factions ?? [];
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
   const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= 5.2e9;
   const canAutopilot = () =>
@@ -61,8 +62,10 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useWolf = () => hasNode(8);
   const useThief = () => mostRootRam(ns) < 256;
   const useAngel = () => !useThief() && upFor(10000);
-  const useBlade = () => resetInfo.currentNode === 6;
+  const useBlade = () =>
+    resetInfo.currentNode === 6 && hasBladeburnerReadyMults(player(ns));
   const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
+  const canWork = () => canAutopilot() && (!useBlade() || hasSimulacrum());
 
   const tasks = [
     AnyHostService(ns)('/bin/access.ts'),
@@ -96,10 +99,8 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
       AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/control.ts'),
       AnyHostService(ns, canAutopilot)('/bin/self/tor.ts'),
+      AnyHostService(ns, canWork)('/bin/self/work.ts'),
     );
-    if (!useBlade() || hasSimulacrum()) {
-      tasks.push(AnyHostService(ns, canAutopilot)('/bin/self/work.ts'));
-    }
   } else {
     tasks.push(
       AnyHostService(ns)('/bin/hinter.ts'),
