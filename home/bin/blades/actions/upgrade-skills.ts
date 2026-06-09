@@ -98,7 +98,9 @@ export async function main(ns: NS) {
     .sort(by(([, limit]) => limit))
     .map(([skill, limit]) => [
       format(upgraded.has(skill))(skill),
-      format(upgraded.has(skill))(ns.bladeburner.getSkillUpgradeCost(skill)),
+      format(upgraded.has(skill))(
+        ns.format.number(ns.bladeburner.getSkillUpgradeCost(skill), 0),
+      ),
       format(upgraded.has(skill))(
         getSkill(skill) + '/' + ns.format.number(limit, 0),
       ),
