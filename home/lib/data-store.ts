@@ -145,9 +145,19 @@ export const getCorpReports = (ns: NS): CorpReports =>
 export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
   putData(ns, PORT_CORP_REPORTS, data);
 
-type BladeReportType = 'Action' | 'Skills' | 'Locations';
-type BladeReports = Record<BladeReportType, string>;
-export const getBladeReports = (ns: NS): BladeReports =>
+export type BladeAction = {
+  estimatedChance: [number, number];
+  actionCountRemaining: number;
+};
+type BladeData = {
+  actions: {
+    General: Record<BladeburnerGeneralActionName, BladeAction>;
+    Contracts: Record<BladeburnerContractName, BladeAction>;
+    Operations: Record<BladeburnerOperationName, BladeAction>;
+    'Black Operations': Record<BladeburnerBlackOpName, BladeAction>;
+  };
+};
+export const getBladeData = (ns: NS): BladeData =>
   readData(ns, PORT_BLADE_REPORTS) || {};
-export const putBladeReports = (ns: NS, data: Partial<BladeReports>) =>
+export const putBladeData = (ns: NS, data: Partial<BladeData>) =>
   putData(ns, PORT_BLADE_REPORTS, data);

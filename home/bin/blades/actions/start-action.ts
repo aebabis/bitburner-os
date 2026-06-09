@@ -1,4 +1,4 @@
-import { putBladeReports } from '../../../lib/data-store';
+import { putBladeData } from '../../../lib/data-store';
 import { table } from '../../../lib/table';
 import { formatTime } from '../../../lib/util';
 
@@ -26,6 +26,6 @@ export async function main(ns: NS) {
         `${tFormat(currentTime / 1000)}/${tFormat(actionTime / 1000)}`,
       ],
     ];
-    putBladeReports(ns, { Action: table(ns, columns, rows, { colors: true }) });
+    putBladeData(ns, { Action: table(ns, columns, rows, { colors: true }) });
   }
 }

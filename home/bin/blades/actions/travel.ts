@@ -1,4 +1,4 @@
-import { putBladeReports } from '../../../lib/data-store';
+import { putBladeData } from '../../../lib/data-store';
 import { table } from '../../../lib/table';
 import { by } from '../../../lib/util';
 
@@ -29,7 +29,7 @@ export async function main(ns: NS) {
       stats.communities,
       ns.format.number(stats.chaos).replace(/^0/, ' '),
     ]);
-  putBladeReports(ns, {
+  putBladeData(ns, {
     Locations: table(ns, columns, rows, { colors: true }),
   });
 }

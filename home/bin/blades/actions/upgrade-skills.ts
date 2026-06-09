@@ -25,7 +25,7 @@
 // Hands of Midas - Money sucks
 
 import { C, NORMAL } from '../../../lib/colors';
-import { putBladeReports } from '../../../lib/data-store';
+import { putBladeData } from '../../../lib/data-store';
 import { table } from '../../../lib/table';
 import { by } from '../../../lib/util';
 
@@ -105,5 +105,5 @@ export async function main(ns: NS) {
         getSkill(skill) + '/' + ns.format.number(limit, 0),
       ),
     ]);
-  putBladeReports(ns, { Skills: table(ns, columns, rows, { colors: true }) });
+  putBladeData(ns, { Skills: table(ns, columns, rows, { colors: true }) });
 }

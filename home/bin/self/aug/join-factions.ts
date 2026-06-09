@@ -1,6 +1,5 @@
 import { getGangData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
-import { CITY_FACTIONS } from '../../../lib/factions';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -12,7 +11,7 @@ export async function main(ns: NS) {
   for (const faction of invites) {
     if (
       factionTargets.includes(faction) ||
-      !CITY_FACTIONS.includes(faction) ||
+      !Object.values(ns.enums.CityName).includes(faction as CityName) ||
       gang != null
     )
       ns.singularity.joinFaction(faction);

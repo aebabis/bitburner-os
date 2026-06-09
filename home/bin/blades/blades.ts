@@ -1,16 +1,6 @@
 import { BRIGHT, NORMAL } from '../../lib/colors';
-import { getBladeReports } from '../../lib/data-store';
+import { BladeAction, getBladeData } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
-
-const ACTION_NAMES = {
-  General: (ns: NS) => ns.bladeburner.getGeneralActionNames(),
-  Contracts: (ns: NS) => ns.bladeburner.getContractNames(),
-  Operations: (ns: NS) => ns.bladeburner.getOperationNames(),
-  'Black Operations': (ns: NS) => ns.bladeburner.getBlackOpNames(),
-} as Record<BladeburnerActionType, (ns: NS) => BladeburnerActionName[]>;
-
-const getActionNames = (ns: NS, type: BladeburnerActionType) =>
-  ACTION_NAMES[type](ns);
 
 const hasBlade = (ns: NS) =>
   ns.getResetInfo().ownedAugs.has("The Blade's Simulacrum");
@@ -32,41 +22,27 @@ const improve = async (
   }
 };
 
-const tryAction =
-  (ns: NS) =>
-  async (
-    type: BladeburnerActionType,
-    name: BladeburnerActionName,
-    chance: number,
-  ) => {
-    if (ns.bladeburner.getActionCountRemaining(type, name) < 1) return false;
-    const [lower] = ns.bladeburner.getActionEstimatedSuccessChance(type, name);
-    if (lower < chance) return false;
-    await start(ns)(type, name);
-    return true;
-  };
-
-const findAction = async (ns: NS, type: BladeburnerActionType) => {
-  for (const name of getActionNames(ns, type).reverse()) {
-    if (await tryAction(ns)(type, name, 0.7)) return true;
-  }
-  return false;
-};
+const canDo = (action: BladeAction, chance: number) =>
+  action.actionCountRemaining >= 1 && action.estimatedChance[0] >= chance;
 
 /**
- * Determines if a viable action needs training.
+ * Determines whether there's a viable mission that needs training
  * To be viable, the average success chance needs to be above .7
  * To need training, the probability spread needs to be above .1
  */
-const needsIntel = (ns: NS, type: BladeburnerActionType) =>
-  getActionNames(ns, type).some((contract) => {
-    const [lower, upper] = ns.bladeburner.getActionEstimatedSuccessChance(
-      type,
-      contract,
-    );
+const needsIntel = (ns: NS) => {
+  const { actions } = getBladeData(ns);
+  const missions = [
+    ...Object.values(actions.Contracts),
+    ...Object.values(actions.Operations),
+    ...Object.values(actions['Black Operations']),
+  ];
+  return missions.some((mission) => {
+    const [lower, upper] = mission.estimatedChance;
     const avg = (lower + upper) / 2;
     return avg > 0.7 && upper - lower > 0.1;
   });
+};
 
 const hasStaminaPenalty = (ns: NS) => {
   const [currentStamina, maxStamina] = ns.bladeburner.getStamina();
@@ -84,19 +60,19 @@ const showInfo = (ns: NS) => {
   ns.print(
     BRIGHT.BOLD + '  SIMULACRUM: ' + NORMAL(hasBlade(ns) ? 'Yes' : 'No'),
   );
-  const reports = getBladeReports(ns);
-  for (const type of ['Action', 'Locations', 'Skills'] as const) {
-    const report = reports[type];
-    if (report) {
-      ns.print('\n');
-      ns.print(
-        report
-          .split('\n')
-          .map((line) => ' ' + line)
-          .join('\n'),
-      );
-    }
-  }
+  // const reports = getBladeReports(ns);
+  // for (const type of ['Action', 'Locations', 'Skills'] as const) {
+  //   const report = reports[type];
+  //   if (report) {
+  //     ns.print('\n');
+  //     ns.print(
+  //       report
+  //         .split('\n')
+  //         .map((line) => ' ' + line)
+  //         .join('\n'),
+  //     );
+  //   }
+  // }
   ns.print('\n');
 };
 
@@ -115,29 +91,35 @@ export async function main(ns: NS) {
   while (true) {
     await rmi(ns)('/bin/blades/actions/upgrade-skills.ts');
     await rmi(ns)('/bin/blades/actions/travel.ts');
+    await rmi(ns)('/bin/blades/actions/load-actions.ts');
+    const { actions } = getBladeData(ns);
     if (hasStaminaPenalty(ns)) {
       await improve(ns, 'agility');
     } else {
-      const missionTypes = [
-        'Black Operations',
-        'Operations',
-        'Contracts',
-      ] as const;
-      let foundAction;
       const { name } = ns.bladeburner.getNextBlackOp() || {};
-      if (name && (await tryAction(ns)('Black Operations', name, 0.8))) {
-        foundAction = true;
+      if (name && canDo(actions['Black Operations'][name], 0.8)) {
+        await start(ns)('Black Operations', name);
       } else {
-        for (const type of missionTypes) {
-          if ((foundAction = await findAction(ns, type))) break;
-        }
-      }
-      if (!foundAction) {
-        const trainingType = missionTypes.find((type) => needsIntel(ns, type));
-        if (trainingType) {
-          await start(ns)('General', 'Field Analysis');
+        const operation = ns.bladeburner
+          .getOperationNames()
+          .reverse()
+          .find((operation) => canDo(actions['Operations'][operation], 0.7));
+        if (operation) {
+          await start(ns)('Operations', operation);
         } else {
-          await improve(ns, getLowestStat(ns));
+          const contract = ns.bladeburner
+            .getContractNames()
+            .reverse()
+            .find((contract) => canDo(actions['Contracts'][contract], 0.7));
+          if (contract) {
+            await start(ns)('Contracts', contract);
+          } else {
+            if (needsIntel(ns)) {
+              await start(ns)('General', 'Field Analysis');
+            } else {
+              await improve(ns, getLowestStat(ns));
+            }
+          }
         }
       }
     }
