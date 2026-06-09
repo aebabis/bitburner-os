@@ -7,16 +7,11 @@ import {
   type Goal,
   hackingXpGoal,
   moneyPrereqGoal,
-  combatLevelsGoal,
-  bladesJoinGoal,
-  factionJoinGoal,
-  augMoneyGoal,
-  factionRepGoal,
-  buyAugAction,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
+  getBladeburnerTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
@@ -65,26 +60,15 @@ export const getGoals = (ns: NS): Goal => {
   const THE_BLADE = "The Blade's Simulacrum";
   const hasBlade = staticData.resetInfo.ownedAugs.has(THE_BLADE);
   if ([6, 7].includes(currentNode) && !hasBlade) {
-    const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
-    const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
-    const currentRep = factionRep?.['Bladeburners'] ?? 0;
-    const cbGoal = combatLevelsGoal(100, player.skills);
-    const joinBlades = bladesJoinGoal(ns.bladeburner.inBladeburner(), [cbGoal]);
-    const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [
-      joinBlades,
-    ]);
-    const repGoal = factionRepGoal(
-      'Bladeburners',
-      bladeRepCost,
-      currentRep,
-      joinBladeFaction,
+    const bladeTree = getBladeburnerTree(
+      getStaticData(ns),
+      getPlayerData(ns),
+      getMoneyData(ns),
+      ns.bladeburner.inBladeburner(),
     );
-    const augMoney = augMoneyGoal(
-      bladePrice,
-      money + estimatedStockValue,
-      referenceIncome,
-    );
-    return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
+    if (bladeTree != null) {
+      return bladeTree;
+    }
   }
 
   if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {

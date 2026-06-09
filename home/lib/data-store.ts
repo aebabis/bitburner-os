@@ -114,16 +114,23 @@ export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA);
 export const putRamData = (ns: NS, data: RamData) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 
-type PlayerData = {
+export type PlayerData = {
   player: Player;
+  factionRep?: Record<FactionName, number>;
 };
 export const getPlayerData = (ns: NS): PlayerData =>
   readData(ns, PORT_PLAYER_DATA) || {};
 export const putPlayerData = (ns: NS, data: PlayerData) =>
   putData(ns, PORT_PLAYER_DATA, data);
 
-export const getMoneyData = (ns: NS) => readData(ns, PORT_MONEY_DATA) || {};
-export const putMoneyData = (ns: NS, data) =>
+const DEFAULT_MONEY_DATA = {
+  estimatedStockValue: 0,
+  referenceIncome: 0,
+};
+export type MoneyData = typeof DEFAULT_MONEY_DATA;
+export const getMoneyData = (ns: NS): MoneyData =>
+  Object.assign({}, DEFAULT_MONEY_DATA, readData(ns, PORT_MONEY_DATA) || {});
+export const putMoneyData = (ns: NS, data: MoneyData) =>
   putData(ns, PORT_MONEY_DATA, data);
 
 export type StoredContract = {

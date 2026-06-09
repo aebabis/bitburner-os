@@ -17,6 +17,7 @@ import {
   type Action,
   type Goal,
   type Plan,
+  bladesJoinGoal,
 } from './nodes.ts';
 import {
   findOptimalBatch,
@@ -28,7 +29,7 @@ import {
   shouldPursueFavor,
   computeResetOverhead,
 } from '../aug-select.ts';
-import { StaticData } from '../data-store.ts';
+import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 
 const plan = (
   deps: Goal[],
@@ -415,4 +416,35 @@ export const buildFactionGoalTree = (
     if (times.some((t) => t == null) || treeValue === 0) return 0;
     return treeValue / (Math.max(...(times as number[])) + overhead);
   });
+};
+
+export const getBladeburnerTree = (
+  staticData: StaticData,
+  playerData: PlayerData,
+  moneyData: MoneyData,
+  inBladeburner: boolean,
+) => {
+  const { player, factionRep } = playerData;
+  const { estimatedStockValue, referenceIncome } = moneyData;
+  const THE_BLADE = "The Blade's Simulacrum";
+  const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
+  const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
+  const currentRep = factionRep?.['Bladeburners'] ?? 0;
+  const cbGoal = combatLevelsGoal(100, player.skills);
+  const joinBlades = bladesJoinGoal(inBladeburner, [cbGoal]);
+  const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [
+    joinBlades,
+  ]);
+  const repGoal = factionRepGoal(
+    'Bladeburners',
+    bladeRepCost,
+    currentRep,
+    joinBladeFaction,
+  );
+  const augMoney = augMoneyGoal(
+    bladePrice,
+    player.money + estimatedStockValue,
+    referenceIncome,
+  );
+  return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
 };
