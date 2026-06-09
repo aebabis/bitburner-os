@@ -30,6 +30,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasNode = (num: number) =>
     resetInfo.currentNode === num || resetInfo.ownedSF.has(num);
   const hacknetAvailable = ![8].includes(resetInfo.currentNode);
+  const playerLikesHacknet = false;
   const gangsAvailable =
     hasNode(2) &&
     !resetInfo.bitNodeOptions.disableGang &&
