@@ -124,8 +124,13 @@ export async function main(ns: NS) {
         'Contracts',
       ] as const;
       let foundAction;
-      for (const type of missionTypes) {
-        if ((foundAction = await findAction(ns, type))) break;
+      const { name } = ns.bladeburner.getNextBlackOp() || {};
+      if (name && (await tryAction(ns)('Black Operations', name, 0.8))) {
+        foundAction = true;
+      } else {
+        for (const type of missionTypes) {
+          if ((foundAction = await findAction(ns, type))) break;
+        }
       }
       if (!foundAction) {
         const trainingType = missionTypes.find((type) => needsIntel(ns, type));
