@@ -1,6 +1,8 @@
 import { BRIGHT, NORMAL } from '../../lib/colors';
 import { BladeAction, getBladeData } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
+import { table } from '../../lib/table';
+import { by } from '../../lib/util';
 
 const hasBlade = (ns: NS) =>
   ns.getResetInfo().ownedAugs.has("The Blade's Simulacrum");
@@ -57,9 +59,29 @@ const getLowestStat = (ns: NS) => {
 
 const showInfo = (ns: NS) => {
   ns.clearLog();
+
+  const { cities } = getBladeData(ns);
   ns.print(
     BRIGHT.BOLD + '  SIMULACRUM: ' + NORMAL(hasBlade(ns) ? 'Yes' : 'No'),
   );
+  if (cities) {
+    ns.print('\n');
+    const columns = [
+      ' CITY',
+      { name: 'EST POP' },
+      { name: 'CMTY', align: 'right' },
+      { name: ' CHAOS', align: 'right' },
+    ];
+    const rows = Object.entries(cities)
+      .sort(by(([, stats]) => -stats.estimatedPopulation))
+      .map(([city, stats]) => [
+        ' ' + city,
+        ns.format.number(stats.estimatedPopulation).padStart(8),
+        stats.communities,
+        ns.format.number(stats.chaos).replace(/^0/, ' '),
+      ]);
+    ns.print(table(ns, columns, rows, { colors: true }));
+  }
   // const reports = getBladeReports(ns);
   // for (const type of ['Action', 'Locations', 'Skills'] as const) {
   //   const report = reports[type];
@@ -90,8 +112,9 @@ export async function main(ns: NS) {
 
   while (true) {
     await rmi(ns)('/bin/blades/actions/upgrade-skills.ts');
-    await rmi(ns)('/bin/blades/actions/travel.ts');
     await rmi(ns)('/bin/blades/actions/load-actions.ts');
+    await rmi(ns)('/bin/blades/actions/load-cities.ts');
+    await rmi(ns)('/bin/blades/actions/travel.ts');
     const { actions } = getBladeData(ns);
     if (hasStaminaPenalty(ns)) {
       await improve(ns, 'agility');
