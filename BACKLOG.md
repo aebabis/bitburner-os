@@ -29,3 +29,4 @@
 - Multiple target factions
 - Migrate from `@eslint/js` + `@typescript-eslint/parser` to `typescript-eslint` unified plugin (once JS→TS migration is further along)
 - make isTixViable and is4SViable use surplus money instead of taking money as soon as aug money goal barely met
+- Replace accountant with query-service calls?
