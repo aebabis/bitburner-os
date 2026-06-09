@@ -109,7 +109,7 @@ export async function main(ns: NS) {
     await rmi(ns)('/bin/self/travel.ts', 1, 'Sector-12');
     await rmi(ns)('/bin/self/improvement.ts', 1, getLowestStat(ns));
     await rmi(ns)('/bin/blades/actions/join-bladeburner-division.ts');
-    await ns.bladeburner.nextUpdate();
+    await ns.sleep(1000);
   }
 
   while (true) {

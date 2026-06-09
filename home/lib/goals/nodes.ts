@@ -10,6 +10,7 @@ export type GoalType =
   | 'FACTION_JOIN'
   | 'FACTION_REP'
   | 'FACTION_FAVOR'
+  | 'BLADES_JOIN'
   | 'COMBAT_LEVELS'
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
@@ -54,7 +55,7 @@ interface GoalProps {
   actions?: Action[];
   ownTime?: () => number | null;
 }
-const goal = (
+export const goal = (
   type: GoalType,
   desc: string,
   isDone: () => boolean,
@@ -223,6 +224,12 @@ export const factionJoinGoal = (
 ) =>
   goal('FACTION_JOIN', 'Join ' + faction, () => factions.includes(faction), {
     faction,
+    deps,
+    ownTime: () => 0,
+  });
+
+export const bladesJoinGoal = (inBlades: boolean, deps: Goal[] = []) =>
+  goal('BLADES_JOIN', 'Join the blades', () => inBlades, {
     deps,
     ownTime: () => 0,
   });

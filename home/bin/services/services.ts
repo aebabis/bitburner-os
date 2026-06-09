@@ -71,16 +71,14 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/dashboard.ts'),
     AnyHostService(ns)('/bin/accountant.ts'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
-    AnyHostService(ns)('/bin/share.ts'),
-    AnyHostService(ns)('/bin/stalker.ts'),
   ];
 
   if (useWolf()) tasks.push(AnyHostService(ns)('/bin/nerd.ts'));
   else tasks.push(AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'));
 
-  if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
-
   if (useBlade()) tasks.push(AnyHostService(ns)('/bin/blades/blades.ts'));
+
+  if (hacknetAvailable) tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
 
   if (gangsAvailable)
     tasks.push(AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.ts'));
@@ -107,6 +105,10 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   }
 
   tasks.push(Service(ns, isRemoteApiConnected)('/bin/nvim.ts', 'home'));
+  tasks.push(
+    AnyHostService(ns)('/bin/share.ts'),
+    AnyHostService(ns)('/bin/stalker.ts'),
+  );
 
   return tasks;
 };
