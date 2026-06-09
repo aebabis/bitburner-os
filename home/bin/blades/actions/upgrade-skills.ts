@@ -24,10 +24,7 @@
 // Cyber's Edge - Reaper and Elusive System are supposedly better. Not sure why not both?
 // Hands of Midas - Money sucks
 
-import { C, NORMAL } from '../../../lib/colors';
-import { putBladeData } from '../../../lib/data-store';
-import { table } from '../../../lib/table';
-import { by } from '../../../lib/util';
+import { getBladeData, putBladeData } from '../../../lib/data-store';
 
 const SKILL_LIMITS: Record<BladeburnerSkillName, number> = {
   "Blade's Intuition": Infinity,
@@ -48,17 +45,13 @@ type SkillCondition = (ns: NS) => boolean;
 
 const LIMITATIONS: Partial<Record<BladeburnerSkillName, SkillCondition>> = {
   'Digital Observer': (ns) => {
-    const [low, high] = ns.bladeburner.getActionEstimatedSuccessChance(
-      'Operations',
-      'Investigation',
-    );
+    const { actions } = getBladeData(ns);
+    const [low, high] = actions.Operations.Investigation.estimatedChance;
     return (low + high) / 2 > 0.7;
   },
   Overclock: (ns) => {
-    const [low, high] = ns.bladeburner.getActionEstimatedSuccessChance(
-      'Operations',
-      'Assassination',
-    );
+    const { actions } = getBladeData(ns);
+    const [low, high] = actions.Operations.Assassination.estimatedChance;
     return (low + high) / 2 > 0.9;
   },
 };
@@ -66,44 +59,23 @@ const LIMITATIONS: Partial<Record<BladeburnerSkillName, SkillCondition>> = {
 const SKILLS = Object.keys(SKILL_LIMITS) as BladeburnerSkillName[];
 
 export async function main(ns: NS) {
-  const neededSkills = SKILLS.filter(
-    (skill) => ns.bladeburner.getSkillLevel(skill) < SKILL_LIMITS[skill],
-  )
-    .filter((skill) => LIMITATIONS[skill]?.(ns) ?? true)
-    .sort(
-      (a, b) =>
-        ns.bladeburner.getSkillUpgradeCost(a) -
-        ns.bladeburner.getSkillUpgradeCost(b),
-    );
+  const skills = SKILLS.map((name) => ({
+    name,
+    cost: ns.bladeburner.getSkillUpgradeCost(name),
+    level: ns.bladeburner.getSkillLevel(name),
+    limit: SKILL_LIMITS[name],
+    upgradedThisTick: false,
+  }));
+  const neededSkills = skills
+    .filter((skill) => skill.level < skill.limit)
+    .filter((skill) => LIMITATIONS[skill.name]?.(ns) ?? true)
+    .sort((a, b) => a.cost - b.cost);
   const upgraded = new Set<BladeburnerSkillName>();
   for (const skill of neededSkills) {
-    if (ns.bladeburner.upgradeSkill(skill)) {
-      upgraded.add(skill);
+    if (ns.bladeburner.upgradeSkill(skill.name)) {
+      upgraded.add(skill.name);
+      skill.upgradedThisTick = true;
     }
   }
-
-  const format = (upgraded: boolean) => (upgraded ? C(40) : NORMAL);
-
-  const getSkill = (skill: BladeburnerSkillName) =>
-    ns.bladeburner.getSkillLevel(skill);
-  const columns = [
-    'SKILL',
-    { name: '  COST', align: 'right' },
-    { name: ' LEVEL', align: 'right' },
-  ];
-  const rows = (
-    Object.entries(SKILL_LIMITS) as [BladeburnerSkillName, number][]
-  )
-    .filter(([, limit]) => limit > 0)
-    .sort(by(([, limit]) => limit))
-    .map(([skill, limit]) => [
-      format(upgraded.has(skill))(skill),
-      format(upgraded.has(skill))(
-        ns.format.number(ns.bladeburner.getSkillUpgradeCost(skill), 0),
-      ),
-      format(upgraded.has(skill))(
-        getSkill(skill) + '/' + ns.format.number(limit, 0),
-      ),
-    ]);
-  putBladeData(ns, { Skills: table(ns, columns, rows, { colors: true }) });
+  putBladeData(ns, { skills });
 }

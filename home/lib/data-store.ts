@@ -156,6 +156,21 @@ type BladeData = {
     Operations: Record<BladeburnerOperationName, BladeAction>;
     'Black Operations': Record<BladeburnerBlackOpName, BladeAction>;
   };
+  cities: Record<
+    CityName,
+    {
+      estimatedPopulation: number;
+      chaos: number;
+      communities: number;
+    }
+  >;
+  skills: {
+    name: BladeburnerSkillName;
+    cost: number;
+    level: number;
+    limit: number;
+    upgradedThisTick: boolean;
+  }[];
 };
 export const getBladeData = (ns: NS): BladeData =>
   readData(ns, PORT_BLADE_REPORTS) || {};

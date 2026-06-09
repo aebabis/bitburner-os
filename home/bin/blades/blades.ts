@@ -1,4 +1,4 @@
-import { BRIGHT, NORMAL } from '../../lib/colors';
+import { BRIGHT, C, NORMAL } from '../../lib/colors';
 import { BladeAction, getBladeData } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
 import { table } from '../../lib/table';
@@ -60,7 +60,7 @@ const getLowestStat = (ns: NS) => {
 const showInfo = (ns: NS) => {
   ns.clearLog();
 
-  const { cities } = getBladeData(ns);
+  const { cities, skills } = getBladeData(ns);
   ns.print(
     BRIGHT.BOLD + '  SIMULACRUM: ' + NORMAL(hasBlade(ns) ? 'Yes' : 'No'),
   );
@@ -82,19 +82,26 @@ const showInfo = (ns: NS) => {
       ]);
     ns.print(table(ns, columns, rows, { colors: true }));
   }
-  // const reports = getBladeReports(ns);
-  // for (const type of ['Action', 'Locations', 'Skills'] as const) {
-  //   const report = reports[type];
-  //   if (report) {
-  //     ns.print('\n');
-  //     ns.print(
-  //       report
-  //         .split('\n')
-  //         .map((line) => ' ' + line)
-  //         .join('\n'),
-  //     );
-  //   }
-  // }
+  if (skills) {
+    ns.print('\n');
+    console.log(skills);
+    const format = (upgraded: boolean) => (upgraded ? C(40) : NORMAL);
+
+    const columns = [
+      ' SKILL',
+      { name: '  COST', align: 'right' },
+      { name: ' LEVEL', align: 'right' },
+    ];
+    const rows = skills
+      .filter(({ limit }) => limit > 0)
+      .sort((a, b) => (a.limit > b.limit ? 1 : -1))
+      .map(({ name, cost, level, limit, upgradedThisTick }) => [
+        ' ' + format(upgradedThisTick)(name),
+        format(upgradedThisTick)(ns.format.number(cost, 0)),
+        format(upgradedThisTick)(level + '/' + ns.format.number(limit, 0)),
+      ]);
+    ns.print(table(ns, columns, rows, { colors: true }));
+  }
   ns.print('\n');
 };
 

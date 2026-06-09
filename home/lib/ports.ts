@@ -6,6 +6,11 @@ export function replacer(_key: string, value: unknown) {
       dataType: 'Map',
       value: Array.from(value.entries()), // or with spread: value: [...value]
     };
+  } else if (value === Infinity) {
+    return {
+      dataType: 'number',
+      value: 'Infinity',
+    };
   } else {
     return value;
   }
@@ -15,6 +20,9 @@ export function reviver(_key: string, value: unknown) {
   if (typeof value === 'object' && value !== null) {
     if (value.dataType === 'Map') {
       return new Map(value.value);
+    }
+    if (value.dataType === 'number' && value.value === 'Infinity') {
+      return Infinity;
     }
   }
   return value;
