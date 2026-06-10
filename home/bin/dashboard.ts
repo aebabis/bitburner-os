@@ -75,15 +75,7 @@ const getRunStats = (ns: NS) => {
 };
 
 const getPlayerLevels = (ns: NS) => {
-  const { skills } = getPlayerData(ns).player;
-  const { resetInfo, augmentationStats = {} } = getStaticData(ns);
-
-  const stat = (stat: keyof Multipliers) => {
-    let p = 1;
-    for (const [aug, count] of resetInfo.ownedAugs.entries())
-      p *= (augmentationStats[aug]?.[stat] ?? 1) ** count;
-    return p;
-  };
+  const { skills, mults } = getPlayerData(ns).player;
 
   const G = C(72);
   const W = C(251);
@@ -92,41 +84,26 @@ const getPlayerLevels = (ns: NS) => {
   const fmt = (v: number) => M('x' + v.toFixed(3));
   return table(ns, null, [
     ['', '', M('mult'), M('exp')],
-    [
-      G('Hack'),
-      G(skills.hacking),
-      fmt(stat('hacking')),
-      fmt(stat('hacking_exp')),
-    ],
+    [G('Hack'), G(skills.hacking), fmt(mults.hacking), fmt(mults.hacking_exp)],
     [
       W('Str'),
       W(skills.strength),
-      fmt(stat('strength')),
-      fmt(stat('strength_exp')),
+      fmt(mults.strength),
+      fmt(mults.strength_exp),
     ],
-    [
-      W('Def'),
-      W(skills.defense),
-      fmt(stat('defense')),
-      fmt(stat('defense_exp')),
-    ],
+    [W('Def'), W(skills.defense), fmt(mults.defense), fmt(mults.defense_exp)],
     [
       W('Dex'),
       W(skills.dexterity),
-      fmt(stat('dexterity')),
-      fmt(stat('dexterity_exp')),
+      fmt(mults.dexterity),
+      fmt(mults.dexterity_exp),
     ],
-    [
-      W('Agi'),
-      W(skills.agility),
-      fmt(stat('agility')),
-      fmt(stat('agility_exp')),
-    ],
+    [W('Agi'), W(skills.agility), fmt(mults.agility), fmt(mults.agility_exp)],
     [
       W('Cha'),
       W(skills.charisma),
-      fmt(stat('charisma')),
-      fmt(stat('charisma_exp')),
+      fmt(mults.charisma),
+      fmt(mults.charisma_exp),
     ],
   ]);
 };

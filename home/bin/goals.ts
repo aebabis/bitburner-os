@@ -35,11 +35,14 @@ const getAugTableData = (ns: NS) => {
 export async function main(ns: NS) {
   const [command, ...rest] = ns.args;
 
+  const { resetInfo } = getStaticData(ns);
+
   if (command === undefined) {
     // TODO: Show help?
     return;
   }
 
+  const fmt = (x: number | string) => ns.format.number(+x, 3);
   switch (command) {
     case 'aug-table': {
       const {
@@ -68,15 +71,13 @@ export async function main(ns: NS) {
         .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
         .map((aug) => {
           const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
-          const value = augValueFromStats(aug, augmentationStats);
+          const value = augValueFromStats(resetInfo, aug, augmentationStats);
           const price = (augmentationPrices[aug] ?? 0) * nfMult;
           const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
           return { aug, value, price, repReq };
         })
         .sort((a, b) => b.value - a.value);
 
-      const fmt = /** @param {string | number} x */ (x) =>
-        ns.format.number(/** @type {number} */ x, 3);
       ns.tprint(
         '\n' +
           table(
@@ -129,7 +130,7 @@ export async function main(ns: NS) {
           .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
           .map((aug) => {
             const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
-            const value = augValueFromStats(aug, augmentationStats);
+            const value = augValueFromStats(resetInfo, aug, augmentationStats);
             const price = (augmentationPrices[aug] ?? 0) * nfMult;
             const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
             const factions = augFactions[aug] ?? [];
@@ -164,8 +165,6 @@ export async function main(ns: NS) {
           })
           .sort((a, b) => b.utility - a.utility);
 
-        const fmt = /** @param {string | number} x */ (x) =>
-          ns.format.number(/** @type {number} */ x, 3);
         ns.clearLog();
         ns.print(
           table(
@@ -176,8 +175,7 @@ export async function main(ns: NS) {
               {
                 name: 'Utility×1M',
                 align: 'right',
-                process: /** @param {string | number} x */ (x) =>
-                  fmt(/** @type {number} */ x * 1e6),
+                process: (x: number | string) => fmt(+x * 1e6),
               },
             ],
             rows.map(({ aug, value, utility }) => [aug, value, utility]),
@@ -190,8 +188,7 @@ export async function main(ns: NS) {
     case 'faction-live': {
       ns.disableLog('ALL');
       ns.ui.openTail();
-      /** @param {number | null} s */
-      const fmtTime = (s) => {
+      const fmtTime = (s: number | null) => {
         if (s == null || !isFinite(s)) return '?';
         if (s === 0) return '';
         const h = Math.floor(s / 3600);
@@ -248,15 +245,11 @@ export async function main(ns: NS) {
             const eta =
               times == null || times.some((t) => t == null)
                 ? null
-                : Math.max(.../** @type {number[]} */ times);
+                : Math.max(...(times as number[]));
             return [faction, value, utility, nfCount, nonNfCount, eta];
           })
-          .sort(
-            (a, b) => /** @type {number} */ b[2] - /** @type {number} */ a[2],
-          );
+          .sort((a, b) => b[2] - a[2]);
 
-        const fmt = /** @param {string | number} x */ (x) =>
-          ns.format.number(/** @type {number} */ x, 3);
         ns.clearLog();
         ns.print(
           table(
@@ -267,16 +260,14 @@ export async function main(ns: NS) {
               {
                 name: 'Util×1M',
                 align: 'right',
-                process: /** @param {string | number} x */ (x) =>
-                  fmt(/** @type {number} */ x * 1e6),
+                process: (x: string | number) => fmt(+x * 1e6),
               },
               { name: 'NF', align: 'right' },
               { name: 'Augs', align: 'right' },
               {
                 name: 'ETA',
                 align: 'right',
-                process: /** @param {string | number} x */ (x) =>
-                  fmtTime(/** @type {number} */ x),
+                process: (x: string | number) => fmtTime(+x),
               },
             ],
             rows,
