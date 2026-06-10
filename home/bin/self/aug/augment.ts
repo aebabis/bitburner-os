@@ -1,5 +1,6 @@
 import { tprint } from '../../../boot/util';
 import { STR } from '../../../lib/colors';
+import { getGoals } from '../../../lib/goals/goals';
 import { rmi } from '../../../lib/rmi';
 
 export async function main(ns: NS) {
@@ -25,8 +26,11 @@ export async function main(ns: NS) {
     ns.print('Loaded favor');
     await rmi(ns)('/bin/self/aug/join-factions.ts');
     ns.print('Loaded factions');
-    await rmi(ns)('/bin/self/aug/purchase-augs.ts');
-    ns.print('Checked augs');
+    // Prevent early RAM drain by pre-checking install
+    if (getGoals(ns).deps.every((g) => g.isDone())) {
+      await rmi(ns)('/bin/self/aug/purchase-augs.ts');
+      ns.print('Attempted to augment');
+    }
     await ns.sleep(100);
   }
 }

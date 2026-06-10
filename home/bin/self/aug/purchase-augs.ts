@@ -31,10 +31,9 @@ export async function main(ns: NS) {
       ns.write(LOGFILE, args.join(' ') + '\n', 'a');
     };
 
-    // Go home so file logging works
-    ns.singularity.connect('home');
-
-    print(new Date().toLocaleDateString());
+    const dateStr = new Date().toLocaleDateString();
+    const timeStr = new Date().toLocaleTimeString();
+    print(`${dateStr} ${timeStr}`);
 
     for (const goal of [root, ...root.prerequisites()]) {
       print(
@@ -62,7 +61,7 @@ export async function main(ns: NS) {
       `Using ${finisher} (${ns.getServerMaxRam(finisher)}) as Singularity server`,
     );
 
-    const run = async (
+    const exec = async (
       script: string,
       threads: number,
       ...args: ScriptArg[]
@@ -90,7 +89,7 @@ export async function main(ns: NS) {
       const cost = buyRep.amount * donationRate;
       print('Cost:  $' + ns.format.number(cost));
       print('Avail: $' + ns.format.number(ns.getPlayer().money));
-      await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
+      await exec('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
       print('Rep:   ' + ns.singularity.getFactionRep(buyRep.faction));
     }
 
@@ -114,13 +113,13 @@ export async function main(ns: NS) {
     print(`  bought ${nfCount} Neuroflux`);
 
     // Buy RAM if we can
-    await run('/bin/self/buy-ram.ts', 1);
+    await exec('/bin/self/buy-ram.ts', 1);
 
     // Try to start next aug with market access
-    await run('/bin/broker/purchase.ts', 1, 'purchaseWseAccount');
-    await run('/bin/broker/purchase.ts', 1, 'purchaseTixApi');
-    await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketDataTixApi');
-    await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketData');
+    await exec('/bin/broker/purchase.ts', 1, 'purchaseWseAccount');
+    await exec('/bin/broker/purchase.ts', 1, 'purchaseTixApi');
+    await exec('/bin/broker/purchase.ts', 1, 'purchase4SMarketDataTixApi');
+    await exec('/bin/broker/purchase.ts', 1, 'purchase4SMarketData');
 
     const { factionFavor, favorToDonate, augmentationRepReqs } =
       getStaticData(ns);
@@ -148,7 +147,7 @@ export async function main(ns: NS) {
         const donationAmount = (repOfNextNeuroflux - currentRep) * donationRate;
         print('Donation: $' + donationAmount);
         if (currentRep < repOfNextNeuroflux) {
-          await run(
+          await exec(
             '/bin/self/aug/donate-to-faction.ts',
             1,
             highestFavorFaction,
@@ -163,7 +162,7 @@ export async function main(ns: NS) {
         'Done buying NFG. Donating remaining money: $' +
           ns.format.number(ns.getPlayer().money),
       );
-      await run(
+      await exec(
         '/bin/self/aug/donate-to-faction.ts',
         1,
         highestFavorFaction,
@@ -186,7 +185,11 @@ export async function main(ns: NS) {
       'a',
     );
 
+    if (ns.getHostname() !== 'home') {
+      ns.scp([AUG_LOG_FILE, LOGFILE, '/log/last-reset.txt'], 'home');
+    }
+
     // Start all over
-    await run('/bin/self/aug/reset.ts', 1);
+    await exec('/bin/self/aug/reset.ts', 1);
   }
 }
