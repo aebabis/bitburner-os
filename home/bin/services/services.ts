@@ -60,22 +60,31 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
     );
   };
   const useWolf = () => hasNode(8);
-  const useThief = () => mostRootRam(ns) < 256;
-  const useAngel = () => !useThief() && upFor(10000);
+  const hasAngel = hasNode(1);
+  const hasThief = !hasNode(5);
+  const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
+  const useAngel = () => preferAngel() || !hasThief;
+  const useThief = () => !preferAngel() || !hasAngel;
   const useBlade = () =>
     resetInfo.currentNode === 6 && hasBladeburnerReadyMults(player(ns));
   const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
   const canWork = () => canAutopilot() && (!useBlade() || hasSimulacrum());
 
-  const tasks = [
-    AnyHostService(ns)('/bin/access.ts'),
-    AnyHostService(ns, useThief)('/bin/thief.ts'),
-    AnyHostService(ns, useAngel)('/bin/angel.ts'),
+  const tasks = [AnyHostService(ns)('/bin/access.ts')];
+
+  if (hasAngel) {
+    tasks.push(AnyHostService(ns, useAngel)('/bin/angel.ts'));
+  }
+  if (hasThief) {
+    tasks.push(AnyHostService(ns, useThief)('/bin/thief.ts'));
+  }
+
+  tasks.push(
     AnyHostService(ns, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
     AnyHostService(ns)('/bin/accountant.ts'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
-  ];
+  );
 
   if (useWolf()) tasks.push(AnyHostService(ns)('/bin/nerd.ts'));
   else tasks.push(AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'));

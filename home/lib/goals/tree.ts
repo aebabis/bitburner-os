@@ -28,6 +28,7 @@ import {
   shouldEarlyInstall,
   shouldPursueFavor,
   computeResetOverhead,
+  computeRepRate,
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 
@@ -213,25 +214,6 @@ const getPurchaseOrder = (
   return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
 };
 
-const computeRepRate = (
-  faction: FactionName,
-  factionWorkTypes: Record<string, string[]>,
-  factionFavor: Record<string, number>,
-  player: Player,
-  formulas: Formulas,
-): number =>
-  Math.max(
-    0,
-    ...(factionWorkTypes[faction] ?? ['hacking']).map(
-      (workType) =>
-        formulas?.work.factionGains(
-          player,
-          workType,
-          factionFavor?.[faction] ?? 0,
-        )?.reputation * 5,
-    ),
-  );
-
 /**
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
@@ -267,7 +249,7 @@ export const buildFactionGoalTree = (
     augmentationPrices,
     augmentationPrereqs,
     augmentationStats,
-    factionWorkTypes = {},
+    factionWorkTypes,
   } = staticData;
   const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
 
@@ -305,8 +287,10 @@ export const buildFactionGoalTree = (
   const repRate = computeRepRate(
     faction,
     factionWorkTypes,
-    staticData.factionFavor ?? {},
+    factionRep,
+    staticData.factionFavor,
     player,
+    staticData.resetInfo.lastAugReset,
     formulas,
   );
 

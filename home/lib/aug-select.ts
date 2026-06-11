@@ -155,6 +155,33 @@ export const computeAugCost = (
   return cost;
 };
 
+export const computeRepRate = (
+  faction: FactionName,
+  factionWorkTypes: Record<FactionName, FactionWorkType[]> | undefined,
+  factionRep: Record<FactionName, number> | undefined,
+  factionFavor: Record<FactionName, number> | undefined,
+  player: Player,
+  lastAugReset: number,
+  formulas: Formulas,
+): number => {
+  if (faction === 'Bladeburners') {
+    const timeSinceInstall =
+      lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+    return (factionRep?.['Bladeburners'] ?? 0) / timeSinceInstall;
+  }
+  return Math.max(
+    0,
+    ...(factionWorkTypes?.[faction] ?? ['hacking']).map(
+      (workType) =>
+        formulas?.work.factionGains(
+          player,
+          workType,
+          factionFavor?.[faction] ?? 0,
+        )?.reputation * 5,
+    ),
+  );
+};
+
 export const findOptimalBatch = (
   faction: FactionName,
   staticData: StaticData,
@@ -171,6 +198,7 @@ export const findOptimalBatch = (
     augmentationStats,
     factionAugmentations,
     factionFavor,
+    factionWorkTypes,
   } = staticData;
 
   const canDonate =
@@ -191,14 +219,18 @@ export const findOptimalBatch = (
   const augValue = (aug: string) =>
     augValueFromStats(resetInfo, aug, augmentationStats);
 
-  const currentRep = factionRep[faction] ?? 0;
-  const gainRate = formulas.work.factionGains(
-    player,
-    'hacking',
-    factionFavor?.[faction] ?? 0,
-  );
-
   const resetOverhead = computeResetOverhead(staticData);
+
+  const currentRep = factionRep[faction] ?? 0;
+  const gainRate = computeRepRate(
+    faction,
+    factionWorkTypes,
+    factionRep,
+    factionFavor,
+    player,
+    resetInfo.lastAugReset,
+    formulas,
+  );
 
   // Neuroflux is always available regardless of owned count — you can always buy more.
   // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.
@@ -251,11 +283,7 @@ export const findOptimalBatch = (
     const timeForMoney =
       Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
     const timeForRep =
-      canDonate || bindingRep === 0
-        ? 0
-        : gainRate != null
-          ? bindingRep / (gainRate.reputation * 5)
-          : Infinity;
+      canDonate || bindingRep === 0 ? 0 : bindingRep / gainRate;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
 
