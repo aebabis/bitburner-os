@@ -206,7 +206,9 @@ const selectTarget = (ns: NS, minFrameRam: number) => {
   const evaluations = getPossibleTargets(ns).map((hostname) =>
     evaluateTarget(ns, getHorizon(ns), hostname, minFrameRam),
   );
-  if (evaluations.length === 0) throw new Error('No hackable targets?!');
+  if (evaluations.length === 0) {
+    return { hostname: null, money: 0, time: 0, incomeRate: 0 };
+  }
   return evaluations.reduce((a, b) => (a.utility > b.utility ? a : b));
 };
 
@@ -281,6 +283,11 @@ export async function main(ns: NS) {
     time,
     incomeRate,
   } = selectTarget(ns, minFrameRam);
+
+  if (target == null) {
+    await ns.sleep(1000);
+    return;
+  }
 
   const server = getHackableServer(ns, target);
   debug(needsSetup(server));

@@ -345,7 +345,14 @@ export const getAccessibleFactions = (
     ...STORY_FACTIONS,
     ...CRIMINAL_ORGANIZATIONS,
     ...CITY_FACTIONS,
+    'Bladeburners',
   ].filter((faction) => {
+    if (
+      faction === 'Bladeburners' &&
+      !player.factions.includes('Bladeburners')
+    ) {
+      return false;
+    }
     const reqs = factionRequirements?.[faction] ?? [];
     const disqualifiers = reqs
       .filter((req) => req.type === 'not')
