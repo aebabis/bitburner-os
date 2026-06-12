@@ -3,6 +3,7 @@ import {
   BladeAction,
   BladeCurrentAction,
   getBladeData,
+  putBladeData,
 } from '../../lib/data-store';
 import { rmi } from '../../lib/rmi';
 import { table } from '../../lib/table';
@@ -25,6 +26,7 @@ const improve = async (
     await start(ns)('General', 'Training');
   } else {
     await rmi(ns)('/bin/self/improvement.ts', 1, stat);
+    putBladeData(ns, { currentAction: null });
   }
 };
 
@@ -87,20 +89,18 @@ const showInfo = (ns: NS) => {
       ' '.repeat(21) +
       '▲',
   );
-  if (currentAction) {
-    ns.print('\n');
-    const tFormat = (ms: number) => formatTime(ms).replace(/^0/, '');
-    const columns = [' ACTION', ''];
-    const rows = !currentAction
-      ? [[' (none)', '']]
-      : [
-          [
-            ' ' + currentAction.name,
-            `${tFormat(currentAction.time / 1000)}/${tFormat(getActionDuration(ns, currentAction) / 1000)}`,
-          ],
-        ];
-    ns.print(table(ns, columns, rows, { colors: true }));
-  }
+  ns.print('\n');
+  const tFormat = (ms: number) => formatTime(ms).replace(/^0/, '');
+  const columns = [' ACTION', ''];
+  const rows = !currentAction
+    ? [[' (none)', '']]
+    : [
+        [
+          ' ' + currentAction.name,
+          `${tFormat(currentAction.time / 1000)}/${tFormat(getActionDuration(ns, currentAction) / 1000)}`,
+        ],
+      ];
+  ns.print(table(ns, columns, rows, { colors: true }));
   if (cities) {
     ns.print('\n');
     const columns = [
