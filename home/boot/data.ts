@@ -40,6 +40,7 @@ export async function main(ns: NS) {
     purchasedServerLimit: ns.cloud.getServerLimit(),
     purchasedServerMaxRam,
     purchasedServerCosts,
+    favorToDonate: ns.getFavorToDonate(),
   });
 
   // Go to next step in the boot sequence

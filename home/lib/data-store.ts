@@ -71,6 +71,7 @@ export type StaticData = {
   requiredAugRam: number;
   bitNodeMultipliers: { HacknetNodeMoney: number | null };
   hacknetMultipliers: HacknetMultipliers;
+  favorToDonate: number;
 
   materialData?: Record<CorpMaterialName, CorpMaterialConstantData>;
   industryData?: Record<CorpIndustryName, CorpIndustryData>;
@@ -88,7 +89,6 @@ export type StaticData = {
   factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
   // TODO: Move this to playerData; it changes
   factionFavorGain?: Record<FactionName, number>;
-  favorToDonate?: number;
 };
 export const getStaticData = (ns: NS): StaticData =>
   readData(ns, PORT_STATIC_DATA) || {};
@@ -96,7 +96,12 @@ export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
 type GangData =
-  | { isReady: false }
+  | {
+      isReady: false;
+      gangInfo?: GangGenInfo;
+      allGangInfo?: Record<string, GangOtherInfoObject>;
+      memberNames?: string[];
+    }
   | {
       isReady: true;
       gangInfo: GangGenInfo;
@@ -117,10 +122,12 @@ export const putRamData = (ns: NS, data: RamData) =>
 export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
+  /** Augmentations purchased this run (and not yet installed) */
+  purchasedAugmentations: string[];
 };
 export const getPlayerData = (ns: NS): PlayerData =>
   readData(ns, PORT_PLAYER_DATA) || {};
-export const putPlayerData = (ns: NS, data: PlayerData) =>
+export const putPlayerData = (ns: NS, data: Partial<PlayerData>) =>
   putData(ns, PORT_PLAYER_DATA, data);
 
 const DEFAULT_MONEY_DATA = {

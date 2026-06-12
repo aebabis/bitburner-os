@@ -11,7 +11,5 @@ export const getPurchasedAugmentations = (ns: NS) => {
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  putPlayerData(ns, {
-    purchasedAugmentations: getPurchasedAugmentations(ns),
-  });
+  putPlayerData(ns, { purchasedAugmentations: getPurchasedAugmentations(ns) });
 }

@@ -1,4 +1,4 @@
-import { putBladeData } from '../../../lib/data-store';
+import { BladeCurrentAction, putBladeData } from '../../../lib/data-store';
 
 export async function main(ns: NS) {
   const [type, name] = ns.args as [
@@ -11,11 +11,11 @@ export async function main(ns: NS) {
   }
 
   const currentAction = current
-    ? {
+    ? ({
         type: current.type as BladeburnerActionType,
         name: current.name as BladeburnerActionName,
         time: ns.bladeburner.getActionCurrentTime(),
-      }
+      } as BladeCurrentAction)
     : null;
 
   putBladeData(ns, { currentAction });

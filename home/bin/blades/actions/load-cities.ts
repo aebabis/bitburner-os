@@ -1,8 +1,6 @@
-import { BladeAction, putBladeData } from '../../../lib/data-store';
+import { putBladeData } from '../../../lib/data-store';
 
 export async function main(ns: NS) {
-  const { bladeburner: bb } = ns;
-
   const CITIES = Object.values(ns.enums.CityName);
 
   const getCityStats = (city: CityName) => ({

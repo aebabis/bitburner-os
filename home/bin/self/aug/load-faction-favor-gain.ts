@@ -8,7 +8,5 @@ export async function main(ns: NS) {
   for (const faction of factions)
     factionFavorGain[faction] = ns.singularity.getFactionFavorGain(faction);
 
-  const favorToDonate = ns.getFavorToDonate();
-
-  putStaticData(ns, { factionFavorGain, favorToDonate });
+  putStaticData(ns, { factionFavorGain });
 }
