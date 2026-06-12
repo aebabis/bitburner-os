@@ -134,7 +134,7 @@ const DEFAULT_MONEY_DATA = {
 export type MoneyData = typeof DEFAULT_MONEY_DATA;
 export const getMoneyData = (ns: NS): MoneyData =>
   Object.assign({}, DEFAULT_MONEY_DATA, readData(ns, PORT_MONEY_DATA) || {});
-export const putMoneyData = (ns: NS, data: MoneyData) =>
+export const putMoneyData = (ns: NS, data: Partial<MoneyData>) =>
   putData(ns, PORT_MONEY_DATA, data);
 
 export type StoredContract = {
