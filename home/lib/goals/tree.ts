@@ -74,14 +74,14 @@ export const buildJoinSubtree = (
     player,
     staticData,
     money,
-    referenceIncome,
+    totalIncome,
     karma,
     formulas = null,
   }: {
     player: Player;
     staticData: StaticData;
     money: number;
-    referenceIncome: number;
+    totalIncome: number;
     karma: number;
     formulas: Formulas;
   },
@@ -169,7 +169,7 @@ export const buildJoinSubtree = (
   if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
   const totalMoneyTarget = moneyTarget + bdMoney;
   if (totalMoneyTarget > 0)
-    joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, referenceIncome));
+    joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, totalIncome));
   const [loc] = locationReqs;
   if (loc) joinPrereqs.push(locationGoal(loc, city));
 
@@ -226,7 +226,7 @@ interface FactionGoalTreeProps {
   ownedAugs: string[];
   money: number;
   estimatedStockValue: number;
-  referenceIncome: number;
+  totalIncome: number;
   formulas: Formulas; // TODO: Use ReturnType<formulas>
   karma: number;
 }
@@ -240,7 +240,7 @@ export const buildFactionGoalTree = (
     ownedAugs,
     money,
     estimatedStockValue = 0,
-    referenceIncome,
+    totalIncome,
     formulas,
     karma,
   }: FactionGoalTreeProps,
@@ -253,14 +253,14 @@ export const buildFactionGoalTree = (
   } = staticData;
   const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
 
-  const moneyRate = referenceIncome || Infinity;
+  const moneyRate = totalIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
 
   const joinGoal = buildJoinSubtree(faction, {
     player,
     staticData,
     money,
-    referenceIncome,
+    totalIncome,
     karma,
     formulas,
   });
@@ -311,7 +311,7 @@ export const buildFactionGoalTree = (
       augs.length,
       costToAug,
       liquidAssets,
-      referenceIncome,
+      totalIncome,
     )
   ) {
     const queuedAugs = purchasedAugmentations.filter(
@@ -335,7 +335,7 @@ export const buildFactionGoalTree = (
       currentRep,
       currentFavor,
       repRate,
-      referenceIncome,
+      totalIncome,
       liquidAssets,
       player,
       formulas,
@@ -358,7 +358,7 @@ export const buildFactionGoalTree = (
       const tFavor = favorGoal.timeToComplete();
       if (tFavor == null || treeValue === 0) return 0;
       const donationRate = formulas.reputation.donationForRep(1, player);
-      const tN1 = (repReq * donationRate + costToAug) / referenceIncome;
+      const tN1 = (repReq * donationRate + costToAug) / totalIncome;
       return (
         treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead)
       );
@@ -373,7 +373,7 @@ export const buildFactionGoalTree = (
     const moneyGoal = augMoneyGoal(
       costToAug + donationCost,
       liquidAssets,
-      referenceIncome,
+      totalIncome,
     );
     return [
       [joinGoal, moneyGoal],
@@ -390,7 +390,7 @@ export const buildFactionGoalTree = (
       joinGoal,
       repRate,
     );
-    const moneyGoal = augMoneyGoal(costToAug, liquidAssets, referenceIncome);
+    const moneyGoal = augMoneyGoal(costToAug, liquidAssets, totalIncome);
     return [[repGoal, moneyGoal], augs.map(buyAugAction)];
   };
 
@@ -409,7 +409,7 @@ export const getBladeburnerTree = (
   inBladeburner: boolean,
 ) => {
   const { player, factionRep } = playerData;
-  const { estimatedStockValue, referenceIncome } = moneyData;
+  const { estimatedStockValue, totalIncome } = moneyData;
   const THE_BLADE = "The Blade's Simulacrum";
   const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
   const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
@@ -428,7 +428,7 @@ export const getBladeburnerTree = (
   const augMoney = augMoneyGoal(
     bladePrice,
     player.money + estimatedStockValue,
-    referenceIncome,
+    totalIncome,
   );
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
 };

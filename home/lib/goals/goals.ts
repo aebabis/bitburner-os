@@ -16,7 +16,7 @@ import {
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
-import { needsAugRam, needsJobRam } from '../query-service.ts';
+import { getIncome, needsAugRam, needsJobRam } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 
@@ -26,7 +26,8 @@ export const getGoals = (ns: NS): Goal => {
   const staticData = getStaticData(ns);
   const { currentNode } = staticData.resetInfo;
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
-  const { estimatedStockValue = 0, referenceIncome = 0 } = getMoneyData(ns);
+  const { estimatedStockValue = 0 } = getMoneyData(ns);
+  const { totalIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns);
   const karma = ns.heart.break();
   const ownedAugs = [
@@ -41,7 +42,7 @@ export const getGoals = (ns: NS): Goal => {
     ownedAugs,
     money,
     estimatedStockValue,
-    referenceIncome,
+    totalIncome,
     formulas,
     karma,
   };
@@ -51,7 +52,7 @@ export const getGoals = (ns: NS): Goal => {
       player,
       staticData,
       money,
-      referenceIncome,
+      totalIncome,
       karma,
       formulas,
     });
@@ -74,7 +75,7 @@ export const getGoals = (ns: NS): Goal => {
   if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
     return reevaluateGoal(
-      moneyPrereqGoal(target, estimatedStockValue + money, referenceIncome),
+      moneyPrereqGoal(target, estimatedStockValue + money, totalIncome),
     );
   }
 
@@ -113,7 +114,7 @@ export const getGoals = (ns: NS): Goal => {
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
   const makeRamGoal = (size: number, cost: number) =>
-    jobRamGoal(POOL1, pool1Ram, size, cost, money, referenceIncome);
+    jobRamGoal(POOL1, pool1Ram, size, cost, money, totalIncome);
 
   if (bestPlan) {
     const ramGoals = [];
@@ -123,12 +124,12 @@ export const getGoals = (ns: NS): Goal => {
       ramGoals.push(makeRamGoal(requiredAugRam, augRamCost));
     }
 
-    if (needsJobRam(ns) && referenceIncome > 0) {
+    if (needsJobRam(ns) && totalIncome > 0) {
       const baselineTTC = Math.max(
         ...bestPlan.deps.map((g) => g.timeToComplete() ?? Infinity),
       );
       const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
-      if (jobRamCost / referenceIncome < baselineTTC)
+      if (jobRamCost / totalIncome < baselineTTC)
         ramGoals.push(makeRamGoal(requiredJobRam, jobRamCost));
     }
 
@@ -142,7 +143,7 @@ export const getGoals = (ns: NS): Goal => {
     requiredJobRam,
     jobRamCost,
     money,
-    referenceIncome,
+    totalIncome,
   );
   return reevaluateGoal(jrg);
 };

@@ -12,7 +12,7 @@ import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
 import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY } from '../lib/colors';
-import { hasBitNode } from '../lib/query-service';
+import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
 import { SHARE } from '../etc/filenames';
@@ -186,9 +186,9 @@ const moneyTable = (ns: NS) => {
     theftIncome = 0,
     hacknetIncome = 0,
     gangIncome = 0,
-    referenceIncome = 0,
     stockIncome = 0,
-  } = moneyData;
+    totalIncome = 0,
+  } = getIncome(ns);
   const rows = [
     [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
     [' Hacknet', `$${ns.format.number(hacknetIncome, 1)}/s`],
@@ -196,7 +196,7 @@ const moneyTable = (ns: NS) => {
     [' Stocks', `$${ns.format.number(stockIncome, 1)}/s`],
   ];
   const top =
-    H(' INCOME    ') + C(183)(`$${ns.format.number(referenceIncome, 1)}/s`);
+    H(' INCOME    ') + C(183)(`$${ns.format.number(totalIncome, 1)}/s`);
   return top + '\n' + table(ns, null, rows);
 };
 

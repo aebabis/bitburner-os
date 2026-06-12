@@ -124,8 +124,12 @@ export const putPlayerData = (ns: NS, data: PlayerData) =>
   putData(ns, PORT_PLAYER_DATA, data);
 
 const DEFAULT_MONEY_DATA = {
+  hacknetIncome: 0,
+  gangIncome: 0,
+  stockIncome: 0,
+  theftIncome: 0,
   estimatedStockValue: 0,
-  referenceIncome: 0,
+  totalIncome: 0,
 };
 export type MoneyData = typeof DEFAULT_MONEY_DATA;
 export const getMoneyData = (ns: NS): MoneyData =>

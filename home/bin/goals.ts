@@ -3,6 +3,7 @@ import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
 import { formulas as getFormulas } from '../lib/formulas';
+import { getIncome } from '../lib/query-service';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -110,7 +111,7 @@ export async function main(ns: NS) {
           alreadyHave,
           installedNFCount,
         } = getAugTableData(ns);
-        const { referenceIncome = 0 } = getMoneyData(ns);
+        const { totalIncome = 0 } = getIncome(ns);
         const {
           player: augLivePlayer,
           factionRep = /** @type {Record<string, number>} */ {},
@@ -151,7 +152,7 @@ export async function main(ns: NS) {
             );
             const remainingRep = Math.max(0, repReq - bestCurrentRep);
             const timeForMoney =
-              referenceIncome > 0 ? price / referenceIncome : Infinity;
+              totalIncome > 0 ? price / totalIncome : Infinity;
             const timeForRep =
               bestRepRate > 0
                 ? remainingRep / bestRepRate
@@ -204,13 +205,13 @@ export async function main(ns: NS) {
           factionRep = {},
           purchasedAugmentations = [],
         } = getPlayerData(ns);
-        const { referenceIncome = 0 } = getMoneyData(ns);
+        const { totalIncome = 0 } = getIncome(ns);
         const formulas = getFormulas(ns);
         const ownedAugs = [
           ...(staticData.installedAugmentations ?? []),
           ...purchasedAugmentations,
         ];
-        const moneyRate = referenceIncome || Infinity;
+        const moneyRate = totalIncome || Infinity;
         const planData = {
           player,
           staticData,
@@ -218,7 +219,7 @@ export async function main(ns: NS) {
           purchasedAugmentations,
           ownedAugs,
           money: player.money ?? 0,
-          referenceIncome,
+          referenceIncome: totalIncome,
           formulas,
           karma: ns.heart.break(),
         };

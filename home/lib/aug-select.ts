@@ -98,12 +98,12 @@ export const shouldEarlyInstall = (
   numTargeted: number,
   costToAug: number,
   liquidAssets: number,
-  referenceIncome: number,
+  totalIncome: number,
 ) => {
   if (numQueued === 0 || numTargeted === 0) return false;
   const timeToMoneyGoal =
-    referenceIncome > 0
-      ? Math.max(0, costToAug - liquidAssets) / referenceIncome
+    totalIncome > 0
+      ? Math.max(0, costToAug - liquidAssets) / totalIncome
       : Infinity;
   return timeToMoneyGoal > INSTALL_OVERHEAD_SEC;
 };

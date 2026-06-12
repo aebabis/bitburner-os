@@ -82,7 +82,6 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   tasks.push(
     AnyHostService(ns, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
-    AnyHostService(ns)('/bin/accountant.ts'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
   );
 

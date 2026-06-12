@@ -111,7 +111,7 @@ export const jobRamGoal = (
   requiredJobRam: number,
   jobRamCost: number,
   currentMoney: number,
-  referenceIncome: number,
+  totalIncome: number,
 ) =>
   goal(
     'JOB_RAM',
@@ -120,8 +120,8 @@ export const jobRamGoal = (
     {
       requirement: requiredJobRam,
       ownTime: () =>
-        referenceIncome > 0
-          ? Math.max(0, jobRamCost - currentMoney) / referenceIncome
+        totalIncome > 0
+          ? Math.max(0, jobRamCost - currentMoney) / totalIncome
           : null,
     },
   );
@@ -196,7 +196,7 @@ export const karmaGoal = (karmaRequired: number, karma: number) =>
 export const moneyPrereqGoal = (
   moneyTarget: number,
   currentMoney: number,
-  referenceIncome: number,
+  totalIncome: number,
 ) =>
   goal(
     'MONEY',
@@ -205,8 +205,8 @@ export const moneyPrereqGoal = (
     {
       requirement: moneyTarget,
       ownTime: () =>
-        referenceIncome > 0
-          ? Math.max(0, moneyTarget - currentMoney) / referenceIncome
+        totalIncome > 0
+          ? Math.max(0, moneyTarget - currentMoney) / totalIncome
           : null,
     },
   );
@@ -257,7 +257,7 @@ export const factionRepGoal = (
 export const augMoneyGoal = (
   costToAug: number | undefined,
   liquidAssets: number,
-  referenceIncome: number,
+  totalIncome: number,
 ) =>
   goal(
     'AUG_MONEY',
@@ -268,8 +268,8 @@ export const augMoneyGoal = (
     {
       requirement: costToAug,
       ownTime: () =>
-        costToAug != null && referenceIncome > 0
-          ? Math.max(0, costToAug - liquidAssets) / referenceIncome
+        costToAug != null && totalIncome > 0
+          ? Math.max(0, costToAug - liquidAssets) / totalIncome
           : null,
     },
   );

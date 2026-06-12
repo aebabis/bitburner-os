@@ -14,10 +14,7 @@ export async function main(ns: NS) {
     const moneyData = getMoneyData(ns);
     putMoneyData(ns, { ...moneyData, hacknetIncome });
 
-    if (moneyData.referenceIncome == null) {
-      await ns.sleep(1000);
-      continue;
-    }
+    ns.sleep(10000);
 
     try {
       const purchase = await getBestPurchase(ns);

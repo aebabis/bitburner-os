@@ -12,6 +12,7 @@ import {
   needsAugRam,
   getJobRamCost,
   getAugRamCost,
+  getIncome,
 } from '../lib/query-service';
 import { getTimeToMilestone } from '../lib/goals/goals';
 import { infect, fullInfect } from './infect';
@@ -100,8 +101,8 @@ export async function main(ns: NS) {
 
   const attemptPurchase = async (ns: NS) => {
     const { resetInfo } = getStaticData(ns);
-    const { referenceIncome, theftRatePerGB } = getMoneyData(ns);
-    if (referenceIncome == null) return;
+    const { totalIncome, theftRatePerGB } = getIncome(ns);
+    if (totalIncome == null) return;
     const timeToGoal = getTimeToMilestone(ns) ?? Infinity;
     // TODO: Make threshold time based on urgency of joining faction.
     // If goal tree is rep-bound, then the threshold time should be
@@ -126,7 +127,7 @@ export async function main(ns: NS) {
       }
       while (
         minRam < purchasedServerMaxRam &&
-        purchasedServerCosts[minRam] < referenceIncome * 5
+        purchasedServerCosts[minRam] < totalIncome * 5
       )
         minRam *= 2;
       return minRam;

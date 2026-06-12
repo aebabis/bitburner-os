@@ -1,4 +1,9 @@
-import { getStaticData, getRamData, getPlayerData } from './data-store';
+import {
+  getStaticData,
+  getRamData,
+  getPlayerData,
+  getMoneyData,
+} from './data-store';
 
 /** @template T
  *  @param {(ns: NS) => T} func */
@@ -67,4 +72,21 @@ export const shouldWorkHaveFocus = (ns: NS) => {
 export const hasBitNode = (ns: NS, bn: number) => {
   const { resetInfo } = getStaticData(ns);
   return resetInfo.currentNode === bn || resetInfo.ownedSF.has(bn);
+};
+
+export const getIncome = (ns: NS) => {
+  const {
+    hacknetIncome = 0,
+    gangIncome = 0,
+    stockIncome = 0,
+    theftIncome = 0,
+  } = getMoneyData(ns);
+  const totalIncome = hacknetIncome + gangIncome + stockIncome + theftIncome;
+  return {
+    hacknetIncome,
+    gangIncome,
+    stockIncome,
+    theftIncome,
+    totalIncome,
+  };
 };

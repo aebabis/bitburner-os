@@ -88,7 +88,7 @@ describe('buildFactionGoalTree', () => {
       purchasedAugmentations: ['OwnedAug'],
       ownedAugs: ['OwnedAug'],
       money: 0,
-      referenceIncome: 0,
+      totalIncome: 0,
       formulas: mockFormulas,
       karma: 0,
     });
@@ -114,7 +114,7 @@ describe('buildFactionGoalTree', () => {
       purchasedAugmentations: ['InstalledAug', 'QueuedAug'], // 1 installed + 1 queued
       ownedAugs: ['InstalledAug', 'QueuedAug'],
       money: AUG_PRICE * 2,
-      referenceIncome: 1,
+      totalIncome: 1,
       formulas: mockFormulas,
       karma: 0,
     });
@@ -146,7 +146,7 @@ describe('buildFactionGoalTree', () => {
       purchasedAugmentations: [],
       ownedAugs: [],
       money: 0,
-      referenceIncome: 0,
+      totalIncome: 0,
       formulas: mockFormulas,
       karma: 0,
     });
@@ -186,7 +186,7 @@ describe('buildFactionGoalTree', () => {
       purchasedAugmentations: [],
       ownedAugs: [],
       money: 0,
-      referenceIncome: 0,
+      totalIncome: 0,
       formulas: mockFormulas,
       karma: 0,
     });
@@ -217,7 +217,7 @@ describe('buildFactionGoalTree', () => {
     purchasedAugmentations: [],
     ownedAugs: [],
     money: 0,
-    referenceIncome: 0,
+    totalIncome: 0,
     formulas: mockFormulas,
     karma: 0,
   });
@@ -383,7 +383,7 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
     ownedAugs: [],
     money: 0,
     estimatedStockValue: 0,
-    referenceIncome: 1,
+    totalIncome: 1,
     formulas: mockFormulas,
     karma: 0,
   });
