@@ -67,6 +67,7 @@ export const getGoals = (ns: NS): Goal => {
         getStaticData(ns),
         getPlayerData(ns),
         getMoneyData(ns),
+        totalIncome,
         ns.bladeburner.inBladeburner(),
       );
     }

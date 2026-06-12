@@ -406,10 +406,11 @@ export const getBladeburnerTree = (
   staticData: StaticData,
   playerData: PlayerData,
   moneyData: MoneyData,
+  totalIncome: number,
   inBladeburner: boolean,
 ) => {
   const { player, factionRep } = playerData;
-  const { estimatedStockValue, totalIncome } = moneyData;
+  const { estimatedStockValue = 0 } = moneyData;
   const THE_BLADE = "The Blade's Simulacrum";
   const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
   const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
