@@ -30,7 +30,7 @@ const getTimes = (ns: NS, target: string) => {
 const coreBonus = (cores = 1) => 1 + (cores - 1) / 16;
 
 const getWThreads = (targetDecrease: number, cores = 1, weakenRate = 1) =>
-  Math.floor((20 * targetDecrease) / (coreBonus(cores) * weakenRate));
+  Math.ceil((20 * targetDecrease) / (coreBonus(cores) * weakenRate));
 
 const computeThreads = (ns: NS, target: string, portion: number) => {
   if (portion <= 0 || portion >= 1)
