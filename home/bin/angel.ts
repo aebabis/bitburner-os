@@ -196,7 +196,7 @@ const getPossibleTargets = (ns: NS) =>
       return false;
     }
     const { requiredHackingSkill, moneyMax } = getHackableServer(ns, hostname);
-    return ns.getHackingLevel() > requiredHackingSkill && moneyMax > 0;
+    return ns.getHackingLevel() >= requiredHackingSkill && moneyMax > 0;
   });
 
 const getHorizon = (ns: NS) =>

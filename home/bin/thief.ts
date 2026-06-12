@@ -43,7 +43,7 @@ const getPossibleTargets = (ns: NS) =>
     }
     const maxMoney = ns.getServerMaxMoney(hostname);
     const requiredHackingSkill = ns.getServerRequiredHackingLevel(hostname);
-    return ns.getHackingLevel() > requiredHackingSkill && maxMoney > 0;
+    return ns.getHackingLevel() >= requiredHackingSkill && maxMoney > 0;
   });
 
 const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
