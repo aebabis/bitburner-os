@@ -130,6 +130,8 @@ const DEFAULT_MONEY_DATA = {
   theftIncome: 0,
   estimatedStockValue: 0,
   totalIncome: 0,
+
+  theftRatePerGB: 0,
 };
 export type MoneyData = typeof DEFAULT_MONEY_DATA;
 export const getMoneyData = (ns: NS): MoneyData =>

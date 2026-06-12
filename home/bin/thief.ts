@@ -241,15 +241,17 @@ export async function main(ns: NS) {
   }
 
   // Sleep loop: exec each queued frame at its scheduled time.
+  let ramUsed = 0;
   let lastEndTime = Date.now();
   for (const entry of queue) {
     const delay = entry.execAt - Date.now();
     if (delay > 0) await ns.sleep(delay);
 
     const assign = makeAssign(getRootServerRam(ns));
-    const runners = entry.jobs.map(({ script, threads, additionalMsec }) =>
-      assign(script, threads, additionalMsec),
-    );
+    const runners = entry.jobs.map(({ script, threads, additionalMsec }) => {
+      ramUsed += threads * (script === HACK ? 1.7 : 1.75);
+      return assign(script, threads, additionalMsec);
+    });
     if (runners.some((r) => r == null)) break;
     for (const runner of runners) runner!();
 
@@ -261,5 +263,5 @@ export async function main(ns: NS) {
 
   const { onlineMoneyMade } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / (weakTime / 1000);
-  putMoneyData(ns, { theftIncome });
+  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / ramUsed });
 }

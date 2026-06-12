@@ -304,6 +304,7 @@ export async function main(ns: NS) {
 
   const alloc = buildWorkerThreadAllocator(getRootServerRam(ns));
 
+  let totalRam = 0;
   const assign = (script: string, threads: number, additionalMsec: number) => {
     if (threads === 0) return () => {};
     const allocations: [string, number][] = [];
@@ -311,6 +312,7 @@ export async function main(ns: NS) {
     while (threadsRemaining > 0) {
       const allocation = alloc(threads, script === HACK ? 1.7 : 1.75);
       if (allocation == null) return null;
+      totalRam += threads * (script === HACK ? 1.7 : 1.75);
       allocations.push(allocation);
       threadsRemaining -= allocation[1];
     }
@@ -344,5 +346,5 @@ export async function main(ns: NS) {
 
   const { onlineMoneyMade } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / (weakTime / 1000);
-  putMoneyData(ns, { theftIncome });
+  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalRam });
 }
