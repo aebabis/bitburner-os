@@ -16,7 +16,7 @@ import {
 import { getTimeToMilestone } from '../lib/goals/goals';
 import { infect, fullInfect } from './infect';
 
-const getServerNames = (maxServers: number) => {
+const serverNames = (maxServers: number) => {
   return new Array(maxServers)
     .fill(null)
     .map((_, i) => (i + 1).toString().padStart(2, '0'))
@@ -24,7 +24,7 @@ const getServerNames = (maxServers: number) => {
 };
 
 const getPurchasedServerRams = (ns: NS, maxServers: number) => {
-  return getServerNames(maxServers)
+  return serverNames(maxServers)
     .filter(ns.serverExists)
     .map((hostname) => ({
       hostname,
@@ -33,7 +33,7 @@ const getPurchasedServerRams = (ns: NS, maxServers: number) => {
 };
 
 const getNextServerName = (ns: NS, maxServers: number) =>
-  getServerNames(maxServers).find((hostname) => !ns.serverExists(hostname));
+  serverNames(maxServers).find((hostname) => !ns.serverExists(hostname));
 
 const atCapacity = (ns: NS) => {
   const ramData = getRamData(ns);

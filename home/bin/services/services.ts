@@ -60,7 +60,7 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
     );
   };
   const useWolf = () => hasNode(8);
-  const hasAngel = hasNode(1);
+  const hasAngel = resetInfo.ownedSF.has(1);
   const hasThief = !hasNode(5);
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const useAngel = () => preferAngel() || !hasThief;
