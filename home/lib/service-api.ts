@@ -12,6 +12,7 @@ type ServiceData = {
   allowed: boolean;
   pid: number;
   desc: string;
+  ram: number;
 };
 
 const getServiceName = (script: string) =>

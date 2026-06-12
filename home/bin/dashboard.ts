@@ -201,37 +201,35 @@ const moneyTable = (ns: NS) => {
 };
 
 const getWork = (ns: NS) => {
-  const { factionRep = {}, currentWork } = getPlayerData(ns);
+  const { factionRep, currentWork } = getPlayerData(ns);
   const { location } = getPlayerData(ns).player;
   const WORK = H('WORK');
   if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
-  const {
-    type,
-    crimeType,
-    companyName,
-    factionName,
-    // workMoneyGained,
-    // workRepGained,
-  } = currentWork;
-  if (type === 'FACTION') {
-    const rep = Math.floor(factionRep[factionName]);
+  if (currentWork.type === 'FACTION') {
+    const { factionName } = currentWork;
+    const rep = Math.floor(factionRep?.[factionName] ?? 0);
     return ` ${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
-  } else if (type === 'COMPANY') {
-    return ` ${WORK} ${companyName} `;
-  } else if (type === 'CRIME') {
-    return ` ${WORK} ${crimeType} `;
+  } else if (currentWork.type === 'COMPANY') {
+    return ` ${WORK} ${currentWork.companyName} `;
+  } else if (currentWork.type === 'CRIME') {
+    return ` ${WORK} ${currentWork.crimeType} `;
   }
-  return ` ${WORK} ${type} ${location} `;
+  return ` ${WORK} ${currentWork.type} ${location} `;
 };
 
 const getExecutionTable = (ns: NS) => {
   const { lastRuns = {}, lastCancellations = {} } = getSchedulerReportData(ns);
   const rows = Object.entries(lastCancellations)
     .filter(([script, cancelTime]) => lastRuns[script] < cancelTime)
-    .map(([script]) => [script, lastRuns[script] ?? Infinity])
+    .map(
+      ([script]) => [script, lastRuns[script] ?? Infinity] as [string, number],
+    )
     .sort(by(([, lastRun]) => lastRun))
-    .map(([script, lastRun]) => [script, (Date.now() - lastRun) / 1000])
+    .map(
+      ([script, lastRun]) =>
+        [script, (Date.now() - lastRun) / 1000] as [string, number],
+    )
     .filter(([, lastRun]) => +lastRun >= 10)
     .map(([script, timeSince]) => [
       script.replace(/^\/bin\//, ''),

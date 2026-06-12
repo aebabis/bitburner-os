@@ -122,6 +122,7 @@ export const putRamData = (ns: NS, data: RamData) =>
 export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
+  currentWork?: Task;
   /** Augmentations purchased this run (and not yet installed) */
   purchasedAugmentations: string[];
 };
@@ -139,6 +140,13 @@ const DEFAULT_MONEY_DATA = {
   totalIncome: 0,
 
   theftRatePerGB: 0,
+  theft: {
+    target: '',
+    money: 0,
+    time: 0,
+    incomeRate: 0,
+    endTime: 0,
+  },
 };
 export type MoneyData = typeof DEFAULT_MONEY_DATA;
 export const getMoneyData = (ns: NS): MoneyData =>
