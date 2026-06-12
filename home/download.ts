@@ -148,7 +148,6 @@ const FILES = [
   '/lib/service-api.ts',
   '/lib/service.ts',
   '/lib/table.ts',
-  '/lib/thief.ts',
   '/lib/timeline.ts',
   '/lib/util.ts',
   'nmap-gui.ts',
