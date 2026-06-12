@@ -12,15 +12,6 @@ import {
 import Thief from '../lib/thief';
 import { initProfiler } from '../lib/profiler';
 
-type ThiefTableRow = {
-  hostname: string;
-  type?: string;
-  jobs?: number;
-  portion?: number;
-  timeLeft?: string;
-  frame?: string;
-};
-
 export async function main(ns: NS) {
   initProfiler();
   ns.disableLog('ALL');
@@ -32,12 +23,6 @@ export async function main(ns: NS) {
   ns.ui.openTail();
   ns.ui.resizeTail(WIDTH, HEIGHT);
   ns.ui.moveTail(x - 2, y - 30);
-
-  const feed: string[] = [];
-  const log = (message: string) => {
-    feed.push(message);
-    while (feed.length > 10) feed.shift();
-  };
 
   const hostnames = getHostnames(ns);
   const possibleTargets = hostnames.filter(
@@ -84,7 +69,7 @@ export async function main(ns: NS) {
       // batches are trivially cheap and spreading across all servers is better.
       const [topThief] = viableThieves;
       const godMode =
-        topThief != null && ns.hackAnalyze(topThief.getHostname()) >= 0.5;
+        topThief != null && ns.hackAnalyze(topThief.hostname()) >= 0.5;
 
       ns.clearLog();
       const secStr = (hostname: string) =>
@@ -160,7 +145,6 @@ export async function main(ns: NS) {
           ramData.maxRamSlot / 2,
         );
         if (outcome) {
-          log(`Started batch on ${thief.getHostname()}`);
           ramAvailable -= thief.getReservedThreads() * 1.75;
         }
       }

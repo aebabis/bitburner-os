@@ -17,15 +17,6 @@ const PORTIONS = new Array(count + 1)
   .map((x) => 1 - 1 / (1 + e ** (-1 * k * (x - x_0))));
 
 const getTimes = (ns: NS, target: string) => {
-  if (ns.fileExists('Formulas.exe', 'home')) {
-    const server = /** @type {Server} */ {
-      ...ns.formulas.mockServer(),
-      hackDifficulty: ns.getServerMinSecurityLevel(target),
-      requiredHackingSkill: ns.getServerRequiredHackingLevel(target),
-    };
-    const hackTime = ns.formulas.hacking.hackTime(server, ns.getPlayer());
-    return { hackTime, growTime: hackTime * 3.2, weakenTime: hackTime * 4 };
-  }
   const minSec = ns.getServerMinSecurityLevel(target);
   const curSec = ns.getServerSecurityLevel(target);
   const ratio = minSec / curSec;
@@ -36,11 +27,10 @@ const getTimes = (ns: NS, target: string) => {
   };
 };
 
-const getWThreads = (ns: NS, targetDecrease: number, cores = 1) => {
-  let threads = 1;
-  while (ns.weakenAnalyze(threads, cores) < targetDecrease) threads++;
-  return threads;
-};
+const coreBonus = (cores = 1) => 1 + (cores - 1) / 16;
+
+const getWThreads = (targetDecrease: number, cores = 1, weakenRate = 1) =>
+  (20 * targetDecrease) / (coreBonus(cores) * weakenRate);
 
 const computeThreads = (ns: NS, target: string, portion: number) => {
   if (portion <= 0 || portion >= 1)
@@ -51,18 +41,18 @@ const computeThreads = (ns: NS, target: string, portion: number) => {
     portion += 0.01;
     hackThreads = Math.floor(portion / ns.hackAnalyze(target));
   }
-  const secIncrease1 = ns.hackAnalyzeSecurity(hackThreads);
+  const secIncrease1 = hackThreads * 0.002;
   if (secIncrease1 === Infinity) return null;
 
   const growFactor = 1 / (1 - portion);
   const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
-  const secIncrease2 = ns.growthAnalyzeSecurity(growThreads);
+  const secIncrease2 = growThreads * 0.002;
   if (secIncrease2 === Infinity) return null;
 
   return {
     ...getTimes(ns, target),
-    weaken1Threads: getWThreads(ns, secIncrease1),
-    weaken2Threads: getWThreads(ns, secIncrease2),
+    weaken1Threads: getWThreads(secIncrease1),
+    weaken2Threads: getWThreads(secIncrease2),
     growThreads,
     hackThreads,
   };
@@ -266,7 +256,7 @@ class WGWBatch extends Batch {
 
     const minSecurity = ns.getServerMinSecurityLevel(target);
     const curSecurity = ns.getServerSecurityLevel(target);
-    let weaken1Threads = getWThreads(ns, curSecurity - minSecurity);
+    let weaken1Threads = getWThreads(curSecurity - minSecurity);
 
     const maxMoney = ns.getServerMaxMoney(target);
     const money = ns.getServerMoneyAvailable(target) || 1;
@@ -276,8 +266,8 @@ class WGWBatch extends Batch {
     const portion = maxMoney / money;
     let growThreads = Math.ceil(ns.growthAnalyze(target, portion));
 
-    const secBump = ns.growthAnalyzeSecurity(growThreads);
-    let weaken2Threads = getWThreads(ns, secBump);
+    const secBump = growThreads * 0.002;
+    let weaken2Threads = getWThreads(secBump);
 
     this.frame = [weaken1Threads, growThreads, weaken2Threads];
 
@@ -362,7 +352,7 @@ export default class Thief {
     this.batches = [];
   }
 
-  getHostname = () => this.server;
+  hostname = () => this.server;
 
   canHack = () => {
     const hasRoot = this.ns.hasRootAccess(this.server);
@@ -450,12 +440,9 @@ export default class Thief {
     const curSec = ns.getServerSecurityLevel(server);
     const money = ns.getServerMoneyAvailable(server) || 1;
     const maxMoney = ns.getServerMaxMoney(server);
-    const weaken1Threads = getWThreads(ns, curSec - minSec);
+    const weaken1Threads = getWThreads(curSec - minSec);
     const growThreads = Math.ceil(ns.growthAnalyze(server, maxMoney / money));
-    const weaken2Threads = getWThreads(
-      ns,
-      ns.growthAnalyzeSecurity(growThreads),
-    );
+    const weaken2Threads = getWThreads(growThreads * 0.002);
     const totalThreads = weaken1Threads + growThreads + weaken2Threads;
     const minPasses = Math.ceil((totalThreads * 1.75) / ramAvailable);
     return minPasses * ns.getWeakenTime(server);
