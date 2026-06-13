@@ -47,6 +47,22 @@ export const getGoals = (ns: NS): Goal => {
     karma,
   };
 
+  const overhead = computeResetOverhead(staticData);
+
+  const plans = getAccessibleFactions(staticData, player, ownedAugs)
+    .map((f) => buildFactionGoalTree(f, planData))
+    .filter(/** @type {<T>(x: T | null) => x is T} */ Boolean);
+  const bestPlan =
+    plans.length > 0
+      ? plans.reduce((a, b) =>
+          a.utility(overhead) >= b.utility(overhead) ? a : b,
+        )
+      : null;
+
+  const selectedFaction =
+    bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
+  recordGoalSnapshot(plans, selectedFaction, overhead);
+
   if (currentNode === 2 && !player.factions?.includes('Slum Snakes')) {
     const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
@@ -95,22 +111,6 @@ export const getGoals = (ns: NS): Goal => {
         (targetHackingXp - player.exp.hacking) / xpRate,
       ),
     );
-
-  const overhead = computeResetOverhead(staticData);
-
-  const plans = getAccessibleFactions(staticData, player, ownedAugs)
-    .map((f) => buildFactionGoalTree(f, planData))
-    .filter(/** @type {<T>(x: T | null) => x is T} */ Boolean);
-  const bestPlan =
-    plans.length > 0
-      ? plans.reduce((a, b) =>
-          a.utility(overhead) >= b.utility(overhead) ? a : b,
-        )
-      : null;
-
-  const selectedFaction =
-    bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
-  recordGoalSnapshot(plans, selectedFaction, overhead);
 
   const POOL1 = `${THREADPOOL}-01`;
   const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;

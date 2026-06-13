@@ -251,7 +251,8 @@ export const buildFactionGoalTree = (
     augmentationStats,
     factionWorkTypes,
   } = staticData;
-  const augValue = (aug: string) => augValueFromStats(aug, augmentationStats);
+  const augValue = (aug: string) =>
+    augValueFromStats(staticData.resetInfo, aug, augmentationStats);
 
   const moneyRate = totalIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
