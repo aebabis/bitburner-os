@@ -129,7 +129,7 @@ export const putRamData = (ns: NS, data: RamData) =>
 export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
-  currentWork?: Task;
+  currentWork?: Task | null;
   /** Augmentations purchased this run (and not yet installed) */
   purchasedAugmentations: string[];
 };
