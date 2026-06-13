@@ -1,33 +1,6 @@
 import { getPath } from '../lib/backdoor.ts';
 import { BRIGHT } from '../lib/colors';
-
-const sendCommand = async (command: string) => {
-  const input = globalThis['document'].querySelector('input');
-
-  if (!input) {
-    throw new Error('input not found');
-  }
-  input.focus();
-
-  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-    globalThis.HTMLInputElement.prototype,
-    'value',
-  )!.set;
-  nativeInputValueSetter!.call(input, command);
-  const event = new Event('input', { bubbles: true });
-  input.dispatchEvent(event);
-
-  input.dispatchEvent(
-    new KeyboardEvent('keydown', {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
-      bubbles: true, // Crucial: React listens at the root/parent level
-      cancelable: true,
-    }),
-  );
-};
+import { sendTerminalCommand } from '../lib/nav.ts';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -45,7 +18,7 @@ export async function main(ns: NS) {
         ...path.map((s: string) => (s === 'home' ? ' home' : ` connect ${s} `)),
         ' backdoor',
       ];
-      // await sendCommand(rows.join(';'));
+      await sendTerminalCommand(ns)(rows.join(';'));
       while (rows.length < 15) {
         rows.push('');
       }
