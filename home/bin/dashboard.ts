@@ -328,7 +328,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getHackingTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
-  const WIDTH = 1200;
+  const WIDTH = 1300;
   const HEIGHT = 500;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
