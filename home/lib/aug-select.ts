@@ -244,7 +244,10 @@ export const findOptimalBatch = (
     ? Array.from({ length: MAX_AUGS }, (_, i) => ({
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
-        price: nfBase * 1.9 ** (numQueued + i) * 1.14 ** (installedNFCount + i),
+        price:
+          nfBase *
+          1.9 ** (numQueued + installedNFCount + i) *
+          1.14 ** (installedNFCount + i),
         remainingRep: Math.max(
           0,
           nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep,
@@ -270,7 +273,7 @@ export const findOptimalBatch = (
     // .slice() gives a copy, so sorting it doesn't disturb the rep-ascending order of augs[]
     const affordable = augs
       .slice(0, i + 1)
-      .sort((a, b) => b.value - a.value)
+      .sort((a, b) => b.value - a.value || a.price - b.price)
       .slice(0, MAX_AUGS);
 
     const totalValue = affordable.reduce((s, a) => s + a.value, 0);
