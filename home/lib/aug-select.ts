@@ -244,10 +244,7 @@ export const findOptimalBatch = (
     ? Array.from({ length: MAX_AUGS }, (_, i) => ({
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
-        price:
-          nfBase *
-          1.9 ** (numQueued + installedNFCount + i) *
-          1.14 ** (installedNFCount + i),
+        price: nfBase * 1.9 ** (numQueued + i) * 1.14 ** (installedNFCount + i),
         remainingRep: Math.max(
           0,
           nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep,
