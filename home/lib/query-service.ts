@@ -5,18 +5,15 @@ import {
   getMoneyData,
 } from './data-store';
 
-/** @template T
- *  @param {(ns: NS) => T} func */
-const cache = (func) => {
-  /** @type {T | undefined} */
-  let data;
+const cache = <T>(func: (ns: NS) => T) => {
+  let data: T | undefined;
   return (ns: NS) => {
     if (data === undefined) data = func(ns);
     return data;
   };
 };
 
-const getRamInfo = cache((ns) => {
+const getRamInfo = cache((ns: NS) => {
   const { purchasedServerCosts, requiredJobRam, requiredAugRam } =
     getStaticData(ns);
   return (
@@ -28,23 +25,19 @@ const getRamInfo = cache((ns) => {
   );
 });
 
-export const getJobRamCost = cache((ns) => {
+export const getJobRamCost = cache((ns: NS) => {
   const { purchasedServerCosts, requiredJobRam } = getRamInfo(ns);
   return purchasedServerCosts[requiredJobRam];
 });
 
-export const getAugRamCost = cache((ns) => {
+export const getAugRamCost = cache((ns: NS) => {
   const { purchasedServerCosts, requiredAugRam } = getRamInfo(ns);
   return purchasedServerCosts[requiredAugRam];
 });
 
-const getPoolRamStatus = (ns) => {
+const getPoolRamStatus = (ns: NS) => {
   const { rootServers, purchasedServers } = getRamData(ns);
-  const homeRam =
-    rootServers.find(
-      (/** @type {{hostname: string, maxRam: number}} */ s) =>
-        s.hostname === 'home',
-    )?.maxRam ?? 0;
+  const homeRam = rootServers?.find((s) => s.hostname === 'home')?.maxRam ?? 0;
   const pool1Ram = purchasedServers[0]?.maxRam || 0;
   return { homeRam, pool1Ram };
 };
@@ -80,6 +73,7 @@ export const getIncome = (ns: NS) => {
     gangIncome = 0,
     stockIncome = 0,
     theftIncome = 0,
+    theftRatePerGB = 0,
   } = getMoneyData(ns);
   const totalIncome = hacknetIncome + gangIncome + stockIncome + theftIncome;
   return {
@@ -88,5 +82,6 @@ export const getIncome = (ns: NS) => {
     stockIncome,
     theftIncome,
     totalIncome,
+    theftRatePerGB,
   };
 };

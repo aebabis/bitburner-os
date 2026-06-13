@@ -8,7 +8,6 @@ import {
   lastCancellations,
   droppedTickets,
   TicketEntry,
-  ServerRamInfo,
 } from '../lib/scheduler-api';
 import {
   getStaticData,
@@ -44,7 +43,7 @@ export async function main(ns: NS) {
     ns.exec('/bin/self/buy-ram.ts', 'home');
   }
 
-  const getRamInfo = (hostname: string): ServerRamInfo => {
+  const getRamInfo = (hostname: string) => {
     const maxRam = ns.getServerMaxRam(hostname);
     const ramUsed = ns.getServerUsedRam(hostname);
     const ramUnused = maxRam - ramUsed;
@@ -159,7 +158,12 @@ export async function main(ns: NS) {
           // Specific server requested
           const server = getRamInfo(process.host);
           if (ramRequired <= server.ramAvailableTo(process)) {
-            await fulfill(ns, queue.splice(i--, 1)[0], server);
+            await fulfill(
+              ns,
+              queue.splice(i--, 1)[0],
+              server.hostname,
+              server.ramAvailableTo,
+            );
             continue;
           }
         } else {
@@ -177,9 +181,19 @@ export async function main(ns: NS) {
           const settleServer = eligibleServers.find(isServerUsable);
 
           if (server != null)
-            await fulfill(ns, queue.splice(i--, 1)[0], server);
+            await fulfill(
+              ns,
+              queue.splice(i--, 1)[0],
+              server.hostname,
+              server.ramAvailableTo,
+            );
           else if (settleServer != null)
-            await fulfill(ns, queue.splice(i--, 1)[0], settleServer);
+            await fulfill(
+              ns,
+              queue.splice(i--, 1)[0],
+              settleServer.hostname,
+              settleServer.ramAvailableTo,
+            );
           else if (
             !process.isWorker &&
             ramRequired <= ns.getServerMaxRam('home')

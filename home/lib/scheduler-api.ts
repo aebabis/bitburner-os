@@ -52,20 +52,12 @@ export const lastRuns: Record<string, number> = {};
 export const lastCancellations: Record<string, number> = {};
 export let droppedTickets = 0;
 
-export type ServerRamInfo = {
-  hostname: string;
-  maxRam: number;
-  ramUsed: number;
-  ramUnused: number;
-  ramAvailableTo: (process: TicketEntry) => number;
-};
-
 export const fulfill = async (
   ns: NS,
   process: TicketEntry,
-  server: ServerRamInfo,
+  hostname: string,
+  ramAvailableTo: (process: TicketEntry) => number,
 ) => {
-  const { hostname, ramAvailableTo } = server;
   const { script, numThreads, args, ticket } = process;
   const scriptRam = ns.getScriptRam(script, 'home');
   const maxThreads = Math.floor(ramAvailableTo(process) / scriptRam);

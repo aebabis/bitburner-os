@@ -112,8 +112,15 @@ export const getGangData = (ns: NS): GangData => readData(ns, PORT_GANG_DATA);
 export const putGangData = (ns: NS, data: Partial<GangData>) =>
   putData(ns, PORT_GANG_DATA, data);
 
+export type ServerRamInfo = {
+  hostname: string;
+  maxRam: number;
+  ramUsed: number;
+  ramUnused: number;
+};
 type RamData = {
   rootServers?: Server[];
+  purchasedServers?: ServerRamInfo[];
 };
 export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA);
 export const putRamData = (ns: NS, data: RamData) =>
