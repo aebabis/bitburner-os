@@ -12,13 +12,14 @@ export async function main(ns: NS) {
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
+  if (materialData == null || industryData == null)
+    throw new Error('Static data not properly initialized');
   const { requiredMaterials } = industryData[INDUSTRY];
   const report = startReport(ns, divisionName);
   const division = getDivision(ns, divisionName);
   if (division == null) return;
 
-  /** @type {CorpMaterialName[]} */
-  const materialNames = Object.keys(requiredMaterials);
+  const materialNames = Object.keys(requiredMaterials) as CorpMaterialName[];
 
   for (const cityName of division.cities) {
     report.add([' ' + cityName]);
@@ -28,7 +29,7 @@ export async function main(ns: NS) {
       continue;
     }
 
-    const format = (/** @type number */ num) => ns.format.number(num, 1);
+    const format = (num: number) => ns.format.number(num, 1);
 
     const warehouse = ns.corporation.getWarehouse(divisionName, cityName);
     const product = ns.corporation.getProduct(divisionName, cityName, "R'");
@@ -43,13 +44,14 @@ export async function main(ns: NS) {
 
     const BATCH_INPUT_VOLUME = materialNames
       .map(
-        (material) => requiredMaterials[material] * materialData[material].size,
+        (material) =>
+          requiredMaterials[material]! * materialData[material].size,
       )
       .reduce((a, b) => a + b, 0);
     const BATCH_INPUT_MAX = MAX_INPUT_VOLUME / BATCH_INPUT_VOLUME;
 
     for (const material of materialNames) {
-      const coefficient = requiredMaterials[material];
+      const coefficient = requiredMaterials[material]!;
       const { stored } = ns.corporation.getMaterial(
         divisionName,
         cityName,

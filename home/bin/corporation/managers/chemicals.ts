@@ -11,13 +11,14 @@ export async function main(ns: NS) {
   const { materialData, industryData } = getStaticData(ns);
 
   const divisionName = DivisionNames[INDUSTRY];
+  if (materialData == null || industryData == null)
+    throw new Error('Static data not properly initialized');
   const { requiredMaterials } = industryData[INDUSTRY];
   const division = getDivision(ns, divisionName);
 
   if (division == null) return;
 
-  /** @type {CorpMaterialName[]} */
-  const materialNames = Object.keys(requiredMaterials);
+  const materialNames = Object.keys(requiredMaterials) as CorpMaterialName[];
 
   for (const city of division.cities) {
     const { buy, sell } = getActions(ns, divisionName, city);
@@ -42,7 +43,8 @@ export async function main(ns: NS) {
 
     const BATCH_INPUT_VOLUME = materialNames
       .map(
-        (material) => requiredMaterials[material] * materialData[material].size,
+        (material) =>
+          requiredMaterials[material]! * materialData[material].size,
       )
       .reduce((a, b) => a + b, 0);
     const BATCH_INPUT_TSL = TARGET_INPUT_VOLUME / BATCH_INPUT_VOLUME;
@@ -55,7 +57,7 @@ export async function main(ns: NS) {
     ).productionAmount;
 
     for (const material of materialNames) {
-      const coefficient = requiredMaterials[material];
+      const coefficient = requiredMaterials[material]!;
 
       const tsl = coefficient * BATCH_INPUT_TSL;
       const demand = coefficient * Math.min(BATCH_INPUT_MAX, productionRate);

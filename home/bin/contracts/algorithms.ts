@@ -18,7 +18,7 @@ export const computeSumPermutations = (MAX: number) => {
 
 export const computeSumPermutationsII = (
   target: number,
-  set: number,
+  set: number[],
   max = set.length - 1,
   cache: Record<string, number> = {},
 ) => {

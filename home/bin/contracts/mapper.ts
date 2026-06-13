@@ -21,21 +21,19 @@ import {
   squareRoot,
 } from './algorithms';
 
-const arr2d = (/** @type {number} */ rows, /** @type {number} */ cols) =>
+const arr2d = (rows: number, cols: number) =>
   Array(rows)
     .fill(0)
     .map(() => Array(cols).fill(0));
 
 const map = {
-  'Algorithmic Stock Trader I': (/** @type {number[]} */ prices) =>
-    stockProfit(prices, 1),
-  'Algorithmic Stock Trader II': (/** @type {number[]} */ prices) =>
+  'Algorithmic Stock Trader I': (prices: number[]) => stockProfit(prices, 1),
+  'Algorithmic Stock Trader II': (prices: number[]) =>
     stockProfit(prices, Infinity),
-  'Algorithmic Stock Trader III': (/** @type {number[]} */ prices) =>
-    stockProfit(prices, 2),
-  'Algorithmic Stock Trader IV': (/** @type {[number, number[]]} */ [n, p]) =>
+  'Algorithmic Stock Trader III': (prices: number[]) => stockProfit(prices, 2),
+  'Algorithmic Stock Trader IV': ([n, p]: [number, number[]]) =>
     stockProfit(p, n),
-  'Array Jumping Game': (/** @type {number[]} */ track) => +!!fewestHops(track),
+  'Array Jumping Game': (track: number[]) => +!!fewestHops(track),
   'Array Jumping Game II': fewestHops,
   'Compression I: RLE Compression': rle,
   'Compression II: LZ Decompression': lzDecode,
@@ -53,12 +51,11 @@ const map = {
   'Square Root': squareRoot,
   'Subarray with Maximum Sum': maximumSubarraySum,
   'Total Ways to Sum': computeSumPermutations,
-  'Total Ways to Sum II': (/** @type {[number, number[]]} */ [t, a]) =>
+  'Total Ways to Sum II': ([t, a]: [number, number[]]) =>
     computeSumPermutationsII(t, a),
-  'Unique Paths in a Grid I': (/** @type {[number, number]} */ [r, c]) =>
+  'Unique Paths in a Grid I': ([r, c]: [number, number]) =>
     countPaths(arr2d(r, c)),
   'Unique Paths in a Grid II': countPaths,
 };
 
-export default (/** @type {string} */ contractType) =>
-  map[/** @type {keyof typeof map} */ contractType];
+export default (contractType: keyof typeof map) => map[contractType];

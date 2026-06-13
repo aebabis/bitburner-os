@@ -50,14 +50,15 @@ export async function main(ns: NS) {
 
     const BATCH_INPUT_VOLUME = materialNames
       .map(
-        (material) => requiredMaterials[material] * materialData[material].size,
+        (material) =>
+          requiredMaterials[material]! * materialData[material].size,
       )
       .reduce((a, b) => a + b, 0);
     const BATCH_INPUT_TSL = TARGET_INPUT_VOLUME / BATCH_INPUT_VOLUME;
     const BATCH_INPUT_MAX = MAX_INPUT_VOLUME / BATCH_INPUT_VOLUME;
 
     for (const material of materialNames) {
-      const coefficient = requiredMaterials[material];
+      const coefficient = requiredMaterials[material]!;
 
       const tsl = coefficient * BATCH_INPUT_TSL;
       const demand = coefficient * Math.min(BATCH_INPUT_MAX, foodRate);
