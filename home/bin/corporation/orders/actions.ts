@@ -1,12 +1,11 @@
 import { rmi } from '../../../lib/rmi';
 
-/** @param {NS} ns
- *  @param {string} divisionName
- *  @param {CityName} cityName
- */
-export const getActions = (ns, divisionName, cityName) => {
-  /** @param {CorpMaterialName} material @param {number} amount */
-  const buy = async (material, amount) => {
+export const getActions = (
+  ns: NS,
+  divisionName: string,
+  cityName: CityName,
+) => {
+  const buy = async (material: CorpMaterialName, amount: number) => {
     await rmi(ns)(
       '/bin/corporation/orders/buy-material.ts',
       1,
@@ -26,8 +25,11 @@ export const getActions = (ns, divisionName, cityName) => {
     );
   };
 
-  /** @param {CorpMaterialName} material @param {number|string} amount @param {string} price */
-  const sell = async (material, amount, price) => {
+  const sell = async (
+    material: CorpMaterialName,
+    amount: number | string,
+    price: string,
+  ) => {
     await rmi(ns)(
       '/bin/corporation/orders/buy-material.ts',
       1,
@@ -47,20 +49,13 @@ export const getActions = (ns, divisionName, cityName) => {
     );
   };
 
-  /** @param {string} sourceDivision
-   *  @param {CityName} sourceCity
-   *  @param {string} targetDivision
-   *  @param {CityName} targetCity
-   *  @param {CorpMaterialName} material
-   *  @param {number|string} amount
-   **/
   const transfer = async (
-    sourceDivision,
-    sourceCity,
-    targetDivision,
-    targetCity,
-    material,
-    amount,
+    sourceDivision: string,
+    sourceCity: CityName,
+    targetDivision: string,
+    targetCity: CityName,
+    material: CorpMaterialName,
+    amount: number | string,
   ) => {
     await rmi(ns)(
       '/bin/corporation/orders/cancel-export-material.ts',

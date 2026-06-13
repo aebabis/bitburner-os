@@ -23,8 +23,6 @@ const mostRootRam = (ns: NS) => {
 
 export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
-  const start = Date.now();
-  const upFor = (durationMs: number) => Date.now() - start > durationMs;
   const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);
 

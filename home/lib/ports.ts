@@ -18,17 +18,23 @@ export function replacer(_key: string, value: unknown) {
 
 export function reviver(_key: string, value: unknown) {
   if (typeof value === 'object' && value !== null) {
-    if (value.dataType === 'Map') {
-      return new Map(value.value);
-    }
-    if (value.dataType === 'number' && value.value === 'Infinity') {
-      return Infinity;
+    if ('dataType' in value) {
+      if (value.dataType === 'Map' && 'value' in value) {
+        return new Map(value.value as [string, unknown][]);
+      }
+      if (
+        value.dataType === 'number' &&
+        'value' in value &&
+        value.value === 'Infinity'
+      ) {
+        return Infinity;
+      }
     }
   }
   return value;
 }
 
-const s = (data) => {
+const s = (data: unknown) => {
   if (data === null)
     throw new Error('Cannot write null. This interface uses null for "empty"');
   return JSON.stringify({ data }, replacer);
@@ -41,11 +47,15 @@ export default (ns: NS) => {
     if (packet === NULL) return null;
     return p(packet);
   };
-  const writePort = (handle: number, data) =>
+  const writePort = (handle: number, data: unknown) =>
     ns.getPortHandle(handle).write(s(data));
-  const tryWritePort = (handle: number, data) =>
+  const tryWritePort = (handle: number, data: unknown) =>
     ns.getPortHandle(handle).tryWrite(s(data));
-  const blockingWritePort = async (handle: number, data, timeout = 60000) => {
+  const blockingWritePort = async (
+    handle: number,
+    data: unknown,
+    timeout = 60000,
+  ) => {
     let start = Date.now();
     let outcome = false;
     while (true) {
@@ -73,9 +83,9 @@ export default (ns: NS) => {
     clearPort,
     getPortHandle: (handle: number) => ({
       read: () => readPort(handle),
-      write: (data) => writePort(handle, data),
-      tryWrite: (data) => tryWritePort(handle, data),
-      blockingWrite: (data, timeout = 60000) =>
+      write: (data: unknown) => writePort(handle, data),
+      tryWrite: (data: unknown) => tryWritePort(handle, data),
+      blockingWrite: (data: unknown, timeout = 60000) =>
         blockingWritePort(handle, data, timeout),
       clear: () => clearPort(handle),
       peek: () => peek(handle),

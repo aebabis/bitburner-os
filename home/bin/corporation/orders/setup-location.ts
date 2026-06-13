@@ -1,5 +1,9 @@
 export async function main(ns: NS) {
-  const [divisionName, cityName, needsWarehouse = false] = ns.args;
+  const [divisionName, cityName, needsWarehouse = false] = ns.args as [
+    string,
+    CityName,
+    boolean,
+  ];
 
   const { officeInitialCost, warehouseInitialCost } =
     ns.corporation.getConstants();

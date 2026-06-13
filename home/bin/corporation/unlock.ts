@@ -3,8 +3,7 @@ export async function main(ns: NS) {
 
   const { funds } = ns.corporation.getCorporation();
 
-  /** @constant */
-  const canUnlock = {
+  const canUnlock: Record<CorpUnlockName, () => boolean> = {
     'Smart Supply': () => true,
     Export: () => false,
     'Shady Accounting': () => false,
@@ -15,7 +14,8 @@ export async function main(ns: NS) {
     'Office API': () => false,
   };
 
-  for (const unlock in canUnlock) {
+  const unlocks = Object.keys(canUnlock) as CorpUnlockName[];
+  for (const unlock of unlocks) {
     if (
       !ns.corporation.hasUnlock(unlock) &&
       ns.corporation.getUnlockCost(unlock) <= funds &&
