@@ -1,10 +1,9 @@
 import { getContractData, putContractData } from '../../lib/data-store';
+import { getSpawnChain } from '../../lib/service-api';
 import algorithms from './mapper';
 
 const decode = (data: unknown) =>
-  typeof data === 'string' && data.match(/^\d+n$/)
-    ? BigInt(data.slice(0, -1))
-    : data;
+  typeof data === 'string' && data.match(/^\d+n$/) ? BigInt(data.slice(0, -1)) : data;
 
 const attemptContract = (
   ns: NS,
@@ -17,7 +16,7 @@ const attemptContract = (
 ) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
-  const answer = algorithm(/** @type {never} */ decode(data));
+  const answer = algorithm(decode(data));
   try {
     // @ts-ignore -- returnReward option not in type definitions
     const outcome = ns.codingcontract.attempt(answer, filename, hostname, {
@@ -25,9 +24,7 @@ const attemptContract = (
     });
     if (outcome === '')
       ns.tprint(
-        'ERROR ' +
-          algorithm.name +
-          `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`,
+        'ERROR ' + algorithm.name + `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`,
       );
     else ns.tprint(outcome);
     return !!outcome;
@@ -39,6 +36,8 @@ const attemptContract = (
 
 export async function main(ns: NS) {
   try {
+    const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
+    ns.ramOverride(maxRam);
     const { contracts = [], failedContractNames = [] } = getContractData(ns);
     const remainingContracts = [];
     for (const contract of contracts) {
@@ -50,6 +49,7 @@ export async function main(ns: NS) {
       }
     }
     putContractData(ns, { contracts: remainingContracts, failedContractNames });
+    ns.spawn('/bin/contracts/complete.ts', { spawnDelay: 1 });
   } catch (error) {
     console.error(error);
   }

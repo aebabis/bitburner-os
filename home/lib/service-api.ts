@@ -18,20 +18,13 @@ type ServiceData = {
   overhead: number;
 };
 
-const getServiceName = (script: string) =>
-  script.split('/').pop()?.split('.').shift();
+const getServiceName = (script: string) => script.split('/').pop()?.split('.').shift();
 
 export const getTableString = (ns: NS, taskData: ServiceData[]) => {
   return table(
     ns,
     ['ID', 'NAME', '', 'PID', 'DESC'],
-    taskData.map(({ id, name, status, pid, desc }) => [
-      id,
-      name,
-      status,
-      pid,
-      desc,
-    ]),
+    taskData.map(({ id, name, status, pid, desc }) => [id, name, status, pid, desc]),
   );
 };
 
@@ -39,21 +32,14 @@ export const getServices = (ns: NS): ServiceData[] => {
   return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 
-export const disableService = async (
-  ns: NS,
-  idOrName = getServiceName(ns.getScriptName()),
-) => {
+export const disableService = async (ns: NS, idOrName = getServiceName(ns.getScriptName())) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
     identifier: idOrName,
     type: DISABLE,
   });
 };
 
-export const enableService = async (
-  ns: NS,
-  idOrName: string | number,
-  override = false,
-) => {
+export const enableService = async (ns: NS, idOrName: string | number, override = false) => {
   await Ports(ns).getPortHandle(PORT_SERVICES_REPL).blockingWrite({
     identifier: idOrName,
     type: ENABLE,
@@ -75,4 +61,17 @@ export const checkQueue = (ns: NS) => {
     tasks.push(port.read());
   }
   return tasks;
+};
+
+export const getSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
+  const chain = new Set([startScript]);
+  for (const script of chain) {
+    const spawnCalls = ns.read(script).matchAll(/ns\.spawn\('([^']+)'/g);
+    for (const [, script] of spawnCalls) chain.add(script);
+  }
+  const scriptRam = [...chain].map((script) => ns.getScriptRam(script));
+  return {
+    chain,
+    maxRam: Math.max(...scriptRam),
+  };
 };

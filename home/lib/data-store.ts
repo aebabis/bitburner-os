@@ -93,8 +93,7 @@ export type StaticData = {
   // TODO: Move this to playerData; it changes
   factionFavorGain?: Record<FactionName, number>;
 };
-export const getStaticData = (ns: NS): StaticData =>
-  readData(ns, PORT_STATIC_DATA) || {};
+export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
@@ -112,8 +111,7 @@ type GangData =
       memberNames: string[];
     };
 export const getGangData = (ns: NS): GangData => readData(ns, PORT_GANG_DATA);
-export const putGangData = (ns: NS, data: Partial<GangData>) =>
-  putData(ns, PORT_GANG_DATA, data);
+export const putGangData = (ns: NS, data: Partial<GangData>) => putData(ns, PORT_GANG_DATA, data);
 
 export type ServerRamInfo = {
   hostname: string;
@@ -125,10 +123,8 @@ type RamData = {
   rootServers?: Server[];
   purchasedServers?: ServerRamInfo[];
 };
-export const getRamData = (ns: NS): RamData =>
-  readData(ns, PORT_SCH_RAM_DATA) || {};
-export const putRamData = (ns: NS, data: RamData) =>
-  replaceData(ns, PORT_SCH_RAM_DATA, data);
+export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA) || {};
+export const putRamData = (ns: NS, data: RamData) => replaceData(ns, PORT_SCH_RAM_DATA, data);
 
 export type PlayerData = {
   player: Player;
@@ -137,8 +133,7 @@ export type PlayerData = {
   /** Augmentations purchased this run (and not yet installed) */
   purchasedAugmentations: string[];
 };
-export const getPlayerData = (ns: NS): PlayerData =>
-  readData(ns, PORT_PLAYER_DATA) || {};
+export const getPlayerData = (ns: NS): PlayerData => readData(ns, PORT_PLAYER_DATA) || {};
 export const putPlayerData = (ns: NS, data: Partial<PlayerData>) =>
   putData(ns, PORT_PLAYER_DATA, data);
 
@@ -172,15 +167,16 @@ export type StoredContract = {
   tries: number;
   maxTries: number;
 };
-type ContractData = { contracts: StoredContract[] };
-export const getContractData = (ns: NS): ContractData =>
-  readData(ns, PORT_CONTRACT_DATA) || {};
+type ContractData = {
+  contracts: StoredContract[];
+  failedContractNames?: string[];
+};
+export const getContractData = (ns: NS): ContractData => readData(ns, PORT_CONTRACT_DATA) || {};
 export const putContractData = (ns: NS, data: ContractData) =>
   putData(ns, PORT_CONTRACT_DATA, data);
 
 type CorpReports = Record<DivisionName, string[][]>;
-export const getCorpReports = (ns: NS): CorpReports =>
-  readData(ns, PORT_CORP_REPORTS) || {};
+export const getCorpReports = (ns: NS): CorpReports => readData(ns, PORT_CORP_REPORTS) || {};
 export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
   putData(ns, PORT_CORP_REPORTS, data);
 
@@ -234,7 +230,6 @@ type BladeData = {
     upgradedThisTick: boolean;
   }[];
 };
-export const getBladeData = (ns: NS): BladeData =>
-  readData(ns, PORT_BLADE_REPORTS) || {};
+export const getBladeData = (ns: NS): BladeData => readData(ns, PORT_BLADE_REPORTS) || {};
 export const putBladeData = (ns: NS, data: Partial<BladeData>) =>
   putData(ns, PORT_BLADE_REPORTS, data);
