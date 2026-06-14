@@ -99,7 +99,8 @@ export const Service =
             );
             pid = newPid || undefined;
             if (!pid) {
-              ns.tprint(ERROR + 'Failed to start ' + desc);
+              if (currentInterval === interval)
+                ns.tprint(ERROR + 'Failed to start ' + desc);
               currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
             }
           } finally {
