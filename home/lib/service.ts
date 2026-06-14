@@ -6,8 +6,7 @@ import { ERROR, WARN, C } from './colors';
 const getExistingPid = (ns: NS, desc: string) => {
   try {
     const services = getServices(ns);
-    if (services != null)
-      return services.find((service) => service.desc === desc)?.pid;
+    if (services != null) return services.find((service) => service.desc === desc)?.pid;
   } catch (error) {
     ns.tprint(error);
   }
@@ -22,18 +21,8 @@ let count = 1;
 const MAX_INTERVAL = 60_000;
 
 export const Service =
-  (
-    ns: NS,
-    condition = (_ns: NS) => true,
-    interval = 5000,
-    isViable = () => true,
-  ) =>
-  (
-    script: string,
-    target: string | null = null,
-    numThreads = 1,
-    ...args: ScriptArg[]
-  ) => {
+  (ns: NS, isViable = () => true, condition = (_ns: NS) => true, interval = 5000) =>
+  (script: string, target: string | null = null, numThreads = 1, ...args: ScriptArg[]) => {
     const id = count++;
     const desc =
       target == null
@@ -89,18 +78,10 @@ export const Service =
           queued = true;
           if (beforeRun) beforeRun();
           try {
-            const { pid: newPid } = execOnBestServer(
-              ns,
-              script,
-              target,
-              numThreads,
-              false,
-              args,
-            );
+            const { pid: newPid } = execOnBestServer(ns, script, target, numThreads, false, args);
             pid = newPid || undefined;
             if (!pid) {
-              if (currentInterval === interval)
-                ns.tprint(ERROR + 'Failed to start ' + desc);
+              if (currentInterval === interval) ns.tprint(ERROR + 'Failed to start ' + desc);
               currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
             }
           } finally {
@@ -112,8 +93,7 @@ export const Service =
       }
     };
 
-    const matches = (identifier: string | number) =>
-      identifier == id || identifier === shortname;
+    const matches = (identifier: string | number) => identifier == id || identifier === shortname;
     const toData = () => ({
       id,
       name: shortname,
@@ -144,16 +124,6 @@ export const Service =
   };
 
 export const AnyHostService =
-  (
-    ns: NS,
-    condition: () => boolean = () => true,
-    interval = 5000,
-    isViable = () => true,
-  ) =>
+  (ns: NS, isViable = () => true, condition = () => true, interval = 5000) =>
   (script: string, numThreads = 1, ...args: ScriptArg[]) =>
-    Service(ns, condition, interval, isViable)(
-      script,
-      null,
-      numThreads,
-      ...args,
-    );
+    Service(ns, isViable, condition, interval)(script, null, numThreads, ...args);
