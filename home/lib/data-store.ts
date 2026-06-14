@@ -69,6 +69,7 @@ export type StaticData = {
   purchasedServerCosts: Record<number, number>;
   requiredJobRam: number;
   requiredAugRam: number;
+  serviceOverhead: Record<string, number>;
   bitNodeMultipliers: { HacknetNodeMoney: number | null };
   hacknetMultipliers: HacknetMultipliers;
   favorToDonate: number;

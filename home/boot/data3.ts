@@ -39,7 +39,19 @@ export async function main(ns: NS) {
   }
   tprint(ns)(STR + `  Aug Suite RAM Required: ${requiredAugRam}GB`);
 
-  putStaticData(ns, { requiredJobRam, requiredAugRam });
+  const getOverhead = (script: string) =>
+    Math.max(0, getRamDepth(script) - getRam(script));
+
+  const serviceOverhead = Object.fromEntries(
+    [...new Set(services)].map((s) => [s, getOverhead(s)]),
+  );
+  const totalOverhead = Object.values(serviceOverhead).reduce(
+    (a, b) => a + b,
+    0,
+  );
+  tprint(ns)(STR + `  Service overhead pool: ${totalOverhead.toFixed(2)}GB`);
+
+  putStaticData(ns, { requiredJobRam, requiredAugRam, serviceOverhead });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);
