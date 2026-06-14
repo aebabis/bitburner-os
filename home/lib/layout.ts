@@ -1,15 +1,22 @@
 import { BORDER } from './colors';
 
-/** @typedef {{ text: string | string[], width: number, height: number, getText?: (w: number, h: number) => string[] }} RenderResult */
-/** @typedef {RenderResult & { x: number, y: number }} PlacedItem */
+type RenderResult = {
+  text: string | string[];
+  width: number;
+  height: number;
+  getText?: (w: number, h: number) => string[];
+};
+type PlacedItem = RenderResult & { x: number; y: number };
 
 const COLOR_CODES = /\x1b\[[0-9;]+m/g;
 
 export class GrowingWindow {
-  constructor(
-    /** @type {() => string} */ getContent,
-    /** @type {boolean} */ stretch = false,
-  ) {
+  minWidth: number;
+  minHeight: number;
+  stretch: boolean;
+  getContent: () => string[];
+
+  constructor(getContent: () => string, stretch = false) {
     this.minWidth = 1;
     this.minHeight = 1;
     this.stretch = stretch;
@@ -17,16 +24,14 @@ export class GrowingWindow {
       const rows = getContent().split('\n');
       this.minWidth = Math.max(
         this.minWidth,
-        ...rows.map(
-          (/** @type {string} */ s) => s.replace(COLOR_CODES, '').length,
-        ),
+        ...rows.map((s) => s.replace(COLOR_CODES, '').length),
       );
       this.minHeight = Math.max(this.minHeight, rows.length);
       return rows;
     };
   }
 
-  render(/** @type {number} */ WIDTH) {
+  render(WIDTH: number) {
     const text = this.getContent();
     const width = this.stretch ? WIDTH - 2 : Math.min(WIDTH - 2, this.minWidth);
     const height = this.minHeight;
@@ -34,26 +39,13 @@ export class GrowingWindow {
   }
 }
 
-/** @param {{ render: (WIDTH: number) => RenderResult }[]} windows @param {number} WIDTH */
-export const renderWindows = (windows, WIDTH) => {
-  const overlaps = (
-    /** @type {{ x: number, y: number, width: number, height: number }} */ {
-      x: r1x1,
-      y: r1y1,
-      width: r1w,
-      height: r1h,
-    },
-  ) => {
+type Window = { render: (WIDTH: number) => RenderResult };
+type Box = { x: number; y: number; width: number; height: number };
+export const renderWindows = (windows: Window[], WIDTH: number) => {
+  const overlaps = ({ x: r1x1, y: r1y1, width: r1w, height: r1h }: Box) => {
     const r1x2 = r1x1 + r1w;
     const r1y2 = r1y1 + r1h;
-    return (
-      /** @type {{ x: number, y: number, width: number, height: number }} */ {
-        x: r2x1,
-        y: r2y1,
-        width: r2w,
-        height: r2h,
-      },
-    ) => {
+    return ({ x: r2x1, y: r2y1, width: r2w, height: r2h }: Box) => {
       const r2x2 = r2x1 + r2w;
       const r2y2 = r2y1 + r2h;
       return !(r2x2 < r1x1 || r2x1 > r1x2 || r2y2 < r1y1 || r2y1 > r1y2);
@@ -61,35 +53,32 @@ export const renderWindows = (windows, WIDTH) => {
   };
 
   const text = windows
-    .map((/** @type {{ render: (WIDTH: number) => RenderResult }} */ win) => {
+    .map((win) => {
       try {
         return win.render(WIDTH);
       } catch (error) {
         console.error(error);
-        return /** @type {RenderResult} */ {
+        return {
           text: ' '.repeat(WIDTH),
           width: WIDTH,
           height: 1,
         };
       }
     })
-    .sort(
-      (/** @type {RenderResult} */ a, /** @type {RenderResult} */ b) =>
-        a.height - b.height,
-    );
+    .sort((a: RenderResult, b: RenderResult) => a.height - b.height);
 
-  const placed = /** @type {PlacedItem[]} */ [];
+  const placed: PlacedItem[] = [];
   let x = 0;
   let y = 0;
   while (text.length > 0) {
     while (true) {
-      const item = /** @type {RenderResult | undefined} */ text.find(
-        (/** @type {RenderResult} */ item) =>
+      const item = text.find(
+        (item) =>
           (x + item.width <= WIDTH - 2 || item.width >= WIDTH - 2) &&
           !placed.some(overlaps({ x, y, ...item })),
       );
       if (item != null) {
-        const placedItem = /** @type {PlacedItem} */ item;
+        const placedItem = item as PlacedItem;
         placedItem.x = x;
         placedItem.y = y;
         placed.push(placedItem);
@@ -165,7 +154,7 @@ export const renderWindows = (windows, WIDTH) => {
   for (let i = 0; i < 2; i++)
     for (const box of placed) {
       const { x, y, width, height } = box;
-      const drawCorner = (/** @type {number} */ x, /** @type {number} */ y) => {
+      const drawCorner = (x: number, y: number) => {
         const top = y === 0;
         const left = x === 0;
         const right = x === WIDTH - 1;
@@ -221,12 +210,8 @@ export const renderWindows = (windows, WIDTH) => {
     const drawn = getText ? getText(width, height) : text;
     for (let yy = 0; yy < height; yy++) {
       const row =
-        /** @type {string[]} */ drawn[yy]?.match(
-          /((?:\[[0-9;]+m)*.(?:\[[0-9;]+m)?)/g,
-        ) ||
-        ' '.repeat(
-          /** @type {string[]} */ drawn[0].replace(COLOR_CODES, '').length,
-        );
+        drawn[yy]?.match(/((?:\[[0-9;]+m)*.(?:\[[0-9;]+m)?)/g) ||
+        ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
       for (let xx = 0; xx < width; xx++) {
         grid[y + yy + 1][x + xx + 1] = row[xx] || ' ';
       }
