@@ -1,7 +1,6 @@
 import { THREADPOOL } from '../etc/config';
 import {
-  getRamData,
-  getMoneyData,
+  getSchedulerReportData,
   getStaticData,
   getHostnames,
   putHostnames,
@@ -15,7 +14,7 @@ import {
   getIncome,
 } from '../lib/query-service';
 import { getTimeToMilestone } from '../lib/goals/goals';
-import { infect, fullInfect } from './infect';
+import { fullInfect } from './infect';
 
 const serverNames = (maxServers: number) => {
   return new Array(maxServers)
@@ -37,13 +36,19 @@ const getNextServerName = (ns: NS, maxServers: number) =>
   serverNames(maxServers).find((hostname) => !ns.serverExists(hostname));
 
 const atCapacity = (ns: NS) => {
-  const ramData = getRamData(ns);
-  if (ramData == null) return false;
+  const rootHosts = getHostnames(ns).filter((hostname) =>
+    ns.hasRootAccess(hostname),
+  );
+  const totalMaxRam = rootHosts
+    .map(ns.getServerMaxRam)
+    .reduce((a, b) => a + b, 0);
+  const totalUsedRam = rootHosts
+    .map(ns.getServerUsedRam)
+    .reduce((a, b) => a + b, 0);
+  const poolReserve = getSchedulerReportData(ns).poolReserve ?? 0;
 
-  const { totalRamUsed, totalMaxRam, ramQueued } = ramData;
-
-  // Allow a 20% buffer
-  return totalRamUsed + ramQueued > totalMaxRam * 0.8;
+  // Allow a 20% buffer; pool reserve counts as occupied since hackers leave it free.
+  return totalUsedRam + poolReserve > totalMaxRam * 0.8;
 };
 
 export async function main(ns: NS) {
