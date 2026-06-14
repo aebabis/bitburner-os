@@ -122,7 +122,8 @@ type RamData = {
   rootServers?: Server[];
   purchasedServers?: ServerRamInfo[];
 };
-export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA);
+export const getRamData = (ns: NS): RamData =>
+  readData(ns, PORT_SCH_RAM_DATA) || {};
 export const putRamData = (ns: NS, data: RamData) =>
   replaceData(ns, PORT_SCH_RAM_DATA, data);
 

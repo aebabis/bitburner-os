@@ -30,7 +30,7 @@ const UTILITIES = {
   },
   dispatch: {
     command: 'bin/dispatch.ts',
-    desc: 'Tell scheduler to run a program',
+    desc: 'Tell planner to run a program',
   },
   liquidate: {
     command: 'dispatch bin/liquidate.ts',
@@ -76,8 +76,8 @@ const UTILITY_DESCRIPTIONS = Object.fromEntries(
 const ALIASES = {
   // Main
   start: 'home; ./start.ts',
-  stop: 'home; kill /bin/scheduler.ts; ./stop.ts',
-  restart: 'home; kill /bin/scheduler.ts; ./stop.ts start.ts',
+  stop: 'home; kill /bin/planner.ts; ./stop.ts',
+  restart: 'home; kill /bin/planner.ts; ./stop.ts start.ts',
   services: './services.ts',
 
   // Shorthand

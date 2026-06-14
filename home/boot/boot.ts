@@ -4,7 +4,7 @@ import { STR } from '../lib/colors';
 
 const getBootSequence = (ns: NS) => {
   const controller =
-    ns.getServerMaxRam('home') <= 8 ? '/bin/eight-gig.ts' : '/bin/scheduler.ts';
+    ns.getServerMaxRam('home') <= 8 ? '/bin/eight-gig.ts' : '/bin/planner.ts';
   return [
     '/boot/reset.ts',
     '/boot/ui.ts',

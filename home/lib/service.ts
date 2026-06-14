@@ -1,4 +1,4 @@
-import { delegate } from './scheduler-delegate.ts';
+import { execOnBestServer } from './ram-router';
 import { getServices } from './service-api.ts';
 import { getStaticData } from './data-store';
 import { ERROR, C } from './colors';
@@ -14,6 +14,7 @@ const getExistingPid = (ns: NS, desc: string) => {
 };
 
 let count = 1;
+const MAX_INTERVAL = 60_000;
 
 export const Service =
   (ns: NS, condition = (_ns: NS) => true, interval = 5000) =>
@@ -34,15 +35,20 @@ export const Service =
     let lastRun = 0;
     let enabled = true;
     let queued = false;
+    let currentInterval = interval;
 
     const isRunning = () => pid && ns.isRunning(pid);
 
-    const enable = () => (enabled = true);
+    const enable = () => {
+      enabled = true;
+      currentInterval = interval;
+    };
     const disable = () => (enabled = false);
 
     const stop = () => {
       ns.kill(pid);
       pid = null;
+      currentInterval = interval;
     };
 
     const statusCode = () => {
@@ -55,25 +61,28 @@ export const Service =
     const check = async (beforeRun?: () => void) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
+      if (running) currentInterval = interval;
       if (!running && shouldBe) {
         const now = Date.now();
-        const isReady = now - lastRun >= interval;
-        if (isReady) {
+        if (now - lastRun >= currentInterval) {
+          // TODO: pre-flight pool RAM check here (backoff on failure)
           lastRun = now;
           queued = true;
           if (beforeRun) beforeRun();
           try {
-            const handle = await delegate(ns, true)(
+            const { pid: newPid } = execOnBestServer(
+              ns,
               script,
               target,
               numThreads,
-              ...args,
+              false,
+              args,
             );
-            pid = handle.pid;
-            if (pid == null) ns.tprint(ERROR + 'Failed to start ' + desc);
-          } catch (error) {
-            pid = null;
-            throw error;
+            pid = newPid || undefined;
+            if (!pid) {
+              ns.tprint(ERROR + 'Failed to start ' + desc);
+              currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
+            }
           } finally {
             queued = false;
           }

@@ -43,7 +43,7 @@ const getRunStats = (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
   const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
   const { onlineRunningTime = 0 } =
-    ns.getRunningScript('/bin/scheduler.ts', 'home') || {};
+    ns.getRunningScript('/bin/planner.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
   const getSF = () => {
@@ -328,8 +328,8 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getHackingTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
-  const WIDTH = 1300;
-  const HEIGHT = 500;
+  const WIDTH = 1400;
+  const HEIGHT = 450;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
   if (clientWidth) ns.ui.moveTail(clientWidth - WIDTH - 2, 2);
