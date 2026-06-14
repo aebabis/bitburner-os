@@ -1,10 +1,13 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { buildWorkerThreadAllocator } from '../lib/ram';
+import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 
 const HACK = 'bin/workers/hackshot.ts';
 const GROW = 'bin/workers/growshot.ts';
 const WEAK = 'bin/workers/weakshot.ts';
+
+const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY(ns));
 
 const SPACING = 50;
 const FRAME_SPACING = 200;
@@ -13,15 +16,6 @@ const FRAME_LIMIT = Math.floor(PROC_LIMIT / 4);
 
 // Weaken reduces security by 0.05 per thread (base rate)
 const getWeakThreads = (secDecrease: number) => Math.ceil(secDecrease / 0.05);
-
-const getRootServers = (ns: NS) => getHostnames(ns).filter(ns.hasRootAccess);
-const getRootServerRam = (ns: NS) =>
-  getRootServers(ns).reduce<Record<string, number>>((ram, hostname) => {
-    ram[hostname] =
-      ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 128);
-    return ram;
-  }, {});
 
 const needsSetup = (ns: NS, hostname: string) => {
   const minSec = ns.getServerMinSecurityLevel(hostname);

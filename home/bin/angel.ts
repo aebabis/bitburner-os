@@ -1,6 +1,7 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR } from '../lib/colors';
 import { getHostnames, putMoneyData } from '../lib/data-store';
+import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
@@ -36,14 +37,7 @@ const getHackableServer = (ns: NS, hostname: string): HackableServer => {
   return server as HackableServer;
 };
 
-const getRootServers = (ns: NS) => getHostnames(ns).filter(ns.hasRootAccess);
-const getRootServerRam = (ns: NS) =>
-  getRootServers(ns).reduce<Record<string, number>>((ram, hostname) => {
-    const { maxRam, ramUsed } = ns.getServer(hostname);
-    ram[hostname] = maxRam - ramUsed;
-    if (hostname === 'home') ram[hostname] = Math.max(0, ram[hostname] - 128);
-    return ram;
-  }, {});
+const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY(ns));
 
 const getWeakThreads = (ns: NS, targetDecrease: number) => {
   let threads = 1;

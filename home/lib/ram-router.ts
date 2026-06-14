@@ -1,16 +1,40 @@
 import { THREADPOOL } from '../etc/config';
-import { HACK, GROW, WEAKEN, SHARE } from '../etc/filenames';
+import {
+  HACK,
+  GROW,
+  WEAKEN,
+  SHARE,
+  HACKSHOT,
+  GROWSHOT,
+  WEAKSHOT,
+} from '../etc/filenames';
 import { by } from './util';
-import { getHostnames } from './data-store';
+import { getHostnames, getSchedulerReportData } from './data-store';
 
-const WORKERS = new Set([HACK, GROW, WEAKEN, SHARE]);
+const WORKERS = new Set([
+  HACK,
+  GROW,
+  WEAKEN,
+  SHARE,
+  HACKSHOT,
+  GROWSHOT,
+  WEAKSHOT,
+]);
 
 export type ExecProcess = { script: string; highPriority?: boolean };
 
 export type RamPolicy = {
   /** Returns GB to reserve on home for the given process. */
   homeReserve: (process: ExecProcess) => number;
+  /** Returns GB to deduct from the non-home pool (for service RMI overhead). */
+  poolReserve?: () => number;
 };
+
+/** Policy for batch hacking programs (thief, angel): large home reserve + pool awareness. */
+export const HACKER_POLICY = (ns: NS): RamPolicy => ({
+  homeReserve: () => 128,
+  poolReserve: () => getSchedulerReportData(ns).poolReserve ?? 0,
+});
 
 export const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
@@ -111,15 +135,35 @@ export const execOnBestServer = (
  * Returns available RAM per server as a flat record, suitable for
  * buildWorkerThreadAllocator. Respects the unified RAM policy so
  * batch workers (thief, angel) honour the same home reserve and
- * foodnstuff/neo-net exclusion as the planner.
+ * foodnstuff/neo-net exclusion as the planner. Normalises the script
+ * path so callers without a leading '/' still trigger the WORKERS check.
+ * Applies policy.poolReserve (non-home servers, largest first) if set.
  */
 export const getWorkerRam = (
   ns: NS,
   script: string,
   policy: RamPolicy = DEFAULT_POLICY,
-): Record<string, number> =>
-  getRootServers(ns, policy).reduce<Record<string, number>>((acc, info) => {
-    const available = info.ramAvailableTo({ script });
-    if (available > 0) acc[info.hostname] = available;
-    return acc;
-  }, {});
+): Record<string, number> => {
+  const normalScript = script.startsWith('/') ? script : '/' + script;
+  const result = getRootServers(ns, policy).reduce<Record<string, number>>(
+    (acc, info) => {
+      const available = info.ramAvailableTo({ script: normalScript });
+      if (available > 0) acc[info.hostname] = available;
+      return acc;
+    },
+    {},
+  );
+
+  let remaining = policy.poolReserve?.() ?? 0;
+  for (const hostname of Object.keys(result)
+    .filter((h) => h !== 'home')
+    .sort((a, b) => result[b] - result[a])) {
+    if (remaining <= 0) break;
+    const reduction = Math.min(result[hostname], remaining);
+    result[hostname] -= reduction;
+    if (result[hostname] <= 0) delete result[hostname];
+    remaining -= reduction;
+  }
+
+  return result;
+};
