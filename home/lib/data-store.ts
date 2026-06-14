@@ -170,6 +170,7 @@ export type StoredContract = {
 type ContractData = {
   contracts: StoredContract[];
   failedContractNames?: string[];
+  data: unknown;
 };
 export const getContractData = (ns: NS): ContractData => readData(ns, PORT_CONTRACT_DATA) || {};
 export const putContractData = (ns: NS, data: ContractData) =>

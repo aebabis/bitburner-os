@@ -1,25 +1,6 @@
 import { THREADPOOL } from '../etc/config';
-import {
-  HACK,
-  GROW,
-  WEAKEN,
-  SHARE,
-  HACKSHOT,
-  GROWSHOT,
-  WEAKSHOT,
-} from '../etc/filenames';
 import { by } from './util';
 import { getHostnames, getSchedulerReportData } from './data-store';
-
-const WORKERS = new Set([
-  HACK,
-  GROW,
-  WEAKEN,
-  SHARE,
-  HACKSHOT,
-  GROWSHOT,
-  WEAKSHOT,
-]);
 
 export type ExecProcess = { script: string; highPriority?: boolean };
 
@@ -32,7 +13,7 @@ export type RamPolicy = {
 
 /** Policy for batch hacking programs (thief, angel): large home reserve + pool awareness. */
 export const HACKER_POLICY = (ns: NS): RamPolicy => ({
-  homeReserve: () => 128,
+  homeReserve: () => 2,
   poolReserve: () => getSchedulerReportData(ns).poolReserve ?? 0,
 });
 
@@ -43,41 +24,26 @@ export const DEFAULT_POLICY: RamPolicy = {
   },
 };
 
-export const getRamInfo = (
-  ns: NS,
-  hostname: string,
-  policy: RamPolicy = DEFAULT_POLICY,
-) => {
+export const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT_POLICY) => {
   const maxRam = ns.getServerMaxRam(hostname);
   const ramUsed = ns.getServerUsedRam(hostname);
   const ramUnused = maxRam - ramUsed;
   let ramAvailableTo = (_: ExecProcess) => ramUnused;
   if (hostname === 'home') {
-    ramAvailableTo = (process) =>
-      Math.max(0, ramUnused - policy.homeReserve(process));
-  } else if (hostname === 'foodnstuff' || hostname === 'neo-net') {
-    // These servers only have worker scripts if explicitly copied there.
-    // TODO: remove once all servers receive all .ts files at root time.
-    ramAvailableTo = ({ script }) => (WORKERS.has(script) ? 0 : ramUnused);
+    ramAvailableTo = (process) => Math.max(0, ramUnused - policy.homeReserve(process));
   }
   return { hostname, maxRam, ramUsed, ramUnused, ramAvailableTo };
 };
 
 type RamInfo = ReturnType<typeof getRamInfo>;
 
-export const getRootServers = (
-  ns: NS,
-  policy: RamPolicy = DEFAULT_POLICY,
-): RamInfo[] =>
+export const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
   getHostnames(ns)
     .filter(ns.hasRootAccess)
     .map((h) => getRamInfo(ns, h, policy))
     .sort(by((s) => -s.ramUnused));
 
-export const getPurchasedServers = (
-  ns: NS,
-  policy: RamPolicy = DEFAULT_POLICY,
-): RamInfo[] =>
+export const getPurchasedServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
   getHostnames(ns)
     .filter((h) => h.startsWith(THREADPOOL))
     .sort()
@@ -112,9 +78,7 @@ export const execOnBestServer = (
   }
 
   const rootServers = getRootServers(ns, policy);
-  const eligible = rootServers.filter(
-    (s) => ns.getScriptRam(script, s.hostname) > 0,
-  );
+  const eligible = rootServers.filter((s) => ns.getScriptRam(script, s.hostname) > 0);
   const isValid = (s: RamInfo) => s.ramAvailableTo(process) >= ramRequired;
   const isUsable = (s: RamInfo) => s.ramAvailableTo(process) >= scriptRam;
   const server = eligible.find(isValid) ?? eligible.find(isUsable);
@@ -133,11 +97,10 @@ export const execOnBestServer = (
 
 /**
  * Returns available RAM per server as a flat record, suitable for
- * buildWorkerThreadAllocator. Respects the unified RAM policy so
- * batch workers (thief, angel) honour the same home reserve and
- * foodnstuff/neo-net exclusion as the planner. Normalises the script
- * path so callers without a leading '/' still trigger the WORKERS check.
- * Applies policy.poolReserve (non-home servers, largest first) if set.
+ * buildWorkerThreadAllocator. Applies the home reserve from policy and
+ * deducts policy.poolReserve from non-home servers largest-first if set.
+ * Servers where the script is not installed (getScriptRam returns 0) are
+ * excluded via execOnBestServer's own check; no special-casing needed here.
  */
 export const getWorkerRam = (
   ns: NS,
@@ -145,14 +108,11 @@ export const getWorkerRam = (
   policy: RamPolicy = DEFAULT_POLICY,
 ): Record<string, number> => {
   const normalScript = script.startsWith('/') ? script : '/' + script;
-  const result = getRootServers(ns, policy).reduce<Record<string, number>>(
-    (acc, info) => {
-      const available = info.ramAvailableTo({ script: normalScript });
-      if (available > 0) acc[info.hostname] = available;
-      return acc;
-    },
-    {},
-  );
+  const result = getRootServers(ns, policy).reduce<Record<string, number>>((acc, info) => {
+    const available = info.ramAvailableTo({ script: normalScript });
+    if (available > 0) acc[info.hostname] = available;
+    return acc;
+  }, {});
 
   let remaining = policy.poolReserve?.() ?? 0;
   for (const hostname of Object.keys(result)
