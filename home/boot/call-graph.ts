@@ -1,7 +1,7 @@
 import { tprint } from './util';
 
 const DELEGATE_PATTERN =
-  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service)\s*\([^)]*\)\s*\(\s*["'`]([^"'`]+)["'`]/g;
+  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service)\b[^`'"]*[`'"](\/[^`'"]+)[`'"]/g;
 const IMPORT_PATTERN = /\bimport\b[^'"]*from\s*["']([^"']+)["']/g;
 
 const resolve = (fromPath, rel) => {

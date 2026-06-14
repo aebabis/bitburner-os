@@ -13,7 +13,7 @@ import {
   checkQueue,
   getTableString,
 } from '../lib/service-api';
-import { getViableServices } from './services/services';
+import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
 import {
   execOnBestServer,
@@ -27,12 +27,11 @@ const player = (ns: NS) => ns.getPlayer();
 const go = async (ns: NS) => {
   ns.disableLog('ALL');
 
-  const { resetInfo } = getStaticData(ns);
+  const { resetInfo, serviceOverhead } = getStaticData(ns);
   if (resetInfo.currentNode === 8) {
     ns.exec('/bin/self/buy-ram.ts', 'home');
   }
-
-  const tasks = getViableServices(ns, player);
+  const tasks = getAllServices(ns, player).filter((t) => t.isViable());
 
   const lastRuns: Record<string, number> = {};
   const lastCancellations: Record<string, number> = {};
@@ -91,10 +90,17 @@ const go = async (ns: NS) => {
   };
 
   const updateReports = () => {
+    const rootServers = getRootServers(ns);
     putRamData(ns, {
-      rootServers: getRootServers(ns) as any,
+      rootServers: rootServers as any,
       purchasedServers: getPurchasedServers(ns) as any,
     });
+    const freePool = rootServers
+      .filter((s) => s.hostname !== 'home')
+      .reduce((sum, s) => sum + s.ramUnused, 0);
+    const poolReserve = tasks
+      .filter((t) => t.isRunning())
+      .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0);
     putSchedulerReportData(ns, {
       lastRuns,
       lastCancellations,
@@ -104,17 +110,27 @@ const go = async (ns: NS) => {
       enqueueFails: 0,
       inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
       outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
+      freePool,
+      poolReserve,
     });
   };
 
   while (true) {
     await handleExecRequests();
     putPlayerData(ns, { player: player(ns) });
+    const poolContext = {
+      freePool: getRootServers(ns)
+        .filter((s) => s.hostname !== 'home')
+        .reduce((sum, s) => sum + s.ramUnused, 0),
+      poolReserve: tasks
+        .filter((t) => t.isRunning())
+        .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0),
+    };
     for (const task of tasks) {
       try {
         updateTasks();
         showServices();
-        await task.check(showServices);
+        await task.check(showServices, poolContext);
       } catch (error) {
         console.error(error);
         if (error?.name === 'ScriptDeath') throw error;

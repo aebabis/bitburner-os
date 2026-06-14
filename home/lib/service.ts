@@ -1,7 +1,7 @@
 import { execOnBestServer } from './ram-router';
 import { getServices } from './service-api.ts';
 import { getStaticData } from './data-store';
-import { ERROR, C } from './colors';
+import { ERROR, WARN, C } from './colors';
 
 const getExistingPid = (ns: NS, desc: string) => {
   try {
@@ -13,11 +13,21 @@ const getExistingPid = (ns: NS, desc: string) => {
   }
 };
 
+export type PoolContext = {
+  freePool: number;
+  poolReserve: number;
+};
+
 let count = 1;
 const MAX_INTERVAL = 60_000;
 
 export const Service =
-  (ns: NS, condition = (_ns: NS) => true, interval = 5000) =>
+  (
+    ns: NS,
+    condition = (_ns: NS) => true,
+    interval = 5000,
+    isViable = () => true,
+  ) =>
   (
     script: string,
     target: string | null = null,
@@ -55,17 +65,26 @@ export const Service =
       if (!enabled) return ERROR('⊗');
       else if (queued) return '△';
       else if (isRunning()) return C(34)('●');
+      else if (currentInterval > interval) return WARN('○');
       else return '○';
     };
 
-    const check = async (beforeRun?: () => void) => {
+    const check = async (beforeRun?: () => void, poolContext?: PoolContext) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
       if (running) currentInterval = interval;
       if (!running && shouldBe) {
         const now = Date.now();
         if (now - lastRun >= currentInterval) {
-          // TODO: pre-flight pool RAM check here (backoff on failure)
+          const overhead = getStaticData(ns).serviceOverhead[script] ?? 0;
+          if (overhead > 0 && poolContext != null) {
+            const available = poolContext.freePool - poolContext.poolReserve;
+            if (available < overhead) {
+              lastRun = now;
+              currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
+              return;
+            }
+          }
           lastRun = now;
           queued = true;
           if (beforeRun) beforeRun();
@@ -104,12 +123,15 @@ export const Service =
       pid,
       desc,
       ram,
+      overhead: getStaticData(ns).serviceOverhead[script] ?? 0,
     });
 
     return {
       isRunning,
       check,
       getPid: () => pid,
+      script,
+      isViable,
       toData,
       toString,
       enable,
@@ -121,6 +143,16 @@ export const Service =
   };
 
 export const AnyHostService =
-  (ns: NS, condition: () => boolean = () => true, interval = 5000) =>
+  (
+    ns: NS,
+    condition: () => boolean = () => true,
+    interval = 5000,
+    isViable = () => true,
+  ) =>
   (script: string, numThreads = 1, ...args: ScriptArg[]) =>
-    Service(ns, condition, interval)(script, null, numThreads, ...args);
+    Service(ns, condition, interval, isViable)(
+      script,
+      null,
+      numThreads,
+      ...args,
+    );

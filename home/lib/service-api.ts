@@ -8,11 +8,14 @@ export const ENABLE = 'ENABLE';
 type ServiceData = {
   id: number | string;
   name: string;
+  script: string;
   status: string;
+  isRunning: boolean;
   allowed: boolean;
   pid: number;
   desc: string;
   ram: number;
+  overhead: number;
 };
 
 const getServiceName = (script: string) =>

@@ -21,7 +21,7 @@ const mostRootRam = (ns: NS) => {
   );
 };
 
-export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
+export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
   const { requiredJobRam, requiredAugRam, purchasedServerCosts, resetInfo } =
     getStaticData(ns);
@@ -68,57 +68,82 @@ export const getViableServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
   const canWork = () => canAutopilot() && (!useBlade() || hasSimulacrum());
 
-  const tasks = [AnyHostService(ns)('/bin/access.ts')];
-
-  if (hasAngel) {
-    tasks.push(AnyHostService(ns, useAngel)('/bin/angel.ts'));
-  }
-  if (hasThief) {
-    tasks.push(AnyHostService(ns, useThief)('/bin/thief.ts'));
-  }
-
-  tasks.push(
+  return [
+    AnyHostService(ns)('/bin/access.ts'),
+    AnyHostService(ns, useAngel, 5000, () => hasAngel)('/bin/angel.ts'),
+    AnyHostService(ns, useThief, 5000, () => hasThief)('/bin/thief.ts'),
     AnyHostService(ns, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
-  );
-
-  if (useWolf()) tasks.push(AnyHostService(ns)('/bin/nerd.ts'));
-  else tasks.push(AnyHostService(ns, couldTrade)('/bin/broker/broker.ts'));
-
-  if (useBlade()) tasks.push(AnyHostService(ns)('/bin/blades/blades.ts'));
-
-  if (hacknetAvailable && playerLikesHacknet) {
-    tasks.push(AnyHostService(ns)('/bin/hacknet.ts'));
-  }
-
-  if (gangsAvailable)
-    tasks.push(AnyHostService(ns, inCriminalFaction)('/bin/gang/mob-boss.ts'));
-
-  if (corpAvailable)
-    tasks.push(
-      AnyHostService(ns, corpReady)('/bin/corporation/corporation.ts'),
-    );
-
-  if (hasSingularity) {
-    tasks.push(
-      AnyHostService(ns, canAutopilot)('/bin/self/aug/augment.ts'),
-      AnyHostService(ns, canAutopilot)('/bin/self/control.ts'),
-      AnyHostService(ns, canAutopilot)('/bin/self/tor.ts'),
-      AnyHostService(ns, canWork)('/bin/self/work.ts'),
-    );
-  } else {
-    tasks.push(
-      AnyHostService(ns)('/bin/hinter.ts'),
-      AnyHostService(ns)('/bin/trailblazer.ts'),
-    );
-  }
-
-  tasks.push(Service(ns, isRemoteApiConnected)('/bin/nvim.ts', 'home'));
-  tasks.push(
+    AnyHostService(ns, () => true, 5000, useWolf)('/bin/nerd.ts'),
+    AnyHostService(
+      ns,
+      couldTrade,
+      5000,
+      () => !useWolf(),
+    )('/bin/broker/broker.ts'),
+    AnyHostService(
+      ns,
+      useBlade,
+      5000,
+      () => resetInfo.currentNode === 6,
+    )('/bin/blades/blades.ts'),
+    AnyHostService(
+      ns,
+      () => true,
+      5000,
+      () => hacknetAvailable && playerLikesHacknet,
+    )('/bin/hacknet.ts'),
+    AnyHostService(
+      ns,
+      inCriminalFaction,
+      5000,
+      () => gangsAvailable,
+    )('/bin/gang/mob-boss.ts'),
+    AnyHostService(
+      ns,
+      corpReady,
+      5000,
+      () => corpAvailable,
+    )('/bin/corporation/corporation.ts'),
+    AnyHostService(
+      ns,
+      canAutopilot,
+      5000,
+      () => hasSingularity,
+    )('/bin/self/aug/augment.ts'),
+    AnyHostService(
+      ns,
+      canAutopilot,
+      5000,
+      () => hasSingularity,
+    )('/bin/self/control.ts'),
+    AnyHostService(
+      ns,
+      canAutopilot,
+      5000,
+      () => hasSingularity,
+    )('/bin/self/tor.ts'),
+    AnyHostService(
+      ns,
+      canWork,
+      5000,
+      () => hasSingularity,
+    )('/bin/self/work.ts'),
+    AnyHostService(
+      ns,
+      () => true,
+      5000,
+      () => !hasSingularity,
+    )('/bin/hinter.ts'),
+    AnyHostService(
+      ns,
+      () => true,
+      5000,
+      () => !hasSingularity,
+    )('/bin/trailblazer.ts'),
+    Service(ns, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
-  );
-
-  return tasks;
+  ];
 };

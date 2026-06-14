@@ -3,7 +3,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { getCallGraph } from './call-graph';
 import { STR } from '../lib/colors';
-import { getViableServices } from '../bin/services/services';
+import { getAllServices } from '../bin/services/services';
 
 export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'Determining required job RAM');
@@ -11,8 +11,8 @@ export async function main(ns: NS) {
   const { scriptRam, resetInfo } = getStaticData(ns);
 
   const callGraph = getCallGraph(ns);
-  const services = getViableServices(ns, (ns: NS) => ns.getPlayer()).map(
-    (service) => service.toData().script,
+  const services = getAllServices(ns, (ns: NS) => ns.getPlayer()).map(
+    (service) => service.script,
   );
 
   const getRam = (script: string) => scriptRam[script.replace(/^\.*[/]/, '')];

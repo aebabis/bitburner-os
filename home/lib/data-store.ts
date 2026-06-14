@@ -42,6 +42,8 @@ type SchedulerReportData = {
   droppedTickets: number;
   lastRuns: Record<string, number>;
   lastCancellations: Record<string, number>;
+  freePool?: number;
+  poolReserve?: number;
 };
 export const getSchedulerReportData = (ns: NS): SchedulerReportData =>
   readData(ns, PORT_SCH_REPORTING) || {};
