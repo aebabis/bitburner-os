@@ -1,19 +1,11 @@
-import { getContractData, putContractData } from '../../lib/data-store';
+import { getContractData, putContractData, StoredContract } from '../../lib/data-store';
 import { getSpawnChain } from '../../lib/service-api';
 import algorithms from './mapper';
 
 const decode = (data: unknown) =>
   typeof data === 'string' && data.match(/^\d+n$/) ? BigInt(data.slice(0, -1)) : data;
 
-const attemptContract = (
-  ns: NS,
-  /** @type {{filename: string, hostname: string, type: string, data: unknown}} */ {
-    filename,
-    hostname,
-    type,
-    data,
-  },
-) => {
+const attemptContract = (ns: NS, { filename, hostname, type, data }: StoredContract) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
   const answer = algorithm(decode(data));
