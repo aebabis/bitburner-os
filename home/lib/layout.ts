@@ -65,7 +65,17 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
         };
       }
     })
-    .sort((a: RenderResult, b: RenderResult) => a.height - b.height);
+    .sort((a: RenderResult, b: RenderResult) => {
+      // Hack for giving topbar priority
+      if (a.height === 1) {
+        return -1;
+      }
+      if (b.height === 1) {
+        return 1;
+      }
+      // All other boxes are sorted by vertical height descending
+      return b.height - a.height;
+    });
 
   const placed: PlacedItem[] = [];
   let x = 0;
