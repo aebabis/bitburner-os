@@ -62,10 +62,11 @@ export async function main(ns: NS) {
     maxRam: number,
     hostname = getNextServerName(ns, purchasedServerLimit),
   ) => {
-    const JOB_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
+    if (hostname == null) {
+      throw new Error('Attempted to buy server past limit');
+    }
 
     const isUpgrade = ns.serverExists(hostname);
-    const isJobServer = JOB_SERVERS.includes(hostname);
     const savings = isUpgrade
       ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname))
       : 0;
@@ -95,8 +96,9 @@ export async function main(ns: NS) {
     if (isUpgrade) ns.print(`Upgraded ${hostname} to ${ram}GB ram for ${cost}`);
     else ns.print(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);
 
-    if (isJobServer) fullInfect(ns, hostname);
-    else infect(ns, hostname);
+    if (!isUpgrade) {
+      fullInfect(ns, hostname);
+    }
   };
 
   const attemptPurchase = async (ns: NS) => {
