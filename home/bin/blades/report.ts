@@ -19,8 +19,29 @@ const getActionDuration = (ns: NS, action: BladeCurrentAction) => {
   }
 };
 
+const contentWidth = (ns: NS) =>
+  Math.max(...ns.bladeburner.getOperationNames().map((name) => name.length)) + 11;
+
 const showInfo = (ns: NS) => {
   ns.clearLog();
+
+  ns.print(' ');
+  ns.print(BRIGHT.BOLD + '  OPERATIONS');
+
+  const blackOps = ns.bladeburner.getBlackOpNames();
+  const currentBlackOp = ns.bladeburner.getNextBlackOp();
+  const completedBlackOps = blackOps.slice(
+    0,
+    currentBlackOp != null ? blackOps.indexOf(currentBlackOp.name) : blackOps.length,
+  );
+  for (const completedOp of completedBlackOps) {
+    ns.print('  ' + completedOp.padEnd(contentWidth(ns) - 3) + C(10)('  ✓'));
+  }
+  if (currentBlackOp) {
+    ns.print('  ' + MEDIUM(currentBlackOp.name));
+  }
+
+  ns.print(' ');
 
   const { cities, skills, currentAction } = getBladeData(ns);
   ns.print(
@@ -48,7 +69,7 @@ const showInfo = (ns: NS) => {
     const columns = [
       ' CITY',
       { name: '     EST POP', align: 'right' },
-      { name: 'CMTY', align: 'right' },
+      { name: ' CMTY', align: 'right' },
       { name: ' CHAOS', align: 'right' },
     ];
     const rows = Object.entries(cities)
@@ -67,7 +88,7 @@ const showInfo = (ns: NS) => {
 
     const columns = [
       ' SKILL',
-      { name: '      COST', align: 'right' },
+      { name: '       COST', align: 'right' },
       { name: ' LEVEL', align: 'right' },
     ];
     const rows = skills
@@ -86,7 +107,7 @@ const showInfo = (ns: NS) => {
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
-  ns.ui.resizeTail(350, 440);
+  ns.ui.resizeTail(355, 440);
 
   while (true) {
     showInfo(ns);
