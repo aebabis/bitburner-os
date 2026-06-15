@@ -1,6 +1,9 @@
 import { BladeAction, putBladeData } from '../../../lib/data-store';
+import { joinSpawnChain } from '../../../lib/service-api';
 
 export async function main(ns: NS) {
+  const { linkTo } = joinSpawnChain(ns, '/bin/blades/blades.ts');
+
   const { bladeburner: bb } = ns;
 
   const ACTION_NAMES: Record<BladeburnerActionType, BladeburnerActionName[]> = {
@@ -15,10 +18,7 @@ export async function main(ns: NS) {
     BladeburnerActionName[],
   ][];
 
-  const getActions = (
-    type: BladeburnerActionType,
-    names: BladeburnerActionName[],
-  ) =>
+  const getActions = (type: BladeburnerActionType, names: BladeburnerActionName[]) =>
     Object.fromEntries(
       names.map((name) => [
         name,
@@ -35,4 +35,5 @@ export async function main(ns: NS) {
   ) as Record<BladeburnerActionType, ReturnType<typeof getActions>>;
 
   putBladeData(ns, { actions });
+  await linkTo('/bin/blades/actions/load-cities.ts', 0);
 }

@@ -71,7 +71,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     ChainedService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, useWolf)('/bin/nerd.ts'),
     AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/broker.ts'),
-    AnyHostService(ns, bladesAvailable, useBlade)('/bin/blades/blades.ts'),
+    ChainedService(ns, bladesAvailable, useBlade)('/bin/blades/blades.ts'),
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/mob-boss.ts'),
     AnyHostService(ns, enableCorp, corpReady)('/bin/corporation/corporation.ts'),

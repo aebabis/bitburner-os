@@ -63,17 +63,38 @@ export const checkQueue = (ns: NS) => {
   return tasks;
 };
 
-export const getSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
-  const chain = new Set([startScript.replace(/^\//, '')]);
-  for (const script of chain) {
-    const spawnCalls = ns.read(script).matchAll(/linkTo\('([^']+)'/g);
-    for (const [, script] of spawnCalls) chain.add(script.replace(/^\//, ''));
+declare global {
+  var __spawnChains: Record<string, SpawnChain>;
+}
+export {};
+
+type SpawnChain = {
+  chain: Set<string>;
+  maxRam: number;
+};
+
+const getSpawnChain = (ns: NS, startScript = ns.getScriptName()): SpawnChain => {
+  if (globalThis.__spawnChains[startScript] == null) {
+    const chain = new Set([startScript.replace(/^\//, '')]);
+    for (const script of chain) {
+      const spawnCalls = ns.read(script).matchAll(/linkTo\('([^']+)'/g);
+      for (const [, script] of spawnCalls) chain.add(script.replace(/^\//, ''));
+    }
+    const scriptRam = [...chain].map((script) => ns.getScriptRam(script));
+    globalThis.__spawnChains[startScript] = {
+      chain,
+      maxRam: Math.max(...scriptRam) + ns.getFunctionRamCost('spawn'),
+    };
   }
-  const scriptRam = [...chain].map((script) => ns.getScriptRam(script));
-  return {
-    chain,
-    maxRam: Math.max(...scriptRam) + ns.getFunctionRamCost('spawn'),
-  };
+  return globalThis.__spawnChains[startScript];
+};
+
+export const readSpawnChain = (ns: NS, startScript: string) => {
+  if (globalThis.__spawnChains == null) {
+    globalThis.__spawnChains = {};
+  }
+  delete globalThis.__spawnChains[startScript];
+  return getSpawnChain(ns, startScript);
 };
 
 export const joinSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
@@ -86,9 +107,9 @@ export const joinSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
     throw new Error(`${script} tried to join ${maxRam}GB chain without extra RAM reserved`);
   }
   return {
-    linkTo: async (nextScript: string, timeout = 100) => {
+    linkTo: async (nextScript: string, timeout = 100, ...args: ScriptArg[]) => {
       await ns.sleep(timeout);
-      ns['spawn'](nextScript, { spawnDelay: 0 });
+      ns['spawn'](nextScript, { spawnDelay: 0 }, ...args);
     },
   };
 };

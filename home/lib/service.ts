@@ -1,5 +1,5 @@
 import { execOnBestServer } from './ram-router';
-import { getServices, getSpawnChain } from './service-api.ts';
+import { getServices, readSpawnChain } from './service-api.ts';
 import { getStaticData } from './data-store';
 import { ERROR, WARN, C } from './colors';
 
@@ -32,7 +32,7 @@ export const Service =
     { interval = 5000, isChain = false }: ServiceOptions = {},
   ) =>
   (script: string, target: string | null = null, numThreads = 1, ...args: ScriptArg[]) => {
-    const chain = isChain ? getSpawnChain(ns, script) : null;
+    const chain = isChain ? readSpawnChain(ns, script) : null;
 
     const id = count++;
     const desc =

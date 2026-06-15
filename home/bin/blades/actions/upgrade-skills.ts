@@ -25,6 +25,7 @@
 // Hands of Midas - Money sucks
 
 import { getBladeData, putBladeData } from '../../../lib/data-store';
+import { joinSpawnChain } from '../../../lib/service-api';
 
 const SKILL_LIMITS: Record<BladeburnerSkillName, number> = {
   "Blade's Intuition": Infinity,
@@ -59,6 +60,8 @@ const LIMITATIONS: Partial<Record<BladeburnerSkillName, SkillCondition>> = {
 const SKILLS = Object.keys(SKILL_LIMITS) as BladeburnerSkillName[];
 
 export async function main(ns: NS) {
+  const { linkTo } = joinSpawnChain(ns, '/bin/blades/blades.ts');
+
   const skills = SKILLS.map((name) => ({
     name,
     cost: ns.bladeburner.getSkillUpgradeCost(name),
@@ -78,4 +81,5 @@ export async function main(ns: NS) {
     }
   }
   putBladeData(ns, { skills });
+  await linkTo('/bin/blades/actions/travel.ts', 0);
 }

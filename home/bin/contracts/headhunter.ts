@@ -33,5 +33,5 @@ export async function main(ns: NS) {
   const { linkTo } = joinSpawnChain(ns, '/bin/contracts/freelancer.ts');
   const contracts = findContracts(ns);
   putContractData(ns, { contracts });
-  linkTo('/bin/contracts/complete.ts');
+  await linkTo('/bin/contracts/complete.ts');
 }
