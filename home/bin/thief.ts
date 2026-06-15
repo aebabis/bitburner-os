@@ -43,23 +43,16 @@ const getPossibleTargets = (ns: NS) =>
 const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
   const maxMoney = ns.getServerMaxMoney(hostname);
   const money = Math.max(ns.getServerMoneyAvailable(hostname), 1);
-  const totalGrowThreads = Math.ceil(
-    ns.growthAnalyze(hostname, maxMoney / money),
-  );
+  const totalGrowThreads = Math.ceil(ns.growthAnalyze(hostname, maxMoney / money));
   const threadsPerPass = Math.max(1, Math.floor(totalRam / (1.75 * 2)));
-  return (
-    Math.ceil(totalGrowThreads / threadsPerPass) *
-    (ns.getWeakenTime(hostname) + SPACING)
-  );
+  return Math.ceil(totalGrowThreads / threadsPerPass) * (ns.getWeakenTime(hostname) + SPACING);
 };
 
 const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
   const maxMoney = ns.getServerMaxMoney(hostname);
-  if (maxMoney === 0)
-    return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
+  if (maxMoney === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
   const hackPortion = ns.hackAnalyze(hostname);
-  if (hackPortion === 0)
-    return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
+  if (hackPortion === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
   const growFactor = 1 / (1 - hackPortion);
   const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
   const weak1Threads = getWeakThreads(0.002); // hack security per thread
@@ -80,10 +73,7 @@ const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
 };
 
 const getTarget = (ns: NS) => {
-  const totalRam = Object.values(getRootServerRam(ns)).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
   const evaluations = getPossibleTargets(ns).map((hostname) =>
     evaluateTarget(ns, hostname, totalRam),
   );
@@ -119,22 +109,17 @@ export async function main(ns: NS) {
     const pid = ns.exec(
       script,
       hostname,
-      threads,
+      { threads, temporary: true },
       target,
       additionalMsec,
       `${workerId++}`,
     );
-    if (!pid)
-      throw new Error(`exec fail: ${script} ${hostname} ${threads} ${target}`);
+    if (!pid) throw new Error(`exec fail: ${script} ${hostname} ${threads} ${target}`);
   };
 
   const makeAssign = (ramSnapshot: Record<string, number>) => {
     const alloc = buildWorkerThreadAllocator(ramSnapshot);
-    return (
-      script: string,
-      threads: number,
-      additionalMsec: number,
-    ): (() => void) | null => {
+    return (script: string, threads: number, additionalMsec: number): (() => void) | null => {
       if (threads === 0) return () => {};
       const allocations: [string, number][] = [];
       let rem = threads;
@@ -145,8 +130,7 @@ export async function main(ns: NS) {
         rem -= allocation[1];
       }
       return () => {
-        for (const [hostname, t] of allocations)
-          execWorker(script, hostname, t, additionalMsec);
+        for (const [hostname, t] of allocations) execWorker(script, hostname, t, additionalMsec);
       };
     };
   };
@@ -162,23 +146,16 @@ export async function main(ns: NS) {
   const queue: QueueEntry[] = [];
 
   if (needsSetup(ns, target)) {
-    const secDiff =
-      ns.getServerSecurityLevel(target) - ns.getServerMinSecurityLevel(target);
+    const secDiff = ns.getServerSecurityLevel(target) - ns.getServerMinSecurityLevel(target);
     const initWeakThreads = secDiff > 0 ? getWeakThreads(secDiff) : 0;
-    const totalRam = Object.values(getRootServerRam(ns)).reduce(
-      (a, b) => a + b,
-      0,
-    );
+    const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
     // Reserve RAM for initWeak, split remainder evenly between grow and weak2.
     const growRamBudget = (totalRam - initWeakThreads * 1.75) / 2;
     const maxGrowThreads = Math.max(1, Math.floor(growRamBudget / 1.75));
     const maxMoney = ns.getServerMaxMoney(target);
     const currentMoney = Math.max(ns.getServerMoneyAvailable(target), 1);
     const growFactor = maxMoney / currentMoney;
-    const growThreads = Math.min(
-      maxGrowThreads,
-      Math.ceil(ns.growthAnalyze(target, growFactor)),
-    );
+    const growThreads = Math.min(maxGrowThreads, Math.ceil(ns.growthAnalyze(target, growFactor)));
     const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
 
     // One WGW pass: initWeak ends at +weakTime, grow ends at +weakTime+SPACING,
@@ -206,10 +183,7 @@ export async function main(ns: NS) {
     const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
     const frameRam = 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
 
-    const totalRam = Object.values(getRootServerRam(ns)).reduce(
-      (a, b) => a + b,
-      0,
-    );
+    const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
     const numFrames = Math.min(Math.floor(totalRam / frameRam), FRAME_LIMIT);
 
     // Frames are pipelined: launch one every FRAME_PERIOD, each with the same
