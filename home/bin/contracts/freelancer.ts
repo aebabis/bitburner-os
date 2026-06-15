@@ -5,35 +5,33 @@ import algorithms from './mapper';
 
 const isContract = (file: string) => file.endsWith('.cct');
 
-const getContracts = async (ns: NS) => {
-  const files = getHostnames(ns).flatMap((hostname) =>
-    ns
-      .ls(hostname)
-      .filter(isContract)
-      .map((filename) => ({
-        filename,
-        hostname,
-      })),
-  );
-  return Promise.all(
-    files.map(async ({ filename, hostname }) => ({
-      filename,
-      hostname,
-      type: await inPlace(ns).codingcontract['getContractType'](filename, hostname),
-      data: await inPlace(ns).codingcontract['getData'](filename, hostname),
-    })),
-  );
+type Contract = {
+  filename: string;
+  hostname: string;
+  type: string;
+  data: unknown;
+  tries: number;
 };
 
-const attemptContract = async (
-  ns: NS,
-  { filename, hostname, type, data }: ReturnType<typeof getContracts>[number],
-) => {
-  const algorithm = algorithms(type);
+const getContracts = async (ns: NS) => {
+  const results: Contract[] = [];
+  for (const hostname of getHostnames(ns)) {
+    for (const filename of ns.ls(hostname).filter(isContract)) {
+      const type = await inPlace(ns).codingcontract['getContractType'](filename, hostname);
+      const data = await inPlace(ns).codingcontract['getData'](filename, hostname);
+      const tries = await inPlace(ns).codingcontract['getNumTriesRemaining'](filename, hostname);
+      results.push({ hostname, filename, type, data, tries });
+    }
+  }
+  return results;
+};
+
+const attemptContract = async (ns: NS, { filename, hostname, type, data }: Contract) => {
+  const algorithm = algorithms(type as keyof typeof algorithms);
   if (algorithm == null) return null;
-  const answer = algorithm(data);
+  const answer = algorithm(data as never); // No idea
   try {
-    const outcome = await ns.codingcontract['attempt'](answer, filename, hostname);
+    const outcome = await inPlace(ns).codingcontract['attempt'](answer, filename, hostname);
     if (outcome === '')
       ns.tprint(
         'ERROR ' + algorithm.name + `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`,
@@ -54,14 +52,11 @@ export async function main(ns: NS) {
   // Reserve highest cost RAM
   ns.codingcontract.attempt;
 
-  const n = inPlace(ns);
-
   while (true) {
     const contracts = await getContracts(ns);
     for (const contract of contracts) {
-      ns.tprint(contract);
       if (!failures.has(contract.filename)) {
-        if (!(await attemptContract(n, contract))) {
+        if (!(await attemptContract(ns, contract))) {
           failures.add(contract.filename);
         }
       }
