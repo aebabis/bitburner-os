@@ -64,10 +64,10 @@ export const checkQueue = (ns: NS) => {
 };
 
 export const getSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
-  const chain = new Set([startScript]);
+  const chain = new Set([startScript.replace(/^\//, '')]);
   for (const script of chain) {
     const spawnCalls = ns.read(script).matchAll(/ns\.spawn\('([^']+)'/g);
-    for (const [, script] of spawnCalls) chain.add(script);
+    for (const [, script] of spawnCalls) chain.add(script.replace(/^\//, ''));
   }
   const scriptRam = [...chain].map((script) => ns.getScriptRam(script));
   return {

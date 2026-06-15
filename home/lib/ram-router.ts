@@ -13,7 +13,7 @@ export type RamPolicy = {
 
 /** Policy for batch hacking programs (thief, angel): large home reserve + pool awareness. */
 export const HACKER_POLICY = (ns: NS): RamPolicy => ({
-  homeReserve: () => 2,
+  homeReserve: () => 64,
   poolReserve: () => getSchedulerReportData(ns).poolReserve ?? 0,
 });
 
@@ -63,9 +63,9 @@ export const execOnBestServer = (
   highPriority: boolean,
   args: ScriptArg[] = [],
   policy: RamPolicy = DEFAULT_POLICY,
+  scriptRam = ns.getScriptRam(script, 'home'),
 ): ExecResult => {
   const process = { script, highPriority };
-  const scriptRam = ns.getScriptRam(script, 'home');
   const ramRequired = scriptRam * numThreads;
 
   if (host != null) {

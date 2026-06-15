@@ -6,20 +6,10 @@ import {
 } from '../lib/data-store';
 import { logger } from '../lib/logger';
 
-import {
-  ENABLE,
-  DISABLE,
-  writeServices,
-  checkQueue,
-  getTableString,
-} from '../lib/service-api';
+import { ENABLE, DISABLE, writeServices, checkQueue, getTableString } from '../lib/service-api';
 import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
-import {
-  execOnBestServer,
-  getRootServers,
-  getPurchasedServers,
-} from '../lib/ram-router';
+import { execOnBestServer, getRootServers, getPurchasedServers } from '../lib/ram-router';
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
 
 const player = (ns: NS) => ns.getPlayer();
@@ -60,18 +50,10 @@ const go = async (ns: NS) => {
       const { script, host, numThreads, args, ticket, highPriority } = taskData;
       if (ns.getScriptRam(script, 'home') === 0) {
         logger(ns).error(`No such script: ${script}`);
-        if (ticket != null && !(await closeTicket(ns)(ticket)))
-          droppedTickets++;
+        if (ticket != null && !(await closeTicket(ns)(ticket))) droppedTickets++;
         continue;
       }
-      const result = execOnBestServer(
-        ns,
-        script,
-        host ?? null,
-        numThreads,
-        !!highPriority,
-        args,
-      );
+      const result = execOnBestServer(ns, script, host ?? null, numThreads, !!highPriority, args);
       if (result.pid === 0) {
         lastCancellations[script] = Date.now();
         droppedTickets++;
@@ -79,12 +61,7 @@ const go = async (ns: NS) => {
       } else {
         lastRuns[script] = Date.now();
         if (ticket != null)
-          await closeTicket(ns)(
-            ticket,
-            result.pid,
-            result.hostname,
-            result.threads,
-          );
+          await closeTicket(ns)(ticket, result.pid, result.hostname, result.threads);
       }
     }
   };
@@ -98,9 +75,11 @@ const go = async (ns: NS) => {
     const freePool = rootServers
       .filter((s) => s.hostname !== 'home')
       .reduce((sum, s) => sum + s.ramUnused, 0);
-    const poolReserve = tasks
-      .filter((t) => t.isRunning())
-      .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0);
+    const poolReserve =
+      tasks
+        .filter((t) => t.isRunning())
+        .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0) +
+      Math.max(0, ...tasks.map((t) => t.pendingRam()));
     putSchedulerReportData(ns, {
       lastRuns,
       lastCancellations,
@@ -130,7 +109,7 @@ const go = async (ns: NS) => {
       try {
         updateTasks();
         showServices();
-        await task.check(showServices, poolContext);
+        await task.check(poolContext);
       } catch (error) {
         console.error(error);
         if (error?.name === 'ScriptDeath') throw error;

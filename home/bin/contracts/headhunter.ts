@@ -30,13 +30,10 @@ const findContracts = (ns: NS): StoredContract[] => {
 };
 
 export async function main(ns: NS) {
-  try {
-    const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
-    ns.ramOverride(maxRam);
-    const contracts = findContracts(ns);
-    putContractData(ns, { contracts });
-    ns.spawn('/bin/contracts/complete.ts', { spawnDelay: 1 });
-  } catch (error) {
-    ns.tprint(error);
-  }
+  const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
+  ns.ramOverride(maxRam);
+  const contracts = findContracts(ns);
+  putContractData(ns, { contracts });
+  await ns.sleep(1000);
+  ns.spawn('/bin/contracts/complete.ts', { spawnDelay: 0 });
 }

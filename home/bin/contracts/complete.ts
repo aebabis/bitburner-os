@@ -27,22 +27,19 @@ const attemptContract = (ns: NS, { filename, hostname, type, data }: StoredContr
 };
 
 export async function main(ns: NS) {
-  try {
-    const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
-    ns.ramOverride(maxRam);
-    const { contracts = [], failedContractNames = [] } = getContractData(ns);
-    const remainingContracts = [];
-    for (const contract of contracts) {
-      if (failedContractNames.includes(contract.filename)) continue;
-      const result = attemptContract(ns, contract);
-      if (!result) {
-        remainingContracts.push(contract);
-        if (result === false) failedContractNames.push(contract.filename);
-      }
+  const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
+  ns.ramOverride(maxRam);
+  const { contracts = [], failedContractNames = [] } = getContractData(ns);
+  const remainingContracts = [];
+  for (const contract of contracts) {
+    if (failedContractNames.includes(contract.filename)) continue;
+    const result = attemptContract(ns, contract);
+    if (!result) {
+      remainingContracts.push(contract);
+      if (result === false) failedContractNames.push(contract.filename);
     }
-    putContractData(ns, { contracts: remainingContracts, failedContractNames });
-    ns.spawn('/bin/contracts/complete.ts', { spawnDelay: 1 });
-  } catch (error) {
-    console.error(error);
   }
+  putContractData(ns, { contracts: remainingContracts, failedContractNames });
+  await ns.sleep(1000);
+  ns.spawn('/bin/contracts/headhunter.ts', { spawnDelay: 0 });
 }

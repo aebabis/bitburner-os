@@ -1,7 +1,7 @@
 import { tprint } from './util';
 
 const DELEGATE_PATTERN =
-  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service)\b[^`'"]*[`'"](\/[^`'"]+)[`'"]/g;
+  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service|ChainedService)\b[^`'"]*[`'"](\/[^`'"]+)[`'"]/g;
 const IMPORT_PATTERN = /\bimport\b[^'"]*from\s*["']([^"']+)["']/g;
 
 const resolve = (fromPath, rel) => {
@@ -17,8 +17,7 @@ const resolve = (fromPath, rel) => {
   return path.endsWith('.ts') ? path : path + '.ts';
 };
 
-const hasMain = (content) =>
-  /export\s+(async\s+)?function\s+main/.test(content);
+const hasMain = (content) => /export\s+(async\s+)?function\s+main/.test(content);
 
 const findCallees = (content) => {
   const paths = new Set();

@@ -164,13 +164,13 @@ export type StoredContract = {
   hostname: string;
   filename: string;
   type: string;
+  data: unknown;
   tries: number;
   maxTries: number;
 };
 type ContractData = {
   contracts: StoredContract[];
   failedContractNames?: string[];
-  data: unknown;
 };
 export const getContractData = (ns: NS): ContractData => readData(ns, PORT_CONTRACT_DATA) || {};
 export const putContractData = (ns: NS, data: ContractData) =>

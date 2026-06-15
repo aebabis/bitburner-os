@@ -1,4 +1,4 @@
-import { AnyHostService, Service } from '../../lib/service';
+import { AnyHostService, ChainedService, Service } from '../../lib/service';
 import { getStaticData, getRamData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 import { hasBladeburnerReadyMults } from '../blades/is-ready';
@@ -66,9 +66,9 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),
     AnyHostService(ns, hasThief, useThief)('/bin/thief.ts'),
-    AnyHostService(ns, always, canPurchaseServers, 1000)('/bin/sysadmin.ts'),
+    AnyHostService(ns, always, canPurchaseServers, { interval: 1000 })('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
-    AnyHostService(ns)('/bin/contracts/freelancer.ts'),
+    ChainedService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, useWolf)('/bin/nerd.ts'),
     AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/broker.ts'),
     AnyHostService(ns, bladesAvailable, useBlade)('/bin/blades/blades.ts'),

@@ -1,12 +1,12 @@
 import { execOnBestServer } from './ram-router';
-import { getServices } from './service-api.ts';
+import { getServices, getSpawnChain } from './service-api.ts';
 import { getStaticData } from './data-store';
 import { ERROR, WARN, C } from './colors';
 
 const getExistingPid = (ns: NS, desc: string) => {
   try {
     const services = getServices(ns);
-    if (services != null) return services.find((service) => service.desc === desc)?.pid;
+    if (services != null) return services.find((service) => service.desc === desc)?.pid ?? null;
   } catch (error) {
     ns.tprint(error);
   }
@@ -18,75 +18,91 @@ export type PoolContext = {
 };
 
 let count = 1;
-const MAX_INTERVAL = 60_000;
+
+interface ServiceOptions {
+  interval?: number;
+  isChain?: boolean;
+}
 
 export const Service =
-  (ns: NS, isViable = () => true, condition = (_ns: NS) => true, interval = 5000) =>
+  (
+    ns: NS,
+    isViable = () => true,
+    condition = (_ns: NS) => true,
+    { interval = 5000, isChain = false }: ServiceOptions = {},
+  ) =>
   (script: string, target: string | null = null, numThreads = 1, ...args: ScriptArg[]) => {
+    const chain = isChain ? getSpawnChain(ns, script) : null;
+
     const id = count++;
     const desc =
       target == null
         ? [script, numThreads, ...args].join(' ')
         : [script, target, numThreads, ...args].join(' ');
     const shortname = script.split('/').pop()?.split('.')[0] ?? '';
-    const ram = getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
+    const ram = chain ? chain.maxRam : getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
     let pid = getExistingPid(ns, desc);
-    let lastRun = 0;
+    let lastStart = 0;
     let enabled = true;
-    let queued = false;
-    let currentInterval = interval;
+    let lastHost: string | null = null;
 
-    const isRunning = () => pid && ns.isRunning(pid);
+    const isRunning = chain
+      ? () => {
+          if (lastHost == null) return false;
+          const proc = ns.ps(lastHost).find((p) => chain.chain.has(p.filename));
+          if (proc != null) {
+            pid = proc.pid;
+            return true;
+          }
+          return false;
+        }
+      : () => pid && ns.isRunning(pid);
+
+    const lastRunning = () => (isRunning() ? (lastStart = Date.now()) : lastStart);
+    const timeSinceRun = () => Date.now() - lastRunning();
 
     const enable = () => {
       enabled = true;
-      currentInterval = interval;
     };
     const disable = () => (enabled = false);
 
     const stop = () => {
-      ns.kill(pid);
+      if (pid) {
+        ns.kill(pid);
+      }
       pid = null;
-      currentInterval = interval;
     };
 
     const statusCode = () => {
       if (!enabled) return ERROR('⊗');
-      else if (queued) return '△';
       else if (isRunning()) return C(34)('●');
-      else if (currentInterval > interval) return WARN('○');
+      else if (timeSinceRun() > interval) return WARN('○');
       else return '○';
     };
 
-    const check = async (beforeRun?: () => void, poolContext?: PoolContext) => {
+    const check = async (poolContext?: PoolContext) => {
       const running = isRunning();
       const shouldBe = enabled && condition(ns);
-      if (running) currentInterval = interval;
-      if (!running && shouldBe) {
-        const now = Date.now();
-        if (now - lastRun >= currentInterval) {
-          const overhead = getStaticData(ns).serviceOverhead[script] ?? 0;
-          if (overhead > 0 && poolContext != null) {
-            const available = poolContext.freePool - poolContext.poolReserve;
-            if (available < overhead) {
-              lastRun = now;
-              currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
-              return;
-            }
+      if (!running && shouldBe && timeSinceRun() > interval) {
+        const overhead = getStaticData(ns).serviceOverhead[script] ?? 0;
+        if (overhead > 0 && poolContext != null) {
+          const available = poolContext.freePool - poolContext.poolReserve;
+          if (available < overhead) {
+            return;
           }
-          lastRun = now;
-          queued = true;
-          if (beforeRun) beforeRun();
-          try {
-            const { pid: newPid } = execOnBestServer(ns, script, target, numThreads, false, args);
-            pid = newPid || undefined;
-            if (!pid) {
-              if (currentInterval === interval) ns.tprint(ERROR + 'Failed to start ' + desc);
-              currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL);
-            }
-          } finally {
-            queued = false;
-          }
+        }
+        const { pid: newPid, hostname } = execOnBestServer(
+          ns,
+          script,
+          target,
+          numThreads,
+          false,
+          args,
+        );
+        pid = newPid || null;
+        if (pid) {
+          lastStart = Date.now();
+          lastHost = hostname;
         }
       } else if (running && !shouldBe) {
         stop();
@@ -107,6 +123,11 @@ export const Service =
       overhead: getStaticData(ns).serviceOverhead[script] ?? 0,
     });
 
+    const pendingRam = () => {
+      if (isRunning() || !enabled || !condition(ns)) return 0;
+      return ram + (getStaticData(ns).serviceOverhead[script] ?? 0);
+    };
+
     return {
       isRunning,
       check,
@@ -114,6 +135,7 @@ export const Service =
       script,
       isViable,
       toData,
+      pendingRam,
       toString,
       enable,
       disable,
@@ -124,6 +146,16 @@ export const Service =
   };
 
 export const AnyHostService =
-  (ns: NS, isViable = () => true, condition = () => true, interval = 5000) =>
+  (ns: NS, isViable = () => true, condition = () => true, options?: ServiceOptions) =>
   (script: string, numThreads = 1, ...args: ScriptArg[]) =>
-    Service(ns, isViable, condition, interval)(script, null, numThreads, ...args);
+    Service(ns, isViable, condition, options)(script, null, numThreads, ...args);
+
+export const ChainedService =
+  (ns: NS, isViable = () => true, condition = (_ns: NS) => true) =>
+  (entryScript: string, host: string | null = null, numThreads = 1, ...args: ScriptArg[]) =>
+    Service(ns, isViable, condition, { interval: 1000, isChain: true })(
+      entryScript,
+      host,
+      numThreads,
+      ...args,
+    );
