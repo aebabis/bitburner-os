@@ -1,3 +1,11 @@
+type Asyncify<T> = {
+  [K in keyof T]: T[K] extends (...args: infer A) => infer R
+    ? (...args: A) => Promise<Awaited<R>>
+    : T[K] extends object
+      ? Asyncify<T[K]>
+      : T[K];
+};
+
 const getScript = (ns: NS) => (path: string[]) => {
   const apiPath = path.join('.');
   const script = `tmp/bin/${apiPath}.ts`;
@@ -42,8 +50,8 @@ const getProxy =
           return namespace[prop as keyof T];
         }
       },
-    }) as T;
+    }) as Asyncify<T>;
 
 const randPort = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 
-export const inPlace = (ns: NS, port = randPort): NS => getProxy(ns, port)(ns);
+export const inPlace = (ns: NS, port = randPort): Asyncify<NS> => getProxy(ns, port)(ns);
