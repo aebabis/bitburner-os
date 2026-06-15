@@ -57,6 +57,7 @@ export const Service =
           return false;
         }
       : () => pid && ns.isRunning(pid);
+    const mayRun = () => enabled && condition(ns);
 
     const lastRunning = () => (isRunning() ? (lastStart = Date.now()) : lastStart);
     const timeSinceRun = () => Date.now() - lastRunning();
@@ -76,13 +77,13 @@ export const Service =
     const statusCode = () => {
       if (!enabled) return ERROR('⊗');
       else if (isRunning()) return C(34)('●');
-      else if (timeSinceRun() > interval) return WARN('○');
+      else if (mayRun() && timeSinceRun() > interval) return WARN('○');
       else return '○';
     };
 
     const check = async (poolContext?: PoolContext) => {
       const running = isRunning();
-      const shouldBe = enabled && condition(ns);
+      const shouldBe = mayRun();
       if (!running && shouldBe && timeSinceRun() > interval) {
         const overhead = getStaticData(ns).serviceOverhead[script] ?? 0;
         if (overhead > 0 && poolContext != null) {
