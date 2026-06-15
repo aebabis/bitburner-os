@@ -1,8 +1,6 @@
-import { getSpawnChain } from '../../lib/service-api';
+import { joinSpawnChain } from '../../lib/spawn-chain';
 
 export async function main(ns: NS) {
-  const { maxRam } = getSpawnChain(ns);
-  ns.ramOverride(maxRam);
-  await ns.sleep(1000);
-  ns.spawn('/bin/contracts/headhunter.ts', { spawnDelay: 0 });
+  const { linkTo } = joinSpawnChain(ns);
+  await linkTo('/bin/contracts/headhunter.ts');
 }

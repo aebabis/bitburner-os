@@ -1,5 +1,5 @@
 import { getContractData, putContractData, StoredContract } from '../../lib/data-store';
-import { getSpawnChain } from '../../lib/service-api';
+import { joinSpawnChain } from '../../lib/spawn-chain';
 import algorithms from './mapper';
 
 const decode = (data: unknown) =>
@@ -27,8 +27,7 @@ const attemptContract = (ns: NS, { filename, hostname, type, data }: StoredContr
 };
 
 export async function main(ns: NS) {
-  const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
-  ns.ramOverride(maxRam);
+  const { linkTo } = joinSpawnChain(ns, '/bin/contracts/freelancer.ts');
   const { contracts = [], failedContractNames = [] } = getContractData(ns);
   const remainingContracts = [];
   for (const contract of contracts) {
@@ -40,6 +39,5 @@ export async function main(ns: NS) {
     }
   }
   putContractData(ns, { contracts: remainingContracts, failedContractNames });
-  await ns.sleep(1000);
-  ns.spawn('/bin/contracts/headhunter.ts', { spawnDelay: 0 });
+  await linkTo('/bin/contracts/headhunter.ts');
 }

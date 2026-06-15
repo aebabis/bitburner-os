@@ -5,6 +5,7 @@ import {
   StoredContract,
 } from '../../lib/data-store';
 import { getSpawnChain } from '../../lib/service-api';
+import { joinSpawnChain } from '../../lib/spawn-chain';
 
 const isContract = (file: string) => file.endsWith('.cct');
 
@@ -30,10 +31,8 @@ const findContracts = (ns: NS): StoredContract[] => {
 };
 
 export async function main(ns: NS) {
-  const { maxRam } = getSpawnChain(ns, '/bin/contracts/freelancer.ts');
-  ns.ramOverride(maxRam);
+  const { linkTo } = joinSpawnChain(ns, '/bin/contracts/freelancer.ts');
   const contracts = findContracts(ns);
   putContractData(ns, { contracts });
-  await ns.sleep(1000);
-  ns.spawn('/bin/contracts/complete.ts', { spawnDelay: 0 });
+  linkTo('/bin/contracts/complete.ts');
 }
