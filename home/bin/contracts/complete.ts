@@ -1,5 +1,5 @@
 import { getContractData, putContractData, StoredContract } from '../../lib/data-store';
-import { joinSpawnChain } from '../../lib/spawn-chain';
+import { joinSpawnChain } from '../../lib/service-api';
 import algorithms from './mapper';
 
 const decode = (data: unknown) =>

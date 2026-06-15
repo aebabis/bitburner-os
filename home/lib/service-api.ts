@@ -72,6 +72,23 @@ export const getSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
   const scriptRam = [...chain].map((script) => ns.getScriptRam(script));
   return {
     chain,
-    maxRam: Math.max(...scriptRam),
+    maxRam: Math.max(...scriptRam) + ns.getFunctionRamCost('spawn'),
+  };
+};
+
+export const joinSpawnChain = (ns: NS, startScript = ns.getScriptName()) => {
+  const script = ns.getScriptName();
+  const { chain, maxRam } = getSpawnChain(ns);
+  if (!chain.has(script)) {
+    throw new Error(`${script} tried to join script chain for ${startScript}`);
+  }
+  if (ns.ramOverride(maxRam) !== maxRam) {
+    throw new Error(`${script} tried to join ${maxRam}GB chain without extra RAM reserved`);
+  }
+  return {
+    linkTo: async (nextScript: string, timeout = 100) => {
+      await ns.sleep(timeout);
+      ns['spawn'](nextScript, { spawnDelay: 0 });
+    },
   };
 };

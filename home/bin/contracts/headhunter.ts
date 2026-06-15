@@ -4,8 +4,7 @@ import {
   getContractData,
   StoredContract,
 } from '../../lib/data-store';
-import { getSpawnChain } from '../../lib/service-api';
-import { joinSpawnChain } from '../../lib/spawn-chain';
+import { joinSpawnChain } from '../../lib/service-api';
 
 const isContract = (file: string) => file.endsWith('.cct');
 
