@@ -6,15 +6,19 @@ type Asyncify<T> = {
       : T[K];
 };
 
+const getApiProgram = (apiPath: string) => `
+export async function main(ns: NS) {
+  const result = ns.${apiPath}(...JSON.parse(ns.args[1]));
+  ns.atExit(() => {
+    ns.writePort(ns.args[0], result);
+  });
+}`;
+
 const getScript = (ns: NS) => (path: string[]) => {
   const apiPath = path.join('.');
   const script = `tmp/bin/${apiPath}.ts`;
   if (!ns.read(script)) {
-    ns.write(
-      script,
-      `export async function main(ns: NS) {\n  ns.writePort(ns.args[0], ns.${apiPath}(...JSON.parse(ns.args[1])));\n}`,
-      'w',
-    );
+    ns.write(script, getApiProgram(apiPath), 'w');
   }
   const functionRam = ns.getFunctionRamCost(apiPath);
   return {
