@@ -1,10 +1,6 @@
 import { BN6_WEIGHTS } from './aug/bn6-weights.ts';
 import { StaticData } from './data-store.ts';
-import {
-  STORY_FACTIONS,
-  CITY_FACTIONS,
-  CRIMINAL_ORGANIZATIONS,
-} from './factions.ts';
+import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 
 export const DEFAULT_AUG_WEIGHTS: Record<keyof Multipliers, number> = {
   // High — stats that increase reputation gain
@@ -58,17 +54,14 @@ const UNITY_AUGS = {
 type UnityAug = keyof typeof UNITY_AUGS;
 
 const getAugWeights = (resetInfo: ResetInfo) => {
-  if (resetInfo.currentNode === 6) {
+  if ([6, 7].includes(resetInfo.currentNode)) {
     return BN6_WEIGHTS;
   } else {
     return DEFAULT_AUG_WEIGHTS;
   }
 };
 
-export const scoreAug = (
-  stats: Multipliers,
-  weights: Record<keyof Multipliers, number>,
-) =>
+export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, number>) =>
   Object.entries(stats)
     .map(([key, stat = 1]) => {
       const mult = stat >= 1 ? stat : 1 / stat;
@@ -82,8 +75,7 @@ const OVERHEAD_BASE = 120 * 60;
 export const computeResetOverhead = (staticData: StaticData) => {
   const installedAugs = staticData.installedAugmentations ?? [];
   const lastAugReset = staticData.resetInfo?.lastAugReset ?? 0;
-  const timeSinceInstall =
-    lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+  const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
   return Math.max(timeSinceInstall, OVERHEAD_BASE / (1 + installedAugs.length));
 };
 
@@ -102,9 +94,7 @@ export const shouldEarlyInstall = (
 ) => {
   if (numQueued === 0 || numTargeted === 0) return false;
   const timeToMoneyGoal =
-    totalIncome > 0
-      ? Math.max(0, costToAug - liquidAssets) / totalIncome
-      : Infinity;
+    totalIncome > 0 ? Math.max(0, costToAug - liquidAssets) / totalIncome : Infinity;
   return timeToMoneyGoal > INSTALL_OVERHEAD_SEC;
 };
 
@@ -134,11 +124,7 @@ export const computeRepReq = (augs: string[], staticData: StaticData) => {
   );
 };
 
-export const computeAugCost = (
-  augs: string[],
-  staticData: StaticData,
-  numQueued: number,
-) => {
+export const computeAugCost = (augs: string[], staticData: StaticData, numQueued: number) => {
   const { augmentationPrices } = staticData;
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
   const sorted = [...augs].sort(
@@ -165,19 +151,14 @@ export const computeRepRate = (
   formulas: Formulas,
 ): number => {
   if (faction === 'Bladeburners') {
-    const timeSinceInstall =
-      lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
+    const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
     return (factionRep?.['Bladeburners'] ?? 0) / timeSinceInstall;
   }
   return Math.max(
     0,
     ...(factionWorkTypes?.[faction] ?? ['hacking']).map(
       (workType) =>
-        formulas?.work.factionGains(
-          player,
-          workType,
-          factionFavor?.[faction] ?? 0,
-        )?.reputation * 5,
+        formulas?.work.factionGains(player, workType, factionFavor?.[faction] ?? 0)?.reputation * 5,
     ),
   );
 };
@@ -201,8 +182,7 @@ export const findOptimalBatch = (
     factionWorkTypes,
   } = staticData;
 
-  const canDonate =
-    (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
+  const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
     ? (formulas.reputation.donationForRep(1, player) ?? Infinity)
     : Infinity;
@@ -212,12 +192,9 @@ export const findOptimalBatch = (
 
   const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
   const getNeededAugs = (fac: FactionName) =>
-    (factionAugmentations?.[fac] ?? [])
-      .filter(stillNeeds)
-      .filter((aug) => aug !== NEUROFLUX);
+    (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (aug: string) =>
-    augValueFromStats(resetInfo, aug, augmentationStats);
+  const augValue = (aug: string) => augValueFromStats(resetInfo, aug, augmentationStats);
 
   const resetOverhead = computeResetOverhead(staticData);
 
@@ -245,10 +222,7 @@ export const findOptimalBatch = (
         name: NEUROFLUX,
         value: augValue(NEUROFLUX),
         price: nfBase * 1.9 ** (numQueued + i) * 1.14 ** (installedNFCount + i),
-        remainingRep: Math.max(
-          0,
-          nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep,
-        ),
+        remainingRep: Math.max(0, nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep),
       }))
     : [];
 
@@ -277,18 +251,13 @@ export const findOptimalBatch = (
     const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
     const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
 
-    const effectivePrice = canDonate
-      ? totalPrice + bindingRep * donationRate
-      : totalPrice;
-    const timeForMoney =
-      Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
-    const timeForRep =
-      canDonate || bindingRep === 0 ? 0 : bindingRep / gainRate;
+    const effectivePrice = canDonate ? totalPrice + bindingRep * donationRate : totalPrice;
+    const timeForMoney = Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
+    const timeForRep = canDonate || bindingRep === 0 ? 0 : bindingRep / gainRate;
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
     const utility = totalValue / cost;
 
-    if (utility > best.utility)
-      best = { utility, batch: affordable.map((a) => a.name) };
+    if (utility > best.utility) best = { utility, batch: affordable.map((a) => a.name) };
   }
 
   return best;
@@ -317,9 +286,7 @@ export const shouldPursueFavor = (
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
   if (!formulas?.reputation || !repRate || !moneyRate) return false;
 
-  const repForFavor = formulas.reputation.calculateFavorToRep(
-    favorToDonate - currentFavor,
-  );
+  const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
   const donationRate = formulas.reputation.donationForRep(1, player);
 
   const tFavor = Math.max(0, repForFavor - currentRep) / repRate;
@@ -341,49 +308,33 @@ export const getAccessibleFactions = (
   ownedAugmentations: string[],
 ) => {
   const { factionRequirements } = staticData;
-  return [
-    ...STORY_FACTIONS,
-    ...CRIMINAL_ORGANIZATIONS,
-    ...CITY_FACTIONS,
-    'Bladeburners',
-  ].filter((faction) => {
-    if (
-      faction === 'Bladeburners' &&
-      !player.factions.includes('Bladeburners')
-    ) {
-      return false;
-    }
-    const reqs = factionRequirements?.[faction] ?? [];
-    const disqualifiers = reqs
-      .filter((req) => req.type === 'not')
-      .map((req) => req.condition);
-    const requiredAugCount =
-      reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ??
-      0;
-    if (ownedAugmentations.length < requiredAugCount) return false;
-    if (
-      CITY_FACTIONS.includes(faction) &&
-      player.factions?.find(
-        (other) => CITY_FACTIONS.includes(other) && other !== faction,
+  return [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS, 'Bladeburners'].filter(
+    (faction) => {
+      if (faction === 'Bladeburners' && !player.factions.includes('Bladeburners')) {
+        return false;
+      }
+      const reqs = factionRequirements?.[faction] ?? [];
+      const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
+      const requiredAugCount =
+        reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;
+      if (ownedAugmentations.length < requiredAugCount) return false;
+      if (
+        CITY_FACTIONS.includes(faction) &&
+        player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction)
       )
-    )
-      return false;
-    if (
-      disqualifiers.some(
-        (req) => req.type === 'employedBy' && player.jobs?.[req.company],
-      )
-    )
-      return false;
-    if (
-      reqs.some(
-        (req) =>
-          req.type === 'someCondition' &&
-          req.conditions.some((req) => req.type === 'jobTitle'),
-      )
-    ) {
-      // TODO: Actually evaluate difficulty of obtaining job
-      return false;
-    }
-    return true;
-  });
+        return false;
+      if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company]))
+        return false;
+      if (
+        reqs.some(
+          (req) =>
+            req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'),
+        )
+      ) {
+        // TODO: Actually evaluate difficulty of obtaining job
+        return false;
+      }
+      return true;
+    },
+  );
 };
