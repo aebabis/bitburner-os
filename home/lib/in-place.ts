@@ -12,7 +12,7 @@ const getScript = (ns: NS) => (path: string[]) => {
   if (!ns.read(script)) {
     ns.write(
       script,
-      `export async function main(ns: NS) {\n  ns.writePort(ns.args[0], ns.${apiPath}(...ns.args.slice(1)));\n}`,
+      `export async function main(ns: NS) {\n  ns.writePort(ns.args[0], ns.${apiPath}(...JSON.parse(ns.args[1])));\n}`,
       'w',
     );
   }
@@ -39,8 +39,11 @@ const getProxy =
           return async (...args: ScriptArg[]) => {
             const startingRam = ns.ramOverride();
             ns.ramOverride(startingRam - ram);
-            ns.run(script, 1, port, ...args);
-            await ns.sleep(0);
+            const pid = ns.run(script, 1, port, JSON.stringify(args));
+            if (!pid) {
+              throw new Error('I would like to prevent this from ever happening');
+            }
+            await ns.nextPortWrite(port);
             ns.ramOverride(startingRam);
             return ns.readPort(port);
           };

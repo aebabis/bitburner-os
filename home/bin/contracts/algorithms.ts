@@ -5,8 +5,7 @@ export const computeSumPermutations = (MAX: number) => {
   for (let sum = 2; sum <= MAX; sum++) {
     table[sum][1] = 1;
     for (let max = 2; max <= sum; max++) {
-      table[sum][max] =
-        table[sum][max - 1] + table[sum - max][Math.min(max, sum - max)];
+      table[sum][max] = table[sum][max - 1] + table[sum - max][Math.min(max, sum - max)];
     }
   }
 
@@ -28,12 +27,7 @@ export const computeSumPermutationsII = (
   let outcomes = 0;
   let item = set[max];
   for (let i = Math.floor(target / item); i >= 0; i--)
-    outcomes += computeSumPermutationsII(
-      target - item * i,
-      set,
-      max - 1,
-      cache,
-    );
+    outcomes += computeSumPermutationsII(target - item * i, set, max - 1, cache);
   cache[key] = outcomes;
   return outcomes;
 };
@@ -76,8 +70,7 @@ export const generateIPs = (() => {
       const first = input.substring(0, dig);
       const rest = input.substring(dig);
       if (isValid(first) && rest.length > 0)
-        for (const subsequence of getIPs(rest, sections - 1))
-          yield `${first}.${subsequence}`;
+        for (const subsequence of getIPs(rest, sections - 1)) yield `${first}.${subsequence}`;
     }
   }
 
@@ -171,8 +164,7 @@ export const pathToCorner = (grid: number[][]) => {
   const w = grid[0].length;
   const k = (x: number, y: number) => `${x},${y}`;
   const map = new Map();
-  const gset = (x: number, y: number, v: number) =>
-    !map.get(k(x, y)) && map.set(k(x, y), v);
+  const gset = (x: number, y: number, v: number) => !map.get(k(x, y)) && map.set(k(x, y), v);
   map.set(k(0, 0), '');
   for (const [coords, path] of map) {
     const [x, y] = coords.split(',').map(Number);
@@ -186,7 +178,11 @@ export const pathToCorner = (grid: number[][]) => {
 };
 
 export const lpf = (num: number) => {
-  for (let f = 2; f * f < num; f++) while (num % f === 0) num /= f;
+  for (let f = 2; f * f <= num; f++) {
+    while (num % f === 0) {
+      num /= f;
+    }
+  }
   return num;
 };
 
@@ -234,18 +230,12 @@ export const hammingEncode = (num: number) => {
   for (let i = encoded.length - 1; i > 0; i--) {
     if (encoded[i]) encoded[0] ^= 1;
     if (i === pow) pow /= 2;
-    else if (encoded[i])
-      for (let p = pow; p > 0; p >>= 1) if (i & p) encoded[p] ^= 1;
+    else if (encoded[i]) for (let p = pow; p > 0; p >>= 1) if (i & p) encoded[p] ^= 1;
   }
   return encoded.join('');
 };
 
-export const stockProfit = (
-  prices: number[],
-  n = 1,
-  s = 0,
-  c: Record<string, number> = {},
-) => {
+export const stockProfit = (prices: number[], n = 1, s = 0, c: Record<string, number> = {}) => {
   let split = 0;
   const key = `${s},${prices.length},${n}`;
   if (c[key]) return c[key];
@@ -253,8 +243,7 @@ export const stockProfit = (
     for (let i = 2; i < prices.length; i++) {
       const left = prices.slice(0, i);
       const right = prices.slice(i);
-      const value =
-        stockProfit(left, 1, s, c) + stockProfit(right, n - 1, s + i, c);
+      const value = stockProfit(left, 1, s, c) + stockProfit(right, n - 1, s + i, c);
       split = Math.max(split, value);
     }
   }
@@ -274,14 +263,12 @@ export const lzDecode = (str: string) => {
   while (buffer.length) {
     let size = +buffer.shift()!;
     if (size > 0) {
-      if (isMode1 && buffer.length >= size)
-        while (size--) result.push(buffer.shift()!);
+      if (isMode1 && buffer.length >= size) while (size--) result.push(buffer.shift()!);
       else {
         const offset = +buffer.shift()!;
         while (size--) result.push(result[result.length - offset]);
       }
     }
-    console.log(result.join(''));
     isMode1 = !isMode1;
   }
   return result.join('');
