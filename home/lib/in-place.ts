@@ -45,12 +45,16 @@ const getProxy =
             const newRam = ns.ramOverride(startingRam - ram);
             if (newRam === startingRam) {
               throw new Error(
-                'Failed to shrink from ' + startingRam + ' to ' + (startingRam - ram),
+                'Failed to shrink from ' +
+                  startingRam +
+                  ' to ' +
+                  (startingRam - ram) +
+                  ". Make sure you've reserved an additional base script cost (1.6GB)",
               );
             }
             const pid = ns.run(script, 1, port, JSON.stringify(args));
             if (!pid) {
-              throw new Error('This error is the least likely');
+              throw new Error('This should never happen');
             }
             await ns.nextPortWrite(port);
             const restoredRam = ns.ramOverride(startingRam);
