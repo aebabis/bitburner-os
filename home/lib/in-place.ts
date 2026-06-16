@@ -40,14 +40,19 @@ const getProxy =
             const startingRam = ns.ramOverride();
             const newRam = ns.ramOverride(startingRam - ram);
             if (newRam === startingRam) {
-              throw new Error('Failed to shrink');
+              throw new Error(
+                'Failed to shrink from ' + startingRam + ' to ' + (startingRam - ram),
+              );
             }
             const pid = ns.run(script, 1, port, JSON.stringify(args));
             if (!pid) {
-              throw new Error('I would like to prevent this from ever happening');
+              throw new Error('This error is the least likely');
             }
             await ns.nextPortWrite(port);
-            ns.ramOverride(startingRam);
+            const restoredRam = ns.ramOverride(startingRam);
+            if (restoredRam !== startingRam) {
+              throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
+            }
             return ns.readPort(port);
           };
         } else if (value instanceof Object) {
