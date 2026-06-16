@@ -20,12 +20,10 @@ export async function main(ns: NS) {
   const { linkTo } = joinSpawnChain(ns, '/bin/blades/blades.ts');
   if (!hasStaminaPenalty(ns)) {
     await linkTo('/bin/blades/actions/select-mission.ts', 0);
+  } else if (hasBlade(ns)) {
+    await linkTo('/bin/blades/actions/start-action.ts', 0, 'General', 'Training');
   } else {
-    if (hasBlade(ns)) {
-      ns.bladeburner.startAction('General', 'Training');
-    } else {
-      trainAgility(ns);
-    }
+    trainAgility(ns);
     await linkTo('/bin/blades/actions/end.ts', 0);
   }
 }
