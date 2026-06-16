@@ -2,6 +2,8 @@ import { putPlayerData } from '../../../lib/data-store';
 import { joinSpawnChain } from '../../../lib/service-api';
 import { shouldWorkHaveFocus } from '../../../lib/query-service';
 
+const hasBlade = (ns: NS) => ns.getResetInfo().ownedAugs.has("The Blade's Simulacrum");
+
 const hasStaminaPenalty = (ns: NS) => {
   const [currentStamina, maxStamina] = ns.bladeburner.getStamina();
   return currentStamina * 2 < maxStamina;
@@ -19,7 +21,11 @@ export async function main(ns: NS) {
   if (!hasStaminaPenalty(ns)) {
     await linkTo('/bin/blades/actions/select-mission.ts', 0);
   } else {
-    trainAgility(ns);
+    if (hasBlade(ns)) {
+      ns.bladeburner.startAction('General', 'Training');
+    } else {
+      trainAgility(ns);
+    }
     await linkTo('/bin/blades/actions/end.ts', 0);
   }
 }
