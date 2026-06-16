@@ -38,7 +38,10 @@ const getProxy =
           }
           return async (...args: ScriptArg[]) => {
             const startingRam = ns.ramOverride();
-            ns.ramOverride(startingRam - ram);
+            const newRam = ns.ramOverride(startingRam - ram);
+            if (newRam === startingRam) {
+              throw new Error('Failed to shrink');
+            }
             const pid = ns.run(script, 1, port, JSON.stringify(args));
             if (!pid) {
               throw new Error('I would like to prevent this from ever happening');

@@ -48,6 +48,7 @@ const failures = new Set<String>();
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+  ns.ramOverride(ns.ramOverride() + 1.6);
 
   // Reserve highest cost RAM
   ns.codingcontract.attempt;
