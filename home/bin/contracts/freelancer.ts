@@ -48,7 +48,6 @@ const failures = new Set<String>();
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
-  ns.ramOverride(ns.ramOverride() + 1.6);
 
   // Reserve highest cost RAM
   ns.codingcontract.attempt;
@@ -57,8 +56,12 @@ export async function main(ns: NS) {
     const contracts = await getContracts(ns);
     for (const contract of contracts) {
       if (!failures.has(contract.filename)) {
-        if (!(await attemptContract(ns, contract))) {
-          failures.add(contract.filename);
+        try {
+          if (!(await attemptContract(ns, contract))) {
+            failures.add(contract.filename);
+          }
+        } catch (error) {
+          ns.tprint(error);
         }
       }
     }

@@ -8,7 +8,12 @@ type Asyncify<T> = {
 
 const getApiProgram = (apiPath: string) => `
 export async function main(ns: NS) {
-  const result = ns.${apiPath}(...JSON.parse(ns.args[1]));
+  let result;
+  try {
+    result = ns.${apiPath}(...JSON.parse(ns.args[1]));
+  } catch (error) {
+    result = error;
+  }
   ns.atExit(() => {
     ns.writePort(ns.args[0], result);
   });
@@ -61,7 +66,12 @@ const getProxy =
             if (restoredRam !== startingRam) {
               throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
             }
-            return ns.readPort(port);
+            const result = ns.readPort(port);
+            if (result instanceof Error) {
+              throw result;
+            } else {
+              return result;
+            }
           };
         } else if (value instanceof Object) {
           return getProxy(ns, port)(value, ...path, prop);
@@ -73,4 +83,27 @@ const getProxy =
 
 const randPort = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 
+/**
+ * Creates an adapter for the NS namespace whose functions share RAM in a program.
+ * Adapter's functions are asyncronous because they run in a separate
+ * process. Everything else works the same.
+ * To use in a program, reserve RAM for the most expensive function used
+ * by the library.
+ * @example
+ * ```ts
+ * typeof ns.cloud.purchaseServer // Most expensive
+ * // Square brackets on all functions sharing RAM
+ * const server = inPlace(ns)\['getServer'\]('mycloud-1');
+ * if (server) {
+ *   await inPlace(ns)\['upgradeServer'\]('mycloud-1', server.maxRam * 2);
+ * } else {
+ *   await inPlace(ns)\['buyServer'\]('mycloud-1');
+ * }
+ * ```
+ */
 export const inPlace = (ns: NS, port = randPort): Asyncify<NS> => getProxy(ns, port)(ns);
+
+// Reserves 1.6 GB of RAM so that ramOverride can give it to
+// run processes. Assumes your program will not call these (without the use of inPlace)
+typeof heartbleed;
+typeof createGang;
