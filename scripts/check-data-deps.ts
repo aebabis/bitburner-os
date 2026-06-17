@@ -16,7 +16,6 @@ const HOME = join(ROOT, 'home');
 const STORES = {
   staticData: { get: 'getStaticData', put: 'putStaticData' },
   playerData: { get: 'getPlayerData', put: 'putPlayerData' },
-  gangData: { get: 'getGangData', put: 'putGangData' },
   moneyData: { get: 'getMoneyData', put: 'putMoneyData' },
   ramData: { get: 'getRamData', put: 'putRamData' },
   contractData: { get: 'getContractData', put: 'putContractData' },
@@ -116,8 +115,7 @@ function analyzeFile(src: string, getFn: string, putFn: string) {
 
     // const alias = getFn(ns) [or getFn(ns) || {}]
     // Excludes: const x = getFn(ns).key  (init is MemberExpression, not a store init)
-    if (node.id?.type === 'Identifier' && isStoreInit(node.init, getFn))
-      aliases.add(node.id.name);
+    if (node.id?.type === 'Identifier' && isStoreInit(node.init, getFn)) aliases.add(node.id.name);
   });
 
   // Pass 2: find reads via aliases and direct chained access.
@@ -152,10 +150,7 @@ function analyzeFile(src: string, getFn: string, putFn: string) {
       // alias passed as a direct argument to an unknown function
       // (not getFn/putFn, not as alias.prop — that's caught above as a read)
       if (node.type === 'CallExpression') {
-        const callee =
-          node.callee?.type === 'Identifier'
-            ? node.callee.name
-            : '(expression)';
+        const callee = node.callee?.type === 'Identifier' ? node.callee.name : '(expression)';
         if (callee === getFn || callee === putFn) continue;
         for (const arg of node.arguments) {
           if (arg.type === 'Identifier' && arg.name === alias)

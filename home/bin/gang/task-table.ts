@@ -1,5 +1,3 @@
-import { getGangData } from '../../lib/data-store';
-
 const HEADINGS = {
   name: 'Name',
   baseRespect: 'R',
@@ -15,10 +13,6 @@ const HEADINGS = {
 };
 
 export const printTaskTable = async (ns: NS) => {
-  const gangData = getGangData(ns);
-  if (gangData == null || !gangData.isReady)
-    return ns.tprint('No data to show yet. Make sure gang.js has run');
-
   const rows = ns.gang
     .getTaskNames()
     .map(ns.gang.getTaskStats)
