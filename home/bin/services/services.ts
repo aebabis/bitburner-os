@@ -64,6 +64,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   return [
     AnyHostService(ns)('/bin/access.ts'),
+    AnyHostService(ns, hasSingularity, canWork)('/bin/self/work.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),
     AnyHostService(ns, hasThief, useThief)('/bin/thief.ts'),
     AnyHostService(ns, always, canPurchaseServers, { interval: 1000 })('/bin/sysadmin.ts'),
@@ -78,7 +79,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, hasSingularity, canAutopilot)('/bin/self/aug/augment.ts'),
     AnyHostService(ns, hasSingularity, canAutopilot)('/bin/self/control.ts'),
     AnyHostService(ns, hasSingularity, canAutopilot)('/bin/self/tor.ts'),
-    AnyHostService(ns, hasSingularity, canWork)('/bin/self/work.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/hinter.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
