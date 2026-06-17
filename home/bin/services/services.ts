@@ -62,6 +62,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const preferBlade = () => inBladeNode() && hasBladeburnerReadyMults(player(ns));
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
+  const canShare = () => player(ns).skills.hacking > 100;
 
   return [
     AnyHostService(ns)('/bin/access.ts'),
@@ -83,7 +84,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, not(hasSingularity))('/bin/hinter.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
-    AnyHostService(ns)('/bin/share.ts'),
+    AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
   ];
 };
