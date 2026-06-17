@@ -106,4 +106,4 @@ export const inPlace = (ns: NS, port = randPort): Asyncify<NS> => getProxy(ns, p
 // Reserves 1.6 GB of RAM so that ramOverride can give it to
 // run processes. Assumes your program will not call these (without the use of inPlace)
 typeof heartbleed;
-typeof createGang;
+typeof hackAnalyzeThreads;
