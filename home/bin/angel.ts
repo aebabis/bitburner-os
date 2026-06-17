@@ -188,7 +188,7 @@ const selectTarget = (ns: NS, minFrameRam: number) => {
 
 const printTable = (ns: NS) => {
   const serverRam = getRootServerRam(ns);
-  const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b);
+  const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b, 0);
   // Minimum ram size of HGW frame to prevent too many processes
   const minFrameRam = totalRamAvailable / FRAME_LIMIT;
   const horizon = getHorizon(ns);
@@ -237,7 +237,7 @@ export async function main(ns: NS) {
     }
   };
 
-  const totalRamAvailable = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b);
+  const totalRamAvailable = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
   // Minimum ram size of HGW frame to prevent too many processes
   const minFrameRam = totalRamAvailable / FRAME_LIMIT;
   debug('Total: ' + ns.format.ram(totalRamAvailable));
