@@ -1,7 +1,8 @@
 import { putMoneyData } from '../../lib/data-store';
 import { isRepBound } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
-import { by } from '../../lib/util';
+import { table } from '../../lib/table';
+import { by, randPort } from '../../lib/util';
 import { getAverageClashWinChance, needsPower } from './util';
 
 export async function main(ns: NS) {
@@ -10,13 +11,18 @@ export async function main(ns: NS) {
   // Reserve RAM
   ns.gang.ascendMember;
 
+  ns.ui.openTail();
+  ns.ui.resizeTail(230, 160);
+
+  const $ns = inPlace(ns, randPort());
+
   while (!ns.gang.inGang()) {
-    await inPlace(ns).gang['createGang']('Slum Snakes');
+    await $ns.gang['createGang']('Slum Snakes');
     await ns.sleep(1000);
   }
 
   const readyForAscension = async (name: string, gangInfo: GangGenInfo) => {
-    const ascension = await inPlace(ns).gang['getAscensionResult'](name);
+    const ascension = await $ns.gang['getAscensionResult'](name);
     if (ascension == null) return false;
     const skills = ['agi', 'cha', 'def', 'dex', 'hack', 'str'] as const;
     if (!skills.some((s) => ascension[s] >= 1.1)) return false;
@@ -32,16 +38,16 @@ export async function main(ns: NS) {
 
   while (true) {
     ns.clearLog();
-    ns.print('Loop Time: ' + (Date.now() - lastLoop) + 'ms');
+    const loopTime = Date.now() - lastLoop + 'ms';
     lastLoop = Date.now();
 
     // Recruit as many members as possible
-    while (await inPlace(ns).gang['recruitMember'](crypto.randomUUID()));
+    while (await $ns.gang['recruitMember'](crypto.randomUUID()));
 
-    const gangInfo = await inPlace(ns).gang['getGangInformation']();
-    const allGangInfo = await inPlace(ns).gang['getAllGangInformation']();
+    const gangInfo = await $ns.gang['getGangInformation']();
+    const allGangInfo = await $ns.gang['getAllGangInformation']();
     const gangName = gangInfo.faction;
-    const memberNames = await inPlace(ns).gang['getMemberNames']();
+    const memberNames = await $ns.gang['getMemberNames']();
     const readyMembers = [];
 
     // Report gang income to other processes
@@ -49,12 +55,12 @@ export async function main(ns: NS) {
 
     const memberInfo: Record<string, GangMemberInfo> = {};
     for (const name of memberNames) {
-      memberInfo[name] = await inPlace(ns).gang['getMemberInformation'](name);
+      memberInfo[name] = await $ns.gang['getMemberInformation'](name);
       if (await readyForAscension(name, gangInfo)) {
-        await inPlace(ns).gang['ascendMember'](name);
+        await $ns.gang['ascendMember'](name);
       }
       if (needsTraining(memberInfo[name])) {
-        await inPlace(ns).gang['setMemberTask'](name, 'Train Combat');
+        await $ns.gang['setMemberTask'](name, 'Train Combat');
       } else {
         readyMembers.push(name);
       }
@@ -62,7 +68,7 @@ export async function main(ns: NS) {
 
     const assignNext = async (members: string[], task: string) => {
       if (members.length > 0) {
-        await inPlace(ns).gang['setMemberTask'](members.shift()!, task);
+        await $ns.gang['setMemberTask'](members.shift()!, task);
         return true;
       }
       return false;
@@ -79,11 +85,11 @@ export async function main(ns: NS) {
 
     const respect = async (name: string) => memberInfo[name].earnedRespect;
 
-    const { territory } = allGangInfo[gangName];
+    const { territory, power } = allGangInfo[gangName];
     const clashWinChance = getAverageClashWinChance(gangName, allGangInfo);
     const shouldFite = territory < 0.99 && clashWinChance > 0.55;
 
-    await inPlace(ns).gang['setTerritoryWarfare'](shouldFite);
+    await $ns.gang['setTerritoryWarfare'](shouldFite);
 
     readyMembers.sort(by((name) => -respect(name)));
     if (gangInfo.territory < 1) await assignNext(readyMembers, 'Territory Warfare');
@@ -104,6 +110,19 @@ export async function main(ns: NS) {
         else await assignAll(readyMembers, 'Human Trafficking');
       }
     }
+
+    ns.print(
+      '\n' +
+        table(ns, null, [
+          [' LOOP TIME', loopTime],
+          [' POWER', ns.format.number(power)],
+          [' TERR', ns.format.number(territory)],
+          [' WIN %', ns.format.number(clashWinChance)],
+          [' Need power?', needsPower(gangName, allGangInfo) ? 'Yes' : 'No'],
+          [' FIGHT?', shouldFite ? 'Yes' : 'No'],
+        ]),
+    );
+    ns.print('\n');
 
     await ns.gang.nextUpdate();
   }
