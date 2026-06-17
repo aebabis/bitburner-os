@@ -47,7 +47,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const enableCorp = () => corpAvailable() && resetInfo.ownedSF.get(3) === 3;
   const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
-  const bladesAvailable = () => [6, 7].includes(resetInfo.currentNode);
+  const inBladeNode = () => [6, 7].includes(resetInfo.currentNode);
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
@@ -59,9 +59,11 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     ns.corporation.hasCorporation() ||
     ns.corporation.canCreateCorporation(mustSelfFund) === 'Success';
   const canAutopilot = () => hasSingularity() && requiredAugRam <= mostRootRam(ns);
-  const useBlade = () => hasBladeburnerReadyMults(player(ns));
-  const canWork = () => canAutopilot() && (!useBlade() || hasSimulacrum());
+  const preferBlade = () => inBladeNode() && hasBladeburnerReadyMults(player(ns));
+  const useBlade = () => preferBlade() || hasSimulacrum();
+  const canWork = () => !preferBlade() || hasSimulacrum();
 
+  ns.tprint(hasSingularity(), canWork());
   return [
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasSingularity, canWork)('/bin/self/work.ts'),
@@ -72,7 +74,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, useWolf)('/bin/nerd.ts'),
     AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/broker.ts'),
-    ChainedService(ns, bladesAvailable, useBlade)('/bin/blades/blades.ts'),
+    ChainedService(ns, inBladeNode, useBlade)('/bin/blades/blades.ts'),
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/don.ts'),
     AnyHostService(ns, enableCorp, corpReady)('/bin/corporation/corporation.ts'),
