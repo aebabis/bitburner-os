@@ -1,7 +1,9 @@
 import { tprint } from '../../../boot/util';
 import { STR } from '../../../lib/colors';
 import { getGoals } from '../../../lib/goals/goals';
+import { nmap } from '../../../lib/nmap';
 import { rmi } from '../../../lib/rmi';
+import { by } from '../../../lib/util';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -26,11 +28,21 @@ export async function main(ns: NS) {
     ns.print('Loaded favor');
     await rmi(ns)('/bin/self/aug/join-factions.ts');
     ns.print('Loaded factions');
-    // Prevent early RAM drain by pre-checking install
-    if (getGoals(ns).deps.every((g) => g.isDone())) {
-      await rmi(ns)('/bin/self/aug/purchase-augs.ts');
-      ns.print('Attempted to augment');
+
+    const root = getGoals(ns);
+    if (root.type === 'INSTALL' && root.deps.every((g) => g.isDone())) {
+      tprint(ns)(STR.BOLD + 'INSTALLING');
+      tprint(ns)(STR + '  Stopping all programs');
+      for (const hostname of nmap(ns))
+        for (const { pid } of ns.ps(hostname))
+          if (pid !== ns.pid) {
+            ns.ui.closeTail(pid);
+            ns.kill(pid);
+          }
+      ns.exec('/bin/self/aug/purchase-augs.ts', 'home');
+      return;
     }
+
     await ns.sleep(100);
   }
 }
