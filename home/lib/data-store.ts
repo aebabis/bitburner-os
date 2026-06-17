@@ -130,6 +130,7 @@ export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
   currentWork?: Task | null;
+  isPlayerUsingTerminal?: boolean;
   /** Augmentations purchased this run (and not yet installed) */
   purchasedAugmentations: string[];
 };

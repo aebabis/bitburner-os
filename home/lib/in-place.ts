@@ -67,6 +67,12 @@ const getProxy =
               throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
             }
             const result = ns.readPort(port);
+            if (result === 'NULL PORT DATA') {
+              throw new Error('No data in port after running helper program');
+            }
+            if (!ns.getPortHandle(port).empty()) {
+              throw new Error('Port ' + port + ' not empty after read: ' + ns.peek(port));
+            }
             if (result instanceof Error) {
               throw result;
             } else {
@@ -81,7 +87,14 @@ const getProxy =
       },
     }) as Asyncify<T>;
 
-const randPort = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+const portMap: Record<string, number> = {};
+
+const getPort = (id: string) => {
+  if (!portMap[id]) {
+    portMap[id] = 1 + Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+  }
+  return portMap[id];
+};
 
 /**
  * Creates an adapter for the NS namespace whose functions share RAM in a program.
@@ -101,7 +114,8 @@ const randPort = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
  * }
  * ```
  */
-export const inPlace = (ns: NS, port = randPort): Asyncify<NS> => getProxy(ns, port)(ns);
+export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS> =>
+  getProxy(ns, port)(ns);
 
 // Reserves 1.6 GB of RAM so that ramOverride can give it to
 // run processes. Assumes your program will not call these (without the use of inPlace)
