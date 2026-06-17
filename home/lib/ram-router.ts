@@ -37,6 +37,25 @@ export const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT
 
 type RamInfo = ReturnType<typeof getRamInfo>;
 
+type RamAllowances = {
+  serviceRam: number;
+  hackingRam: number;
+  sharingRam: number;
+};
+
+// TODO: sharingRam and hackingRam come from same pool
+// (sharingRam + hackingRam) is a guaranteed minimum that
+// scales with total.
+// Decide whether serviceRam is based on unused ram or *all* ram.
+// Both approaches suck.
+export const getRamAllowances = (ns: NS): RamAllowances => {
+  const rootServers = getRootServers(ns);
+  const maxRam = rootServers.map((server) => server.maxRam).reduce((a, b) => a + b, 0);
+  return {
+    sharingRam: maxRam / 10,
+  };
+};
+
 export const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
   getHostnames(ns)
     .filter(ns.hasRootAccess)
