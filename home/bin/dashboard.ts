@@ -94,8 +94,8 @@ const getPlayerLevels = (ns: NS) => {
 
 const threadpoolRow = (ns: NS, server: { hostname: string; ramUsed: number; maxRam: number }) => {
   const { hostname, ramUsed, maxRam } = server;
-  const icon = hostname === 'home' ? '⌂' : '';
-  const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}${icon}`;
+  const icon = hostname === 'home' ? '⌂ ' : '';
+  const ram = `${(icon + ns.format.ram(ramUsed, 0)).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
   const color = hostname === 'home' ? C(63) : ramUsed === maxRam ? BRIGHT : MEDIUM;
   return [color(ram)];
 };
