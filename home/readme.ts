@@ -36,6 +36,10 @@ const UTILITIES = {
     command: 'dispatch bin/liquidate.ts',
     desc: 'Sell all stocks and stop spending',
   },
+  makecct: {
+    command: 'usr/make-cct.ts',
+    desc: 'Create a test coding contract',
+  },
   nmap: {
     command: 'dispatch usr/nmap-gui.ts',
     desc: 'Graphical network map',
@@ -102,8 +106,7 @@ const getHelp = (ns: NS) => {
   const column2 = [...getLines(MAIN), ' ', ...getLines(SHORTHAND)];
   const iters = Math.max(column1.length, column2.length);
   const rows = [];
-  for (let i = 0; i < iters; i++)
-    rows.push([column1[i] || '', column2[i] || '']);
+  for (let i = 0; i < iters; i++) rows.push([column1[i] || '', column2[i] || '']);
   return table(ns, ['', ''], rows);
 };
 
