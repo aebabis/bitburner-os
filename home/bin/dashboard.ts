@@ -42,8 +42,7 @@ const formatTime = (seconds: number | null, emptyZero = false) => {
 const getRunStats = (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
   const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
-  const { onlineRunningTime = 0 } =
-    ns.getRunningScript('/bin/planner.ts', 'home') || {};
+  const { onlineRunningTime = 0 } = ns.getRunningScript('/bin/planner.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
   const getSF = () => {
@@ -85,33 +84,20 @@ const getPlayerLevels = (ns: NS) => {
   return table(ns, null, [
     ['', '', M('mult'), M('exp')],
     [G('Hack'), G(skills.hacking), fmt(mults.hacking), fmt(mults.hacking_exp)],
-    [
-      W('Str'),
-      W(skills.strength),
-      fmt(mults.strength),
-      fmt(mults.strength_exp),
-    ],
+    [W('Str'), W(skills.strength), fmt(mults.strength), fmt(mults.strength_exp)],
     [W('Def'), W(skills.defense), fmt(mults.defense), fmt(mults.defense_exp)],
-    [
-      W('Dex'),
-      W(skills.dexterity),
-      fmt(mults.dexterity),
-      fmt(mults.dexterity_exp),
-    ],
+    [W('Dex'), W(skills.dexterity), fmt(mults.dexterity), fmt(mults.dexterity_exp)],
     [W('Agi'), W(skills.agility), fmt(mults.agility), fmt(mults.agility_exp)],
-    [
-      W('Cha'),
-      W(skills.charisma),
-      fmt(mults.charisma),
-      fmt(mults.charisma_exp),
-    ],
+    [W('Cha'), W(skills.charisma), fmt(mults.charisma), fmt(mults.charisma_exp)],
   ]);
 };
 
-const threadpoolRow = (ns: NS, server: { ramUsed: number; maxRam: number }) => {
-  const { ramUsed, maxRam } = server;
-  const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}`;
-  return [ramUsed === maxRam ? BRIGHT(ram) : MEDIUM(ram)];
+const threadpoolRow = (ns: NS, server: { hostname: string; ramUsed: number; maxRam: number }) => {
+  const { hostname, ramUsed, maxRam } = server;
+  const icon = hostname === 'home' ? '⌂' : '';
+  const ram = `${ns.format.ram(ramUsed, 0).padStart(5)}/${ns.format.ram(maxRam, 0).padEnd(5)}${icon}`;
+  const color = hostname === 'home' ? C(63) : ramUsed === maxRam ? BRIGHT : MEDIUM;
+  return [color(ram)];
 };
 
 const threadpools = (ns: NS) => {
@@ -119,7 +105,7 @@ const threadpools = (ns: NS) => {
     .fill(null)
     .map((_, i) => (i + 1).toString().padStart(2, '0'))
     .map((num) => `${THREADPOOL}-${num}`);
-  return names
+  return ['home', ...names]
     .map((hostname) => {
       try {
         return {
@@ -142,11 +128,7 @@ const threadpoolTable = (ns: NS) => {
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
-  const rows = left.map((list, i) => [
-    ...list,
-    ...(middle[i] || ['']),
-    ...(right[i] || ['']),
-  ]);
+  const rows = left.map((list, i) => [...list, ...(middle[i] || ['']), ...(right[i] || [''])]);
   return BRIGHT.BOLD(' SERVERS ') + '\n' + table(ns, null, rows);
 };
 
@@ -195,8 +177,7 @@ const moneyTable = (ns: NS) => {
     [' Gang', `$${ns.format.number(gangIncome, 1)}/s`],
     [' Stocks', `$${ns.format.number(stockIncome, 1)}/s`],
   ];
-  const top =
-    H(' INCOME    ') + C(183)(`$${ns.format.number(totalIncome, 1)}/s`);
+  const top = H(' INCOME    ') + C(183)(`$${ns.format.number(totalIncome, 1)}/s`);
   return top + '\n' + table(ns, null, rows);
 };
 
@@ -222,19 +203,11 @@ const getExecutionTable = (ns: NS) => {
   const { lastRuns = {}, lastCancellations = {} } = getSchedulerReportData(ns);
   const rows = Object.entries(lastCancellations)
     .filter(([script, cancelTime]) => lastRuns[script] < cancelTime)
-    .map(
-      ([script]) => [script, lastRuns[script] ?? Infinity] as [string, number],
-    )
+    .map(([script]) => [script, lastRuns[script] ?? Infinity] as [string, number])
     .sort(by(([, lastRun]) => lastRun))
-    .map(
-      ([script, lastRun]) =>
-        [script, (Date.now() - lastRun) / 1000] as [string, number],
-    )
+    .map(([script, lastRun]) => [script, (Date.now() - lastRun) / 1000] as [string, number])
     .filter(([, lastRun]) => +lastRun >= 10)
-    .map(([script, timeSince]) => [
-      script.replace(/^\/bin\//, ''),
-      formatTime(timeSince),
-    ]);
+    .map(([script, timeSince]) => [script.replace(/^\/bin\//, ''), formatTime(timeSince)]);
   return ` ${H('DELAYS')} \n` + table(ns, null, rows);
 };
 
@@ -280,9 +253,7 @@ const getSchedulerTable = (ns: NS) => {
   const queue = enqueueFails + ' fails';
   const tickets = droppedTickets + ' dropped';
   const processes = getHostnames(ns).flatMap((hostname) => ns.ps(hostname));
-  const sharePs = processes.filter((ps) =>
-    ps.filename.includes(SHARE.slice(1)),
-  );
+  const sharePs = processes.filter((ps) => ps.filename.includes(SHARE.slice(1)));
   const rows = [
     ['SCHEDULER'],
     ['Heartbeat  ' + heartbeatStr],
@@ -292,16 +263,10 @@ const getSchedulerTable = (ns: NS) => {
     ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
     ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
     ['Processes  ' + processes.length],
-    [
-      'Share Thd  ' +
-        sharePs.map((ps) => ps.threads).reduce((a, b) => a + b, 0),
-    ],
+    ['Share Thd  ' + sharePs.map((ps) => ps.threads).reduce((a, b) => a + b, 0)],
     ['Share Pwr  ' + ns.format.number(ns.getSharePower(), 3)],
     ['Pool Free  ' + (freePool != null ? ns.format.ram(freePool, 0) : '?')],
-    [
-      'Pool Rsv   ' +
-        (poolReserve != null ? ns.format.ram(poolReserve, 0) : '?'),
-    ],
+    ['Pool Rsv   ' + (poolReserve != null ? ns.format.ram(poolReserve, 0) : '?')],
   ];
   return table(ns, null, rows, { colors: true });
 };
