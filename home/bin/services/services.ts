@@ -32,7 +32,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const playerLikesHacknet = false;
 
   const gangKarma = resetInfo.currentNode === 2 ? 0 : -54000;
-  const canSelfFund = resetInfo.currentNode !== 3;
+  const mustSelfFund = resetInfo.currentNode !== 3;
   const isCriminal = (faction: FactionName) => CRIMINAL_ORGANIZATIONS.includes(faction);
 
   // Predicates for service viability (relevance).
@@ -57,7 +57,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangReady = () => factions().some(isCriminal) && ns.heart.break() <= gangKarma;
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
-    ns.corporation.canCreateCorporation(canSelfFund) === 'Success';
+    ns.corporation.canCreateCorporation(mustSelfFund) === 'Success';
   const canAutopilot = () => hasSingularity() && requiredAugRam <= mostRootRam(ns);
   const useBlade = () => hasBladeburnerReadyMults(player(ns));
   const canWork = () => canAutopilot() && (!useBlade() || hasSimulacrum());
