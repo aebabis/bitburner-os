@@ -1,4 +1,3 @@
-import { getStaticData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
 import { formulas } from '../../../lib/formulas';
 import { AUG_LOG_FILE } from '../../../etc/config';
@@ -76,7 +75,7 @@ export async function main(ns: NS) {
   if (buyRep?.type === 'BUY_REP') {
     print('Buying ' + ns.format.number(buyRep.amount) + ' rep');
     const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
-    const cost = buyRep.amount * donationRate;
+    const cost = Math.ceil(buyRep.amount * donationRate);
     print('Cost:  $' + ns.format.number(cost));
     print('Avail: $' + ns.format.number(ns.getPlayer().money));
     await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
@@ -141,6 +140,14 @@ export async function main(ns: NS) {
         await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, donationAmount);
       }
     } while (await inPlace(ns).singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
+
+    print('Buying gang items');
+    const gangMembers = await inPlace(ns).gang['getMemberNames']();
+    for (const equipment of ns.gang.getEquipmentNames().reverse()) {
+      for (const member of gangMembers) {
+        await inPlace(ns).gang['purchaseEquipment'](member, equipment);
+      }
+    }
 
     print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
     await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, ns.getPlayer().money);
