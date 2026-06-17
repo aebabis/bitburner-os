@@ -8,9 +8,10 @@ type Asyncify<T> = {
 
 const getApiProgram = (apiPath: string) => `
 export async function main(ns: NS) {
+  const args = ns.readPort(ns.args[0]);
   let result;
   try {
-    result = ns.${apiPath}(...JSON.parse(ns.args[1]));
+    result = ns.${apiPath}(...args);
   } catch (error) {
     result = error;
   }
@@ -57,7 +58,8 @@ const getProxy =
                   ". Make sure you've reserved RAM for the most expensive call",
               );
             }
-            const pid = ns.run(script, 1, port, JSON.stringify(args));
+            ns.writePort(port, args);
+            const pid = ns.run(script, 1, port);
             if (!pid) {
               throw new Error('This should never happen');
             }
