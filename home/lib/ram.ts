@@ -4,16 +4,11 @@
  * @param serverRam - A map of server names to RAM available for worker threads.
  * @returns A stateful function that allocates threads to workers on request.
  */
-export const buildWorkerThreadAllocator = (
-  serverRam: Record<string, number>,
-) => {
+export const buildWorkerThreadAllocator = (serverRam: Record<string, number>) => {
   // Multiply each ram value by 20
   // so allocation can use integer math.
   const serverIntRam = Object.fromEntries(
-    Object.entries(serverRam).map(([hostname, ram]) => [
-      hostname,
-      Math.floor(ram * 20),
-    ]),
+    Object.entries(serverRam).map(([hostname, ram]) => [hostname, Math.floor(ram * 20)]),
   );
 
   const hostnames = Object.keys(serverRam);
@@ -37,6 +32,14 @@ export const buildWorkerThreadAllocator = (
   };
 
   /**
+   * Returns true if threads of the given type have exhausted all options
+   * for perfect packing and may, therefore, imperfectly utilize servers.
+   */
+  const mayForce = (size: 1.7 | 1.75) => {
+    return hostnames.length + (size === 1.7 ? hackHosts.length : weakHosts.length) === 0;
+  };
+
+  /**
    * Assigns threads for the given thread size, 1.7 or 1.75.
    * If no server can issue the amount requested, a partial amount
    * may be given. In this case, the function should be called again.
@@ -49,7 +52,8 @@ export const buildWorkerThreadAllocator = (
     const intSize = size === 1.7 ? 34 : 35;
     const hostname = size === 1.7 ? takeHackHost() : takeWeakHost();
     if (hostname == null) return null;
-    const threadsAvailable = packThreads(serverIntRam[hostname], intSize);
+    const force = mayForce(size);
+    const threadsAvailable = packThreads(serverIntRam[hostname], intSize, force);
     const threadsAllocated = Math.min(maxThreads, threadsAvailable);
     serverIntRam[hostname] -= threadsAllocated * intSize;
     if (serverIntRam[hostname] >= 34) {
@@ -83,18 +87,17 @@ export const buildWorkerThreadAllocator = (
  *  the maximum threads that will fit instead.
  *  @param intRam - Available ram, scaled by 20 to avoid numeric issues.
  *  @param intSize - The size of the worker thread, scaled by 20 to avoid numeric issues.
+ *  @param force - If true, overrides the normal packing restrictions.
+ *  Use when suboptimal packing is unavoidable.
  *  @returns Maximum number of threads that workers of the provided type
  *  are allowed to take
  */
-const packThreads = (intRam: number, intSize: 34 | 35) => {
+const packThreads = (intRam: number, intSize: 34 | 35, force = false) => {
   const intOther = 34 + 35 - intSize;
   const M = Math.floor(intRam / intSize);
-  const r =
-    intSize === 34
-      ? ((-intRam % intOther) + intOther) % intOther
-      : intRam % intOther;
+  const r = intSize === 34 ? ((-intRam % intOther) + intOther) % intOther : intRam % intOther;
   const threads = r + intOther * Math.floor((M - r) / intOther);
-  if (threads < 0) {
+  if (threads <= 0 || force) {
     return Math.floor(intRam / intSize);
   } else {
     return threads;
@@ -131,7 +134,5 @@ export async function main(ns: NS) {
     results.push(test(2 ** p, 'WEAKEN'));
   }
   const n = (num: number) => num.toString().padEnd(2);
-  ns.tprint(
-    '\n' + results.map((result, i) => `${n(i + 1)}  ${result}`).join('\n'),
-  );
+  ns.tprint('\n' + results.map((result, i) => `${n(i + 1)}  ${result}`).join('\n'));
 }
