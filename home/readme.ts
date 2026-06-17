@@ -20,6 +20,10 @@ const UTILITIES = {
     command: 'dispatch bin/goals.ts aug-table',
     desc: 'Show augmentation scoring table',
   },
+  bitflume: {
+    command: './bitflume.ts',
+    desc: 'Go to BN of choice',
+  },
   config: {
     command: './config.ts',
     desc: 'Global config variables',
