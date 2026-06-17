@@ -1,16 +1,11 @@
-import { rmi } from '../../lib/rmi';
-import { stop } from '../../stop';
-
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   const path = ns.args.slice() as string[];
 
   if (path[path.length - 1] === 'w0r1d_d43m0n') {
-    // will fall through if not enough RAM
-    await rmi(ns)('/bin/self/actualize.ts', 1, 12, 'start.ts');
-    // Kill all scripts before backdooring
-    // final server to prevent glitches.
-    await stop(ns);
+    ns.killall('home', true);
+    ns.exec('/bin/self/actualize.ts', 'home');
+    return;
   }
 
   // Hop along path to target
