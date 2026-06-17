@@ -3,7 +3,6 @@ import { STR } from '../../../lib/colors';
 import { getGoals } from '../../../lib/goals/goals';
 import { nmap } from '../../../lib/nmap';
 import { rmi } from '../../../lib/rmi';
-import { by } from '../../../lib/util';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');

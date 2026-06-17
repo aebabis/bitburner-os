@@ -54,7 +54,7 @@ const getProxy =
                   startingRam +
                   ' to ' +
                   (startingRam - ram) +
-                  ". Make sure you've reserved an additional base script cost (1.6GB)",
+                  ". Make sure you've reserved RAM for the most expensive call",
               );
             }
             const pid = ns.run(script, 1, port, JSON.stringify(args));

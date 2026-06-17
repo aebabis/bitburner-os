@@ -1,21 +1,33 @@
 import { putPlayerData, getStaticData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
-import { getPurchasedAugmentations } from './load-owned-augs';
-import { dump } from '../../../bin/broker/dump';
 import { formulas } from '../../../lib/formulas';
 import { AUG_LOG_FILE } from '../../../etc/config';
+import { inPlace } from '../../../lib/in-place';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
+export const getPurchasedAugmentations = async (ns: NS) => {
+  const installedAugmentations = await inPlace(ns).singularity['getOwnedAugmentations'](false);
+  const ownedAugmentations = await inPlace(ns).singularity['getOwnedAugmentations'](true);
+  const purchasedAugmentations = ownedAugmentations.slice();
+  for (const aug of installedAugmentations)
+    purchasedAugmentations.splice(purchasedAugmentations.indexOf(aug), 1);
+  return purchasedAugmentations;
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+
+  // Reserve RAM
+  ns.singularity.purchaseAugmentation;
+
   if (ns.getHostname() !== 'home') {
     throw new Error('purchase-augs must be run on home');
   }
 
   const { factions } = ns.getPlayer();
   putPlayerData(ns, {
-    purchasedAugmentations: getPurchasedAugmentations(ns),
+    purchasedAugmentations: await getPurchasedAugmentations(ns),
   });
 
   const root = getGoals(ns);
@@ -50,7 +62,18 @@ export async function main(ns: NS) {
 
   // Sell all stocks
   print('Dumping stocks');
-  if (ns.stock.hasTixApiAccess()) dump(ns);
+  if (ns.stock.hasTixApiAccess()) {
+    const symbols = await inPlace(ns).stock['getSymbols']();
+    for (const sym of symbols) {
+      await inPlace(ns).stock['sellStock'](sym, Infinity);
+    }
+    const { currentNode, ownedSF } = ns.getResetInfo();
+    if (currentNode === 8 || (ownedSF.get(8) ?? 0) >= 2) {
+      for (const sym of symbols) {
+        await inPlace(ns).stock['sellShort'](sym, Infinity);
+      }
+    }
+  }
 
   const buyRep = actions.find((a) => a.type === 'BUY_REP');
   if (buyRep?.type === 'BUY_REP') {
@@ -60,22 +83,28 @@ export async function main(ns: NS) {
     print('Cost:  $' + ns.format.number(cost));
     print('Avail: $' + ns.format.number(ns.getPlayer().money));
     await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
-    print('Rep:   ' + ns.singularity.getFactionRep(buyRep.faction));
+    print('Rep:   ' + (await inPlace(ns).singularity['getFactionRep'](buyRep.faction)));
   }
 
   print(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
+  const buyAug = async (augmentation: string) => {
+    for (const faction of factions) {
+      if (await inPlace(ns).singularity['purchaseAugmentation'](faction, augmentation)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   for (const augmentation of targetAugmentations) {
-    const bought = factions.some((faction) =>
-      ns.singularity.purchaseAugmentation(faction, augmentation),
-    );
+    const bought = await buyAug(augmentation);
     print(`  Purchase ${augmentation}?: ${bought}`);
   }
 
   // Spend what's left on Neuroflux
   let nfCount = 0;
-  while (factions.some((faction) => ns.singularity.purchaseAugmentation(faction, NEUROFLUX)))
-    nfCount++;
+  while (await buyAug(NEUROFLUX)) nfCount++;
   print(`  bought ${nfCount} Neuroflux`);
 
   // Buy RAM if we can
@@ -96,30 +125,31 @@ export async function main(ns: NS) {
   if (factionFavor[highestFavorFaction] >= favorToDonate) {
     const currentNfgRepBase = augmentationRepReqs[NEUROFLUX];
     do {
-      const purchasedAugs = getPurchasedAugmentations(ns);
+      const purchasedAugs = await getPurchasedAugmentations(ns);
       print('Purchased augs: ' + purchasedAugs);
       const purchasedNfg = purchasedAugs.filter((name) => name === NEUROFLUX);
       const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
       print('Next Rep: ' + repOfNextNeuroflux);
       const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
-      const currentRep = ns.singularity.getFactionRep(highestFavorFaction);
+      const currentRep = await inPlace(ns).singularity['getFactionRep'](highestFavorFaction);
       const donationAmount = (repOfNextNeuroflux - currentRep) * donationRate;
       print('Donation: $' + donationAmount);
       if (currentRep < repOfNextNeuroflux) {
         await run('/bin/self/aug/donate-to-faction.ts', 1, highestFavorFaction, donationAmount);
       }
-    } while (ns.singularity.purchaseAugmentation(highestFavorFaction, NEUROFLUX));
+    } while (await inPlace(ns).singularity['purchaseAugmentation'](highestFavorFaction, NEUROFLUX));
 
     print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
     await run('/bin/self/aug/donate-to-faction.ts', 1, highestFavorFaction, ns.getPlayer().money);
     print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
-  print(getPurchasedAugmentations(ns).join('\n'));
+  const purchasedAugs = await getPurchasedAugmentations(ns);
+  print(purchasedAugs.join('\n'));
 
   ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
   ns.write(AUG_LOG_FILE, `${new Date().toLocaleDateString()}----------------------------\n`, 'a');
-  ns.write(AUG_LOG_FILE, getPurchasedAugmentations(ns).join('\n') + '\n', 'a');
+  ns.write(AUG_LOG_FILE, purchasedAugs.join('\n') + '\n', 'a');
 
   // if (ns.getHostname() !== 'home') {
   //   ns.scp([AUG_LOG_FILE, LOGFILE, '/log/last-reset.txt'], 'home');
