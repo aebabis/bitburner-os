@@ -81,17 +81,15 @@ export type StaticData = {
 
   stocks?: StaticStockData[];
   factionFavor: Record<FactionName, number>;
-  augmentations?: string[];
-  augmentationPrices?: Record<string, number>;
-  augmentationRepReqs?: Record<string, number>;
-  augmentationPrereqs?: Record<string, string[]>;
-  augmentationStats?: Record<string, Multipliers>;
+  augmentations: string[];
+  augmentationPrices: Record<string, number>;
+  augmentationRepReqs: Record<string, number>;
+  augmentationPrereqs: Record<string, string[]>;
+  augmentationStats: Record<string, Multipliers>;
   purchasedAugmentations?: string[];
-  factionRequirements?: Record<FactionName, PlayerRequirement[]>;
-  factionAugmentations?: Record<FactionName, string[]>;
-  factionWorkTypes?: Record<FactionName, FactionWorkType[]>;
-  // TODO: Move this to playerData; it changes
-  factionFavorGain?: Record<FactionName, number>;
+  factionRequirements: Record<FactionName, PlayerRequirement[]>;
+  factionAugmentations: Record<FactionName, string[]>;
+  factionWorkTypes: Record<FactionName, FactionWorkType[]>;
 };
 export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>

@@ -1,4 +1,4 @@
-import { putPlayerData, getStaticData } from '../../../lib/data-store';
+import { getStaticData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
 import { formulas } from '../../../lib/formulas';
 import { AUG_LOG_FILE } from '../../../etc/config';
@@ -26,9 +26,6 @@ export async function main(ns: NS) {
   }
 
   const { factions } = ns.getPlayer();
-  putPlayerData(ns, {
-    purchasedAugmentations: await getPurchasedAugmentations(ns),
-  });
 
   const root = getGoals(ns);
   const actions = root.type === 'INSTALL' ? root.actions : [];
@@ -116,14 +113,20 @@ export async function main(ns: NS) {
   await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketDataTixApi');
   await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketData');
 
-  const { factionFavor, favorToDonate, augmentationRepReqs } = getStaticData(ns);
-  const highestFavorFaction = ns
-    .getPlayer()
-    .factions.filter((faction) => faction !== 'Slum Snakes')
-    .reduce((f1, f2) => (factionFavor[f1] > factionFavor[f2] ? f1 : f2));
-  print('Buying favor and NFG from highest favor faction: ' + highestFavorFaction);
-  if (factionFavor[highestFavorFaction] >= favorToDonate) {
-    const currentNfgRepBase = augmentationRepReqs[NEUROFLUX];
+  const favorToDonate = ns.getFavorToDonate();
+
+  let donationFaction = null;
+  let highestFavor = 0;
+  for (const faction of ns.getPlayer().factions) {
+    const favor = await inPlace(ns).singularity['getFactionFavor'](faction);
+    if (favor > highestFavor && favor >= favorToDonate) {
+      donationFaction = faction;
+      highestFavor = favor;
+    }
+  }
+  if (donationFaction != null) {
+    print('Buying favor and NFG from highest favor faction: ' + donationFaction);
+    const currentNfgRepBase = await inPlace(ns).singularity['getAugmentationRepReq'](NEUROFLUX);
     do {
       const purchasedAugs = await getPurchasedAugmentations(ns);
       print('Purchased augs: ' + purchasedAugs);
@@ -131,16 +134,16 @@ export async function main(ns: NS) {
       const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
       print('Next Rep: ' + repOfNextNeuroflux);
       const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
-      const currentRep = await inPlace(ns).singularity['getFactionRep'](highestFavorFaction);
+      const currentRep = await inPlace(ns).singularity['getFactionRep'](donationFaction);
       const donationAmount = (repOfNextNeuroflux - currentRep) * donationRate;
       print('Donation: $' + donationAmount);
       if (currentRep < repOfNextNeuroflux) {
-        await run('/bin/self/aug/donate-to-faction.ts', 1, highestFavorFaction, donationAmount);
+        await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, donationAmount);
       }
-    } while (await inPlace(ns).singularity['purchaseAugmentation'](highestFavorFaction, NEUROFLUX));
+    } while (await inPlace(ns).singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
 
     print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
-    await run('/bin/self/aug/donate-to-faction.ts', 1, highestFavorFaction, ns.getPlayer().money);
+    await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, ns.getPlayer().money);
     print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 

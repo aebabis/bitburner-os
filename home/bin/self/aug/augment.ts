@@ -1,32 +1,44 @@
 import { tprint } from '../../../boot/util';
 import { STR } from '../../../lib/colors';
+import { putPlayerData } from '../../../lib/data-store';
 import { getGoals } from '../../../lib/goals/goals';
+import { inPlace } from '../../../lib/in-place';
 import { nmap } from '../../../lib/nmap';
-import { rmi } from '../../../lib/rmi';
+import { getPurchasedAugmentations } from './load-owned-augs';
+
+const getRep = async (ns: NS) => {
+  const factionRep = {} as Record<FactionName, number>;
+  const factions = Object.values(ns.enums.FactionName);
+  for (const faction of factions) {
+    factionRep[faction] = await inPlace(ns).singularity['getFactionRep'](faction);
+  }
+  return factionRep;
+};
+
+const joinFactions = async (ns: NS) => {
+  const factionTargets = getGoals(ns)
+    .prerequisites('FACTION_JOIN')
+    .map((g) => g.faction);
+  const invites = await inPlace(ns).singularity['checkFactionInvitations']();
+  for (const faction of invites) {
+    if (
+      factionTargets.includes(faction) ||
+      !Object.values(ns.enums.CityName).includes(faction as CityName) ||
+      ns.gang.inGang()
+    )
+      await inPlace(ns).singularity['joinFaction'](faction);
+  }
+};
 
 export async function main(ns: NS) {
-  ns.disableLog('ALL');
-  const retry = true;
+  ns.singularity.getOwnedAugmentations;
 
-  tprint(ns)(STR.BOLD + 'LOADING AUGMENTATION AND FACTION DATA');
-  await rmi(ns, retry)('/bin/self/aug/load-aug-names.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-aug-prices.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-aug-reps.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-aug-prereqs.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-aug-stats.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-faction-favor.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-faction-reqs.ts');
-  await rmi(ns, retry)('/bin/self/aug/load-faction-work-types.ts');
+  ns.disableLog('ALL');
 
   while (true) {
-    await rmi(ns, retry)('/bin/self/aug/load-faction-rep.ts');
-    ns.print('Loaded rep');
-    await rmi(ns, retry)('/bin/self/aug/load-owned-augs.ts');
-    ns.print('Loaded augs');
-    await rmi(ns, retry)('/bin/self/aug/load-faction-favor-gain.ts');
-    ns.print('Loaded favor');
-    await rmi(ns)('/bin/self/aug/join-factions.ts');
-    ns.print('Loaded factions');
+    putPlayerData(ns, { factionRep: await getRep(ns) });
+    putPlayerData(ns, { purchasedAugmentations: await getPurchasedAugmentations(ns) });
+    await joinFactions(ns);
 
     const root = getGoals(ns);
     if (root.type === 'INSTALL' && root.deps.every((g) => g.isDone())) {
