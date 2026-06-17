@@ -63,7 +63,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
 
-  ns.tprint(hasSingularity(), canWork());
   return [
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasSingularity, canWork)('/bin/self/work.ts'),
