@@ -1,9 +1,4 @@
-import {
-  getStaticData,
-  getRamData,
-  getPlayerData,
-  getMoneyData,
-} from './data-store';
+import { getStaticData, getRamData, getPlayerData, getMoneyData } from './data-store';
 
 const cache = <T>(func: (ns: NS) => T) => {
   let data: T | undefined;
@@ -14,8 +9,7 @@ const cache = <T>(func: (ns: NS) => T) => {
 };
 
 const getRamInfo = cache((ns: NS) => {
-  const { purchasedServerCosts, requiredJobRam, requiredAugRam } =
-    getStaticData(ns);
+  const { purchasedServerCosts, requiredJobRam, requiredAugRam } = getStaticData(ns);
   return (
     purchasedServerCosts && {
       purchasedServerCosts,
@@ -38,7 +32,7 @@ export const getAugRamCost = cache((ns: NS) => {
 const getPoolRamStatus = (ns: NS) => {
   const { rootServers, purchasedServers } = getRamData(ns);
   const homeRam = rootServers?.find((s) => s.hostname === 'home')?.maxRam ?? 0;
-  const pool1Ram = purchasedServers[0]?.maxRam || 0;
+  const pool1Ram = purchasedServers?.[0]?.maxRam || 0;
   return { homeRam, pool1Ram };
 };
 
@@ -57,8 +51,7 @@ export const needsAugRam = (ns: NS) => {
 export const shouldWorkHaveFocus = (ns: NS) => {
   const { isPlayerActive } = getPlayerData(ns);
   const { installedAugmentations } = getStaticData(ns);
-  if (installedAugmentations.includes('Neuroreceptor Management Implant'))
-    return false;
+  if (installedAugmentations.includes('Neuroreceptor Management Implant')) return false;
   return !isPlayerActive;
 };
 
