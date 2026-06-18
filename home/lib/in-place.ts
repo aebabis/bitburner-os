@@ -20,19 +20,88 @@ export async function main(ns: NS) {
   });
 }`;
 
-const getScript = (ns: NS) => (path: string[]) => {
-  const apiPath = path.join('.');
+const getFunctionProgram = (func: () => unknown) => {
+  const body = func
+    .toString()
+    .replaceAll(/(ns\.[A-Zaz\.]*)\['([^']*)']/, (_str, match1, match2) => `${match1}.${match2}`);
+  return `
+export async function main(ns: NS) {
+  const args = ns.readPort(ns.args[0]);
+  let result;
+  try {
+    result = ${body}();
+  } catch (error) {
+    result = error;
+  }
+  ns.atExit(() => {
+    ns.writePort(ns.args[0], result);
+  });
+}`;
+};
+
+const sdbm = (str: string) => {
+  let hashCode = 0;
+  for (let i = 0; i < str.length; i++) {
+    hashCode = str.charCodeAt(i) + (hashCode << 6) + (hashCode << 16) - hashCode;
+  }
+  return hashCode;
+};
+
+const getScript = (ns: NS) => (apiPath: string) => {
   const script = `tmp/bin/${apiPath}.ts`;
   if (!ns.read(script)) {
     ns.write(script, getApiProgram(apiPath), 'w');
   }
-  const functionRam = ns.getFunctionRamCost(apiPath);
-  return {
-    script,
-    baseRam: functionRam,
-    ram: 1.6 + functionRam,
-  };
+  return script;
 };
+
+const getBodyScript = (ns: NS) => (func: () => unknown) => {
+  const hash = sdbm(func.toString());
+  const script = `tmp/bin/rip-${hash}.ts`;
+  if (!ns.read(script)) {
+    ns.write(script, getFunctionProgram(func), 'w');
+  }
+  return script;
+};
+
+const runScript =
+  (ns: NS, port: number) =>
+  async (script: string, ...args: ScriptArg[]) => {
+    const ram = ns.getScriptRam(script);
+    const startingRam = ns.ramOverride();
+    const newRam = ns.ramOverride(startingRam - ram);
+    if (newRam === startingRam) {
+      throw new Error(
+        'Failed to shrink from ' +
+          startingRam +
+          ' to ' +
+          (startingRam - ram) +
+          ". Make sure you've reserved RAM for the most expensive call",
+      );
+    }
+    ns.writePort(port, args);
+    const pid = ns.run(script, 1, port);
+    if (!pid) {
+      throw new Error('This should never happen');
+    }
+    await ns.nextPortWrite(port);
+    const restoredRam = ns.ramOverride(startingRam);
+    if (restoredRam !== startingRam) {
+      throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
+    }
+    const result = ns.readPort(port);
+    if (result === 'NULL PORT DATA') {
+      throw new Error('No data in port after running helper program');
+    }
+    if (!ns.getPortHandle(port).empty()) {
+      throw new Error('Port ' + port + ' not empty after read: ' + ns.peek(port));
+    }
+    if (result instanceof Error) {
+      throw result;
+    } else {
+      return result;
+    }
+  };
 
 const getProxy =
   (ns: NS, port: number) =>
@@ -41,46 +110,13 @@ const getProxy =
       get(namespace: T, prop) {
         const value = namespace[prop as keyof T];
         if (typeof value === 'function') {
-          const { script, ram, baseRam } = getScript(ns)([...path, prop].map((p) => p.toString()));
-          if (baseRam === 0) {
+          const apiPath = [...path, prop].map((p) => p.toString()).join('.');
+          if (ns.getFunctionRamCost(apiPath) === 0) {
             // Don't make scripts for free APIs
             return value;
           }
-          return async (...args: ScriptArg[]) => {
-            const startingRam = ns.ramOverride();
-            const newRam = ns.ramOverride(startingRam - ram);
-            if (newRam === startingRam) {
-              throw new Error(
-                'Failed to shrink from ' +
-                  startingRam +
-                  ' to ' +
-                  (startingRam - ram) +
-                  ". Make sure you've reserved RAM for the most expensive call",
-              );
-            }
-            ns.writePort(port, args);
-            const pid = ns.run(script, 1, port);
-            if (!pid) {
-              throw new Error('This should never happen');
-            }
-            await ns.nextPortWrite(port);
-            const restoredRam = ns.ramOverride(startingRam);
-            if (restoredRam !== startingRam) {
-              throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
-            }
-            const result = ns.readPort(port);
-            if (result === 'NULL PORT DATA') {
-              throw new Error('No data in port after running helper program');
-            }
-            if (!ns.getPortHandle(port).empty()) {
-              throw new Error('Port ' + port + ' not empty after read: ' + ns.peek(port));
-            }
-            if (result instanceof Error) {
-              throw result;
-            } else {
-              return result;
-            }
-          };
+          const script = getScript(ns)(apiPath);
+          return async (...args: ScriptArg[]) => runScript(ns, port)(script, ...args);
         } else if (value instanceof Object) {
           return getProxy(ns, port)(value, ...path, prop);
         } else {
@@ -118,6 +154,13 @@ const getPort = (id: string) => {
  */
 export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS> =>
   getProxy(ns, port)(ns);
+
+export const runInPlace =
+  (ns: NS, port = getPort(ns.getScriptName())) =>
+  async <T>(action: () => T): Promise<T> => {
+    const script = getBodyScript(ns)(action);
+    return runScript(ns, port)(script);
+  };
 
 // Reserves 1.6 GB of RAM so that ramOverride can give it to
 // run processes. Assumes your program will not call these (without the use of inPlace)
