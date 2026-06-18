@@ -23,13 +23,13 @@ export async function main(ns: NS) {
 const getFunctionProgram = (func: () => unknown) => {
   const body = func
     .toString()
-    .replaceAll(/(ns\.[A-Zaz\.]*)\['([^']*)']/, (_str, match1, match2) => `${match1}.${match2}`);
+    .replaceAll(/(ns[A-Zaz\.]*)\['([^']*)']/g, (_str, match1, match2) => `${match1}.${match2}`);
   return `
 export async function main(ns: NS) {
   const args = ns.readPort(ns.args[0]);
   let result;
   try {
-    result = ${body}();
+    result = (${body})();
   } catch (error) {
     result = error;
   }
@@ -60,6 +60,10 @@ const getBodyScript = (ns: NS) => (func: () => unknown) => {
   const script = `tmp/bin/rip-${hash}.ts`;
   if (!ns.read(script)) {
     ns.write(script, getFunctionProgram(func), 'w');
+    const ram = ns.getScriptRam(script);
+    if (ram === 0) {
+      throw new Error('runInPlace callback contains illegal or unsupported syntax');
+    }
   }
   return script;
 };
