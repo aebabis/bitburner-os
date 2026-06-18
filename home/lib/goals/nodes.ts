@@ -32,7 +32,7 @@ export type Goal = {
   isDone: () => boolean;
   toString: () => string;
   requirement: number | undefined;
-  faction: string | undefined;
+  faction: FactionName | undefined;
   deps: Goal[];
   actions: Action[];
   ownTime: () => number | null;
@@ -40,12 +40,7 @@ export type Goal = {
   prerequisites: (typeFilter?: GoalType) => Goal[];
 };
 
-export const COMBAT_STATS = [
-  'strength',
-  'defense',
-  'dexterity',
-  'agility',
-] as const;
+export const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'] as const;
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 interface GoalProps {
@@ -59,13 +54,7 @@ export const goal = (
   type: GoalType,
   desc: string,
   isDone: () => boolean,
-  {
-    requirement,
-    faction,
-    deps = [],
-    actions = [],
-    ownTime = () => null,
-  }: GoalProps = {},
+  { requirement, faction, deps = [], actions = [], ownTime = () => null }: GoalProps = {},
 ) => {
   let _ttc: number;
   return {
@@ -96,11 +85,8 @@ export const goal = (
       if (_ttc !== undefined) return _ttc;
       if (isDone()) return (_ttc = 0);
       const depsMax =
-        deps.length === 0
-          ? 0
-          : Math.max(...deps.map((d) => d.timeToComplete() ?? Infinity));
-      return (_ttc =
-        depsMax === Infinity || ownTime() == null ? null : depsMax + ownTime());
+        deps.length === 0 ? 0 : Math.max(...deps.map((d) => d.timeToComplete() ?? Infinity));
+      return (_ttc = depsMax === Infinity || ownTime() == null ? null : depsMax + ownTime());
     },
   };
 };
@@ -113,18 +99,10 @@ export const jobRamGoal = (
   currentMoney: number,
   totalIncome: number,
 ) =>
-  goal(
-    'JOB_RAM',
-    `${requiredJobRam}GB on ${poolServer}`,
-    () => currentRam >= requiredJobRam,
-    {
-      requirement: requiredJobRam,
-      ownTime: () =>
-        totalIncome > 0
-          ? Math.max(0, jobRamCost - currentMoney) / totalIncome
-          : null,
-    },
-  );
+  goal('JOB_RAM', `${requiredJobRam}GB on ${poolServer}`, () => currentRam >= requiredJobRam, {
+    requirement: requiredJobRam,
+    ownTime: () => (totalIncome > 0 ? Math.max(0, jobRamCost - currentMoney) / totalIncome : null),
+  });
 
 export const installGoal = (deps: Goal[], actions: Action[]) => {
   const isInstall = actions.find((action) => action.type === 'BUY_AUG');
@@ -147,12 +125,10 @@ export const hackingLevelGoal = (
   currentHacking: number,
   trainingTime: number | null = null,
 ) =>
-  goal(
-    'HACKING_LEVEL',
-    `Hacking ≥ ${hackReq}`,
-    () => currentHacking >= hackReq,
-    { requirement: hackReq, ownTime: () => trainingTime },
-  );
+  goal('HACKING_LEVEL', `Hacking ≥ ${hackReq}`, () => currentHacking >= hackReq, {
+    requirement: hackReq,
+    ownTime: () => trainingTime,
+  });
 
 export const hackingXpGoal = (
   xpReq: number,
@@ -177,15 +153,10 @@ export const combatLevelsGoal = (
   );
 
 export const killsGoal = (killsRequired: number, numPeopleKilled: number) =>
-  goal(
-    'KILLS',
-    `Kill ${killsRequired} people`,
-    () => numPeopleKilled >= killsRequired,
-    {
-      requirement: numPeopleKilled,
-      ownTime: () => (killsRequired - numPeopleKilled) * 3,
-    },
-  );
+  goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
+    requirement: numPeopleKilled,
+    ownTime: () => (killsRequired - numPeopleKilled) * 3,
+  });
 
 export const karmaGoal = (karmaRequired: number, karma: number) =>
   goal('KARMA', `Have ${karmaRequired} karma`, () => karmaRequired >= karma, {
@@ -193,23 +164,11 @@ export const karmaGoal = (karmaRequired: number, karma: number) =>
     ownTime: () => -(karmaRequired - karma),
   });
 
-export const moneyPrereqGoal = (
-  moneyTarget: number,
-  currentMoney: number,
-  totalIncome: number,
-) =>
-  goal(
-    'MONEY',
-    `Have ${fmtMoney(moneyTarget)}`,
-    () => currentMoney >= moneyTarget,
-    {
-      requirement: moneyTarget,
-      ownTime: () =>
-        totalIncome > 0
-          ? Math.max(0, moneyTarget - currentMoney) / totalIncome
-          : null,
-    },
-  );
+export const moneyPrereqGoal = (moneyTarget: number, currentMoney: number, totalIncome: number) =>
+  goal('MONEY', `Have ${fmtMoney(moneyTarget)}`, () => currentMoney >= moneyTarget, {
+    requirement: moneyTarget,
+    ownTime: () => (totalIncome > 0 ? Math.max(0, moneyTarget - currentMoney) / totalIncome : null),
+  });
 
 export const locationGoal = (location: CityName, currentLocation: CityName) =>
   goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
@@ -217,11 +176,7 @@ export const locationGoal = (location: CityName, currentLocation: CityName) =>
     ownTime: () => 0,
   });
 
-export const factionJoinGoal = (
-  faction: FactionName,
-  factions: FactionName[],
-  deps: Goal[] = [],
-) =>
+export const factionJoinGoal = (faction: FactionName, factions: FactionName[], deps: Goal[] = []) =>
   goal('FACTION_JOIN', 'Join ' + faction, () => factions.includes(faction), {
     faction,
     deps,
@@ -241,18 +196,12 @@ export const factionRepGoal = (
   dep: Goal,
   repRate?: number,
 ) =>
-  goal(
-    'FACTION_REP',
-    `Gain ${requirement} rep (${faction})`,
-    () => currentRep >= requirement,
-    {
-      requirement,
-      faction,
-      deps: [dep],
-      ownTime: () =>
-        repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null,
-    },
-  );
+  goal('FACTION_REP', `Gain ${requirement} rep (${faction})`, () => currentRep >= requirement, {
+    requirement,
+    faction,
+    deps: [dep],
+    ownTime: () => (repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null),
+  });
 
 export const augMoneyGoal = (
   costToAug: number | undefined,
@@ -261,9 +210,7 @@ export const augMoneyGoal = (
 ) =>
   goal(
     'AUG_MONEY',
-    'Save ' +
-      (costToAug != null ? fmtMoney(costToAug) : '?') +
-      ' for augmentations',
+    'Save ' + (costToAug != null ? fmtMoney(costToAug) : '?') + ' for augmentations',
     () => costToAug != null && liquidAssets >= costToAug,
     {
       requirement: costToAug,
