@@ -11,30 +11,38 @@ export async function main(ns: NS) {
   const args = ns.readPort(ns.args[0]);
   let result;
   try {
-    result = ns.${apiPath}(...args);
+    result = await ns.${apiPath}(...args);
   } catch (error) {
     result = error;
   }
   ns.atExit(() => {
-    ns.writePort(ns.args[0], result);
+    try {
+      ns.writePort(ns.args[0], result);
+    } catch (error) {
+      ns.writePort(ns.args[0], error);
+    }
   });
 }`;
 
 const getFunctionProgram = (func: () => unknown) => {
   const body = func
     .toString()
-    .replaceAll(/(ns[A-Zaz\.]*)\['([^']*)']/g, (_str, match1, match2) => `${match1}.${match2}`);
+    .replaceAll(/(ns[A-Za-z\.]*)\['([^']*)']/g, (_str, match1, match2) => `${match1}.${match2}`);
   return `
 export async function main(ns: NS) {
   const args = ns.readPort(ns.args[0]);
   let result;
   try {
-    result = (${body})();
+    result = await (${body})(...args);
   } catch (error) {
     result = error;
   }
   ns.atExit(() => {
-    ns.writePort(ns.args[0], result);
+    try {
+      ns.writePort(ns.args[0], result);
+    } catch (error) {
+      ns.writePort(ns.args[0], error);
+    }
   });
 }`;
 };
@@ -161,9 +169,10 @@ export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS
 
 export const runInPlace =
   (ns: NS, port = getPort(ns.getScriptName())) =>
-  async <T>(action: () => T): Promise<T> => {
+  <F extends (...args: any[]) => any>(action: F) =>
+  (...args: Parameters<F>): Promise<ReturnType<F>> => {
     const script = getBodyScript(ns)(action);
-    return runScript(ns, port)(script);
+    return runScript(ns, port)(script, ...args) as Promise<ReturnType<F>>;
   };
 
 // Reserves 1.6 GB of RAM so that ramOverride can give it to
