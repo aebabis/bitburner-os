@@ -2,6 +2,8 @@ import { getGoals } from '../../../lib/goals/goals';
 import { formulas } from '../../../lib/formulas';
 import { AUG_LOG_FILE } from '../../../etc/config';
 import { inPlace } from '../../../lib/in-place';
+import { tprint } from '../../../boot/util';
+import { STR } from '../../../lib/colors';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -16,6 +18,8 @@ export const getPurchasedAugmentations = async (ns: NS) => {
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+  tprint(ns)(STR.BOLD + 'INSTALLING');
+  tprint(ns)(STR + '  Stopping all programs');
 
   // Reserve RAM
   ns.singularity.purchaseAugmentation;

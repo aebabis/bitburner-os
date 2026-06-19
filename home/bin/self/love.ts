@@ -5,7 +5,16 @@ import { by, randPort } from '../../lib/util';
 import { inPlace, runInPlace } from '../../lib/in-place';
 import { shouldWorkHaveFocus as focus } from '../../lib/query-service';
 import { $nmap } from '../../lib/nmap.rip';
-import { $backdoor, $getBackdoorPath } from '../../lib/backdoor.rip';
+import { $getBackdoorPath } from '../../lib/backdoor.rip';
+import { getPurchasedAugmentations } from './aug/load-owned-augs';
+import {
+  $getFactionRep,
+  $getPurchasedAugmentations,
+  $install,
+  $joinFactions,
+  $sing,
+  $win,
+} from '../../lib/sing.rip';
 
 const TRAVEL_COST = 200_000;
 
@@ -193,14 +202,9 @@ export async function main(ns: NS) {
     const backdoorPath = await $getBackdoorPath(ns, runPort)(hostnames);
 
     if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
-      await runInPlace(
-        ns,
-        runPort,
-      )(() => {
-        ns['killall']('home', true);
-        ns['exec']('/bin/self/actualize.ts', 'home');
-      })();
+      await $win(ns, runPort);
     }
+    await $sing(ns, runPort)(root);
 
     if (findGoal('HACKING_XP') && canGoToSchool) {
       if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
