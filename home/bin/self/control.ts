@@ -8,8 +8,13 @@ export async function main(ns: NS) {
     const { isPlayerUsingTerminal } = getPlayerData(ns);
     if (!isPlayerUsingTerminal) {
       const path = getPath(ns);
-      if (path != null) await rmi(ns)('/bin/self/backdoor.ts', 1, ...path);
-      else await rmi(ns)('/bin/self/hack.ts');
+      if (path != null) {
+        if (path[path.length - 1] !== 'w0r1d_d43m0n') {
+          await rmi(ns)('/bin/self/backdoor.ts', 1, ...path);
+        }
+      } else {
+        await rmi(ns)('/bin/self/hack.ts');
+      }
     }
     await ns.sleep(100);
   }

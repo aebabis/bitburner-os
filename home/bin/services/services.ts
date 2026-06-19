@@ -65,8 +65,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canShare = () => player(ns).skills.hacking > 100;
 
   return [
+    AnyHostService(ns, hasSingularity, canWork)('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
-    AnyHostService(ns, hasSingularity, canWork)('/bin/self/work.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),
     AnyHostService(ns, hasThief, useThief)('/bin/thief.ts'),
     AnyHostService(ns, always, canPurchaseServers, { interval: 1000 })('/bin/sysadmin.ts'),
