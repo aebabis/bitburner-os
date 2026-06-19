@@ -319,6 +319,11 @@ export const twoColor = ([numVertices, edges]: [number, number[][]]) => {
     if (arr[a] == null) arr[a] = !arr[b];
     if (arr[b] == null) arr[b] = !arr[a];
   }
+  for (const val of arr) {
+    if (val === undefined) {
+      return [];
+    }
+  }
   return arr.map(Number);
 };
 
