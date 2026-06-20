@@ -2,19 +2,11 @@ import { getStaticData, putPlayerData } from '../../lib/data-store';
 import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals';
 import { Goal, GoalType } from '../../lib/goals/nodes';
 import { by, randPort } from '../../lib/util';
-import { inPlace, runInPlace } from '../../lib/in-place';
+import { inPlace } from '../../lib/in-place';
 import { shouldWorkHaveFocus as focus } from '../../lib/query-service';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
-import { getPurchasedAugmentations } from './aug/load-owned-augs';
-import {
-  $getFactionRep,
-  $getPurchasedAugmentations,
-  $install,
-  $joinFactions,
-  $sing,
-  $win,
-} from '../../lib/sing.rip';
+import { $sing, $win } from '../../lib/sing.rip';
 
 const TRAVEL_COST = 200_000;
 
