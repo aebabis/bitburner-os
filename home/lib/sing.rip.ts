@@ -67,18 +67,55 @@ export const $getPurchasedAugmentations = (ns: NS, port: number) =>
     return purchasedAugmentations;
   })();
 
-export const $sing = (ns: NS, port: number) => async (goalTree: Goal) => {
-  if (goalTree.type === 'INSTALL' && goalTree.deps.every((g) => g.isDone())) {
-    await $install(ns, port);
-  }
+const TOR_PORT = 704 * 6047;
+type TorPurchases = Partial<Record<ProgramName | 'Tor', boolean>>;
 
-  const factionTargets = goalTree.prerequisites('FACTION_JOIN').map((g) => g.faction!);
-  await $joinFactions(ns, port)(factionTargets);
-
-  const factionRep = await $getFactionRep(ns, port);
-  const purchasedAugmentations = await $getPurchasedAugmentations(ns, port);
-
-  const dynamicSingData = { factionRep, purchasedAugmentations };
-  putPlayerData(ns, dynamicSingData);
-  return dynamicSingData;
+export const $tor = async (ns: NS, port = ns.pid) => {
+  const $ = inPlace(ns, port);
+  const hostnames = await $nmap(ns, port)();
+  const neededPortLevel = await runInPlace(
+    ns,
+    port,
+  )((hostnames: string[]) => {
+    const hackLevel = ns['getHackingLevel']();
+    return Math.max(
+      ...hostnames
+        .filter((hostname) => hostname !== 'home')
+        .filter((hostname) => ns['getServerRequiredHackingLevel'](hostname) <= hackLevel)
+        .map(ns['getServerNumPortsRequired']),
+    );
+  })(hostnames);
+  const portData = ns.readPort(TOR_PORT);
+  const purchases = (portData === 'NULL PORT DATA' ? {} : portData) as TorPurchases;
+  const $purchase = async (program: ProgramName) => {
+    purchases[program] = await $.singularity['purchaseProgram'](program);
+  };
+  purchases['Tor'] = purchases['Tor'] || (await $.singularity['purchaseTor']());
+  await $purchase('Formulas.exe');
+  if (neededPortLevel >= 1 && !purchases['BruteSSH.exe']) await $purchase('BruteSSH.exe');
+  if (neededPortLevel >= 2 && !purchases['FTPCrack.exe']) await $purchase('FTPCrack.exe');
+  if (neededPortLevel >= 3 && !purchases['relaySMTP.exe']) await $purchase('relaySMTP.exe');
+  if (neededPortLevel >= 4 && !purchases['HTTPWorm.exe']) await $purchase('HTTPWorm.exe');
+  if (neededPortLevel >= 5 && !purchases['SQLInject.exe']) await $purchase('SQLInject.exe');
+  ns.writePort(TOR_PORT, purchases);
 };
+
+export const $sing =
+  (ns: NS, port = ns.pid) =>
+  async (goalTree: Goal) => {
+    if (goalTree.type === 'INSTALL' && goalTree.deps.every((g) => g.isDone())) {
+      await $install(ns, port);
+    }
+
+    await $tor(ns, port);
+
+    const factionTargets = goalTree.prerequisites('FACTION_JOIN').map((g) => g.faction!);
+    await $joinFactions(ns, port)(factionTargets);
+
+    const factionRep = await $getFactionRep(ns, port);
+    const purchasedAugmentations = await $getPurchasedAugmentations(ns, port);
+
+    const dynamicSingData = { factionRep, purchasedAugmentations };
+    putPlayerData(ns, dynamicSingData);
+    return dynamicSingData;
+  };
