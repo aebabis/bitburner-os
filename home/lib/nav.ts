@@ -16,9 +16,7 @@ const Tabs = {
 type TabGroup = keyof typeof Tabs;
 
 const tabGroups = Object.fromEntries(
-  Object.entries(Tabs).flatMap(([groupName, tabs]) =>
-    tabs.map((tab) => [tab, groupName]),
-  ),
+  Object.entries(Tabs).flatMap(([groupName, tabs]) => tabs.map((tab) => [tab, groupName])),
 ) as Record<Tab, TabGroup>;
 
 const groupFor = (tab: Tab) => tabGroups[tab];
@@ -36,13 +34,13 @@ const toggleTabGroup = (group: TabGroup, expanded?: boolean) => {
 const clickButton = (text: string) => {
   const buttons = [...doc.querySelectorAll('button')] as HTMLButtonElement[];
   const target = buttons.find((button) => button.innerText.includes(text));
-  target!.click();
+  target?.click();
 };
 
 const getDrawerButton = (text: string) =>
   (doc.querySelector(`[role="button"]:has([aria-label="${text}"])`) ||
-    ([...doc.querySelectorAll('[role="button"]')] as HTMLDivElement[]).find(
-      (button) => button.innerText.includes(text),
+    ([...doc.querySelectorAll('[role="button"]')] as HTMLDivElement[]).find((button) =>
+      button.innerText.includes(text),
     )) as HTMLDivElement;
 
 const clickDrawerTab = (tab: string) => {
