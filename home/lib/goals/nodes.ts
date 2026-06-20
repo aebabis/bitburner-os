@@ -161,7 +161,7 @@ export const killsGoal = (killsRequired: number, numPeopleKilled: number) =>
 export const karmaGoal = (karmaRequired: number, karma: number) =>
   goal('KARMA', `Have ${karmaRequired} karma`, () => karmaRequired >= karma, {
     requirement: karmaRequired,
-    ownTime: () => -(karmaRequired - karma),
+    ownTime: () => -(karmaRequired - karma) / 3,
   });
 
 export const moneyPrereqGoal = (moneyTarget: number, currentMoney: number, totalIncome: number) =>
