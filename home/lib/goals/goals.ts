@@ -7,6 +7,7 @@ import {
   type Goal,
   hackingXpGoal,
   moneyPrereqGoal,
+  karmaGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -24,16 +25,13 @@ export const getGoals = (ns: NS): Goal => {
   const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
-  const { currentNode } = staticData.resetInfo;
+  const { currentNode, ownedSF } = staticData.resetInfo;
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
   const { totalIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns);
   const karma = ns.heart.break();
-  const ownedAugs = [
-    ...staticData.installedAugmentations,
-    ...purchasedAugmentations,
-  ];
+  const ownedAugs = [...staticData.installedAugmentations, ...purchasedAugmentations];
   const planData = {
     player,
     staticData,
@@ -54,16 +52,14 @@ export const getGoals = (ns: NS): Goal => {
     .filter(/** @type {<T>(x: T | null) => x is T} */ Boolean);
   const bestPlan =
     plans.length > 0
-      ? plans.reduce((a, b) =>
-          a.utility(overhead) >= b.utility(overhead) ? a : b,
-        )
+      ? plans.reduce((a, b) => (a.utility(overhead) >= b.utility(overhead) ? a : b))
       : null;
 
-  const selectedFaction =
-    bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
+  const selectedFaction = bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
   recordGoalSnapshot(plans, selectedFaction, overhead);
 
-  if (currentNode === 2 && !player.factions?.includes('Slum Snakes')) {
+  const inSlumSnakes = player.factions?.includes('Slum Snakes');
+  if (currentNode === 2 && !inSlumSnakes) {
     const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,
@@ -73,6 +69,10 @@ export const getGoals = (ns: NS): Goal => {
       formulas,
     });
     return reevaluateGoal(joinGoal);
+  }
+
+  if (currentNode === 7 && (ownedSF.get(7) ?? 0) >= 1 && karma > -54000) {
+    return reevaluateGoal(karmaGoal(-54000, karma));
   }
 
   const THE_BLADE = "The Blade's Simulacrum";
@@ -91,9 +91,7 @@ export const getGoals = (ns: NS): Goal => {
 
   if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
-    return reevaluateGoal(
-      moneyPrereqGoal(target, estimatedStockValue + money, totalIncome),
-    );
+    return reevaluateGoal(moneyPrereqGoal(target, estimatedStockValue + money, totalIncome));
   }
 
   const universityGains = formulas.work.universityGains(
@@ -126,9 +124,7 @@ export const getGoals = (ns: NS): Goal => {
     }
 
     if (needsJobRam(ns) && totalIncome > 0) {
-      const baselineTTC = Math.max(
-        ...bestPlan.deps.map((g) => g.timeToComplete() ?? Infinity),
-      );
+      const baselineTTC = Math.max(...bestPlan.deps.map((g) => g.timeToComplete() ?? Infinity));
       const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
       if (jobRamCost / totalIncome < baselineTTC)
         ramGoals.push(makeRamGoal(requiredJobRam, jobRamCost));
@@ -138,14 +134,7 @@ export const getGoals = (ns: NS): Goal => {
   }
 
   const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
-  const jrg = jobRamGoal(
-    POOL1,
-    pool1Ram,
-    requiredJobRam,
-    jobRamCost,
-    money,
-    totalIncome,
-  );
+  const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, totalIncome);
   return reevaluateGoal(jrg);
 };
 

@@ -164,10 +164,14 @@ export async function main(ns: NS) {
           bestChance = otherChance;
         }
       }
-      const { crimeType } = ns.singularity.getCurrentWork() as CrimeTask;
-      if (crimeType !== bestCrime[0]) {
-        await $.singularity['commitCrime'](bestCrime[0], focus(ns));
-      }
+      await $commitCrime(bestCrime[0]);
+    }
+  };
+
+  const $commitCrime = async (crime: CrimeType) => {
+    const { crimeType } = (ns.singularity.getCurrentWork() || {}) as CrimeTask;
+    if (crimeType !== crime) {
+      await $.singularity['commitCrime'](crime, focus(ns));
     }
   };
 
@@ -206,8 +210,8 @@ export async function main(ns: NS) {
         await $.singularity['travelToCity']('Sector-12');
       }
       await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus(ns));
-    } else if (findGoal('KILLS')?.isDone() === false) {
-      await $.singularity['commitCrime']('Homicide');
+    } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
+      await $commitCrime('Homicide');
     } else if (!isRepBound(ns, root) && canMakeMoney) {
       await makeMoney();
     } else if (workFaction != null) {

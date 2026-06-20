@@ -1,7 +1,7 @@
-import { AnyHostService, ChainedService, Service } from '../../lib/service';
+import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData, getRamData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
-import { hasBladeburnerReadyMults } from '../blades/is-ready';
+import { getGoals } from '../../lib/goals/goals';
 
 const isRemoteApiConnected = () => {
   const elem = eval('doc' + 'ument').querySelector('svg[aria-label^="Remote API"]');
@@ -59,7 +59,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     ns.corporation.hasCorporation() ||
     ns.corporation.canCreateCorporation(mustSelfFund) === 'Success';
   const canAutopilot = () => hasSingularity() && requiredAugRam <= mostRootRam(ns);
-  const preferBlade = () => inBladeNode() && hasBladeburnerReadyMults(player(ns));
+  const preferBlade = () => inBladeNode() && getGoals(ns).prerequisites('BLADES_JOIN').length > 0;
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
