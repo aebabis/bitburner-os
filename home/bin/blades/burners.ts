@@ -1,6 +1,6 @@
 import { getGoals } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
-import { $sing } from '../../lib/sing.rip';
+import { $sing, $win } from '../../lib/sing.rip';
 import {
   $getActions,
   $getCities,
@@ -87,8 +87,11 @@ export async function main(ns: NS) {
     const skills = await $upgradeSkills(ns)(actions, stamina);
     const city = await $selectCity(ns)(cities);
     const currentBlackOp = ((await $.bladeburner['getNextBlackOp']()) || {}).name || null;
-
     const hasStaminaPenalty = stamina[0] * 2 < stamina[1];
+
+    if (currentBlackOp == null) {
+      await $win(ns, ns.pid);
+    }
     if (hasStaminaPenalty) {
       if (hasBlade) {
         await $startAction(ns)('General', 'Training');
