@@ -6,10 +6,7 @@ import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
-
-const HACK = 'bin/workers/hackshot.ts';
-const GROW = 'bin/workers/growshot.ts';
-const WEAK = 'bin/workers/weakshot.ts';
+import { HACK, GROW, WEAK } from '../etc/filenames';
 
 const PROC_LIMIT = 60000;
 const FRAME_LIMIT = Math.floor(PROC_LIMIT / 3);

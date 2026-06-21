@@ -1,11 +1,8 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
+import { HACK, GROW, WEAK } from '../etc/filenames';
 import { getHostnames, putMoneyData } from '../lib/data-store';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
-
-const HACK = 'bin/workers/hackshot.ts';
-const GROW = 'bin/workers/growshot.ts';
-const WEAK = 'bin/workers/weakshot.ts';
 
 const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY(ns));
 
