@@ -8,6 +8,8 @@ import {
   hackingXpGoal,
   moneyPrereqGoal,
   karmaGoal,
+  rebootGoal,
+  homeRamGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -22,7 +24,12 @@ import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 
 export const getGoals = (ns: NS): Goal => {
-  const { player, factionRep, purchasedAugmentations = [] } = getPlayerData(ns);
+  const {
+    player,
+    factionRep,
+    homeRamUpgradeCost = 0,
+    purchasedAugmentations = [],
+  } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
   const { currentNode, ownedSF } = staticData.resetInfo;
@@ -57,6 +64,17 @@ export const getGoals = (ns: NS): Goal => {
 
   const selectedFaction = bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
   recordGoalSnapshot(plans, selectedFaction, overhead);
+
+  // If player has singularity access but not all of SF4,
+  // the static augmentation data may have not loaded during boot.
+  // If this is the case, make a goal for more RAM on home.
+  if (staticData.resetInfo.ownedSF.has(4) && staticData.augmentations == null) {
+    const bootRam = staticData.scriptRam['/boot/data4.ts'];
+    const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
+    const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
+    const currentRam = ns.getServerMaxRam('home');
+    return rebootGoal(homeRamGoal(currentRam, targetRam, money));
+  }
 
   const inSlumSnakes = player.factions?.includes('Slum Snakes');
   if (currentNode === 2 && !inSlumSnakes) {

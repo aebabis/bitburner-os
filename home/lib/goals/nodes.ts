@@ -5,7 +5,9 @@ const fmtMoney = (n: number) => '$' + fmt.format(n);
 
 export type GoalType =
   | 'JOB_RAM'
+  | 'HOME_RAM'
   | 'INSTALL'
+  | 'REBOOT'
   | 'REEVALUATE'
   | 'FACTION_JOIN'
   | 'FACTION_REP'
@@ -104,6 +106,12 @@ export const jobRamGoal = (
     ownTime: () => (totalIncome > 0 ? Math.max(0, jobRamCost - currentMoney) / totalIncome : null),
   });
 
+export const homeRamGoal = (currentRam: number, targetRam: number, prereq: Goal) =>
+  goal('HOME_RAM', `${targetRam}GB RAM on home`, () => currentRam >= targetRam, {
+    deps: [prereq],
+    ownTime: () => 0,
+  });
+
 export const installGoal = (deps: Goal[], actions: Action[]) => {
   const isInstall = actions.find((action) => action.type === 'BUY_AUG');
   const desc = isInstall ? 'Install augmentations' : 'Reset for favor';
@@ -113,6 +121,12 @@ export const installGoal = (deps: Goal[], actions: Action[]) => {
     ownTime: () => 0,
   });
 };
+
+export const rebootGoal = (dep: Goal) =>
+  goal('REBOOT', 'Reboot', () => false, {
+    deps: [dep],
+    ownTime: () => 0,
+  });
 
 export const reevaluateGoal = (dep: Goal) =>
   goal('REEVALUATE', 'Re-evaluate plan', () => false, {

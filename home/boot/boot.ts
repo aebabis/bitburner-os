@@ -3,6 +3,7 @@ import { tprint } from './util';
 import { STR } from '../lib/colors';
 
 const getBootSequence = (ns: NS) => {
+  const { ownedSF } = ns.getResetInfo();
   const homeRam = ns.getServerMaxRam('home');
   const sequence = [
     '/boot/reset.ts',
@@ -12,8 +13,11 @@ const getBootSequence = (ns: NS) => {
     '/boot/data2.ts',
     '/boot/data3.ts',
   ];
-  if (homeRam >= ns.getScriptRam('/boot/data4.ts')) {
-    sequence.push('/boot/data4.ts');
+  if (ownedSF.has(4)) {
+    if (homeRam >= ns.getScriptRam('/boot/data4.ts')) {
+      sequence.push('/boot/data4.ts');
+    }
+    sequence.push('/boot/data5.ts');
   }
   if (homeRam <= 8) {
     sequence.push('/bin/eight-gig.ts');
