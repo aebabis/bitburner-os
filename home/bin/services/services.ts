@@ -22,7 +22,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const { disableGang, disableCorporation } = resetInfo.bitNodeOptions;
 
   const always = () => true;
-  const not = (predicate: () => boolean) => () => !predicate;
+  const not = (predicate: () => boolean) => () => !predicate();
   const hasNode = (num: number) => resetInfo.currentNode === num || resetInfo.ownedSF.has(num);
 
   const money = () => player(ns).money ?? 0;
