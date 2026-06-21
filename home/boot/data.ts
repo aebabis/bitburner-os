@@ -10,12 +10,12 @@ export async function main(ns: NS) {
 
   tprint(ns)(STR + '  Precalculating static server costs');
   const purchasedServerMaxRam = ns.cloud.getRamLimit();
-  const purchasedServerCosts = /** @type {Record<number, number>} */ {};
+  const purchasedServerCosts: Record<number, number> = {};
   for (let ram = purchasedServerMaxRam; ram >= 2; ram /= 2)
     purchasedServerCosts[ram] = ns.cloud.getServerCost(ram);
 
   tprint(ns)(STR + '  Storing script RAM costs');
-  const scriptRam = /** @type {Record<string, number>} */ {};
+  const scriptRam: Record<string, number> = {};
   const scripts = ns.ls('home').filter((file) => file.endsWith('.ts'));
   for (const script of scripts) scriptRam[script] = ns.getScriptRam(script);
 
@@ -23,8 +23,7 @@ export async function main(ns: NS) {
   saveHostnames(ns);
 
   const resetInfo = ns.getResetInfo();
-  if (resetInfo.lastAugReset === resetInfo.lastNodeReset)
-    ns.rm(AUG_LOG_FILE, 'home');
+  if (resetInfo.lastAugReset === resetInfo.lastNodeReset) ns.rm(AUG_LOG_FILE, 'home');
 
   const serverBackdoorRequirements = nmap(ns).map((hostname) => ({
     hostname,

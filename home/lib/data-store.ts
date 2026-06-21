@@ -42,8 +42,6 @@ type SchedulerReportData = {
   droppedTickets: number;
   lastRuns: Record<string, number>;
   lastCancellations: Record<string, number>;
-  freePool?: number;
-  poolReserve?: number;
 };
 export const getSchedulerReportData = (ns: NS): SchedulerReportData =>
   readData(ns, PORT_SCH_REPORTING) || {};
@@ -71,7 +69,6 @@ export type StaticData = {
   purchasedServerCosts: Record<number, number>;
   requiredJobRam: number;
   requiredAugRam: number;
-  serviceOverhead: Record<string, number>;
   bitNodeMultipliers: { HacknetNodeMoney: number | null };
   hacknetMultipliers: HacknetMultipliers;
   favorToDonate: number;

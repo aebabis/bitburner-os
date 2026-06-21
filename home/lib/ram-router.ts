@@ -8,19 +8,17 @@ export type RamPolicy = {
   /** Returns GB to reserve on home for the given process. */
   homeReserve: (process: ExecProcess) => number;
   /** Returns GB to deduct from the non-home pool (for service RMI overhead). */
-  poolReserve?: () => number;
 };
 
 /** Policy for batch hacking programs (thief, angel): large home reserve + pool awareness. */
 export const HACKER_POLICY = (ns: NS): RamPolicy => ({
-  homeReserve: () => 64,
-  poolReserve: () => getSchedulerReportData(ns).poolReserve ?? 0,
+  homeReserve: () => 16,
 });
 
 export const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
     if (script === '/bin/access.ts' || script === '/bin/nerd.ts') return 0;
-    return highPriority ? 2 : 16;
+    return highPriority ? 2 : 4;
   },
 };
 
@@ -117,7 +115,7 @@ export const execOnBestServer = (
 /**
  * Returns available RAM per server as a flat record, suitable for
  * buildWorkerThreadAllocator. Applies the home reserve from policy and
- * deducts policy.poolReserve from non-home servers largest-first if set.
+ * deducts policy.
  * Servers where the script is not installed (getScriptRam returns 0) are
  * excluded via execOnBestServer's own check; no special-casing needed here.
  */
@@ -133,7 +131,7 @@ export const getWorkerRam = (
     return acc;
   }, {});
 
-  let remaining = policy.poolReserve?.() ?? 0;
+  let remaining = 0;
   for (const hostname of Object.keys(result)
     .filter((h) => h !== 'home')
     .sort((a, b) => result[b] - result[a])) {

@@ -15,7 +15,6 @@ type ServiceData = {
   pid: number;
   desc: string;
   ram: number;
-  overhead: number;
 };
 
 const getServiceName = (script: string) => script.split('/').pop()?.split('.').shift();

@@ -36,19 +36,12 @@ const getNextServerName = (ns: NS, maxServers: number) =>
   serverNames(maxServers).find((hostname) => !ns.serverExists(hostname));
 
 const atCapacity = (ns: NS) => {
-  const rootHosts = getHostnames(ns).filter((hostname) =>
-    ns.hasRootAccess(hostname),
-  );
-  const totalMaxRam = rootHosts
-    .map(ns.getServerMaxRam)
-    .reduce((a, b) => a + b, 0);
-  const totalUsedRam = rootHosts
-    .map(ns.getServerUsedRam)
-    .reduce((a, b) => a + b, 0);
-  const poolReserve = getSchedulerReportData(ns).poolReserve ?? 0;
+  const rootHosts = getHostnames(ns).filter((hostname) => ns.hasRootAccess(hostname));
+  const totalMaxRam = rootHosts.map(ns.getServerMaxRam).reduce((a, b) => a + b, 0);
+  const totalUsedRam = rootHosts.map(ns.getServerUsedRam).reduce((a, b) => a + b, 0);
 
-  // Allow a 20% buffer; pool reserve counts as occupied since hackers leave it free.
-  return totalUsedRam + poolReserve > totalMaxRam * 0.8;
+  // Allow a 20% buffer
+  return totalUsedRam > totalMaxRam * 0.8;
 };
 
 export async function main(ns: NS) {
@@ -72,14 +65,11 @@ export async function main(ns: NS) {
     }
 
     const isUpgrade = ns.serverExists(hostname);
-    const savings = isUpgrade
-      ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname))
-      : 0;
+    const savings = isUpgrade ? ns.cloud.getServerCost(ns.getServerMaxRam(hostname)) : 0;
 
     const purchase = isUpgrade
       ? (hostname: string, ram: number) => ns.cloud.upgradeServer(hostname, ram)
-      : (hostname: string, ram: number) =>
-          ns.cloud.purchaseServer(hostname, ram);
+      : (hostname: string, ram: number) => ns.cloud.purchaseServer(hostname, ram);
 
     let ram = maxRam;
     while (!purchase(hostname, ram)) {
@@ -132,18 +122,12 @@ export async function main(ns: NS) {
         minRam *= 2;
         if (minRam > purchasedServerMaxRam) return null;
       }
-      while (
-        minRam < purchasedServerMaxRam &&
-        purchasedServerCosts[minRam] < totalIncome * 5
-      )
+      while (minRam < purchasedServerMaxRam && purchasedServerCosts[minRam] < totalIncome * 5)
         minRam *= 2;
       return minRam;
     };
 
-    if (
-      atMaxServers &&
-      servers.every((server) => server.ram === purchasedServerMaxRam)
-    ) {
+    if (atMaxServers && servers.every((server) => server.ram === purchasedServerMaxRam)) {
       disableService(ns, 'sysadmin');
       return;
     }
@@ -173,8 +157,7 @@ export async function main(ns: NS) {
 
     // Prefer upgrading the lowest-numbered server that hasn't yet reached minRam
     const upgradeTarget = servers.find(({ ram }) => ram < minRam) ?? null;
-    if (upgradeTarget != null)
-      await buyServer(minRam, maxRam, upgradeTarget.hostname);
+    if (upgradeTarget != null) await buyServer(minRam, maxRam, upgradeTarget.hostname);
     else if (!atMaxServers) await buyServer(minRam, maxRam);
   };
 

@@ -14,7 +14,6 @@ const getExistingPid = (ns: NS, desc: string) => {
 
 export type PoolContext = {
   freePool: number;
-  poolReserve: number;
 };
 
 let count = 1;
@@ -81,17 +80,10 @@ export const Service =
       else return '○';
     };
 
-    const check = async (poolContext?: PoolContext) => {
+    const check = async () => {
       const running = isRunning();
       const shouldBe = mayRun();
       if (!running && shouldBe && timeSinceRun() > interval) {
-        const overhead = getStaticData(ns).serviceOverhead[script] ?? 0;
-        if (overhead > 0 && poolContext != null) {
-          const available = poolContext.freePool - poolContext.poolReserve;
-          if (available < overhead) {
-            return;
-          }
-        }
         const { pid: newPid, hostname } = execOnBestServer(
           ns,
           script,
@@ -121,12 +113,11 @@ export const Service =
       pid,
       desc,
       ram,
-      overhead: getStaticData(ns).serviceOverhead[script] ?? 0,
     });
 
     const pendingRam = () => {
       if (isRunning() || !enabled || !condition(ns)) return 0;
-      return ram + (getStaticData(ns).serviceOverhead[script] ?? 0);
+      return ram;
     };
 
     return {

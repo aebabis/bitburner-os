@@ -214,12 +214,11 @@ const getExecutionTable = (ns: NS) => {
 const getServiceTable = (ns: NS) => {
   return table(
     ns,
-    ['SERVICES', '', '', ''],
-    getServices(ns).map(({ name, status, ram, overhead }) => [
+    ['SERVICES', '', ''],
+    getServices(ns).map(({ name, status, ram }) => [
       name,
       status,
       '  ' + (ram ? MEDIUM(ram.toFixed(2) + 'GB') : ERROR('error')),
-      overhead > 0 ? MEDIUM('(+' + overhead.toFixed(2) + 'GB)') : undefined,
     ]),
     { colors: true },
   );
@@ -233,8 +232,6 @@ const getSchedulerTable = (ns: NS) => {
     maxWaitTime = 0,
     enqueueFails = 0,
     droppedTickets = 0,
-    freePool,
-    poolReserve,
   } = getSchedulerReportData(ns);
   const age = heartbeat == null ? null : Date.now() - heartbeat;
   const heartbeatStr =
@@ -265,8 +262,6 @@ const getSchedulerTable = (ns: NS) => {
     ['Processes  ' + processes.length],
     ['Share Thd  ' + sharePs.map((ps) => ps.threads).reduce((a, b) => a + b, 0)],
     ['Share Pwr  ' + ns.format.number(ns.getSharePower(), 3)],
-    ['Pool Free  ' + (freePool != null ? ns.format.ram(freePool, 0) : '?')],
-    ['Pool Rsv   ' + (poolReserve != null ? ns.format.ram(poolReserve, 0) : '?')],
   ];
   return table(ns, null, rows, { colors: true });
 };

@@ -11,14 +11,11 @@ export async function main(ns: NS) {
   const { scriptRam, resetInfo } = getStaticData(ns);
 
   const callGraph = getCallGraph(ns);
-  const services = getAllServices(ns, (ns: NS) => ns.getPlayer()).map(
-    (service) => service.script,
-  );
+  const services = getAllServices(ns, (ns: NS) => ns.getPlayer()).map((service) => service.script);
 
   const getRam = (script: string) => scriptRam[script.replace(/^\.*[/]/, '')];
   const getRamDepth = (script: string): number => {
-    if (callGraph[script] == null)
-      throw new Error(script + ' not found in call graph');
+    if (callGraph[script] == null) throw new Error(script + ' not found in call graph');
     return getRam(script) + Math.max(0, ...callGraph[script].map(getRamDepth));
   };
 
@@ -30,28 +27,14 @@ export async function main(ns: NS) {
 
   let requiredAugRam = 0;
   if (resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4)) {
-    const augScripts = Object.keys(scriptRam).filter((s) =>
-      s.startsWith('bin/self/aug/'),
-    );
+    const augScripts = Object.keys(scriptRam).filter((s) => s.startsWith('bin/self/aug/'));
     const maxAugRam = Math.max(0, ...augScripts.map(getRam));
     requiredAugRam = 1;
     while (requiredAugRam < maxAugRam) requiredAugRam *= 2;
   }
   tprint(ns)(STR + `  Aug Suite RAM Required: ${requiredAugRam}GB`);
 
-  const getOverhead = (script: string) =>
-    Math.max(0, getRamDepth(script) - getRam(script));
-
-  const serviceOverhead = Object.fromEntries(
-    [...new Set(services)].map((s) => [s, getOverhead(s)]),
-  );
-  const totalOverhead = Object.values(serviceOverhead).reduce(
-    (a, b) => a + b,
-    0,
-  );
-  tprint(ns)(STR + `  Service overhead pool: ${totalOverhead.toFixed(2)}GB`);
-
-  putStaticData(ns, { requiredJobRam, requiredAugRam, serviceOverhead });
+  putStaticData(ns, { requiredJobRam, requiredAugRam });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);

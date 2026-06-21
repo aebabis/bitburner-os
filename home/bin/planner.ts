@@ -72,14 +72,6 @@ const go = async (ns: NS) => {
       rootServers: rootServers as any,
       purchasedServers: getPurchasedServers(ns) as any,
     });
-    const freePool = rootServers
-      .filter((s) => s.hostname !== 'home')
-      .reduce((sum, s) => sum + s.ramUnused, 0);
-    const poolReserve =
-      tasks
-        .filter((t) => t.isRunning())
-        .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0) +
-      Math.max(0, ...tasks.map((t) => t.pendingRam()));
     putSchedulerReportData(ns, {
       lastRuns,
       lastCancellations,
@@ -89,8 +81,6 @@ const go = async (ns: NS) => {
       enqueueFails: 0,
       inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
       outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
-      freePool,
-      poolReserve,
     });
   };
 
@@ -101,9 +91,6 @@ const go = async (ns: NS) => {
       freePool: getRootServers(ns)
         .filter((s) => s.hostname !== 'home')
         .reduce((sum, s) => sum + s.ramUnused, 0),
-      poolReserve: tasks
-        .filter((t) => t.isRunning())
-        .reduce((sum, t) => sum + (serviceOverhead[t.script] ?? 0), 0),
     };
     for (const task of tasks) {
       try {
