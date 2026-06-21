@@ -1,4 +1,5 @@
 import { KEYWORD, NORMAL } from './lib/colors';
+import { sendTerminalCommand } from './lib/nav';
 import { table } from './lib/table';
 
 const MAIN = {
@@ -115,13 +116,16 @@ const getHelp = (ns: NS) => {
 };
 
 const getAliases = () =>
-  KEYWORD.BOLD +
   Object.entries(ALIASES)
     .map(([alias, command]) => `alias ${alias}=${JSON.stringify(command)}`)
     .join(';');
 
 export async function main(ns: NS) {
   const [command] = ns.args;
-  if (command == null) ns.tprint('\n' + getHelp(ns) + '\n\n');
-  else if (command === 'aliases') ns.tprint(getAliases());
+  if (command == null) {
+    ns.tprint('\n' + getHelp(ns) + '\n\n');
+  } else if (command === 'alias') {
+    await sendTerminalCommand(ns)(getAliases());
+    ns.tprint(KEYWORD.BOLD + 'Aliases loaded');
+  }
 }
