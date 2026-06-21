@@ -7,10 +7,8 @@ export const getAverageClashWinChance = (
     .filter(([faction]) => faction !== gangName)
     .map(([, info]) => info);
   return (
-    otherGangInfo
-      .filter((info) => info.territory > 0)
-      .map((info) => power / (power + info.power))
-      .reduce((a, b) => a + b, 0) / otherGangInfo.length
+    otherGangInfo.map((info) => power / (power + info.power)).reduce((a, b) => a + b, 0) /
+    otherGangInfo.length
   );
 };
 
