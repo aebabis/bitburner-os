@@ -1,6 +1,6 @@
 import { THREADPOOL } from '../etc/config';
 import { by } from './util';
-import { getHostnames, getSchedulerReportData } from './data-store';
+import { getHostnames } from './data-store';
 
 export type ExecProcess = { script: string; highPriority?: boolean };
 
@@ -22,7 +22,7 @@ export const DEFAULT_POLICY: RamPolicy = {
   },
 };
 
-export const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT_POLICY) => {
+const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT_POLICY) => {
   const maxRam = ns.getServerMaxRam(hostname);
   const ramUsed = ns.getServerUsedRam(hostname);
   const ramUnused = maxRam - ramUsed;

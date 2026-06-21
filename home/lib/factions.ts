@@ -1,18 +1,6 @@
-const EARLY_FACTIONS = [
-  'CyberSec',
-  'Tian Di Hui',
-  'Netburners',
-] as FactionName[];
-const HACKING_GROUPS = [
-  'NiteSec',
-  'The Black Hand',
-  'BitRunners',
-] as FactionName[];
-const ENDGAME_FACTIONS = [
-  'The Covenant',
-  'Daedalus',
-  'Illuminati',
-] as FactionName[];
+const EARLY_FACTIONS = ['CyberSec', 'Tian Di Hui', 'Netburners'] as FactionName[];
+const HACKING_GROUPS = ['NiteSec', 'The Black Hand', 'BitRunners'] as FactionName[];
+const ENDGAME_FACTIONS = ['The Covenant', 'Daedalus', 'Illuminati'] as FactionName[];
 
 export const STORY_FACTIONS = [
   ...EARLY_FACTIONS,
@@ -20,7 +8,7 @@ export const STORY_FACTIONS = [
   ...ENDGAME_FACTIONS,
 ] as FactionName[];
 
-const MEGACORPORATIONS = [
+export const MEGACORPORATIONS = [
   'ECorp',
   'MegaCorp',
   'KuaiGong International',
@@ -49,11 +37,4 @@ export const CITY_FACTIONS = [
   'Ishima',
   'Aevum',
   'Volhaven',
-] as FactionName[];
-
-export const FACTIONS = [
-  ...STORY_FACTIONS,
-  ...MEGACORPORATIONS,
-  ...CRIMINAL_ORGANIZATIONS,
-  ...CITY_FACTIONS,
 ] as FactionName[];
