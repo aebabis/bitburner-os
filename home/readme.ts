@@ -22,7 +22,7 @@ const UTILITIES = {
     desc: 'Show augmentation scoring table',
   },
   bitflume: {
-    command: './bitflume.ts',
+    command: 'killall; ./usr/bitflume.ts',
     desc: 'Go to BN of choice',
   },
   config: {
