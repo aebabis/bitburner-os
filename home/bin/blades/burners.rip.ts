@@ -7,14 +7,14 @@ export const $train =
     await runInPlace(
       ns,
       ns.pid,
-    )((focus: boolean) => {
+    )((focus: boolean, stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
       const stats = ['strength', 'defense', 'dexterity', 'agility'] as const;
       const { city, skills } = ns['getPlayer']();
       const lowestStat = stats.reduce((s1, s2) => (skills[s1] < skills[s2] ? s1 : s2));
       const statToTrain = ns.enums.GymType[stat || lowestStat];
       if (city !== 'Sector-12') ns.singularity['travelToCity']('Sector-12');
       ns.singularity['gymWorkout']('Powerhouse Gym', statToTrain, focus);
-    })(focus);
+    })(focus, stat);
   };
 
 export const $getActions = async (ns: NS) =>
