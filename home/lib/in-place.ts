@@ -84,11 +84,8 @@ const runScript =
     const newRam = ns.ramOverride(startingRam - ram);
     if (newRam === startingRam) {
       throw new Error(
-        'Failed to shrink from ' +
-          startingRam +
-          ' to ' +
-          (startingRam - ram) +
-          ". Make sure you've reserved RAM for the most expensive call",
+        `Failed to shrink from ${startingRam}GB to ${startingRam - ram}GB for ${script}. ` +
+          "Make sure you've reserved RAM for the most expensive call",
       );
     }
     ns.writePort(port, args);

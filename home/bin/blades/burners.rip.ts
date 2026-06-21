@@ -17,76 +17,87 @@ export const $train =
     })(focus, stat);
   };
 
-export const $getActions = async (ns: NS) =>
-  runInPlace(
-    ns,
-    ns.pid,
-  )(() => {
-    const ACTION_NAMES: Record<BladeburnerActionType, BladeburnerActionName[]> = {
-      General: ns.bladeburner.getGeneralActionNames(),
-      Contracts: ns.bladeburner.getContractNames(),
-      Operations: ns.bladeburner.getOperationNames(),
-      'Black Operations': ns.bladeburner.getBlackOpNames(),
-    };
-
-    const actionPairs = Object.entries(ACTION_NAMES) as [
-      BladeburnerActionType,
-      BladeburnerActionName[],
-    ][];
-
-    type BladeAction = {
-      estimatedChance: [number, number];
-      actionCountRemaining: number;
-      duration: number;
-    };
-
-    const getActions = (type: BladeburnerActionType, names: BladeburnerActionName[]) =>
-      Object.fromEntries(
-        names.map((name) => [
+export const $getActions = async (ns: NS) => {
+  const ACTION_NAMES: Record<BladeburnerActionType, BladeburnerActionName[]> = {
+    General: ns.bladeburner.getGeneralActionNames(),
+    Contracts: ns.bladeburner.getContractNames(),
+    Operations: ns.bladeburner.getOperationNames(),
+    'Black Operations': ns.bladeburner.getBlackOpNames(),
+  };
+  const $ = runInPlace(ns, ns.pid);
+  const actionPairs = Object.entries(ACTION_NAMES) as [
+    BladeburnerActionType,
+    BladeburnerActionName[],
+  ][];
+  const actionPlaceholder = () => ({
+    estimatedChance: [0, 0] as [number, number],
+    actionCountRemaining: 0,
+  });
+  const typeActions = (names: BladeburnerActionName[]) =>
+    Object.fromEntries(names.map((name) => [name, actionPlaceholder()]));
+  let result = Object.fromEntries(actionPairs.map(([type, names]) => [type, typeActions(names)]));
+  result = await $((actions, result) => {
+    for (const type of Object.keys(actions) as BladeburnerActionType[])
+      for (const name of actions[type])
+        result[type][name].estimatedChance = ns.bladeburner['getActionEstimatedSuccessChance'](
+          type,
           name,
-          {
-            estimatedChance: ns.bladeburner['getActionEstimatedSuccessChance'](type, name),
-            actionCountRemaining: ns.bladeburner['getActionCountRemaining'](type, name),
-          },
-        ]),
-      ) as Record<BladeburnerActionName, BladeAction>;
-
-    return Object.fromEntries(
-      actionPairs.map(([type, names]) => [type, getActions(type, names)]),
-    ) as Record<BladeburnerActionType, ReturnType<typeof getActions>>;
-  })();
+        );
+    return result;
+  })(ACTION_NAMES, result);
+  result = await $((actions, result) => {
+    for (const type of Object.keys(actions) as BladeburnerActionType[])
+      for (const name of actions[type])
+        result[type][name].actionCountRemaining = ns.bladeburner['getActionCountRemaining'](
+          type,
+          name,
+        );
+    return result;
+  })(ACTION_NAMES, result);
+  return result as Record<
+    BladeburnerActionType,
+    Record<BladeburnerActionName, ReturnType<typeof actionPlaceholder>>
+  >;
+};
 export type BladeActions = Awaited<ReturnType<typeof $getActions>>;
 export type BladeAction = Awaited<
   ReturnType<typeof $getActions>
 >[BladeburnerActionType][BladeburnerActionName];
 
-export const $getCities = async (ns: NS) =>
-  runInPlace(
-    ns,
-    ns.pid,
-  )(() => {
-    const CITIES = Object.values(ns.enums.CityName);
-
-    const getCityStats = (city: CityName) => ({
-      estimatedPopulation: ns.bladeburner['getCityEstimatedPopulation'](city),
-      chaos: ns.bladeburner['getCityChaos'](city),
-      communities: ns.bladeburner['getCityCommunities'](city),
-    });
-
-    const cities = Object.fromEntries(CITIES.map((city) => [city, getCityStats(city)])) as Record<
-      CityName,
-      ReturnType<typeof getCityStats>
-    >;
-
-    return cities;
-  })();
+export const $getCities = async (ns: NS) => {
+  const CITIES = Object.values(ns.enums.CityName);
+  const $ = runInPlace(ns, ns.pid);
+  const pop = await $((cities: CityName[]) => {
+    return Object.fromEntries(
+      cities.map((city) => [city, ns.bladeburner['getCityEstimatedPopulation'](city)]),
+    ) as Record<CityName, number>;
+  })(CITIES);
+  const chaos = await $((cities: CityName[]) => {
+    return Object.fromEntries(
+      cities.map((city) => [city, ns.bladeburner['getCityChaos'](city)]),
+    ) as Record<CityName, number>;
+  })(CITIES);
+  const comm = await $((cities: CityName[]) => {
+    return Object.fromEntries(
+      cities.map((city) => [city, ns.bladeburner['getCityCommunities'](city)]),
+    ) as Record<CityName, number>;
+  })(CITIES);
+  const getCityStats = (city: CityName) => ({
+    estimatedPopulation: pop[city],
+    chaos: chaos[city],
+    communities: comm[city],
+  });
+  return Object.fromEntries(CITIES.map((city) => [city, getCityStats(city)])) as Record<
+    CityName,
+    ReturnType<typeof getCityStats>
+  >;
+};
 export type BladeCities = Awaited<ReturnType<typeof $getCities>>;
 
-export const $upgradeSkills = (ns: NS) =>
-  runInPlace(
-    ns,
-    ns.pid,
-  )((actions: BladeActions, stamina: [number, number]) => {
+export const $upgradeSkills =
+  (ns: NS) => async (actions: BladeActions, stamina: [number, number]) => {
+    const $ = runInPlace(ns, ns.pid);
+
     const SKILL_LIMITS: Record<BladeburnerSkillName, number> = {
       "Blade's Intuition": Infinity,
       Cloak: 25,
@@ -114,26 +125,36 @@ export const $upgradeSkills = (ns: NS) =>
 
     const SKILLS = Object.keys(SKILL_LIMITS) as BladeburnerSkillName[];
 
-    const skills = SKILLS.map((name) => ({
+    let skills = SKILLS.map((name) => ({
       name,
-      cost: ns.bladeburner['getSkillUpgradeCost'](name),
-      level: ns.bladeburner['getSkillLevel'](name),
+      cost: 0,
+      level: 0,
       limit: SKILL_LIMITS[name],
       upgradedThisTick: false,
     }));
+    type Skills = typeof skills;
+    skills = await $((skills: Skills) => {
+      for (const skill of skills) skill.cost = ns.bladeburner['getSkillUpgradeCost'](skill.name);
+      return skills;
+    })(skills);
+    skills = await $((skills: Skills) => {
+      for (const skill of skills) skill.level = ns.bladeburner['getSkillLevel'](skill.name);
+      return skills;
+    })(skills);
     const neededSkills = skills
       .filter((skill) => skill.level < skill.limit)
       .filter((skill) => LIMITATIONS[skill.name]?.(ns) ?? true)
-      .sort((a, b) => a.cost - b.cost);
-    const upgraded = new Set<BladeburnerSkillName>();
-    for (const skill of neededSkills) {
-      if (ns.bladeburner['upgradeSkill'](skill.name)) {
-        upgraded.add(skill.name);
-        skill.upgradedThisTick = true;
+      .sort((a, b) => a.cost - b.cost)
+      .map((skill) => skill.name);
+    skills = await $((skills: Skills, neededSkills: BladeburnerSkillName[]) => {
+      for (const skillName of neededSkills) {
+        const skill = skills.find((skill) => skill.name === skillName)!;
+        skill.upgradedThisTick = ns.bladeburner['upgradeSkill'](skillName);
       }
-    }
+      return skills;
+    })(skills, neededSkills);
     return skills;
-  });
+  };
 export type BladeSkills = Awaited<ReturnType<ReturnType<typeof $upgradeSkills>>>;
 
 export const $startAction =

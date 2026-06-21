@@ -32,6 +32,7 @@ const getNextMission =
     }
     const operation = ns.bladeburner
       .getOperationNames()
+      .filter((opName) => opName !== 'Raid') // I herd raids r bad
       .reverse()
       .find((operation) => canDo(actions['Operations'][operation], 0.7));
     if (operation) {
@@ -64,9 +65,7 @@ export async function main(ns: NS) {
   const $ = inPlace(ns, ns.pid);
   openTail(ns);
 
-  typeof ns.bladeburner.getCityEstimatedPopulation;
-  typeof ns.bladeburner.getCityChaos;
-  typeof ns.bladeburner.getCityCommunities;
+  typeof ns.singularity.getOwnedAugmentations;
 
   const { ownedAugs } = await $['getResetInfo']();
   const hasBlade = ownedAugs.has("The Blade's Simulacrum");
@@ -96,6 +95,9 @@ export async function main(ns: NS) {
       } else {
         await $train(ns)('agility');
       }
+    }
+    if (cities[city].chaos > 10) {
+      await $startAction(ns)('General', 'Diplomacy');
     } else {
       const mission = await getNextMission(ns)(actions, currentBlackOp, rank);
       if (mission) {
