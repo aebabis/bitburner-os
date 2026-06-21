@@ -37,7 +37,7 @@ const UTILITIES = {
     desc: 'Tell planner to run a program',
   },
   liquidate: {
-    command: 'dispatch bin/liquidate.ts',
+    command: 'dispatch usr/liquidate.ts',
     desc: 'Sell all stocks and stop spending',
   },
   makecct: {
