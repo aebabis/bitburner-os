@@ -2,26 +2,24 @@ import Ports from './ports.ts';
 import {
   PORT_HOSTNAMES,
   PORT_STATIC_DATA,
-  PORT_GANG_DATA,
   PORT_SCH_RAM_DATA,
   PORT_SCH_REPORTING,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
   PORT_CONTRACT_DATA,
   PORT_CORP_REPORTS,
-  PORT_BLADE_REPORTS,
 } from '../etc/ports.ts';
 import { DivisionName } from '../bin/corporation/constants.ts';
 
 const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
 
-const replaceData = (ns: NS, portId: number, data) => {
+const replaceData = (ns: NS, portId: number, data: unknown) => {
   const port = Ports(ns).getPortHandle(portId);
   port.clear();
   port.write(data);
 };
 
-const putData = (ns: NS, portId: number, data) => {
+const putData = (ns: NS, portId: number, data: unknown) => {
   const oldData = readData(ns, portId) || {};
   const newData = Object.assign(oldData, data);
   const port = Ports(ns).getPortHandle(portId);
@@ -92,22 +90,6 @@ export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DA
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
-type GangData =
-  | {
-      isReady: false;
-      gangInfo?: GangGenInfo;
-      allGangInfo?: Record<string, GangOtherInfoObject>;
-      memberNames?: string[];
-    }
-  | {
-      isReady: true;
-      gangInfo: GangGenInfo;
-      allGangInfo: Record<string, GangOtherInfoObject>;
-      memberNames: string[];
-    };
-export const getGangData = (ns: NS): GangData => readData(ns, PORT_GANG_DATA);
-export const putGangData = (ns: NS, data: Partial<GangData>) => putData(ns, PORT_GANG_DATA, data);
-
 export type ServerRamInfo = {
   hostname: string;
   maxRam: number;
@@ -177,57 +159,3 @@ type CorpReports = Record<DivisionName, string[][]>;
 export const getCorpReports = (ns: NS): CorpReports => readData(ns, PORT_CORP_REPORTS) || {};
 export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
   putData(ns, PORT_CORP_REPORTS, data);
-
-export type BladeAction = {
-  estimatedChance: [number, number];
-  actionCountRemaining: number;
-  duration: number;
-};
-export type BladeCurrentAction =
-  | {
-      type: 'General';
-      name: BladeburnerGeneralActionName;
-      time: number;
-    }
-  | {
-      type: 'Contracts';
-      name: BladeburnerContractName;
-      time: number;
-    }
-  | {
-      type: 'Operations';
-      name: BladeburnerOperationName;
-      time: number;
-    }
-  | {
-      type: 'Black Operations';
-      name: BladeburnerBlackOpName;
-      time: number;
-    };
-type BladeData = {
-  actions: {
-    General: Record<BladeburnerGeneralActionName, BladeAction>;
-    Contracts: Record<BladeburnerContractName, BladeAction>;
-    Operations: Record<BladeburnerOperationName, BladeAction>;
-    'Black Operations': Record<BladeburnerBlackOpName, BladeAction>;
-  };
-  cities: Record<
-    CityName,
-    {
-      estimatedPopulation: number;
-      chaos: number;
-      communities: number;
-    }
-  >;
-  currentAction: BladeCurrentAction | null;
-  skills: {
-    name: BladeburnerSkillName;
-    cost: number;
-    level: number;
-    limit: number;
-    upgradedThisTick: boolean;
-  }[];
-};
-export const getBladeData = (ns: NS): BladeData => readData(ns, PORT_BLADE_REPORTS) || {};
-export const putBladeData = (ns: NS, data: Partial<BladeData>) =>
-  putData(ns, PORT_BLADE_REPORTS, data);
