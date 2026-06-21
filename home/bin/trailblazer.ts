@@ -1,6 +1,6 @@
 import { getPath } from '../lib/backdoor.ts';
 import { BRIGHT } from '../lib/colors';
-import { sendTerminalCommand } from '../lib/nav.ts';
+import { isTerminalBlocked, sendTerminalCommand } from '../lib/nav.ts';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -18,7 +18,9 @@ export async function main(ns: NS) {
         ...path.map((s: string) => (s === 'home' ? ' home' : ` connect ${s} `)),
         ' backdoor',
       ];
-      await sendTerminalCommand(ns)(rows.join(';'));
+      if (!isTerminalBlocked()) {
+        await sendTerminalCommand(ns)(rows.join(';'));
+      }
       while (rows.length < 15) {
         rows.push('');
       }

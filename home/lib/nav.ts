@@ -60,6 +60,12 @@ export const goToTab = (ns: NS) => async (tab: Tab) => {
   await ns.sleep(1);
 };
 
+export const isTerminalBlocked = () => {
+  return globalThis['document']
+    .querySelector('#terminal li:last-child')
+    ?.innerText.match(/\[\|*-*\]/);
+};
+
 export const sendTerminalCommand = (ns: NS) => async (command: string) => {
   await goToTab(ns)('Terminal');
   const input = doc.querySelector('input');
