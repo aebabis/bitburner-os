@@ -192,9 +192,13 @@ export const $selectCity = (ns: NS) =>
     ns.pid,
   )((cities: BladeCities) => {
     const CITIES = Object.values(ns.enums.CityName);
-    const mostPopulated = CITIES.reduce((a, b) =>
-      cities[a].estimatedPopulation > cities[b].estimatedPopulation ? a : b,
-    );
+    const mostPopulated = CITIES.reduce((a, b) => {
+      if (cities[a].chaos > 40 || cities[b].chaos > 40) {
+        return cities[a].chaos > cities[b].chaos ? a : b;
+      } else {
+        return cities[a].estimatedPopulation > cities[b].estimatedPopulation ? a : b;
+      }
+    });
     ns.bladeburner['switchCity'](mostPopulated);
     return mostPopulated;
   });
