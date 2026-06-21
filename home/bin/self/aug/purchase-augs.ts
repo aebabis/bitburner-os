@@ -150,7 +150,7 @@ export async function main(ns: NS) {
     print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
-  const purchasedAugs = await getPurchasedAugmentations(ns);
+  const purchasedAugs = await $getPurchasedAugmentations(ns);
   print(purchasedAugs.join('\n'));
 
   ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
