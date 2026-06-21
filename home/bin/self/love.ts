@@ -132,13 +132,19 @@ export async function main(ns: NS) {
     CRIMES[crimeName] = await $.singularity['getCrimeStats'](crimeName);
   }
 
-  const goToGym = async (stat: 'strength' | 'defense' | 'dexterity' | 'agility') => {
+  const goToGym = async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
     if (!getGym(ns, ns.getPlayer().city)) {
       await $.singularity['travelToCity']('Sector-12');
     }
-    const gym = getGym(ns, ns.getPlayer().city);
+    const { city, skills } = ns.getPlayer();
+    const statToTrain =
+      stat ||
+      (['strength', 'defense', 'dexterity', 'agility'] as const).reduce((s1, s2) =>
+        skills[s1] < skills[s2] ? s1 : s2,
+      );
+    const gym = getGym(ns, city);
     if (gym) {
-      await $.singularity['gymWorkout'](gym, ns.enums.GymType[stat], focus(ns));
+      await $.singularity['gymWorkout'](gym, ns.enums.GymType[statToTrain], focus(ns));
     }
   };
 
@@ -210,6 +216,8 @@ export async function main(ns: NS) {
         await $.singularity['travelToCity']('Sector-12');
       }
       await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus(ns));
+    } else if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
+      await goToGym();
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
       await $commitCrime('Homicide');
     } else if (!isRepBound(ns, root) && canMakeMoney) {
@@ -219,11 +227,7 @@ export async function main(ns: NS) {
     } else {
       const locationGoal = findGoal('LOCATION');
       if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
-        const { skills } = ns.getPlayer();
-        const lowestStat = (['strength', 'defense', 'dexterity', 'agility'] as const).reduce(
-          (s1, s2) => (skills[s1] < skills[s2] ? s1 : s2),
-        );
-        await goToGym(lowestStat);
+        await goToGym();
       } else if (locationGoal?.isDone() === false) {
         await $.singularity['travelToCity'](locationGoal.requirement as unknown as CityName);
       } else if (canMakeMoney) {

@@ -17,7 +17,7 @@ const player = (ns: NS) => ns.getPlayer();
 const go = async (ns: NS) => {
   ns.disableLog('ALL');
 
-  const { resetInfo, serviceOverhead } = getStaticData(ns);
+  const { resetInfo } = getStaticData(ns);
   if (resetInfo.currentNode === 8) {
     ns.exec('/bin/self/buy-ram.ts', 'home');
   }

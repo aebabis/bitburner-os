@@ -18,6 +18,7 @@ import {
   type Goal,
   type Plan,
   bladesJoinGoal,
+  reevaluateGoal,
 } from './nodes.ts';
 import {
   findOptimalBatch,
@@ -32,11 +33,8 @@ import {
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 
-const plan = (
-  deps: Goal[],
-  actions: Action[],
-  utility: (overhead: number) => number,
-): Plan => Object.assign(installGoal(deps, actions), { utility });
+const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => number): Plan =>
+  Object.assign(installGoal(deps, actions), { utility });
 
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.
@@ -105,9 +103,7 @@ export const buildJoinSubtree = (
     ...requirements.filter((r) => r.type === 'skills').map((r) => r.skills),
   );
   const karmaReq = requirements.find((r) => r.type === 'karma')?.karma ?? 0;
-  const killsReq =
-    requirements.find((r) => r.type === 'numPeopleKilled')?.numPeopleKilled ??
-    0;
+  const killsReq = requirements.find((r) => r.type === 'numPeopleKilled')?.numPeopleKilled ?? 0;
   const moneyTarget = requirements.find((r) => r.type === 'money')?.money ?? 0;
   const locationReqs = [
     ...requirements.filter((r) => r.type === 'city'),
@@ -121,14 +117,13 @@ export const buildJoinSubtree = (
   let bdHackReq = 0,
     bdMoney = 0;
   if (bdReq && serverBackdoorRequirements) {
-    const serverReq = serverBackdoorRequirements.find(
-      (s) => s.hostname === bdReq.server,
-    );
+    const serverReq = serverBackdoorRequirements.find((s) => s.hostname === bdReq.server);
     if (serverReq) {
       bdHackReq = serverReq.requiredHackingLevel;
-      bdMoney = PORT_PROGRAM_COSTS.filter(
-        (_, i) => i < serverReq.numPortsRequired,
-      ).reduce((a, b) => a + b, 0);
+      bdMoney = PORT_PROGRAM_COSTS.filter((_, i) => i < serverReq.numPortsRequired).reduce(
+        (a, b) => a + b,
+        0,
+      );
     }
   }
 
@@ -164,12 +159,10 @@ export const buildJoinSubtree = (
     const t = times ? Math.max(...times) : null;
     joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
   }
-  if (killsReq)
-    joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
+  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
   if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
   const totalMoneyTarget = moneyTarget + bdMoney;
-  if (totalMoneyTarget > 0)
-    joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, totalIncome));
+  if (totalMoneyTarget > 0) joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, totalIncome));
   const [loc] = locationReqs;
   if (loc) joinPrereqs.push(locationGoal(loc, city));
 
@@ -177,14 +170,10 @@ export const buildJoinSubtree = (
 };
 
 export const isRepBound = (root: Goal) => {
-  const unmetRepGoals = root
-    .prerequisites('FACTION_REP')
-    .filter((g) => !g.isDone());
+  const unmetRepGoals = root.prerequisites('FACTION_REP').filter((g) => !g.isDone());
   if (unmetRepGoals.find((g) => g.timeToComplete() == null)) return true;
   const maxRepTime =
-    unmetRepGoals.length > 0
-      ? Math.max(...unmetRepGoals.map((g) => g.timeToComplete() ?? 0))
-      : 0;
+    unmetRepGoals.length > 0 ? Math.max(...unmetRepGoals.map((g) => g.timeToComplete() ?? 0)) : 0;
   const [amg] = root.prerequisites('AUG_MONEY');
   const moneyTime = amg != null ? amg.timeToComplete() : null;
   return moneyTime == null || moneyTime <= maxRepTime;
@@ -198,15 +187,11 @@ const getPurchaseOrder = (
 ): string[] => {
   const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
   const sortedByPriceDesc = (xs: string[]) =>
-    [...xs].sort(
-      (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
-    );
+    [...xs].sort((a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0));
   const nfCount = augs.filter((a) => a === NEUROFLUX).length;
   const order = new Set<string>();
   for (const aug of sortedByPriceDesc(augs.filter((a) => a !== NEUROFLUX))) {
-    for (const prereq of (augmentationPrereqs?.[aug] ?? [])
-      .filter(stillNeeds)
-      .reverse())
+    for (const prereq of (augmentationPrereqs?.[aug] ?? []).filter(stillNeeds).reverse())
       order.add(prereq);
     order.add(aug);
   }
@@ -245,14 +230,9 @@ export const buildFactionGoalTree = (
     karma,
   }: FactionGoalTreeProps,
 ): Plan | null => {
-  const {
-    augmentationPrices,
-    augmentationPrereqs,
-    augmentationStats,
-    factionWorkTypes,
-  } = staticData;
-  const augValue = (aug: string) =>
-    augValueFromStats(staticData.resetInfo, aug, augmentationStats);
+  const { augmentationPrices, augmentationPrereqs, augmentationStats, factionWorkTypes } =
+    staticData;
+  const augValue = (aug: string) => augValueFromStats(staticData.resetInfo, aug, augmentationStats);
 
   const moneyRate = totalIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
@@ -267,23 +247,13 @@ export const buildFactionGoalTree = (
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 
-  const { batch } = findOptimalBatch(
-    faction,
-    staticData,
-    player,
-    formulas,
-    factionRep,
-    ownedAugs,
-    { moneyRate, joinTime },
-  );
+  const { batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, {
+    moneyRate,
+    joinTime,
+  });
   if (batch.length === 0) return null;
 
-  const augs = getPurchaseOrder(
-    batch,
-    augmentationPrereqs,
-    augmentationPrices,
-    ownedAugs,
-  );
+  const augs = getPurchaseOrder(batch, augmentationPrereqs, augmentationPrices, ownedAugs);
   const repReq = computeRepReq(augs, staticData);
   const repRate = computeRepRate(
     faction,
@@ -296,9 +266,7 @@ export const buildFactionGoalTree = (
   );
 
   const installedSet = new Set(staticData.installedAugmentations);
-  const numQueued = purchasedAugmentations.filter(
-    (aug) => !installedSet.has(aug),
-  ).length;
+  const numQueued = purchasedAugmentations.filter((aug) => !installedSet.has(aug)).length;
   const costToAug = computeAugCost(augs, staticData, numQueued);
   const treeValue = augs.reduce((s, aug) => s + augValue(aug), 0);
 
@@ -306,18 +274,8 @@ export const buildFactionGoalTree = (
   const currentRep = factionRep[faction] ?? 0;
 
   // Path 1: Early install — existing queued augs are cheaper to install now than waiting
-  if (
-    shouldEarlyInstall(
-      numQueued,
-      augs.length,
-      costToAug,
-      liquidAssets,
-      totalIncome,
-    )
-  ) {
-    const queuedAugs = purchasedAugmentations.filter(
-      (aug) => !installedSet.has(aug),
-    );
+  if (shouldEarlyInstall(numQueued, augs.length, costToAug, liquidAssets, totalIncome)) {
+    const queuedAugs = purchasedAugmentations.filter((aug) => !installedSet.has(aug));
     const earlyValue = queuedAugs.reduce((s, aug) => s + augValue(aug), 0);
     return plan([], queuedAugs.map(buyAugAction), (overhead) =>
       earlyValue > 0 ? earlyValue / overhead : 0,
@@ -345,37 +303,23 @@ export const buildFactionGoalTree = (
   ) {
     const { favorToDonate } = staticData;
     const pastRep = formulas.reputation.calculateFavorToRep(currentFavor);
-    const totalNeededRep =
-      formulas.reputation.calculateFavorToRep(favorToDonate);
+    const totalNeededRep = formulas.reputation.calculateFavorToRep(favorToDonate);
     const repToInstall = totalNeededRep - pastRep;
-    const favorGoal = factionFavorGoal(
-      faction,
-      repToInstall,
-      currentRep,
-      repRate,
-      joinGoal,
-    );
+    const favorGoal = factionFavorGoal(faction, repToInstall, currentRep, repRate, joinGoal);
     return plan([favorGoal], [], (overhead) => {
       const tFavor = favorGoal.timeToComplete();
       if (tFavor == null || treeValue === 0) return 0;
       const donationRate = formulas.reputation.donationForRep(1, player);
       const tN1 = (repReq * donationRate + costToAug) / totalIncome;
-      return (
-        treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead)
-      );
+      return treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead);
     });
   }
 
   // Path 3: Donation — faction has enough favor; buy remaining rep with money
   const donationPath = (): [Goal[], Action[]] => {
-    const donationRate =
-      formulas?.reputation?.donationForRep(1, player) ?? Infinity;
+    const donationRate = formulas?.reputation?.donationForRep(1, player) ?? Infinity;
     const donationCost = Math.max(0, repReq - currentRep) * donationRate;
-    const moneyGoal = augMoneyGoal(
-      costToAug + donationCost,
-      liquidAssets,
-      totalIncome,
-    );
+    const moneyGoal = augMoneyGoal(costToAug + donationCost, liquidAssets, totalIncome);
     return [
       [joinGoal, moneyGoal],
       [buyRepAction(faction, repReq - currentRep), ...augs.map(buyAugAction)],
@@ -384,13 +328,7 @@ export const buildFactionGoalTree = (
 
   // Path 4: Normal — grind faction rep
   const normalPath = (): [Goal[], Action[]] => {
-    const repGoal = factionRepGoal(
-      faction,
-      repReq,
-      currentRep,
-      joinGoal,
-      repRate,
-    );
+    const repGoal = factionRepGoal(faction, repReq, currentRep, joinGoal, repRate);
     const moneyGoal = augMoneyGoal(costToAug, liquidAssets, totalIncome);
     return [[repGoal, moneyGoal], augs.map(buyAugAction)];
   };
@@ -418,19 +356,14 @@ export const getBladeburnerTree = (
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
   const cbGoal = combatLevelsGoal(100, player.skills);
   const joinBlades = bladesJoinGoal(inBladeburner, [cbGoal]);
-  const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [
-    joinBlades,
-  ]);
-  const repGoal = factionRepGoal(
-    'Bladeburners',
-    bladeRepCost,
-    currentRep,
-    joinBladeFaction,
-  );
-  const augMoney = augMoneyGoal(
-    bladePrice,
-    player.money + estimatedStockValue,
-    totalIncome,
-  );
+  const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [joinBlades]);
+  const repGoal = factionRepGoal('Bladeburners', bladeRepCost, currentRep, joinBladeFaction);
+  const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
+};
+
+export const getNonBN2GangTree = (skills: Skills, karma: number) => {
+  const murderStats = combatLevelsGoal(100, skills);
+  const murderReqs = murderStats.isDone() ? [] : [murderStats];
+  return reevaluateGoal(karmaGoal(-54000, karma, murderReqs));
 };

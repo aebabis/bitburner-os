@@ -15,6 +15,7 @@ import {
   buildFactionGoalTree,
   buildJoinSubtree,
   getBladeburnerTree,
+  getNonBN2GangTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
@@ -90,7 +91,7 @@ export const getGoals = (ns: NS): Goal => {
   }
 
   if (currentNode === 7 && (ownedSF.get(7) ?? 0) >= 1 && karma > -54000) {
-    return reevaluateGoal(karmaGoal(-54000, karma));
+    return getNonBN2GangTree(player.skills, karma);
   }
 
   const THE_BLADE = "The Blade's Simulacrum";
