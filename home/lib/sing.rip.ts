@@ -12,7 +12,7 @@ export const $win = (ns: NS, port: number) =>
     ns['exec']('/bin/self/actualize.ts', 'home');
   })();
 
-export const $install = async (ns: NS, port: number) => {
+const $install = async (ns: NS, port: number) => {
   const hostnames = await $nmap(ns, port)();
   return runInPlace(
     ns,
@@ -41,7 +41,7 @@ export const $joinFactions = (ns: NS, port: number) => async (targets: FactionNa
   })(targets, invites);
 };
 
-export const $getFactionRep = (ns: NS, port: number) =>
+const $getFactionRep = (ns: NS, port: number) =>
   runInPlace(
     ns,
     port,
@@ -54,7 +54,7 @@ export const $getFactionRep = (ns: NS, port: number) =>
     return factionRep;
   })();
 
-export const $getPurchasedAugmentations = (ns: NS, port: number) =>
+export const $getPurchasedAugmentations = (ns: NS, port = ns.pid) =>
   runInPlace(
     ns,
     port,
@@ -70,7 +70,7 @@ export const $getPurchasedAugmentations = (ns: NS, port: number) =>
 const TOR_PORT = 704 * 6047;
 type TorPurchases = Partial<Record<ProgramName | 'Tor', boolean>>;
 
-export const $tor = async (ns: NS, port = ns.pid) => {
+const $tor = async (ns: NS, port = ns.pid) => {
   const $ = inPlace(ns, port);
   const hostnames = await $nmap(ns, port)();
   const neededPortLevel = await runInPlace(

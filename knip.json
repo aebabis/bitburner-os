@@ -32,7 +32,8 @@
     "home/boot/data5.ts",
     "home/bin/planner.ts",
     "home/bin/eight-gig.ts",
-    "home/bin/workers/*.ts"
+    "home/bin/workers/*.ts",
+    "home/bin/self/aug/purchase-augs.ts"
   ],
   "project": ["scripts/**/*.ts", "home/**/*.ts"],
   "ignoreDependencies": ["d3-drag", "d3-force", "d3-selection", "prettier"],

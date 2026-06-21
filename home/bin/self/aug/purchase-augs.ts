@@ -4,17 +4,9 @@ import { AUG_LOG_FILE } from '../../../etc/config';
 import { inPlace } from '../../../lib/in-place';
 import { tprint } from '../../../boot/util';
 import { STR } from '../../../lib/colors';
+import { $getPurchasedAugmentations } from '../../../lib/sing.rip';
 
 const NEUROFLUX = 'NeuroFlux Governor';
-
-export const getPurchasedAugmentations = async (ns: NS) => {
-  const installedAugmentations = await inPlace(ns).singularity['getOwnedAugmentations'](false);
-  const ownedAugmentations = await inPlace(ns).singularity['getOwnedAugmentations'](true);
-  const purchasedAugmentations = ownedAugmentations.slice();
-  for (const aug of installedAugmentations)
-    purchasedAugmentations.splice(purchasedAugmentations.indexOf(aug), 1);
-  return purchasedAugmentations;
-};
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -131,7 +123,7 @@ export async function main(ns: NS) {
     print('Buying favor and NFG from highest favor faction: ' + donationFaction);
     const currentNfgRepBase = await inPlace(ns).singularity['getAugmentationRepReq'](NEUROFLUX);
     do {
-      const purchasedAugs = await getPurchasedAugmentations(ns);
+      const purchasedAugs = await $getPurchasedAugmentations(ns);
       print('Purchased augs: ' + purchasedAugs);
       const purchasedNfg = purchasedAugs.filter((name) => name === NEUROFLUX);
       const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
