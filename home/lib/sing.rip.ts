@@ -33,7 +33,7 @@ export const $joinFactions = (ns: NS, port: number) => async (targets: FactionNa
     for (const faction of invites) {
       if (
         targets.includes(faction) ||
-        cityFactions.includes(faction as CityName) ||
+        !cityFactions.includes(faction as CityName) ||
         ns.gang.inGang()
       )
         ns.singularity['joinFaction'](faction);
