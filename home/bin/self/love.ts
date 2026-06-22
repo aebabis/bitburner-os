@@ -148,6 +148,10 @@ export async function main(ns: NS) {
     }
   };
 
+  const goToWork = async () => {
+    await $.singularity['workForCompany']("Joe's Guns");
+  };
+
   const makeMoney = async () => {
     const statForCrimeTraining = (['strength', 'defense', 'dexterity', 'agility'] as const).find(
       (stat) => ns.getPlayer().skills[stat] < 5,
@@ -155,11 +159,14 @@ export async function main(ns: NS) {
     const timeLimit = getTimeToMilestone(ns) || 60;
     if (statForCrimeTraining != null) {
       if (ns.getPlayer().money > 5000) await goToGym(statForCrimeTraining);
-      else await $.singularity['workForCompany']("Joe's Guns");
+      else await goToWork();
     } else {
       const crimes = Object.entries(CRIMES).filter(
         ([, stats]) => stats.time <= timeLimit * 1000,
       ) as [CrimeType, CrimeStats][];
+      if (crimes.length === 0) {
+        await goToWork();
+      }
       let bestCrime = crimes.shift()!;
       let bestChance = await $.singularity['getCrimeChance'](bestCrime[0]);
       let otherCrime;
