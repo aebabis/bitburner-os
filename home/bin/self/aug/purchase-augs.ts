@@ -137,6 +137,12 @@ export async function main(ns: NS) {
       }
     } while (await inPlace(ns).singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
 
+    print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
+    await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, ns.getPlayer().money);
+    print('Money now: $' + ns.format.number(ns.getPlayer().money));
+  }
+
+  if (ns.gang.inGang()) {
     print('Buying gang items');
     const gangMembers = await inPlace(ns).gang['getMemberNames']();
     for (const equipment of ns.gang.getEquipmentNames().reverse()) {
@@ -144,10 +150,6 @@ export async function main(ns: NS) {
         await inPlace(ns).gang['purchaseEquipment'](member, equipment);
       }
     }
-
-    print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
-    await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, ns.getPlayer().money);
-    print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
   const purchasedAugs = await $getPurchasedAugmentations(ns);
