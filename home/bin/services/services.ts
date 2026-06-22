@@ -77,7 +77,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/don.ts'),
-    AnyHostService(ns, enableCorp, corpReady)('/bin/corporation/corporation.ts'),
+    AnyHostService(ns, enableCorp, corpReady)('/bin/corp/corp.ts'),
     AnyHostService(ns, hasSingularity, canAutopilot)('/bin/self/control.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/hinter.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),

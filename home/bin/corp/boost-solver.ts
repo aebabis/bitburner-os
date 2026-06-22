@@ -1,11 +1,6 @@
-import { getStaticData } from '../../lib/data-store';
-
 const sum = (a: number, b: number) => a + b;
 
-export const solveBoost = (
-  S: number,
-  ...csPairs: [number, number][]
-): number[] => {
+export const solveBoost = (S: number, ...csPairs: [number, number][]): number[] => {
   const cs = csPairs.map(([c]) => c).reduce(sum, 0);
   const amounts = csPairs.map(([c, s], i) => {
     const others = csPairs.filter((_, idx) => idx !== i);
@@ -24,13 +19,11 @@ export const solveBoost = (
 };
 
 export const getBoostTargets = (
-  ns: NS,
+  materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
+  industryData: Record<CorpIndustryName, CorpIndustryData>,
   industryName: CorpIndustryName,
   S: number,
 ) => {
-  const staticData = getStaticData(ns);
-  const materialData = staticData.materialData!;
-  const industryData = staticData.industryData!;
   const {
     aiCoreFactor = 0,
     hardwareFactor = 0,
@@ -41,14 +34,13 @@ export const getBoostTargets = (
   const hardwareSize = materialData['Hardware'].size;
   const realEstateSize = materialData['Real Estate'].size;
   const robotSize = materialData['Robots'].size;
-  const [aiCoreAmount, hardwareAmount, realEstateAmount, robotAmount] =
-    solveBoost(
-      S,
-      [aiCoreFactor, aiCoreSize],
-      [hardwareFactor, hardwareSize],
-      [realEstateFactor, realEstateSize],
-      [robotFactor, robotSize],
-    );
+  const [aiCoreAmount, hardwareAmount, realEstateAmount, robotAmount] = solveBoost(
+    S,
+    [aiCoreFactor, aiCoreSize],
+    [hardwareFactor, hardwareSize],
+    [realEstateFactor, realEstateSize],
+    [robotFactor, robotSize],
+  );
   return {
     'AI Cores': Math.max(0, aiCoreAmount),
     Hardware: Math.max(0, hardwareAmount),

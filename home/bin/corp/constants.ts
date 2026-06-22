@@ -1,9 +1,5 @@
-export const BOOST_MATERIALS = [
-  'AI Cores',
-  'Hardware',
-  'Real Estate',
-  'Robots',
-] as const;
+export const CORP_NAME = 'Rhizome Industries';
+export const BOOST_MATERIALS = ['AI Cores', 'Hardware', 'Real Estate', 'Robots'] as const;
 
 export const DivisionNames: Record<CorpIndustryName, string> = {
   Agriculture: 'Rhizome Foods',

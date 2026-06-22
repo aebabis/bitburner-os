@@ -9,7 +9,7 @@ import {
   PORT_CONTRACT_DATA,
   PORT_CORP_REPORTS,
 } from '../etc/ports.ts';
-import { DivisionName } from '../bin/corporation/constants.ts';
+import { DivisionName } from '../bin/corp/constants.ts';
 
 const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
 
