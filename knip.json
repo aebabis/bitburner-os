@@ -14,7 +14,7 @@
     "home/bin/blades/burners.ts",
     "home/bin/hacknet.ts",
     "home/bin/gang/don.ts",
-    "home/bin/corporation/corporation.ts",
+    "home/bin/corp/corp.ts",
     "home/bin/self/control.ts",
     "home/bin/hinter.ts",
     "home/bin/trailblazer.ts",
