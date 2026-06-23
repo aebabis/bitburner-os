@@ -10,6 +10,8 @@ import {
 } from './corp.rip';
 import { DivisionNames } from './constants';
 import { $manageAgriculture } from './manage/agriculture';
+import { $manageChemicals } from './manage/chemicals';
+import { $manageTobacco } from './manage/tobacco';
 
 export async function main(ns: NS) {
   typeof ns.corporation.createCorporation;
@@ -44,11 +46,13 @@ export async function main(ns: NS) {
 
       const { divisions } = await $.corporation['getCorporation']();
       if (divisions.includes(DivisionNames['Agriculture'])) {
-        await $manageAgriculture(ns)(divisions, materialData, industryData);
+        await $manageAgriculture(ns, materialData, industryData)(divisions);
       }
       if (divisions.includes(DivisionNames['Chemical'])) {
+        await $manageChemicals(ns, materialData, industryData)();
       }
       if (divisions.includes(DivisionNames['Tobacco'])) {
+        await $manageTobacco(ns, materialData, industryData)();
       }
     }
     const reports = getCorpReports(ns);

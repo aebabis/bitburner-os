@@ -10,12 +10,12 @@ import {
 } from '../corp.rip';
 
 export const $manageAgriculture =
-  (ns: NS) =>
-  async (
-    divisions: string[],
+  (
+    ns: NS,
     materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
     industryData: Record<CorpIndustryName, CorpIndustryData>,
-  ) => {
+  ) =>
+  async (divisions: string[]) => {
     const INDUSTRY = 'Agriculture';
 
     const divisionName = DivisionNames[INDUSTRY];
