@@ -20,34 +20,35 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
   const { requiredAugRam, purchasedServerCosts, resetInfo } = getStaticData(ns);
   const { disableGang, disableCorporation } = resetInfo.bitNodeOptions;
+  const { currentNode, ownedSF, ownedAugs } = resetInfo;
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
-  const hasNode = (num: number) => resetInfo.currentNode === num || resetInfo.ownedSF.has(num);
+  const hasNode = (num: number) => currentNode === num || ownedSF.has(num);
 
   const money = () => player(ns).money ?? 0;
   const factions = () => player(ns).factions ?? [];
 
-  const hacknetAvailable = ![8].includes(resetInfo.currentNode);
+  const hacknetAvailable = ![8].includes(currentNode);
   const playerLikesHacknet = false;
 
-  const gangKarma = resetInfo.currentNode === 2 ? 0 : -54000;
-  const mustSelfFund = resetInfo.currentNode !== 3;
+  const gangKarma = currentNode === 2 ? 0 : -54000;
+  const mustSelfFund = currentNode !== 3;
   const isCriminal = (faction: FactionName) => CRIMINAL_ORGANIZATIONS.includes(faction);
 
   // Predicates for service viability (relevance).
   // services that are not useful with current BN/SFs do not appear in the dashboard
   const useWolf = () => hasNode(8);
-  const hasAngel = () => resetInfo.ownedSF.has(1);
+  const hasAngel = () => ownedSF.has(1);
   const hasThief = () => !hasNode(5);
-  const gangsAvailable = () => hasNode(2) && !disableGang && resetInfo.currentNode !== 8;
-  const corpAvailable = () => hasNode(3) && !disableCorporation && resetInfo.currentNode !== 8;
+  const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
+  const corpAllowed = () => !disableCorporation && currentNode !== 8;
   const hasSingularity = () => hasNode(4);
   const enableHacknet = () => hacknetAvailable && playerLikesHacknet;
-  const enableCorp = () => corpAvailable() && resetInfo.ownedSF.get(3) === 3;
-  const hasSimulacrum = () => resetInfo.ownedAugs.has("The Blade's Simulacrum");
+  const enableCorp = () => corpAllowed() && (currentNode === 3 || ownedSF.get(3) === 3);
+  const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
-  const inBladeNode = () => [6, 7].includes(resetInfo.currentNode);
+  const inBladeNode = () => [6, 7].includes(currentNode);
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
