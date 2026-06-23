@@ -16,6 +16,8 @@ export async function main(ns: NS) {
   // Reserve RAM
   ns.singularity.purchaseAugmentation;
 
+  const $ = inPlace(ns, ns.pid);
+
   if (ns.getHostname() !== 'home') {
     throw new Error('purchase-augs must be run on home');
   }
@@ -42,27 +44,17 @@ export async function main(ns: NS) {
     print(goal.desc.padEnd(40) + ' ' + goal.type.padEnd(15) + ' ' + goal.isDone());
   }
 
-  const run = async (script: string, threads: number, ...args: ScriptArg[]) => {
-    print(`${script} ${args.join(' ')}`);
-    const pid = ns.run(script, threads, ...args);
-    if (pid === 0) {
-      print(' failed to run');
-    } else {
-      while (ns.isRunning(pid)) await ns.sleep(50);
-    }
-  };
-
   // Sell all stocks
   print('Dumping stocks');
   if (ns.stock.hasTixApiAccess()) {
-    const symbols = await inPlace(ns).stock['getSymbols']();
+    const symbols = await $.stock['getSymbols']();
     for (const sym of symbols) {
-      await inPlace(ns).stock['sellStock'](sym, Infinity);
+      await $.stock['sellStock'](sym, Infinity);
     }
     const { currentNode, ownedSF } = ns.getResetInfo();
     if (currentNode === 8 || (ownedSF.get(8) ?? 0) >= 2) {
       for (const sym of symbols) {
-        await inPlace(ns).stock['sellShort'](sym, Infinity);
+        await $.stock['sellShort'](sym, Infinity);
       }
     }
   }
@@ -74,15 +66,15 @@ export async function main(ns: NS) {
     const cost = Math.ceil(buyRep.amount * donationRate);
     print('Cost:  $' + ns.format.number(cost));
     print('Avail: $' + ns.format.number(ns.getPlayer().money));
-    await run('/bin/self/aug/donate-to-faction.ts', 1, buyRep.faction, cost);
-    print('Rep:   ' + (await inPlace(ns).singularity['getFactionRep'](buyRep.faction)));
+    await $.singularity['donateToFaction'](buyRep.faction, cost);
+    print('Rep:   ' + (await $.singularity['getFactionRep'](buyRep.faction)));
   }
 
   print(`Attempting to purchase ${targetAugmentations.length} augmentations`);
 
   const buyAug = async (augmentation: string) => {
     for (const faction of factions) {
-      if (await inPlace(ns).singularity['purchaseAugmentation'](faction, augmentation)) {
+      if (await $.singularity['purchaseAugmentation'](faction, augmentation)) {
         return true;
       }
     }
@@ -100,20 +92,20 @@ export async function main(ns: NS) {
   print(`  bought ${nfCount} Neuroflux`);
 
   // Buy RAM if we can
-  await run('/bin/self/buy-ram.ts', 1);
+  while (await $.singularity['upgradeHomeRam']());
 
   // Try to start next aug with market access
-  await run('/bin/broker/purchase.ts', 1, 'purchaseWseAccount');
-  await run('/bin/broker/purchase.ts', 1, 'purchaseTixApi');
-  await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketDataTixApi');
-  await run('/bin/broker/purchase.ts', 1, 'purchase4SMarketData');
+  await $.stock['purchaseWseAccount']();
+  await $.stock['purchaseTixApi']();
+  await $.stock['purchase4SMarketDataTixApi']();
+  await $.stock['purchase4SMarketData']();
 
   const favorToDonate = ns.getFavorToDonate();
 
   let donationFaction = null;
   let highestFavor = 0;
   for (const faction of ns.getPlayer().factions) {
-    const favor = await inPlace(ns).singularity['getFactionFavor'](faction);
+    const favor = await $.singularity['getFactionFavor'](faction);
     if (favor > highestFavor && favor >= favorToDonate) {
       donationFaction = faction;
       highestFavor = favor;
@@ -121,7 +113,7 @@ export async function main(ns: NS) {
   }
   if (donationFaction != null) {
     print('Buying favor and NFG from highest favor faction: ' + donationFaction);
-    const currentNfgRepBase = await inPlace(ns).singularity['getAugmentationRepReq'](NEUROFLUX);
+    const currentNfgRepBase = await $.singularity['getAugmentationRepReq'](NEUROFLUX);
     do {
       const purchasedAugs = await $getPurchasedAugmentations(ns);
       print('Purchased augs: ' + purchasedAugs);
@@ -129,25 +121,25 @@ export async function main(ns: NS) {
       const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
       print('Next Rep: ' + repOfNextNeuroflux);
       const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
-      const currentRep = await inPlace(ns).singularity['getFactionRep'](donationFaction);
+      const currentRep = await $.singularity['getFactionRep'](donationFaction);
       const donationAmount = (repOfNextNeuroflux - currentRep) * donationRate;
       print('Donation: $' + donationAmount);
       if (currentRep < repOfNextNeuroflux) {
-        await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, donationAmount);
+        await $.singularity['donateToFaction'](donationFaction, donationAmount);
       }
-    } while (await inPlace(ns).singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
+    } while (await $.singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
 
     print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
-    await run('/bin/self/aug/donate-to-faction.ts', 1, donationFaction, ns.getPlayer().money);
+    await $.singularity['donateToFaction'](donationFaction, ns.getPlayer().money);
     print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
   if (ns.gang.inGang()) {
     print('Buying gang items');
-    const gangMembers = await inPlace(ns).gang['getMemberNames']();
+    const gangMembers = await $.gang['getMemberNames']();
     for (const equipment of ns.gang.getEquipmentNames().reverse()) {
       for (const member of gangMembers) {
-        await inPlace(ns).gang['purchaseEquipment'](member, equipment);
+        await $.gang['purchaseEquipment'](member, equipment);
       }
     }
   }
@@ -159,10 +151,6 @@ export async function main(ns: NS) {
   ns.write(AUG_LOG_FILE, `${new Date().toLocaleDateString()}----------------------------\n`, 'a');
   ns.write(AUG_LOG_FILE, purchasedAugs.join('\n') + '\n', 'a');
 
-  // if (ns.getHostname() !== 'home') {
-  //   ns.scp([AUG_LOG_FILE, LOGFILE, '/log/last-reset.txt'], 'home');
-  // }
-
   // Start all over
-  await run('/bin/self/aug/reset.ts', 1);
+  await inPlace(ns).singularity['softReset']('start.ts');
 }
