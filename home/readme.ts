@@ -66,7 +66,7 @@ const UTILITIES = {
     desc: 'List non-purchased servers',
   },
   services: {
-    command: 'bin/services.ts',
+    command: 'usr/services.ts',
     desc: 'View and manage installed services',
   },
   update: {
