@@ -23,7 +23,7 @@ const $install = async (ns: NS, port: number) => {
   })(hostnames);
 };
 
-export const $joinFactions = (ns: NS, port: number) => async (targets: FactionName[]) => {
+const $joinFactions = (ns: NS, port: number) => async (targets: FactionName[]) => {
   const invites = await inPlace(ns).singularity['checkFactionInvitations']();
   return runInPlace(
     ns,

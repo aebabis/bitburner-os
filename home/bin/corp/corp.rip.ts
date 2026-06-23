@@ -96,7 +96,7 @@ export const $getWarehouse = (ns: NS) => async (divisionName: DivisionName, city
   }
 };
 
-export const $buy =
+const $buy =
   (ns: NS) =>
   async (divisionName: string, cityName: CityName, material: CorpMaterialName, amount: number) => {
     const $ = inPlace(ns, ns.pid);

@@ -1,4 +1,4 @@
-import { getStaticData, getCorpReports } from '../../lib/data-store';
+import { getStaticData } from '../../lib/data-store';
 import { inPlace } from '../../lib/in-place';
 import {
   $createCorporation,
@@ -53,15 +53,6 @@ export async function main(ns: NS) {
       }
       if (divisions.includes(DivisionNames['Tobacco'])) {
         await $manageTobacco(ns, materialData, industryData)();
-      }
-    }
-    const reports = getCorpReports(ns);
-    ns.clearLog();
-    for (const report of Object.values(reports)) {
-      ns.print(report.shift()![0]);
-      while (report.length) {
-        const row = report.shift()!;
-        ns.print(row.join(' '));
       }
     }
   }

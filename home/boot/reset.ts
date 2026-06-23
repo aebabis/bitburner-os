@@ -1,6 +1,6 @@
 import { nmap } from '../lib/nmap';
 import { defer } from './defer';
-import { putHostnames, putContractData } from '../lib/data-store';
+import { putHostnames } from '../lib/data-store';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
@@ -13,8 +13,7 @@ export async function main(ns: NS) {
 
   // Clear all ports except configuration ports
   tprint(ns)(STR + '  Clearing ports');
-  for (let i = 1; i <= 20; i++)
-    if (!PERSISTENT_PORTS.includes(i)) ns.clearPort(i);
+  for (let i = 1; i <= 20; i++) if (!PERSISTENT_PORTS.includes(i)) ns.clearPort(i);
 
   // Generate list of hostnames
   tprint(ns)(STR + '  Mapping network');
@@ -25,16 +24,11 @@ export async function main(ns: NS) {
   // Batchable files are copied later in boot sequence
   tprint(ns)(STR + '  Wiping old scripts');
   for (const hostname of hostnames)
-    if (hostname !== 'home')
-      for (const script of ns.ls(hostname, '.ts')) ns.rm(script, hostname);
+    if (hostname !== 'home') for (const script of ns.ls(hostname, '.ts')) ns.rm(script, hostname);
 
   // Wipe tmp files
   tprint(ns)(STR + '  Wiping tmp/');
-  for (const file of ns.ls('home'))
-    if (file.startsWith('tmp')) ns.rm(file, 'home');
-
-  tprint(ns)(STR + '  Wiping coding contract references');
-  putContractData(ns, { contracts: [] });
+  for (const file of ns.ls('home')) if (file.startsWith('tmp')) ns.rm(file, 'home');
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);

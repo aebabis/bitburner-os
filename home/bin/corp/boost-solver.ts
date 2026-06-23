@@ -1,6 +1,6 @@
 const sum = (a: number, b: number) => a + b;
 
-export const solveBoost = (S: number, ...csPairs: [number, number][]): number[] => {
+const solveBoost = (S: number, ...csPairs: [number, number][]): number[] => {
   const cs = csPairs.map(([c]) => c).reduce(sum, 0);
   const amounts = csPairs.map(([c, s], i) => {
     const others = csPairs.filter((_, idx) => idx !== i);

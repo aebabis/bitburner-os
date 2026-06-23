@@ -5,7 +5,6 @@ import {
   getPlayerData,
   getMoneyData,
   getRamData,
-  getContractData,
 } from './lib/data-store.ts';
 
 export async function main(ns: NS) {
@@ -15,7 +14,6 @@ export async function main(ns: NS) {
     player: getPlayerData,
     money: getMoneyData,
     ram: getRamData,
-    contracts: getContractData,
   };
   const usage = () => ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
   const [input = ''] = ns.args;

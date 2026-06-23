@@ -6,10 +6,7 @@ import {
   PORT_SCH_REPORTING,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
-  PORT_CONTRACT_DATA,
-  PORT_CORP_REPORTS,
 } from '../etc/ports.ts';
-import { DivisionName } from '../bin/corp/constants.ts';
 
 const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
 
@@ -90,7 +87,7 @@ export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DA
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
-export type ServerRamInfo = {
+type ServerRamInfo = {
   hostname: string;
   maxRam: number;
   ramUsed: number;
@@ -138,24 +135,3 @@ export const getMoneyData = (ns: NS): MoneyData =>
   Object.assign({}, DEFAULT_MONEY_DATA, readData(ns, PORT_MONEY_DATA) || {});
 export const putMoneyData = (ns: NS, data: Partial<MoneyData>) =>
   putData(ns, PORT_MONEY_DATA, data);
-
-export type StoredContract = {
-  hostname: string;
-  filename: string;
-  type: string;
-  data: unknown;
-  tries: number;
-  maxTries: number;
-};
-type ContractData = {
-  contracts: StoredContract[];
-  failedContractNames?: string[];
-};
-export const getContractData = (ns: NS): ContractData => readData(ns, PORT_CONTRACT_DATA) || {};
-export const putContractData = (ns: NS, data: ContractData) =>
-  putData(ns, PORT_CONTRACT_DATA, data);
-
-type CorpReports = Record<DivisionName, string[][]>;
-export const getCorpReports = (ns: NS): CorpReports => readData(ns, PORT_CORP_REPORTS) || {};
-export const putCorpReports = (ns: NS, data: Partial<CorpReports>) =>
-  putData(ns, PORT_CORP_REPORTS, data);
