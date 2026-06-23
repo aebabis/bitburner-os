@@ -6,7 +6,12 @@ import {
   $getDivision,
   $getWarehouse,
   $handleMorale,
+  $manageProducts,
 } from '../corp.rip';
+
+const HQ = 'Sector-12';
+const BRAND_1 = "R'";
+const BRAND_2 = 'R"';
 
 export const $manageTobacco =
   (
@@ -15,6 +20,7 @@ export const $manageTobacco =
     industryData: Record<CorpIndustryName, CorpIndustryData>,
   ) =>
   async () => {
+    const $ = inPlace(ns, ns.pid);
     const INDUSTRY = 'Tobacco';
 
     const divisionName = DivisionNames[INDUSTRY];
@@ -23,6 +29,16 @@ export const $manageTobacco =
 
     if (division == null) return;
 
+    const currentProduct = await $manageProducts(ns)(
+      divisionName,
+      HQ,
+      division.products,
+      BRAND_1,
+      BRAND_2,
+    );
+
+    if (currentProduct == null) return;
+
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -30,12 +46,12 @@ export const $manageTobacco =
         continue;
       }
 
-      const product = await inPlace(ns, ns.pid).corporation['getProduct'](
+      const productStats = await $.corporation['getProduct'](
         divisionName,
         cityName,
-        "R'",
+        currentProduct.name,
       );
-      const outputVolume = product.productionAmount * product.size;
+      const outputVolume = productStats.productionAmount * productStats.size;
 
       await $buyProductionMaterials(ns, materialData)(
         INDUSTRY,
@@ -48,6 +64,14 @@ export const $manageTobacco =
         cityName,
         warehouse.size,
         outputVolume,
+      );
+      await $.corporation['sellProduct'](
+        divisionName,
+        cityName,
+        currentProduct.name,
+        'MAX',
+        'MP',
+        false,
       );
     }
   };

@@ -255,3 +255,43 @@ export const $buyBoostMaterials =
       else await $buy(ns)(divisionName, cityName, material, 0);
     }
   };
+
+export const $manageProducts =
+  (ns: NS) =>
+  async (
+    divisionName: DivisionName,
+    hq: CityName,
+    currentProducts: string[],
+    brand1: string,
+    brand2: string,
+  ) => {
+    const $ = inPlace(ns, ns.pid);
+    if (currentProducts.length === 0) {
+      await $.corporation['makeProduct'](divisionName, hq, brand1, 1e9, 1e9);
+      return null;
+    } else if (currentProducts.length === 1) {
+      const product = await $.corporation['getProduct'](divisionName, hq, currentProducts[0]);
+      if (product.effectiveRating === 0) {
+        return null;
+      }
+      const nextName = product.name === brand1 ? brand2 : brand1;
+      await $.corporation['makeProduct'](divisionName, hq, nextName, 1e9, 1e9);
+      return product;
+    } else {
+      const product1 = await $.corporation['getProduct'](divisionName, hq, currentProducts[0]);
+      const product2 = await $.corporation['getProduct'](divisionName, hq, currentProducts[1]);
+      if (product1.effectiveRating === 0) {
+        return product2;
+      } else if (product2.effectiveRating === 0) {
+        return product1;
+      } else {
+        if (product1.effectiveRating < product2.effectiveRating) {
+          await $.corporation['discontinueProduct'](divisionName, product1.name);
+          return product2;
+        } else {
+          await $.corporation['discontinueProduct'](divisionName, product2.name);
+          return product1;
+        }
+      }
+    }
+  };
