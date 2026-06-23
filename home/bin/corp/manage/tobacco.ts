@@ -5,6 +5,7 @@ import {
   $buyProductionMaterials,
   $getDivision,
   $getWarehouse,
+  $handleMorale,
 } from '../corp.rip';
 
 export const $manageTobacco =
@@ -23,6 +24,7 @@ export const $manageTobacco =
     if (division == null) return;
 
     for (const cityName of division.cities) {
+      await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
       if (!warehouse) {
         continue;

@@ -5,6 +5,7 @@ import {
   $getDivision,
   $getOutputVolume,
   $getWarehouse,
+  $handleMorale,
   $sell,
   $transfer,
 } from '../corp.rip';
@@ -24,22 +25,32 @@ export const $manageAgriculture =
 
     if (division == null) return;
 
-    for (const city of division.cities) {
-      const warehouse = await $getWarehouse(ns)(divisionName, city);
+    for (const cityName of division.cities) {
+      await $handleMorale(ns)(divisionName, cityName);
+      const warehouse = await $getWarehouse(ns)(divisionName, cityName);
       if (!warehouse) {
         continue;
       }
 
-      const outputVolume = await $getOutputVolume(ns, materialData, industryData)(INDUSTRY, city);
-      await $buyProductionMaterials(ns, materialData)(INDUSTRY, city, requiredMaterials, 'Food');
+      const outputVolume = await $getOutputVolume(
+        ns,
+        materialData,
+        industryData,
+      )(INDUSTRY, cityName);
+      await $buyProductionMaterials(ns, materialData)(
+        INDUSTRY,
+        cityName,
+        requiredMaterials,
+        'Food',
+      );
       await $buyBoostMaterials(ns, materialData, industryData)(
         INDUSTRY,
-        city,
+        cityName,
         warehouse.size,
         outputVolume,
       );
 
-      await $sell(ns)(divisionName, city, 'Food', 'MAX', 'MP');
+      await $sell(ns)(divisionName, cityName, 'Food', 'MAX', 'MP');
 
       const tobacco = DivisionNames['Tobacco'];
       const chemical = DivisionNames['Chemical'];
@@ -49,9 +60,9 @@ export const $manageAgriculture =
       if (hasTobacco) {
         await $transfer(ns)(
           divisionName,
-          city,
+          cityName,
           tobacco,
-          city,
+          cityName,
           'Plants',
           `(-IPROD-IINV+${PLANT_TSL})/10`,
         );
@@ -59,14 +70,13 @@ export const $manageAgriculture =
       if (hasChem) {
         await $transfer(ns)(
           divisionName,
-          city,
+          cityName,
           chemical,
-          city,
+          cityName,
           'Plants',
           `(-IPROD-IINV+${PLANT_TSL})/10`,
         );
       }
-      if (!hasTobacco && !hasChem) await $sell(ns)(divisionName, city, 'Plants', 'MAX', 'MP');
-      else await $sell(ns)(divisionName, city, 'Plants', 0, '100*MP');
+      await $sell(ns)(divisionName, cityName, 'Plants', 'MAX', 'MP');
     }
   };

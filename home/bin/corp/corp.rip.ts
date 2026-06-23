@@ -80,6 +80,22 @@ export const $openOffices = async (ns: NS) => {
   }
 };
 
+export const $handleMorale = (ns: NS) => async (divisionName: DivisionName, cityName: CityName) => {
+  const $ = inPlace(ns, ns.pid);
+  const office = await $.corporation['getOffice'](divisionName, cityName);
+  if (office.avgEnergy < 98) {
+    await $.corporation['buyTea'](divisionName, cityName);
+  }
+  if (office.avgMorale < 95) {
+    const personCost = 500000;
+    const result = await $.corporation['throwParty'](divisionName, cityName, personCost);
+    if (result) {
+      const cost = ns.format.number(office.numEmployees * personCost);
+      ns.print(`Party for ${divisionName} in ${cityName}: ${result} for $${cost}`);
+    }
+  }
+};
+
 export const $getDivision = (ns: NS) => async (divisionName: DivisionName) => {
   try {
     return await inPlace(ns, ns.pid).corporation['getDivision'](divisionName);

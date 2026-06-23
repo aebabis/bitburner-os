@@ -5,6 +5,9 @@ import {
   $getDivision,
   $getOutputVolume,
   $getWarehouse,
+  $handleMorale,
+  $sell,
+  $transfer,
 } from '../corp.rip';
 
 export const $manageChemicals =
@@ -23,6 +26,7 @@ export const $manageChemicals =
     if (division == null) return;
 
     for (const cityName of division.cities) {
+      await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
       if (!warehouse) {
         continue;
@@ -45,5 +49,15 @@ export const $manageChemicals =
         warehouse.size,
         outputVolume,
       );
+      const CHEM_TSL = Math.floor(10 / materialData['Chemicals'].size);
+      await $transfer(ns)(
+        divisionName,
+        cityName,
+        DivisionNames['Agriculture'],
+        cityName,
+        'Chemicals',
+        `(-IPROD-IINV+${CHEM_TSL})/10`,
+      );
+      await $sell(ns)(divisionName, cityName, 'Chemicals', 'MAX', 'MP');
     }
   };
