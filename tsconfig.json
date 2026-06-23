@@ -13,5 +13,6 @@
     "types": ["node"]
   },
   "files": [".bitburner/bitburner-globals.d.ts"],
-  "include": ["**/*"]
+  "include": ["**/*"],
+  "exclude": ["home/tmp/**/*"]
 }
