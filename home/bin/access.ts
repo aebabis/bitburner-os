@@ -18,9 +18,7 @@ export async function main(ns: NS) {
     return access(ns)(ns.args[0]);
   }
 
-  let hostnames = getHostnames(ns).filter(
-    (hostname) => !ns.hasRootAccess(hostname),
-  );
+  let hostnames = getHostnames(ns).filter((hostname) => !ns.hasRootAccess(hostname));
 
   while (hostnames.length > 0) {
     const startingLength = hostnames.length;
@@ -31,7 +29,9 @@ export async function main(ns: NS) {
     while ((hostname = unvisited.shift()))
       if (access(ns)(hostname)) {
         success = true;
-        await delegateAny(ns)(INFECT, 1, hostname);
+        if (ns.getServerMaxRam(hostname) > 0) {
+          await delegateAny(ns)(INFECT, 1, hostname);
+        }
       } else {
         hostnames.push(hostname);
       }

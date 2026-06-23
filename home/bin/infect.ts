@@ -7,3 +7,7 @@ export const fullInfect = (ns: NS, ...hostnames: string[]) => {
   const JS = ns.ls('home').filter((f) => f.endsWith('.ts'));
   for (const hostname of hostnames) ns.scp(JS, hostname, 'home');
 };
+
+export async function main(ns: NS) {
+  fullInfect(ns, ...(ns.args as string[]));
+}
