@@ -149,7 +149,7 @@ export async function main(ns: NS) {
   };
 
   const goToWork = async () => {
-    await $.singularity['workForCompany']("Joe's Guns");
+    await $.singularity['workForCompany']("Joe's Guns", focus(ns));
   };
 
   const makeMoney = async () => {
