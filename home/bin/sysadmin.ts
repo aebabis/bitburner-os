@@ -1,10 +1,5 @@
 import { THREADPOOL } from '../etc/config';
-import {
-  getSchedulerReportData,
-  getStaticData,
-  getHostnames,
-  putHostnames,
-} from '../lib/data-store';
+import { getStaticData, getHostnames, putHostnames } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 import {
   needsJobRam,
@@ -14,7 +9,7 @@ import {
   getIncome,
 } from '../lib/query-service';
 import { getTimeToMilestone } from '../lib/goals/goals';
-import { fullInfect } from './infect';
+import { infect } from './infect';
 
 const serverNames = (maxServers: number) => {
   return new Array(maxServers)
@@ -92,7 +87,7 @@ export async function main(ns: NS) {
     else ns.print(`Purchased ${hostname} with ${ram}GB ram for ${cost}`);
 
     if (!isUpgrade) {
-      fullInfect(ns, hostname);
+      infect(ns, hostname);
     }
   };
 

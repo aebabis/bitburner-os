@@ -1,5 +1,4 @@
 import { getStaticData } from '../lib/data-store';
-// import { fullInfect } from './infect';
 
 const OUTPUT_FILE = '/.bitburner/info.json';
 const CMD_FILE = '/.bitburner/cmd.json';
@@ -8,11 +7,7 @@ const INTERVAL_MS = 2000;
 function getStatusLine(ns: NS) {
   const { resetInfo } = getStaticData(ns);
   const { money, skills } = ns.getPlayer();
-  return [
-    `bn:${resetInfo.currentNode}`,
-    formatMoney(money),
-    `hk:${skills.hacking}`,
-  ].join(' | ');
+  return [`bn:${resetInfo.currentNode}`, formatMoney(money), `hk:${skills.hacking}`].join(' | ');
 }
 
 function formatMoney(n: number) {

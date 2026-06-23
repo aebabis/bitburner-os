@@ -1,14 +1,9 @@
-import { THREADPOOL } from '../etc/config';
-import { by } from '../lib/util';
 import { defer } from './defer';
 import { access } from '../bin/access';
-import { infect, fullInfect } from '../bin/infect';
+import { infect } from '../bin/infect';
 import { getHostnames } from '../lib/data-store';
 import { tprint } from './util';
-import { STR, GRAY } from '../lib/colors';
-
-const canRunCode = (ns: NS) => (hostname: string) =>
-  ns.getServerMaxRam(hostname) >= 1.6;
+import { STR } from '../lib/colors';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -20,31 +15,10 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Hacking low-level servers');
   hostnames.forEach(access(ns));
 
-  // Erase old versions of files, then upload
-  // the batchable files to every server
-  tprint(ns)(STR + '  Uploading batch files');
+  // Copy program files
+  tprint(ns)(STR + '  Copying program files');
   for (const hostname of hostnames) {
-    if (hostname !== 'home' && canRunCode(ns)(hostname)) {
-      infect(ns, hostname);
-    }
-  }
-
-  // To reduce the size of the game save file,
-  // only put the non-batch code on the first
-  // N servers. This amount can be adjusted as needed.
-  const SERVERS_NEEDED = 10;
-  const zombies = hostnames
-    .filter((hostname) => hostname !== 'home')
-    .filter((hostname) => !hostname.startsWith(THREADPOOL))
-    .filter(canRunCode(ns))
-    .sort(by(ns.getServerRequiredHackingLevel))
-    .slice(0, SERVERS_NEEDED);
-  tprint(ns)(STR + '  Infecting zombies: ' + GRAY + zombies.join(', '));
-  fullInfect(ns, ...zombies);
-  try {
-    fullInfect(ns, `${THREADPOOL}-01`, `${THREADPOOL}-02`);
-  } catch {
-    /*Do nothing*/
+    infect(ns, hostname);
   }
 
   // Go to next step in the boot sequence

@@ -1,5 +1,3 @@
-import { INFECT } from '../etc/filenames';
-import { delegateAny } from '../lib/scheduler-delegate';
 import { getHostnames } from '../lib/data-store';
 
 export const access = (ns: NS) => (target: string) => {
@@ -12,6 +10,7 @@ export const access = (ns: NS) => (target: string) => {
 };
 
 export async function main(ns: NS) {
+  ns.disableLog('ALL');
   if (ns.args[0] != null) {
     if (typeof ns.args[0] !== 'string')
       throw new Error('Param if given, must be string. Got: ' + ns.args[0]);
@@ -21,24 +20,15 @@ export async function main(ns: NS) {
   let hostnames = getHostnames(ns).filter((hostname) => !ns.hasRootAccess(hostname));
 
   while (hostnames.length > 0) {
-    const startingLength = hostnames.length;
     const unvisited = hostnames;
     hostnames = [];
     let hostname;
-    let success;
     while ((hostname = unvisited.shift()))
       if (access(ns)(hostname)) {
-        success = true;
-        if (ns.getServerMaxRam(hostname) > 0) {
-          await delegateAny(ns)(INFECT, 1, hostname);
-        }
+        ns.print(`Hacked ${hostname}. (${hostnames.length} servers remain})`);
       } else {
         hostnames.push(hostname);
       }
-    if (success)
-      ns.print(
-        `Hacked ${startingLength - hostnames.length} servers. ${hostnames.length} remaining`,
-      );
     await ns.sleep(1000);
   }
 }

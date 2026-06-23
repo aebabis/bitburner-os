@@ -1,5 +1,4 @@
 import { getHostnames } from '../lib/data-store';
-import { fullInfect } from './infect';
 
 export async function main(ns: NS) {
   const hostnames = getHostnames(ns);
@@ -9,14 +8,9 @@ export async function main(ns: NS) {
     const THIS_RAM = ns.getScriptRam('/bin/eight-gig.ts');
     const HACK_RAM = ns.getScriptRam('/bin/workers/hack.ts');
     const threads = Math.floor((HOME_RAM - THIS_RAM) / HACK_RAM);
-    ns.exec('/bin/workers/hack.ts', 'home', threads, n00dles);
+    ns.run('/bin/workers/hack.ts', threads, n00dles);
     await ns.hack(n00dles);
   }
-  const targets = hostnames.filter(
-    (s) => ns.getServerRequiredHackingLevel(s) <= ns.getHackingLevel(),
-  );
-  ns.tprint(targets);
-  fullInfect(ns, ...targets);
   await ns.sleep(5000);
-  ns.exec('/bin/scheduler.ts', 'home');
+  ns.run('/bin/planner.ts');
 }
