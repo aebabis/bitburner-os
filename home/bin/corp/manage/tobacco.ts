@@ -24,7 +24,6 @@ export const $manageTobacco =
     const INDUSTRY = 'Tobacco';
 
     const divisionName = DivisionNames[INDUSTRY];
-    const { requiredMaterials } = industryData[INDUSTRY];
     const division = await $getDivision(ns)(divisionName);
 
     if (division == null) return;
@@ -53,12 +52,6 @@ export const $manageTobacco =
       );
       const outputVolume = productStats.productionAmount * productStats.size;
 
-      await $buyProductionMaterials(ns, materialData)(
-        INDUSTRY,
-        cityName,
-        requiredMaterials,
-        'Chemicals',
-      );
       await $buyBoostMaterials(ns, materialData, industryData)(
         INDUSTRY,
         cityName,
