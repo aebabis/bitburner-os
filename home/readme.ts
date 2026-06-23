@@ -46,7 +46,7 @@ const UTILITIES = {
     desc: 'Create a test coding contract',
   },
   nmap: {
-    command: 'dispatch usr/nmap-gui.ts',
+    command: 'usr/nmap.ts',
     desc: 'Graphical network map',
   },
   read: {
