@@ -166,6 +166,7 @@ export async function main(ns: NS) {
       ) as [CrimeType, CrimeStats][];
       if (crimes.length === 0) {
         await goToWork();
+        return;
       }
       let bestCrime = crimes.shift()!;
       let bestChance = await $.singularity['getCrimeChance'](bestCrime[0]);
@@ -254,7 +255,8 @@ export async function main(ns: NS) {
         }
       }
     }
-    putPlayerData(ns, { currentWork: ns.singularity.getCurrentWork() });
+    const currentWork = JSON.parse(JSON.stringify(ns.singularity.getCurrentWork()));
+    putPlayerData(ns, { currentWork });
     await ns.sleep(200);
   }
 }
