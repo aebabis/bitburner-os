@@ -308,33 +308,36 @@ export const getAccessibleFactions = (
   ownedAugmentations: string[],
 ) => {
   const { factionRequirements } = staticData;
-  return [...STORY_FACTIONS, ...CRIMINAL_ORGANIZATIONS, ...CITY_FACTIONS, 'Bladeburners'].filter(
-    (faction) => {
-      if (faction === 'Bladeburners' && !player.factions.includes('Bladeburners')) {
-        return false;
-      }
-      const reqs = factionRequirements?.[faction] ?? [];
-      const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
-      const requiredAugCount =
-        reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;
-      if (ownedAugmentations.length < requiredAugCount) return false;
-      if (
-        CITY_FACTIONS.includes(faction) &&
-        player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction)
+  return [
+    ...STORY_FACTIONS,
+    ...CRIMINAL_ORGANIZATIONS,
+    ...CITY_FACTIONS,
+    'Bladeburners' as FactionName,
+  ].filter((faction) => {
+    if (faction === 'Bladeburners' && !player.factions.includes('Bladeburners')) {
+      return false;
+    }
+    const reqs = factionRequirements?.[faction] ?? [];
+    const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
+    const requiredAugCount =
+      reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;
+    if (ownedAugmentations.length < requiredAugCount) return false;
+    if (
+      CITY_FACTIONS.includes(faction) &&
+      player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction)
+    )
+      return false;
+    if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company]))
+      return false;
+    if (
+      reqs.some(
+        (req) =>
+          req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'),
       )
-        return false;
-      if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company]))
-        return false;
-      if (
-        reqs.some(
-          (req) =>
-            req.type === 'someCondition' && req.conditions.some((req) => req.type === 'jobTitle'),
-        )
-      ) {
-        // TODO: Actually evaluate difficulty of obtaining job
-        return false;
-      }
-      return true;
-    },
-  );
+    ) {
+      // TODO: Actually evaluate difficulty of obtaining job
+      return false;
+    }
+    return true;
+  });
 };

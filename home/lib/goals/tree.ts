@@ -47,13 +47,13 @@ const skillTrainingTime = (
   stat: string,
   installedAugs: string[],
   augmentationStats: Record<string, Multipliers>,
-  formulas: Formulas,
+  formulas: Formulas | null,
 ) => {
   if (!formulas) return null;
   let levelMult = 1,
     expMult = 1;
   for (const aug of installedAugs) {
-    const s = augmentationStats?.[aug];
+    const s = augmentationStats?.[aug] as unknown as Record<string, number> | undefined;
     if (s?.[stat] != null) levelMult *= s[stat];
     if (s?.[`${stat}_exp`] != null) expMult *= s[`${stat}_exp`];
   }
@@ -81,7 +81,7 @@ export const buildJoinSubtree = (
     money: number;
     totalIncome: number;
     karma: number;
-    formulas: Formulas;
+    formulas: Formulas | null;
   },
 ) => {
   const { factions, skills, city } = player;

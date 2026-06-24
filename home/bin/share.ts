@@ -34,7 +34,7 @@ export async function main(ns: NS) {
       for (const [hostname, ram] of Object.entries(workerRam)) {
         const threads = Math.min(Math.floor(ram / RAM_PER_SHARE), threadsNeeded);
         if (threads) {
-          if (ns.exec(SHARE, hostname, threads)) {
+          if (ns.exec(SHARE, hostname, { threads, temporary: true })) {
             threadsNeeded -= threads;
             if (!threadsNeeded) {
               break;

@@ -5,6 +5,7 @@ import {
   installGoal,
   reevaluateGoal,
   type Goal,
+  type Plan,
   hackingXpGoal,
   moneyPrereqGoal,
   rebootGoal,
@@ -36,7 +37,7 @@ export const getGoals = (ns: NS): Goal => {
   const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
   const { totalIncome = 0 } = getIncome(ns);
-  const formulas = getFormulas(ns);
+  const formulas = getFormulas(ns) as unknown as Formulas;
   const karma = ns.heart.break();
   const ownedAugs = [...staticData.installedAugmentations, ...purchasedAugmentations];
   const planData = {
@@ -55,8 +56,8 @@ export const getGoals = (ns: NS): Goal => {
   const overhead = computeResetOverhead(staticData);
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)
-    .map((f) => buildFactionGoalTree(f, planData))
-    .filter(/** @type {<T>(x: T | null) => x is T} */ Boolean);
+    .map((f) => buildFactionGoalTree(f as FactionName, planData))
+    .filter((x): x is Plan => x !== null);
   const bestPlan =
     plans.length > 0
       ? plans.reduce((a, b) => (a.utility(overhead) >= b.utility(overhead) ? a : b))
@@ -163,9 +164,4 @@ export const getTimeToMilestone = (ns: NS): number | null => {
   return root.timeToComplete();
 };
 
-/**
- * @param {NS} ns
- * @param {import('./nodes.ts').Goal} [root]
- * @returns {boolean}
- */
-export const isRepBound = (ns, root = getGoals(ns)) => isRepBoundPure(root);
+export const isRepBound = (ns: NS, root = getGoals(ns)) => isRepBoundPure(root);

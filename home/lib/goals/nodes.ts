@@ -33,7 +33,7 @@ export type Goal = {
   desc: string;
   isDone: () => boolean;
   toString: () => string;
-  requirement: number | undefined;
+  requirement: number | CityName | undefined;
   faction: FactionName | undefined;
   deps: Goal[];
   actions: Action[];
@@ -46,8 +46,8 @@ export const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'] as c
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 interface GoalProps {
-  requirement?: number;
-  faction?: string;
+  requirement?: number | CityName;
+  faction?: FactionName;
   deps?: Goal[];
   actions?: Action[];
   ownTime?: () => number | null;
@@ -57,8 +57,8 @@ export const goal = (
   desc: string,
   isDone: () => boolean,
   { requirement, faction, deps = [], actions = [], ownTime = () => null }: GoalProps = {},
-) => {
-  let _ttc: number;
+): Goal => {
+  let _ttc: number | null;
   return {
     type,
     desc,
@@ -88,7 +88,8 @@ export const goal = (
       if (isDone()) return (_ttc = 0);
       const depsMax =
         deps.length === 0 ? 0 : Math.max(...deps.map((d) => d.timeToComplete() ?? Infinity));
-      return (_ttc = depsMax === Infinity || ownTime() == null ? null : depsMax + ownTime());
+      const own = ownTime();
+      return (_ttc = depsMax === Infinity || own == null ? null : depsMax + own);
     },
   };
 };
@@ -209,7 +210,7 @@ export const factionRepGoal = (
   requirement: number,
   currentRep: number,
   dep: Goal,
-  repRate?: number,
+  repRate = 0,
 ) =>
   goal('FACTION_REP', `Gain ${requirement} rep (${faction})`, () => currentRep >= requirement, {
     requirement,
