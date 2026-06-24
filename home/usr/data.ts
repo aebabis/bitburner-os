@@ -1,11 +1,11 @@
-import { replacer } from './lib/ports.ts';
+import { replacer } from '../lib/ports.ts';
 import {
   getHostnames,
   getStaticData,
   getPlayerData,
   getMoneyData,
   getRamData,
-} from './lib/data-store.ts';
+} from '../lib/data-store.ts';
 
 export async function main(ns: NS) {
   const OPTIONS = {

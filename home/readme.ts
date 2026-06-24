@@ -30,7 +30,7 @@ const UTILITIES = {
     desc: 'Global config variables',
   },
   data: {
-    command: './data.ts',
+    command: 'usr/data.ts',
     desc: 'View stored by various services',
   },
   dispatch: {
@@ -70,7 +70,7 @@ const UTILITIES = {
     desc: 'View and manage installed services',
   },
   update: {
-    command: 'home; killall; update.ts',
+    command: 'home; killall; ./stop.ts update.ts',
     desc: 'Download most recent code from GitHub',
   },
 };
