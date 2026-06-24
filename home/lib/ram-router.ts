@@ -2,7 +2,7 @@ import { THREADPOOL } from '../etc/config';
 import { by } from './util';
 import { getHostnames } from './data-store';
 
-export type ExecProcess = { script: string; highPriority?: boolean };
+type ExecProcess = { script: string; highPriority?: boolean };
 
 export type RamPolicy = {
   /** Returns GB to reserve on home for the given process. */

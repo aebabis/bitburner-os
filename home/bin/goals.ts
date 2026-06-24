@@ -1,4 +1,4 @@
-import { getStaticData, getPlayerData, getMoneyData } from '../lib/data-store';
+import { getStaticData, getPlayerData } from '../lib/data-store';
 import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
@@ -9,19 +9,15 @@ const NEUROFLUX = 'NeuroFlux Governor';
 
 const getAugTableData = (ns: NS) => {
   const {
-    augmentations = /** @type {string[]} */ [],
-    augmentationStats = /** @type {Record<string, Multipliers>} */ {},
-    augmentationPrices = /** @type {Record<string, number>} */ {},
-    augmentationRepReqs = /** @type {Record<string, number>} */ {},
-    installedAugmentations = /** @type {string[]} */ [],
-    resetInfo = /** @type {any} */ {},
+    augmentations,
+    augmentationStats,
+    augmentationPrices,
+    augmentationRepReqs,
+    installedAugmentations,
+    resetInfo,
   } = getStaticData(ns);
-  const { purchasedAugmentations = /** @type {string[]} */ [] } =
-    getPlayerData(ns);
-  const alreadyHave = new Set([
-    ...installedAugmentations,
-    ...purchasedAugmentations,
-  ]);
+  const { purchasedAugmentations = [] } = getPlayerData(ns);
+  const alreadyHave = new Set([...installedAugmentations, ...purchasedAugmentations]);
   const installedNFCount = resetInfo.ownedAugs?.get(NEUROFLUX) ?? 0;
   return {
     augmentations,
@@ -56,15 +52,11 @@ export async function main(ns: NS) {
       } = getAugTableData(ns);
 
       if (Object.keys(augmentationStats).length === 0) {
-        ns.tprint(
-          'ERROR aug-table: augmentationStats not loaded — run the augment suite first',
-        );
+        ns.tprint('ERROR aug-table: augmentationStats not loaded — run the augment suite first');
         break;
       }
       if (Object.keys(augmentationPrices).length === 0) {
-        ns.tprint(
-          'ERROR aug-table: augmentationPrices not loaded — run the augment suite first',
-        );
+        ns.tprint('ERROR aug-table: augmentationPrices not loaded — run the augment suite first');
         break;
       }
 
@@ -89,12 +81,7 @@ export async function main(ns: NS) {
               { name: 'Price', align: 'right', process: fmt },
               { name: 'Rep Req', align: 'right', process: fmt },
             ],
-            rows.map(({ aug, value, price, repReq }) => [
-              aug,
-              value,
-              price,
-              repReq,
-            ]),
+            rows.map(({ aug, value, price, repReq }) => [aug, value, price, repReq]),
           ),
       );
       break;
@@ -112,20 +99,14 @@ export async function main(ns: NS) {
           installedNFCount,
         } = getAugTableData(ns);
         const { totalIncome = 0 } = getIncome(ns);
-        const {
-          player: augLivePlayer,
-          factionRep = /** @type {Record<string, number>} */ {},
-        } = getPlayerData(ns);
+        const { player: augLivePlayer, factionRep = /** @type {Record<string, number>} */ {} } =
+          getPlayerData(ns);
 
-        const {
-          factionAugmentations = /** @type {Record<string, string[]>} */ {},
-          factionFavor:
-            augLiveFactionFavor = /** @type {Record<string, number>} */ {},
-        } = getStaticData(ns);
+        const { factionAugmentations, factionFavor: augLiveFactionFavor } = getStaticData(ns);
         const augLiveFormulas = getFormulas(ns);
-        const augFactions = /** @type {Record<string, string[]>} */ {};
+        const augFactions = {} as Record<string, FactionName[]>;
         for (const [faction, augs] of Object.entries(factionAugmentations))
-          for (const aug of augs) (augFactions[aug] ??= []).push(faction);
+          for (const aug of augs) (augFactions[aug] ??= []).push(faction as FactionName);
 
         const rows = augmentations
           .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
@@ -146,22 +127,13 @@ export async function main(ns: NS) {
                   )?.reputation ?? 0) * 5,
               ),
             );
-            const bestCurrentRep = Math.max(
-              0,
-              ...factions.map((f) => factionRep[f] ?? 1),
-            );
+            const bestCurrentRep = Math.max(0, ...factions.map((f) => factionRep[f] ?? 1));
             const remainingRep = Math.max(0, repReq - bestCurrentRep);
-            const timeForMoney =
-              totalIncome > 0 ? price / totalIncome : Infinity;
+            const timeForMoney = totalIncome > 0 ? price / totalIncome : Infinity;
             const timeForRep =
-              bestRepRate > 0
-                ? remainingRep / bestRepRate
-                : remainingRep > 0
-                  ? Infinity
-                  : 0;
+              bestRepRate > 0 ? remainingRep / bestRepRate : remainingRep > 0 ? Infinity : 0;
             const time = Math.max(timeForMoney, timeForRep);
-            const utility =
-              value > 0 && isFinite(time) && time > 0 ? value / time : 0;
+            const utility = value > 0 && isFinite(time) && time > 0 ? value / time : 0;
             return { aug, value, utility };
           })
           .sort((a, b) => b.utility - a.utility);
@@ -200,17 +172,10 @@ export async function main(ns: NS) {
       while (true) {
         const staticData = getStaticData(ns);
         const { augmentationStats = {} } = staticData;
-        const {
-          player,
-          factionRep = {},
-          purchasedAugmentations = [],
-        } = getPlayerData(ns);
+        const { player, factionRep = {}, purchasedAugmentations = [] } = getPlayerData(ns);
         const { totalIncome = 0 } = getIncome(ns);
         const formulas = getFormulas(ns);
-        const ownedAugs = [
-          ...(staticData.installedAugmentations ?? []),
-          ...purchasedAugmentations,
-        ];
+        const ownedAugs = [...(staticData.installedAugmentations ?? []), ...purchasedAugmentations];
         const moneyRate = totalIncome || Infinity;
         const planData = {
           player,
@@ -238,7 +203,7 @@ export async function main(ns: NS) {
             const nfCount = batch.filter((a) => a === NEUROFLUX).length;
             const nonNfCount = batch.length - nfCount;
             const value = batch.reduce(
-              (sum, aug) => sum + augValueFromStats(aug, augmentationStats),
+              (sum, aug) => sum + augValueFromStats(resetInfo, aug, augmentationStats),
               0,
             );
             const tree = buildFactionGoalTree(faction, planData);

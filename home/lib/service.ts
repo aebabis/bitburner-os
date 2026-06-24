@@ -12,10 +12,6 @@ const getExistingPid = (ns: NS, desc: string) => {
   }
 };
 
-export type PoolContext = {
-  freePool: number;
-};
-
 let count = 1;
 
 interface ServiceOptions {

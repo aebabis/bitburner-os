@@ -7,7 +7,6 @@ import {
   type Goal,
   hackingXpGoal,
   moneyPrereqGoal,
-  karmaGoal,
   rebootGoal,
   homeRamGoal,
 } from './nodes.ts';
@@ -90,7 +89,7 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  if (currentNode === 7 && (ownedSF.get(7) ?? 0) >= 1 && karma > -54000) {
+  if ([3, 7].includes(currentNode) && (ownedSF.get(currentNode) ?? 0) >= 1 && karma > -54000) {
     return getNonBN2GangTree(player.skills, karma);
   }
 
@@ -162,10 +161,6 @@ export const getTimeToMilestone = (ns: NS): number | null => {
   const joinGoal = root.prerequisites('FACTION_JOIN').find((g) => !g.isDone());
   if (joinGoal) return joinGoal.timeToComplete();
   return root.timeToComplete();
-};
-
-export const getTimeToComplete = (ns: NS): number | null => {
-  return getGoals(ns).timeToComplete();
 };
 
 /**

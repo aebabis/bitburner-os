@@ -1,6 +1,6 @@
 const NULL = 'NULL PORT DATA';
 
-function replacer(_key: string, value: unknown) {
+export function replacer(_key: string, value: unknown) {
   if (value instanceof Map) {
     return {
       dataType: 'Map',

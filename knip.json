@@ -36,6 +36,6 @@
     "home/bin/self/aug/purchase-augs.ts"
   ],
   "project": ["scripts/**/*.ts", "home/**/*.ts"],
-  "ignoreDependencies": ["d3-drag", "d3-force", "d3-selection", "prettier"],
-  "ignore": ["home/lib/d3.ts", "home/lib/colors.ts"]
+  "ignoreDependencies": [],
+  "ignore": ["home/lib/colors.ts"]
 }
