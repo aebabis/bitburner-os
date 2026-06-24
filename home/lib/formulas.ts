@@ -182,21 +182,3 @@ export const formulas = (ns: NS) => {
     return getMockFormulas(getStaticData(ns));
   }
 };
-
-/**
- * Construct a Person for use in Formulas API speculation.
- * Starts from the game's base mock (all-1 multipliers, all-1 skills) and
- * deep-merges the provided overrides for skills and mults.
- * Requires Formulas.exe.
- * @param {NS} ns
- * @param {{ skills?: Partial<Skills>, mults?: Partial<Multipliers> }} [overrides]
- * @returns {Person}
- */
-export const speculativePerson = (ns: NS, { skills, mults } = {}) => {
-  const base = ns.formulas.mockPerson();
-  return {
-    ...base,
-    skills: { ...base.skills, ...skills },
-    mults: { ...base.mults, ...mults },
-  };
-};

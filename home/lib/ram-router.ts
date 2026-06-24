@@ -15,7 +15,7 @@ export const HACKER_POLICY = (ns: NS): RamPolicy => ({
   homeReserve: () => 16,
 });
 
-export const DEFAULT_POLICY: RamPolicy = {
+const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
     if (script === '/bin/access.ts' || script === '/bin/nerd.ts') return 0;
     return highPriority ? 2 : 4;

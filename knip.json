@@ -1,6 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip/schema.json",
   "entry": [
+    "home/readme.ts",
+    "home/start.ts",
+    "home/stop.ts",
     "home/usr/*.ts",
     "home/bin/self/love.ts",
     "home/bin/access.ts",
