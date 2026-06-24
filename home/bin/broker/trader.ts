@@ -35,6 +35,14 @@ export async function main(ns: NS) {
 
   const { StockMarketCommission } = ns.stock.getConstants();
   const MIN_ORDER = StockMarketCommission * 100;
+
+  while (!(await $.stock['purchaseTixApi']())) {
+    await ns.sleep(1000);
+  }
+  while (!(await $.stock['purchase4SMarketDataTixApi']())) {
+    await ns.sleep(1000);
+  }
+
   const symbols = await $.stock['getSymbols']();
 
   const maxShares = await $rip((symbols: string[]) => {
