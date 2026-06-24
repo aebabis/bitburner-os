@@ -3,24 +3,16 @@ import Ports from './ports';
 import { logger } from './logger';
 import { getSchedulerReportData, putSchedulerReportData } from './data-store';
 
-const desc = (
-  script: string,
-  host = null,
-  numThreads = 1,
-  ...args: ScriptArg[]
-) => `${script} ${host || '*'} ${numThreads} ${args.join(' ')}`;
+const desc = (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) =>
+  `${script} ${host || '*'} ${numThreads} ${args.join(' ')}`;
 
 const Job =
   (ns: NS, response: boolean, startTime: number, highPriority = false) =>
   (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
     if (script.startsWith('.') || !script.endsWith('.ts'))
-      throw new Error(
-        `Illegal script name in ${desc(script, host, numThreads, ...args)}`,
-      );
+      throw new Error(`Illegal script name in ${desc(script, host, numThreads, ...args)}`);
     if (!Number.isInteger(numThreads))
-      throw new Error(
-        `Illegal thread count in ${desc(script, host, numThreads, ...args)}`,
-      );
+      throw new Error(`Illegal thread count in ${desc(script, host, numThreads, ...args)}`);
 
     const ticket = response ? crypto.randomUUID() : undefined;
     return {
@@ -40,16 +32,11 @@ type DelegateOptions = {
   highPriority?: boolean;
 };
 
-export const delegate =
+const delegate =
   (ns: NS, response: boolean, options: DelegateOptions = {}) =>
   async (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
     const { startTime = Date.now(), highPriority = false } = options;
-    const job = Job(ns, response, startTime, highPriority)(
-      script,
-      host,
-      numThreads,
-      ...args,
-    );
+    const job = Job(ns, response, startTime, highPriority)(script, host, numThreads, ...args);
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     const written = await port.blockingWrite(job);
     if (!written) {
@@ -65,9 +52,7 @@ export const delegate =
         const responses = port.peek();
         if (responses?.[job.ticket] != null) return responses[job.ticket];
         if (Date.now() - start >= 70000)
-          throw new Error(
-            `Timed-out: ${script} ${host || '*'} ${numThreads} ${args.join(' ')}`,
-          );
+          throw new Error(`Timed-out: ${script} ${host || '*'} ${numThreads} ${args.join(' ')}`);
         await ns.sleep(10);
       }
     }
@@ -77,26 +62,6 @@ export const delegateAny =
   (ns: NS, response = false, options: DelegateOptions = {}) =>
   async (script: string, numThreads = 1, ...args: ScriptArg[]) =>
     await delegate(ns, response, options)(script, null, numThreads, ...args);
-
-export const createBatch = (ns: NS) => {
-  const jobs: ReturnType<ReturnType<typeof Job>>[] = [];
-  const delegate =
-    (startTime: number) =>
-    (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) =>
-      jobs.push(
-        Job(ns, false, startTime, false)(script, host, numThreads, ...args),
-      );
-  return {
-    delegate,
-    delegateAny:
-      (startTime: number) =>
-      (script: string, numThreads = 1, ...args: ScriptArg[]) =>
-        delegate(startTime)(script, null, numThreads, ...args),
-    getSize: () => jobs.length,
-    send: async () =>
-      Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK).blockingWrite(jobs),
-  };
-};
 
 export const getDelegatedTasks = async (ns: NS) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
@@ -116,12 +81,7 @@ const TICKET_TTL = 30_000;
 
 export const closeTicket =
   (ns: NS) =>
-  async (
-    ticket: string,
-    pid = 0,
-    hostname: string | null = null,
-    threads = 0,
-  ) => {
+  async (ticket: string, pid = 0, hostname: string | null = null, threads = 0) => {
     const port = Ports(ns).getPortHandle(PORT_SCH_RETURN);
     const timestamp = Date.now();
     const responses = port.peek() || {};

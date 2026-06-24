@@ -40,7 +40,7 @@ type SchedulerReportData = {
 };
 export const getSchedulerReportData = (ns: NS): SchedulerReportData =>
   readData(ns, PORT_SCH_REPORTING) || {};
-export const putSchedulerReportData = (ns: NS, data: SchedulerReportData) =>
+export const putSchedulerReportData = (ns: NS, data: Partial<SchedulerReportData>) =>
   putData(ns, PORT_SCH_REPORTING, data);
 
 type BackdoorRequirement = {
