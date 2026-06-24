@@ -21,6 +21,7 @@ let count = 1;
 interface ServiceOptions {
   interval?: number;
   isChain?: boolean;
+  temporary?: boolean;
 }
 
 export const Service =
@@ -28,7 +29,7 @@ export const Service =
     ns: NS,
     isViable = () => true,
     condition = (_ns: NS) => true,
-    { interval = 5000, isChain = false }: ServiceOptions = {},
+    { interval = 5000, isChain = false, temporary = true }: ServiceOptions = {},
   ) =>
   (script: string, target: string | null = null, numThreads = 1, ...args: ScriptArg[]) => {
     const chain = isChain ? readSpawnChain(ns, script) : null;
@@ -88,7 +89,7 @@ export const Service =
           ns,
           script,
           target,
-          numThreads,
+          { threads: numThreads, temporary },
           false,
           args,
         );

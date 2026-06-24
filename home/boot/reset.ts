@@ -4,8 +4,7 @@ import { putHostnames } from '../lib/data-store';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 
-import { PORT_RUN_CONFIG, PORT_SERVICES_LIST } from '../etc/ports';
-const PERSISTENT_PORTS = [PORT_RUN_CONFIG, PORT_SERVICES_LIST];
+import { MAX_RESERVED_PORT } from '../etc/ports';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -13,7 +12,7 @@ export async function main(ns: NS) {
 
   // Clear all ports except configuration ports
   tprint(ns)(STR + '  Clearing ports');
-  for (let i = 1; i <= 20; i++) if (!PERSISTENT_PORTS.includes(i)) ns.clearPort(i);
+  for (let i = 1; i <= MAX_RESERVED_PORT; i++) ns.clearPort(i);
 
   // Generate list of hostnames
   tprint(ns)(STR + '  Mapping network');

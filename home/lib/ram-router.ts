@@ -76,19 +76,21 @@ export const execOnBestServer = (
   ns: NS,
   script: string,
   host: string | null,
-  numThreads: number,
+  threadOrOptions: number | RunOptions,
   highPriority: boolean,
   args: ScriptArg[] = [],
   policy: RamPolicy = DEFAULT_POLICY,
   scriptRam = ns.getScriptRam(script, 'home'),
 ): ExecResult => {
   const process = { script, highPriority };
+  const numThreads =
+    typeof threadOrOptions === 'number' ? threadOrOptions : (threadOrOptions.threads ?? 1);
   const ramRequired = scriptRam * numThreads;
 
   if (host != null) {
     const server = getRamInfo(ns, host, policy);
     if (ramRequired <= server.ramAvailableTo(process)) {
-      const pid = ns.exec(script, host, numThreads, ...args);
+      const pid = ns.exec(script, host, threadOrOptions, ...args);
       if (pid !== 0) return { pid, hostname: host, threads: numThreads };
     }
     return { pid: 0, hostname: null, threads: 0 };

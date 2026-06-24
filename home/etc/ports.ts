@@ -1,7 +1,5 @@
 let port = 1;
 
-export const PORT_RUN_CONFIG = port++;
-
 export const PORT_SCH_DELEGATE_TASK = port++;
 export const PORT_SCH_RETURN = port++;
 export const PORT_SCH_RAM_DATA = port++;
@@ -15,3 +13,5 @@ export const PORT_STATIC_DATA = port++;
 
 export const PORT_PLAYER_DATA = port++;
 export const PORT_MONEY_DATA = port++;
+
+export const MAX_RESERVED_PORT = port;
