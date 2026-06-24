@@ -49,11 +49,6 @@ type BackdoorRequirement = {
   numPortsRequired: number;
 };
 
-export type StaticStockData = {
-  sym: string;
-  maxShares: number;
-};
-
 export type StaticData = {
   resetInfo: ResetInfo;
   installedAugmentations: string[];
@@ -71,7 +66,6 @@ export type StaticData = {
   materialData?: Record<CorpMaterialName, CorpMaterialConstantData>;
   industryData?: Record<CorpIndustryName, CorpIndustryData>;
 
-  stocks?: StaticStockData[];
   factionFavor: Record<FactionName, number>;
   augmentations: string[];
   augmentationPrices: Record<string, number>;

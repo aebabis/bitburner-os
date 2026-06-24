@@ -1,5 +1,4 @@
 import { putMoneyData } from '../lib/data-store';
-import { rmi } from '../lib/rmi';
 
 // https://www.reddit.com/r/Bitburner/comments/rsqffz/bitnode_8_stockmarket_algo_trader_script_without/
 const samplingLength = 30;
@@ -100,29 +99,20 @@ export async function main(ns: NS) {
       symChanges[sym].push(current / symLastPrice[sym]);
       symLastPrice[sym] = current;
       if (symChanges[sym].length > samplingLength) {
-        symChanges[sym] = symChanges[sym].slice(
-          symChanges[sym].length - samplingLength,
-        );
+        symChanges[sym] = symChanges[sym].slice(symChanges[sym].length - samplingLength);
       }
     }
 
     const prioritizedSymbols = [...ns.stock.getSymbols()];
-    prioritizedSymbols.sort(
-      (a, b) => posNegDiff(symChanges[b]) - posNegDiff(symChanges[a]),
-    );
+    prioritizedSymbols.sort((a, b) => posNegDiff(symChanges[b]) - posNegDiff(symChanges[a]));
 
     for (const sym of prioritizedSymbols) {
-      const [longShares, longPrice, shortShares, shortPrice] =
-        ns.stock.getPosition(sym);
+      const [longShares, longPrice, shortShares, shortPrice] = ns.stock.getPosition(sym);
       const state = predictState(symChanges[sym]);
       const ratio = posNegRatio(symChanges[sym]);
       const bidPrice = ns.stock.getBidPrice(sym);
       const askPrice = ns.stock.getAskPrice(sym);
-      if (
-        longShares <= 0 &&
-        shortShares <= 0 &&
-        ns.stock.getPrice(sym) < 30000
-      ) {
+      if (longShares <= 0 && shortShares <= 0 && ns.stock.getPrice(sym) < 30000) {
         continue;
       }
 

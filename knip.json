@@ -10,7 +10,7 @@
     "home/bin/dashboard.ts",
     "home/bin/contracts/freelancer.ts",
     "home/bin/nerd.ts",
-    "home/bin/broker/broker.ts",
+    "home/bin/broker/trader.ts",
     "home/bin/blades/burners.ts",
     "home/bin/hacknet.ts",
     "home/bin/gang/don.ts",
