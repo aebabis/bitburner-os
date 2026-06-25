@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, NORMAL } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
@@ -281,6 +281,16 @@ const getHackingTable = (ns: NS) => {
   return table(ns, null, rows, { colors: true });
 };
 
+const getSourceFilesTable = (ns: NS) => {
+  const { resetInfo } = getStaticData(ns);
+  const f = (node: number, str: string) => (node === resetInfo.currentNode ? C(183)(str) : str);
+  const sourceFiles = [...resetInfo.ownedSF.entries()].map(([bn, l]) =>
+    f(bn, `${bn}.${l}`.padStart(4)),
+  );
+  const rows = [sourceFiles.slice(0, 5), sourceFiles.slice(5, 10), sourceFiles.slice(5, 10)];
+  return H(' SFs') + '\n' + table(ns, null, rows);
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -294,6 +304,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => threadpoolTable(ns)),
     new GrowingWindow(() => getExecutionTable(ns)),
     new GrowingWindow(() => getHackingTable(ns)),
+    new GrowingWindow(() => getSourceFilesTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1400;
