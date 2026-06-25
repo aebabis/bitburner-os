@@ -361,9 +361,3 @@ export const getBladeburnerTree = (
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
 };
-
-export const getNonBN2GangTree = (skills: Skills, karma: number) => {
-  const murderStats = combatLevelsGoal(75, skills);
-  const murderReqs = murderStats.isDone() ? [] : [murderStats];
-  return reevaluateGoal(karmaGoal(-54000, karma, murderReqs));
-};

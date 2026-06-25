@@ -10,12 +10,12 @@ import {
   moneyPrereqGoal,
   rebootGoal,
   homeRamGoal,
+  karmaGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
   getBladeburnerTree,
-  getNonBN2GangTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
@@ -90,8 +90,16 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  if ([3, 7].includes(currentNode) && (ownedSF.get(currentNode) ?? 0) >= 1 && karma > -54000) {
-    return getNonBN2GangTree(player.skills, karma);
+  if ([3, 7].includes(currentNode) && (ownedSF.get(currentNode) ?? 0) >= 1 && !ns.gang.inGang()) {
+    const joinGoal = buildJoinSubtree('Slum Snakes', {
+      player,
+      staticData,
+      money,
+      totalIncome,
+      karma,
+      formulas,
+    });
+    return reevaluateGoal(karmaGoal(-54000, karma, [joinGoal]));
   }
 
   const THE_BLADE = "The Blade's Simulacrum";
