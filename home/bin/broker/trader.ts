@@ -2,6 +2,7 @@ import { by } from '../../lib/util';
 import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
+import { putMoneyData } from '../../lib/data-store.ts';
 
 const getSpendableFunds = (ns: NS) => {
   const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
@@ -106,6 +107,9 @@ export async function main(ns: NS) {
       return total;
     })(symbols, positions);
 
+    ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
+    putMoneyData(ns, { estimatedStockValue });
+
     const prices = await runInPlace(
       ns,
       ns.pid,
@@ -115,14 +119,12 @@ export async function main(ns: NS) {
       return result;
     })(symbols);
 
-    ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
-
     const columns = ['SYM', 'Shares', '+/-', 'Price'];
     const rows = symbols
       .filter((sym) => positions[sym][0] > 0)
       .map((sym) => [
         sym,
-        ns.format.number(positions[0][0]),
+        ns.format.number(positions[sym][0]),
         forecasts[sym].toFixed(3) || '',
         '$' + ns.format.number(prices[sym]),
       ]);
