@@ -1,6 +1,6 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { HACK, GROW, WEAK } from '../etc/filenames';
-import { getHostnames, putMoneyData } from '../lib/data-store';
+import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 
@@ -94,8 +94,6 @@ export async function main(ns: NS) {
   const hackTime = ns.getHackTime(target);
   const growTime = ns.getGrowTime(target);
   const weakTime = ns.getWeakenTime(target);
-  const endTime = Date.now() + weakTime;
-  putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
   const execWorker = (
     script: string,
@@ -205,12 +203,24 @@ export async function main(ns: NS) {
     }
   }
 
+  const endTime = Date.now() + weakTime + queue.length * SPACING;
+  putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
+
+  const updateMoneyData = () => {
+    const { onlineMoneyMade } = ns.getRunningScript()!;
+    const theftIncome = onlineMoneyMade / (weakTime / 1000);
+    if (theftIncome > getMoneyData(ns).theftIncome) {
+      putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / ramUsed });
+    }
+  };
+
   // Sleep loop: exec each queued frame at its scheduled time.
   let ramUsed = 0;
   let lastEndTime = Date.now();
   for (const entry of queue) {
     const delay = entry.execAt - Date.now();
     if (delay > 0) await ns.sleep(delay);
+    updateMoneyData();
 
     const assign = makeAssign(getRootServerRam(ns));
     const runners = entry.jobs.map(({ script, threads, additionalMsec }) => {
@@ -225,8 +235,5 @@ export async function main(ns: NS) {
 
   // Sleep until the last scheduled job finishes.
   await ns.sleep(Math.max(0, lastEndTime - Date.now()));
-
-  const { onlineMoneyMade } = ns.getRunningScript()!;
-  const theftIncome = onlineMoneyMade / (weakTime / 1000);
-  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / ramUsed });
+  updateMoneyData();
 }
