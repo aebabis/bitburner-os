@@ -45,6 +45,35 @@ const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
   return Math.ceil(totalGrowThreads / threadsPerPass) * (ns.getWeakenTime(hostname) + SPACING);
 };
 
+const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: number) => {
+  const hackTime = ns.getHackTime();
+  const growTime = ns.getGrowTime();
+  const weakTime = ns.getWeakenTime();
+  const hackPortion = ns.hackAnalyze(hostname);
+  if (hackPortion * hackThreads >= 1) {
+    return null;
+  }
+  const growFactor = 1 / (1 - hackThreads * hackPortion);
+  const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
+  const weak1Threads = getWeakThreads(0.002); // hack security per thread
+  const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
+  const frameRam = hackThreads * 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
+  const maxHackThreads = Math.floor(hackTime / SPACING) * hackThreads;
+  const maxGrowThreads = Math.floor(growTime / SPACING) * growThreads;
+  const maxWeakThreads = Math.floor(weakTime / SPACING) * (weak1Threads + weak2Threads);
+  const peakRam = maxHackThreads * 1.7 + maxGrowThreads * 1.75 + maxWeakThreads * 1.75;
+  const numFrames = Math.min(Math.floor(totalRam / frameRam), FRAME_LIMIT);
+  return {
+    hackThreads,
+    growThreads,
+    weak1Threads,
+    weak2Threads,
+    frameRam,
+    numFrames,
+    peakRam,
+  };
+};
+
 const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
   const maxMoney = ns.getServerMaxMoney(hostname);
   if (maxMoney === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
@@ -171,25 +200,31 @@ export async function main(ns: NS) {
       frameDuration: weakTime + SPACING,
     });
   } else {
-    const hackPortion = ns.hackAnalyze(target);
-    const growFactor = 1 / (1 - hackPortion);
-    const growThreads = Math.ceil(ns.growthAnalyze(target, growFactor));
-    const weak1Threads = getWeakThreads(0.002); // hack security per thread
-    const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
-    const frameRam = 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
-
     const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
-    const numFrames = Math.min(Math.floor(totalRam / frameRam), FRAME_LIMIT);
+    const maxFrames = Math.min(FRAME_LIMIT, Math.floor(weakTime / SPACING));
+
+    let frame = getFrame(ns, target, totalRam, 1)!;
+    for (let i = 1; true; i++) {
+      const nextBiggest = getFrame(ns, target, totalRam, i);
+      if (nextBiggest == null) break;
+      if (nextBiggest.numFrames > maxFrames || nextBiggest.peakRam < 0.9 * totalRam) {
+        frame = nextBiggest;
+      } else {
+        break;
+      }
+    }
+
+    const { hackThreads, growThreads, weak1Threads, weak2Threads, numFrames } = frame;
+    ns.tprint('HACK THREADS: ' + hackThreads);
 
     // Frames are pipelined: launch one every FRAME_PERIOD, each with the same
     // small additionalMsec offsets. RAM is shared across all concurrent frames.
-    const FRAME_PERIOD = 3 * SPACING + FRAME_SPACING;
     const frameDuration = weakTime + 3 * SPACING;
     for (let i = 0; i < numFrames; i++) {
       queue.push({
-        execAt: Date.now() + i * FRAME_PERIOD,
+        execAt: Date.now() + i * FRAME_SPACING,
         jobs: [
-          { script: HACK, threads: 1, additionalMsec: weakTime - hackTime },
+          { script: HACK, threads: hackThreads, additionalMsec: weakTime - hackTime },
           { script: WEAK, threads: weak1Threads, additionalMsec: SPACING },
           {
             script: GROW,
@@ -203,7 +238,7 @@ export async function main(ns: NS) {
     }
   }
 
-  const endTime = Date.now() + weakTime + queue.length * SPACING;
+  const endTime = Date.now() + weakTime + queue.length * FRAME_SPACING;
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
   const updateMoneyData = () => {
