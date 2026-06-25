@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, NORMAL } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, NORMAL, DARK } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
@@ -283,12 +283,32 @@ const getHackingTable = (ns: NS) => {
 
 const getSourceFilesTable = (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
-  const f = (node: number, str: string) => (node === resetInfo.currentNode ? C(183)(str) : str);
-  const sourceFiles = [...resetInfo.ownedSF.entries()].map(([bn, l]) =>
-    f(bn, `${bn}.${l}`.padStart(4)),
+  const { ownedSF } = resetInfo;
+  const f = (bn: number, l?: number) => {
+    const str = `${bn}.${l ?? 0}`.padStart(4);
+    if (l == null) {
+      return C(56)(str);
+    } else if (bn === resetInfo.currentNode) {
+      return C(183)(str);
+    } else {
+      return str;
+    }
+  };
+  const NUMS = new Array(15).fill(0).map((_, i) => i + 1);
+  const sourceFiles = NUMS.map((bn) => f(bn, ownedSF.get(bn)));
+  return (
+    H(' SFs') +
+    ' \n' +
+    ' ' +
+    sourceFiles.slice(0, 5).join(' ') +
+    ' \n' +
+    ' ' +
+    sourceFiles.slice(5, 10).join(' ') +
+    ' \n' +
+    ' ' +
+    sourceFiles.slice(10, 15).join(' ') +
+    ' \n'
   );
-  const rows = [sourceFiles.slice(0, 5), sourceFiles.slice(5, 10), sourceFiles.slice(5, 10)];
-  return H(' SFs') + '\n' + table(ns, null, rows);
 };
 
 export async function main(ns: NS) {
