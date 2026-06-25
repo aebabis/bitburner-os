@@ -36,11 +36,11 @@ export async function main(ns: NS) {
 
   while (true) {
     const STATES = ['START', 'PURCHASE', 'PRODUCTION', 'EXPORT', 'SALE'];
-    const prevState = await ns.corporation.nextUpdate();
-    const prevIndex = STATES.indexOf(prevState);
-    const currState = STATES.at(prevIndex + 1 - STATES.length);
+    const lastAction = await ns.corporation.nextUpdate();
+    const prevIndex = STATES.indexOf(lastAction);
+    const nextAction = STATES.at(prevIndex + 1 - STATES.length);
 
-    if (currState !== 'START') {
+    if (nextAction !== 'START') {
       await $unlock(ns);
       await $openOffices(ns);
 
