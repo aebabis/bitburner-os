@@ -2,7 +2,6 @@ import { inPlace } from '../../../lib/in-place';
 import { DivisionNames } from '../constants';
 import {
   $buyBoostMaterials,
-  $buyProductionMaterials,
   $getDivision,
   $getWarehouse,
   $handleMorale,
@@ -38,6 +37,8 @@ export const $manageTobacco =
 
     if (currentProduct == null) return;
 
+    const hasTA2 = await $.corporation['hasResearched'](divisionName, 'Market-TA.II');
+
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -66,5 +67,8 @@ export const $manageTobacco =
         'MP',
         false,
       );
+      if (hasTA2) {
+        await $.corporation['setProductMarketTA2'](divisionName, currentProduct.name, true);
+      }
     }
   };
