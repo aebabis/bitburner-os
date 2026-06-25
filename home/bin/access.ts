@@ -17,7 +17,7 @@ export async function main(ns: NS) {
     return access(ns)(ns.args[0]);
   }
 
-  let hostnames = getHostnames(ns).filter((hostname) => !ns.hasRootAccess(hostname));
+  let hostnames = getHostnames(ns);
 
   while (hostnames.length > 0) {
     const unvisited = hostnames;
