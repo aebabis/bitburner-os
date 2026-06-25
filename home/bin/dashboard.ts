@@ -323,6 +323,6 @@ export async function main(ns: NS) {
         throw error;
       console.error(error);
     }
-    await ns.sleep(1000);
+    await ns.sleep(100);
   }
 }
