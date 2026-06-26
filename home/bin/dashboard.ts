@@ -70,6 +70,7 @@ const getRunStats = (ns: NS) => {
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),
+    getSpecialAugs(ns),
   ].join('  ');
 };
 
@@ -197,6 +198,20 @@ const getWork = (ns: NS) => {
     return ` ${WORK} ${currentWork.crimeType} `;
   }
   return ` ${WORK} ${currentWork.type} ${location} `;
+};
+
+const getSpecialAugs = (ns: NS) => {
+  const { resetInfo } = getStaticData(ns);
+  const getDisplay = (aug: string, initials: string, off: number, on: number) => {
+    const color = resetInfo.ownedAugs.has(aug) ? C(on).BOLD : C(off);
+    return color(initials);
+  };
+  const specialAugDisplays = [
+    // getDisplay('CashRoot Starter Kit', 'CR', 22, 46),
+    getDisplay('Neuroreceptor Management Implant', 'NR', 236, 226),
+    getDisplay('The Red Pill', 'RP', 236, 160),
+  ];
+  return H('AUGS') + '  ' + specialAugDisplays.join('  ');
 };
 
 const getExecutionTable = (ns: NS) => {

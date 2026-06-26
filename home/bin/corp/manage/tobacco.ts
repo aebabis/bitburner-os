@@ -6,6 +6,7 @@ import {
   $getWarehouse,
   $handleMorale,
   $manageProducts,
+  BoostMaterialProgress,
 } from '../corp.rip';
 
 const HQ = 'Sector-12';
@@ -39,6 +40,7 @@ export const $manageTobacco =
 
     const hasTA2 = await $.corporation['hasResearched'](divisionName, 'Market-TA.II');
 
+    const report = {} as Record<CityName, { boostMaterialProgress: BoostMaterialProgress }>;
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -53,7 +55,7 @@ export const $manageTobacco =
       );
       const outputVolume = productStats.productionAmount * productStats.size;
 
-      await $buyBoostMaterials(ns, materialData, industryData)(
+      const boostMaterialProgress = await $buyBoostMaterials(ns, materialData, industryData)(
         INDUSTRY,
         cityName,
         warehouse.size,
@@ -70,5 +72,7 @@ export const $manageTobacco =
       if (hasTA2) {
         await $.corporation['setProductMarketTA2'](divisionName, currentProduct.name, true);
       }
+      report[cityName] = { boostMaterialProgress };
     }
+    return report;
   };

@@ -8,10 +8,11 @@ import {
   $openOffices,
   $unlock,
 } from './corp.rip';
-import { DivisionNames } from './constants';
+import { BOOST_MATERIALS, DivisionNames } from './constants';
 import { $manageAgriculture } from './manage/agriculture';
 import { $manageChemicals } from './manage/chemicals';
 import { $manageTobacco } from './manage/tobacco';
+import { table } from '../../lib/table';
 
 export async function main(ns: NS) {
   typeof ns.corporation.createCorporation;
@@ -52,7 +53,20 @@ export async function main(ns: NS) {
         await $manageChemicals(ns, materialData, industryData)();
       }
       if (divisions.includes(DivisionNames['Tobacco'])) {
-        await $manageTobacco(ns, materialData, industryData)();
+        const reports = await $manageTobacco(ns, materialData, industryData)();
+        if (reports) {
+          const cities = Object.values(ns.enums.CityName);
+          const columns = ['Material', ...cities];
+          const rows = BOOST_MATERIALS.map((material) => [
+            material,
+            ...cities.map((cityName) => {
+              const [have, need] = reports[cityName].boostMaterialProgress[material];
+              return `${ns.format.number(have)}/${ns.format.number(need)}`;
+            }),
+          ]);
+          ns.clearLog();
+          ns.print(table(ns, columns, rows, { colors: true }));
+        }
       }
     }
   }

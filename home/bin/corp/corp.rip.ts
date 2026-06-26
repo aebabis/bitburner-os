@@ -83,17 +83,17 @@ export const $openOffices = async (ns: NS) => {
 export const $handleMorale = (ns: NS) => async (divisionName: DivisionName, cityName: CityName) => {
   const $ = inPlace(ns, ns.pid);
   const office = await $.corporation['getOffice'](divisionName, cityName);
+  let boughtTea = false;
+  let partyCost: number | null = null;
   if (office.avgEnergy < 98) {
-    await $.corporation['buyTea'](divisionName, cityName);
+    boughtTea = await $.corporation['buyTea'](divisionName, cityName);
   }
   if (office.avgMorale < 95) {
     const personCost = 500000;
     const result = await $.corporation['throwParty'](divisionName, cityName, personCost);
-    if (result) {
-      const cost = ns.format.number(office.numEmployees * personCost);
-      ns.print(`Party for ${divisionName} in ${cityName}: ${result} for $${cost}`);
-    }
+    if (result) partyCost = office.numEmployees * personCost;
   }
+  return { boughtTea, partyCost };
 };
 
 export const $getDivision = (ns: NS) => async (divisionName: DivisionName) => {
@@ -229,6 +229,7 @@ export const $buyProductionMaterials =
     }
   };
 
+export type BoostMaterialProgress = Record<(typeof BOOST_MATERIALS)[number], [number, number]>;
 export const $buyBoostMaterials =
   (
     ns: NS,
@@ -240,20 +241,25 @@ export const $buyBoostMaterials =
     cityName: CityName,
     warehouseSize: number,
     outputVolume: number,
-  ) => {
+  ): Promise<BoostMaterialProgress> => {
     const BUFFER = warehouseSize * 0.1;
     const boostVolume = warehouseSize - BUFFER - MAX_INPUT_VOLUME - outputVolume;
     const $ = inPlace(ns, ns.pid);
     const divisionName = DivisionNames[industry];
     const boostTargets = getBoostTargets(materialData, industryData, industry, boostVolume);
+    const boostPortions = {} as BoostMaterialProgress;
     for (const material of BOOST_MATERIALS) {
       const { stored } = await $.corporation['getMaterial'](divisionName, cityName, material);
       const targetAmount = boostTargets[material];
-      if (stored < targetAmount) await $buy(ns)(divisionName, cityName, material, 1);
-      else if (stored - targetAmount > 10)
+      if (stored < targetAmount) {
+        const count = Math.min((targetAmount - stored) / 1000, Math.max(warehouseSize / 100));
+        await $buy(ns)(divisionName, cityName, material, count);
+      } else if (stored - targetAmount > 10)
         await $sell(ns)(divisionName, cityName, material, 1, 'MP');
       else await $buy(ns)(divisionName, cityName, material, 0);
+      boostPortions[material] = [stored, targetAmount];
     }
+    return boostPortions;
   };
 
 export const $manageProducts =
