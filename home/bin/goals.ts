@@ -206,7 +206,7 @@ export async function main(ns: NS) {
               (sum, aug) => sum + augValueFromStats(resetInfo, aug, augmentationStats),
               0,
             );
-            const tree = buildFactionGoalTree(faction, planData);
+            const tree = buildFactionGoalTree(ns, faction, planData);
             const times = tree?.deps.map((g) => g.timeToComplete());
             const eta =
               times == null || times.some((t) => t == null)

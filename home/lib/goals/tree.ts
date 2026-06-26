@@ -216,6 +216,7 @@ interface FactionGoalTreeProps {
   karma: number;
 }
 export const buildFactionGoalTree = (
+  ns: NS,
   faction: FactionName,
   {
     player,
@@ -282,7 +283,8 @@ export const buildFactionGoalTree = (
     );
   }
 
-  const canDonate = currentFavor >= (staticData.favorToDonate ?? Infinity);
+  const isGang = faction === 'Slum Snakes' && ns.gang.inGang();
+  const canDonate = !isGang && currentFavor >= (staticData.favorToDonate ?? Infinity);
 
   // Path 2: Favor grind — softReset to reach donation threshold, then donate next cycle
   if (

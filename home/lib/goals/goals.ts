@@ -53,7 +53,7 @@ export const getGoals = (ns: NS): Goal => {
   const overhead = computeResetOverhead(staticData);
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)
-    .map((f) => buildFactionGoalTree(f as FactionName, planData))
+    .map((f) => buildFactionGoalTree(ns, f as FactionName, planData))
     .filter((x): x is Plan => x !== null);
   const bestPlan =
     plans.length > 0
