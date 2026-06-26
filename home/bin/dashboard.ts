@@ -208,8 +208,8 @@ const getSpecialAugs = (ns: NS) => {
   };
   const specialAugDisplays = [
     // getDisplay('CashRoot Starter Kit', 'CR', 22, 46),
-    getDisplay('Neuroreceptor Management Implant', 'NR', 236, 226),
-    getDisplay('The Red Pill', 'RP', 236, 160),
+    getDisplay('Neuroreceptor Management Implant', 'NR', 236, 220),
+    getDisplay('The Red Pill', 'RP', 236, 124),
   ];
   return H('AUGS') + '  ' + specialAugDisplays.join('  ');
 };
