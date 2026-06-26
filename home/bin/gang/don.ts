@@ -3,7 +3,7 @@ import { isRepBound } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
 import { table } from '../../lib/table';
 import { by, randPort } from '../../lib/util';
-import { getAverageClashWinChance, needsPower } from './util';
+import { getFightWinRates, needsPower } from './util';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -12,7 +12,7 @@ export async function main(ns: NS) {
   ns.gang.ascendMember;
 
   ns.ui.openTail();
-  ns.ui.resizeTail(230, 160);
+  ns.ui.resizeTail(300, 160);
 
   const $ns = inPlace(ns, randPort());
 
@@ -86,8 +86,8 @@ export async function main(ns: NS) {
     const respect = async (name: string) => memberInfo[name].earnedRespect;
 
     const { territory, power } = allGangInfo[gangName];
-    const clashWinChance = getAverageClashWinChance(gangName, allGangInfo);
-    const shouldFite = territory < 0.99 && clashWinChance > 0.55;
+    const winRates = getFightWinRates(gangName, allGangInfo);
+    const shouldFite = territory < 0.99 && winRates.every((rate) => rate > 0.65);
 
     await $ns.gang['setTerritoryWarfare'](shouldFite);
 
@@ -117,7 +117,7 @@ export async function main(ns: NS) {
           [' LOOP TIME', loopTime],
           [' POWER', ns.format.number(power)],
           [' TERR', ns.format.number(territory)],
-          [' WIN %', ns.format.number(clashWinChance)],
+          [' WIN %', winRates.map((r) => ~~(r * 100)).join(',')],
           [' Need power?', needsPower(gangName, allGangInfo) ? 'Yes' : 'No'],
           [' FIGHT?', shouldFite ? 'Yes' : 'No'],
         ]),

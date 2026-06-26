@@ -1,4 +1,4 @@
-export const getAverageClashWinChance = (
+export const getFightWinRates = (
   gangName: string,
   allGangInfo: Record<string, GangOtherInfoObject>,
 ) => {
@@ -6,10 +6,7 @@ export const getAverageClashWinChance = (
   const otherGangInfo = Object.entries(allGangInfo)
     .filter(([faction]) => faction !== gangName)
     .map(([, info]) => info);
-  return (
-    otherGangInfo.map((info) => power / (power + info.power)).reduce((a, b) => a + b, 0) /
-    otherGangInfo.length
-  );
+  return otherGangInfo.map((info) => power / (power + info.power));
 };
 
 export const needsPower = (gangName: string, allGangInfo: Record<string, GangOtherInfoObject>) => {
