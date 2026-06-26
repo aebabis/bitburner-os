@@ -68,6 +68,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canShare = () => player(ns).skills.hacking > 100;
 
   return [
+    Service(ns, always, always)('/bin/planner.ts', 'home'),
     AnyHostService(ns, hasSingularity, canWork)('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),

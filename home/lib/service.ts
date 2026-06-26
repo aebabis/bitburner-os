@@ -35,7 +35,8 @@ export const Service =
         : [script, target, numThreads, ...args].join(' ');
     const shortname = script.split('/').pop()?.split('.')[0] ?? '';
     const ram = getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
-    let pid = getExistingPid(ns, desc);
+    const isPlanner = script.includes(ns.getScriptName());
+    let pid = isPlanner ? ns.pid : getExistingPid(ns, desc);
     let lastStart = 0;
     let enabled = true;
     let lastHost: string | null = null;
