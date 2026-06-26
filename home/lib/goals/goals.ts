@@ -1,7 +1,5 @@
 import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
-import { THREADPOOL } from '../../etc/config.ts';
 import {
-  jobRamGoal,
   installGoal,
   reevaluateGoal,
   type Goal,
@@ -20,7 +18,7 @@ import {
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
-import { getIncome, needsAugRam, needsJobRam } from '../query-service.ts';
+import { getIncome } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 
@@ -34,7 +32,6 @@ export const getGoals = (ns: NS): Goal => {
   const { money } = player;
   const staticData = getStaticData(ns);
   const { currentNode, ownedSF } = staticData.resetInfo;
-  const { requiredJobRam, requiredAugRam, purchasedServerCosts } = staticData;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
   const { totalIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns) as unknown as Formulas;
@@ -137,32 +134,15 @@ export const getGoals = (ns: NS): Goal => {
       ),
     );
 
-  const POOL1 = `${THREADPOOL}-01`;
-  const pool1Ram = ns.serverExists(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
-  const makeRamGoal = (size: number, cost: number) =>
-    jobRamGoal(POOL1, pool1Ram, size, cost, money, totalIncome);
-
   if (bestPlan) {
-    const ramGoals = [];
-
-    if (needsAugRam(ns)) {
-      const augRamCost = purchasedServerCosts?.[requiredAugRam] ?? 0;
-      ramGoals.push(makeRamGoal(requiredAugRam, augRamCost));
-    }
-
-    if (needsJobRam(ns) && totalIncome > 0) {
-      const baselineTTC = Math.max(...bestPlan.deps.map((g) => g.timeToComplete() ?? Infinity));
-      const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
-      if (jobRamCost / totalIncome < baselineTTC)
-        ramGoals.push(makeRamGoal(requiredJobRam, jobRamCost));
-    }
-
-    return installGoal([...bestPlan.deps, ...ramGoals], bestPlan.actions);
+    return installGoal([...bestPlan.deps], bestPlan.actions);
+  } else {
+    const bootRam = staticData.scriptRam['/boot/data4.ts'];
+    const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
+    const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
+    const currentRam = ns.getServerMaxRam('home');
+    return rebootGoal(homeRamGoal(currentRam, targetRam, money));
   }
-
-  const jobRamCost = purchasedServerCosts?.[requiredJobRam] ?? 0;
-  const jrg = jobRamGoal(POOL1, pool1Ram, requiredJobRam, jobRamCost, money, totalIncome);
-  return reevaluateGoal(jrg);
 };
 
 export const getTimeToMilestone = (ns: NS): number | null => {

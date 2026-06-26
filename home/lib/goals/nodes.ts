@@ -94,19 +94,6 @@ export const goal = (
   };
 };
 
-export const jobRamGoal = (
-  poolServer: string,
-  currentRam: number,
-  requiredJobRam: number,
-  jobRamCost: number,
-  currentMoney: number,
-  totalIncome: number,
-) =>
-  goal('JOB_RAM', `${requiredJobRam}GB on ${poolServer}`, () => currentRam >= requiredJobRam, {
-    requirement: requiredJobRam,
-    ownTime: () => (totalIncome > 0 ? Math.max(0, jobRamCost - currentMoney) / totalIncome : null),
-  });
-
 export const homeRamGoal = (currentRam: number, targetRam: number, prereq: Goal) =>
   goal('HOME_RAM', `${targetRam}GB RAM on home`, () => currentRam >= targetRam, {
     deps: [prereq],

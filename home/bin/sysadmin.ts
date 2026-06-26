@@ -1,13 +1,7 @@
 import { THREADPOOL } from '../etc/config';
 import { getStaticData, getHostnames, putHostnames } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
-import {
-  needsJobRam,
-  needsAugRam,
-  getJobRamCost,
-  getAugRamCost,
-  getIncome,
-} from '../lib/query-service';
+import { getIncome } from '../lib/query-service';
 import { getTimeToMilestone } from '../lib/goals/goals';
 import { infect } from './infect';
 
@@ -42,13 +36,7 @@ const atCapacity = (ns: NS) => {
 export async function main(ns: NS) {
   ns.disableLog('ALL');
 
-  const {
-    requiredJobRam,
-    requiredAugRam,
-    purchasedServerLimit,
-    purchasedServerCosts,
-    purchasedServerMaxRam,
-  } = getStaticData(ns);
+  const { purchasedServerLimit, purchasedServerCosts, purchasedServerMaxRam } = getStaticData(ns);
 
   const buyServer = async (
     minRam: number,
@@ -124,15 +112,6 @@ export async function main(ns: NS) {
 
     if (atMaxServers && servers.every((server) => server.ram === purchasedServerMaxRam)) {
       disableService(ns, 'sysadmin');
-      return;
-    }
-
-    if (needsJobRam(ns) && getJobRamCost(ns) <= money) {
-      await buyServer(requiredJobRam, requiredJobRam, `${THREADPOOL}-01`);
-      return;
-    }
-    if (needsAugRam(ns) && getAugRamCost(ns) <= money) {
-      await buyServer(requiredAugRam, requiredAugRam, `${THREADPOOL}-01`);
       return;
     }
 

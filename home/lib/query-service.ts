@@ -9,19 +9,13 @@ const cache = <T>(func: (ns: NS) => T) => {
 };
 
 const getRamInfo = cache((ns: NS) => {
-  const { purchasedServerCosts, requiredJobRam, requiredAugRam } = getStaticData(ns);
+  const { purchasedServerCosts, requiredAugRam } = getStaticData(ns);
   return (
     purchasedServerCosts && {
       purchasedServerCosts,
-      requiredJobRam,
       requiredAugRam,
     }
   );
-});
-
-export const getJobRamCost = cache((ns: NS) => {
-  const { purchasedServerCosts, requiredJobRam } = getRamInfo(ns);
-  return purchasedServerCosts[requiredJobRam];
 });
 
 export const getAugRamCost = cache((ns: NS) => {
@@ -34,12 +28,6 @@ const getPoolRamStatus = (ns: NS) => {
   const homeRam = rootServers?.find((s) => s.hostname === 'home')?.maxRam ?? 0;
   const pool1Ram = purchasedServers?.[0]?.maxRam || 0;
   return { homeRam, pool1Ram };
-};
-
-export const needsJobRam = (ns: NS) => {
-  const { requiredJobRam } = getStaticData(ns);
-  const { homeRam, pool1Ram } = getPoolRamStatus(ns);
-  return homeRam < requiredJobRam * 2 && pool1Ram < requiredJobRam;
 };
 
 export const needsAugRam = (ns: NS) => {

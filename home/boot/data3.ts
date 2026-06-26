@@ -3,7 +3,6 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { getCallGraph } from './call-graph';
 import { STR } from '../lib/colors';
-import { getAllServices } from '../bin/services/services';
 
 export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'Determining required job RAM');
@@ -11,19 +10,12 @@ export async function main(ns: NS) {
   const { scriptRam, resetInfo } = getStaticData(ns);
 
   const callGraph = getCallGraph(ns);
-  const services = getAllServices(ns, (ns: NS) => ns.getPlayer()).map((service) => service.script);
 
   const getRam = (script: string) => scriptRam[script.replace(/^\.*[/]/, '')];
   const getRamDepth = (script: string): number => {
     if (callGraph[script] == null) throw new Error(script + ' not found in call graph');
     return getRam(script) + Math.max(0, ...callGraph[script].map(getRamDepth));
   };
-
-  const minServiceRam = services.map(getRamDepth).reduce((a, b) => a + b, 0);
-
-  let requiredJobRam = 1;
-  while (requiredJobRam < minServiceRam) requiredJobRam *= 2;
-  tprint(ns)(STR + `  Job RAM Required: ${requiredJobRam}GB`);
 
   let requiredAugRam = 0;
   if (resetInfo.currentNode === 4 || resetInfo.ownedSF.has(4)) {
@@ -34,7 +26,7 @@ export async function main(ns: NS) {
   }
   tprint(ns)(STR + `  Aug Suite RAM Required: ${requiredAugRam}GB`);
 
-  putStaticData(ns, { requiredJobRam, requiredAugRam });
+  putStaticData(ns, { requiredAugRam });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);
