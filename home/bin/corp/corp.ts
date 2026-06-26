@@ -55,13 +55,15 @@ export async function main(ns: NS) {
       if (divisions.includes(DivisionNames['Tobacco'])) {
         const reports = await $manageTobacco(ns, materialData, industryData)();
         if (reports) {
+          const fmt = new Intl.NumberFormat('en', { notation: 'compact' });
+          const f = (n: number) => fmt.format(Math.round(n * 1000) / 1000);
           const cities = Object.values(ns.enums.CityName);
           const columns = ['Material', ...cities];
           const rows = BOOST_MATERIALS.map((material) => [
             material,
             ...cities.map((cityName) => {
               const [have, need] = reports[cityName].boostMaterialProgress[material];
-              return `${ns.format.number(have)}/${ns.format.number(need)}`;
+              return `${f(have)}/${f(need)}`;
             }),
           ]);
           ns.clearLog();
