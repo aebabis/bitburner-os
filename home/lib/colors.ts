@@ -29,6 +29,7 @@ export const BRIGHT = C(104);
 export const NORMAL = C(98);
 export const MEDIUM = C(60);
 export const DARK = C(53);
+export const DIM = C(236);
 export const BORDER = C(17);
 export const MONEY = C(217);
 export const RESET = '\u001b[0m';

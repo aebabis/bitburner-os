@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, NORMAL, DARK } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
@@ -70,6 +70,7 @@ const getRunStats = (ns: NS) => {
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),
+    '    ',
     getSpecialAugs(ns),
   ].join('  ');
 };
@@ -204,16 +205,24 @@ const getWork = (ns: NS) => {
 
 const getSpecialAugs = (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
-  const getDisplay = (aug: string, initials: string, off: number, on: number) => {
-    const color = resetInfo.ownedAugs.has(aug) ? C(on).BOLD : C(off);
+  const getDisplay = (aug: string, initials: string, on: number) => {
+    const color = resetInfo.ownedAugs.has(aug) ? C(on).BOLD : DIM;
     return color(initials);
   };
   const specialAugDisplays = [
-    // getDisplay('CashRoot Starter Kit', 'CR', 22, 46),
-    getDisplay('Neuroreceptor Management Implant', 'NR', 236, 220),
-    getDisplay('The Red Pill', 'RP', 236, 124),
+    // getDisplay('', 'CR', 22, 46),
+    getDisplay('Neuroreceptor Management Implant', 'NR', 220),
+    getDisplay('DataJack', 'DJ', 166),
+    getDisplay('The Red Pill', 'RP', 124),
+    getDisplay('QLink', 'QL', 27),
   ];
-  return H('AUGS') + '  ' + specialAugDisplays.join('  ');
+  if (!(resetInfo.ownedSF.has(4) || resetInfo.currentNode === 4)) {
+    specialAugDisplays.unshift(
+      getDisplay('CashRoot Starter Kit', 'CR', 34),
+      getDisplay('BitRunners Neurolink', 'NL', 70),
+    );
+  }
+  return specialAugDisplays.join('  ');
 };
 
 const getExecutionTable = (ns: NS) => {
@@ -304,7 +313,7 @@ const getSourceFilesTable = (ns: NS) => {
   const f = (bn: number, l?: number) => {
     const str = `${bn}.${l ?? 0}`.padStart(4);
     if (l == null) {
-      return C(56)(str);
+      return DIM(str);
     } else if (bn === resetInfo.currentNode) {
       return C(183)(str);
     } else {
@@ -314,17 +323,10 @@ const getSourceFilesTable = (ns: NS) => {
   const NUMS = new Array(15).fill(0).map((_, i) => i + 1);
   const sourceFiles = NUMS.map((bn) => f(bn, ownedSF.get(bn)));
   return (
-    H(' SFs') +
-    ' \n' +
-    ' ' +
-    sourceFiles.slice(0, 5).join(' ') +
-    ' \n' +
-    ' ' +
-    sourceFiles.slice(5, 10).join(' ') +
-    ' \n' +
-    ' ' +
-    sourceFiles.slice(10, 15).join(' ') +
-    ' \n'
+    H(' SFs \n') +
+    ` ${sourceFiles.slice(0, 5).join(' ')} \n` +
+    ` ${sourceFiles.slice(5, 10).join(' ')} \n` +
+    ` ${sourceFiles.slice(10, 15).join(' ')} \n`
   );
 };
 
