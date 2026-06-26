@@ -103,7 +103,9 @@ const runScript =
       throw new Error('No data in port after running helper program');
     }
     if (!ns.getPortHandle(port).empty()) {
-      throw new Error('Port ' + port + ' not empty after read: ' + ns.peek(port));
+      const data = ns.peek(port);
+      ns.clearPort(port);
+      throw new Error('Port ' + port + ' not empty after read: ' + data);
     }
     if (result instanceof Error) {
       throw result;
