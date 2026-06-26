@@ -1,4 +1,4 @@
-import { getStaticData } from '../../lib/data-store';
+import { getStaticData, putMoneyData } from '../../lib/data-store';
 import { inPlace } from '../../lib/in-place';
 import {
   $createCorporation,
@@ -68,6 +68,8 @@ export async function main(ns: NS) {
           ns.print(table(ns, columns, rows, { colors: true }));
         }
       }
+      const { dividendEarnings } = await $.corporation['getCorporation']();
+      putMoneyData(ns, { dividendEarnings });
     }
   }
 }
