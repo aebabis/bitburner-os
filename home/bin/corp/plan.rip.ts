@@ -359,7 +359,7 @@ export const createPlan = (
       }
     },
 
-    getReport: (mapper = (str: string, isDone: boolean) => `${isDone ? '✓' : ' '} ${str}`) =>
+    getReport: (mapper = (str: string, isDone: boolean) => `${isDone ? ' ✓' : '  '} ${str}`) =>
       steps.map((step) => step.description).map((str, i) => mapper(str, i < currentStepIndex)),
   };
 
