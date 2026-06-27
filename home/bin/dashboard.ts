@@ -70,7 +70,7 @@ const getRunStats = (ns: NS) => {
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),
-    '    ',
+    ' ',
     getSpecialAugs(ns),
   ].join('  ');
 };
@@ -238,14 +238,20 @@ const getExecutionTable = (ns: NS) => {
 };
 
 const getServiceTable = (ns: NS) => {
+  const services = getServices(ns);
+  const fRam = (ram: number) => (ram.toFixed(2) + 'GB').padStart(8);
+  const total = services.map((service) => service.ram).reduce((a, b) => a + b, 0);
   return table(
     ns,
     ['SERVICES', '', ''],
-    getServices(ns).map(({ name, status, ram }) => [
-      name,
-      status,
-      '  ' + (ram ? MEDIUM(ram.toFixed(2) + 'GB') : ERROR('error')),
-    ]),
+    [
+      ...services.map(({ name, status, ram }) => [
+        name,
+        status,
+        ' ' + (ram ? MEDIUM(fRam(ram)) : ERROR('error')),
+      ]),
+      ['TOTAL', '', ' ' + MEDIUM(fRam(total))],
+    ],
     { colors: true },
   );
 };

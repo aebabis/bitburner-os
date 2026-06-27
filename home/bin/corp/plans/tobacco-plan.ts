@@ -10,8 +10,6 @@ export const getTobaccoPlan = (
 ) =>
   createPlan(ns, industryData, materialData)
     .openDivision('Agriculture', AgDiv)
-    .buyUnlock('Office API')
-    .buyUnlock('Warehouse API')
     .assignEmployees(AgDiv, [1, 1, 0, 1, 0, 0])
     .expandOffices(AgDiv, [1, 1, 1, 1, 1, 1])
     .expandWarehouses(AgDiv, 2)
