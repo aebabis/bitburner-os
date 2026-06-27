@@ -27,11 +27,11 @@ export const DEFAULT_AUG_WEIGHTS: Record<keyof Multipliers, number> = {
   agility_exp: 0.5,
 
   // Low — hacknet (cost stats use reciprocal: lower value = better, treated as equivalent boost)
-  hacknet_node_money: 1,
-  hacknet_node_purchase_cost: 0.5,
-  hacknet_node_ram_cost: 0.5,
-  hacknet_node_core_cost: 0.5,
-  hacknet_node_level_cost: 0.5,
+  hacknet_node_money: 0,
+  hacknet_node_purchase_cost: 0,
+  hacknet_node_ram_cost: 0,
+  hacknet_node_core_cost: 0,
+  hacknet_node_level_cost: 0,
 
   // Zero — not relevant for automated play in tested bitnodes
   charisma: 0,
