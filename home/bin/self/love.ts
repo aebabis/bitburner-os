@@ -1,7 +1,7 @@
 import { getStaticData, putPlayerData } from '../../lib/data-store';
 import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals';
 import { Goal, GoalType } from '../../lib/goals/nodes';
-import { by, randPort } from '../../lib/util';
+import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace } from '../../lib/in-place';
 import { shouldWorkHaveFocus as focus } from '../../lib/query-service';
 import { $nmap } from '../../lib/nmap.rip';
@@ -161,6 +161,7 @@ export async function main(ns: NS) {
       if (ns.getPlayer().money > 5000) await goToGym(statForCrimeTraining);
       else await goToWork();
     } else {
+      const CONFIDENCE = 0.9;
       const crimes = Object.entries(CRIMES).filter(
         ([, stats]) => stats.time <= timeLimit * 1000,
       ) as [CrimeType, CrimeStats][];
@@ -168,14 +169,20 @@ export async function main(ns: NS) {
         await goToWork();
         return;
       }
+      const score = async ([type, stats]: [CrimeType, CrimeStats]) => {
+        const chance = await $.singularity['getCrimeChance'](type);
+        const n = Math.floor((timeLimit * 1000) / stats.time);
+        const lb = binomLowerBound(n, chance, CONFIDENCE);
+        return lb > 0 ? lb * stats.money : chance * stats.money;
+      };
       let bestCrime = crimes.shift()!;
-      let bestChance = await $.singularity['getCrimeChance'](bestCrime[0]);
+      let bestScore = await score(bestCrime);
       let otherCrime;
       while ((otherCrime = crimes.shift())) {
-        const otherChance = await $.singularity['getCrimeChance'](otherCrime[0]);
-        if (otherChance * otherCrime[1].money > bestChance * bestCrime[1].money) {
+        const otherScore = await score(otherCrime);
+        if (otherScore > bestScore) {
           bestCrime = otherCrime;
-          bestChance = otherChance;
+          bestScore = otherScore;
         }
       }
       await $commitCrime(bestCrime[0]);

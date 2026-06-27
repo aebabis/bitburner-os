@@ -54,3 +54,26 @@ export const small = (number: string | number) =>
       (n: string) => '₀₁₂₃₄₅₆₇₈₉'[+n] || 'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ'[n.charCodeAt(0) - 97] || ' ',
     )
     .join('');
+
+const logBinomCoeff = (n: number, k: number): number => {
+  let r = 0;
+  for (let i = 0; i < k; i++) r += Math.log(n - i) - Math.log(i + 1);
+  return r;
+};
+
+const binomPMF = (n: number, k: number, p: number): number => {
+  if (p === 0) return k === 0 ? 1 : 0;
+  if (p === 1) return k === n ? 1 : 0;
+  return Math.exp(logBinomCoeff(n, k) + k * Math.log(p) + (n - k) * Math.log(1 - p));
+};
+
+// Largest k such that P(X >= k) >= confidence, where X ~ Binomial(n, p)
+export const binomLowerBound = (n: number, p: number, confidence: number): number => {
+  const threshold = 1 - confidence;
+  let cdf = 0;
+  for (let k = 0; k <= n; k++) {
+    if (cdf > threshold) return k - 1;
+    cdf += binomPMF(n, k, p);
+  }
+  return n;
+};
