@@ -81,10 +81,11 @@ const runScript =
   async (script: string, ...args: ScriptArg[]) => {
     const ram = ns.getScriptRam(script);
     const startingRam = ns.ramOverride();
-    const newRam = ns.ramOverride(startingRam - ram);
+    const desiredNewRam = +(startingRam - ram).toFixed(2);
+    const newRam = +ns.ramOverride(desiredNewRam);
     if (newRam === startingRam) {
       throw new Error(
-        `Failed to shrink from ${startingRam}GB to ${startingRam - ram}GB for ${script}. ` +
+        `Failed to shrink from ${startingRam}GB to ${desiredNewRam}GB for ${script}. ` +
           "Make sure you've reserved RAM for the most expensive call",
       );
     }
