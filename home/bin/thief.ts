@@ -46,8 +46,6 @@ const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
 };
 
 const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: number) => {
-  const hackTime = ns.getHackTime();
-  const growTime = ns.getGrowTime();
   const weakTime = ns.getWeakenTime();
   const hackPortion = ns.hackAnalyze(hostname);
   if (hackPortion * hackThreads >= 1) {
@@ -58,10 +56,8 @@ const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: numbe
   const weak1Threads = getWeakThreads(0.002); // hack security per thread
   const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
   const frameRam = hackThreads * 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
-  const maxHackThreads = Math.floor(hackTime / SPACING) * hackThreads;
-  const maxGrowThreads = Math.floor(growTime / SPACING) * growThreads;
-  const maxWeakThreads = Math.floor(weakTime / SPACING) * (weak1Threads + weak2Threads);
-  const peakRam = maxHackThreads * 1.7 + maxGrowThreads * 1.75 + maxWeakThreads * 1.75;
+  const concurrentFrames = Math.ceil((weakTime + 3 * SPACING) / FRAME_SPACING);
+  const peakRam = concurrentFrames * frameRam;
   const numFrames = Math.min(Math.floor(totalRam / frameRam), FRAME_LIMIT);
   return {
     hackThreads,
@@ -215,7 +211,6 @@ export async function main(ns: NS) {
     }
 
     const { hackThreads, growThreads, weak1Threads, weak2Threads, numFrames } = frame;
-    ns.tprint('HACK THREADS: ' + hackThreads);
 
     // Frames are pipelined: launch one every FRAME_PERIOD, each with the same
     // small additionalMsec offsets. RAM is shared across all concurrent frames.
