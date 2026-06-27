@@ -6,21 +6,24 @@ const partialInfect = (ns: NS, ...hostnames: string[]) => {
 };
 
 const fullInfect = (ns: NS, ...hostnames: string[]) => {
-  const JS = ns.ls('home').filter((f) => f.endsWith('.ts'));
+  const JS = ns
+    .ls('home')
+    .filter((f) => f.endsWith('.ts'))
+    .filter((f) => !f.startsWith('boot'))
+    .filter((f) => !f.startsWith('usr'))
+    .filter((f) => !f.startsWith('tmp'));
   for (const hostname of hostnames) ns.scp(JS, hostname, 'home');
 };
 
 const canRunCode = (ns: NS) => (hostname: string) => ns.getServerMaxRam(hostname) >= 1.6;
 
-const SERVICE_SERVERS = [`${THREADPOOL}-01`, `${THREADPOOL}-02`];
 export const infect = (ns: NS, ...hostnames: string[]) => {
   const workers = ns.ls('home', 'bin/workers/');
   for (const hostname of hostnames) {
     if (hostname !== 'home' && canRunCode(ns)(hostname)) {
-      // To reduce the size of the game save file, only put
-      // non-worker programs on first ~6 company servers
-      // and first 2 cloud servers.
-      if (ns.getServerRequiredHackingLevel() <= 50 || SERVICE_SERVERS.includes(hostname)) {
+      // To reduce boot time and save size, only put
+      // non-worker programs on first cloud server and ~4 company servers
+      if (ns.getServerRequiredHackingLevel() <= 10 || hostname === `${THREADPOOL}-01`) {
         fullInfect(ns, hostname);
       } else {
         partialInfect(ns, hostname);
