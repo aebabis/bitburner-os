@@ -21,9 +21,13 @@ export const infect = (ns: NS, ...hostnames: string[]) => {
   const workers = ns.ls('home', 'bin/workers/');
   for (const hostname of hostnames) {
     if (hostname !== 'home' && canRunCode(ns)(hostname)) {
+      const isCloudServer = hostname.startsWith(THREADPOOL);
+      const allowsEarlyAccess = ns.getServerRequiredHackingLevel(hostname) <= 10;
       // To reduce boot time and save size, only put
       // non-worker programs on first cloud server and ~4 company servers
-      if (ns.getServerRequiredHackingLevel() <= 10 || hostname === `${THREADPOOL}-01`) {
+      if (hostname === `${THREADPOOL}-01`) {
+        fullInfect(ns, hostname);
+      } else if (!isCloudServer && allowsEarlyAccess) {
         fullInfect(ns, hostname);
       } else {
         partialInfect(ns, hostname);
