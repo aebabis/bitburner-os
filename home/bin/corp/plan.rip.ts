@@ -46,6 +46,12 @@ export const createPlan = (
   materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
 ) => {
   type EmployeeCounts = [number, number, number, number, number, number];
+  type Step = {
+    description: string;
+    isDone: () => Promise<boolean>;
+    canStart: () => Promise<boolean>;
+    complete: () => Promise<boolean>;
+  };
   const CITIES = Object.values(ns.enums.CityName);
   const EMPLOYEE_SEQUENCE = [
     'Operations',
@@ -57,10 +63,11 @@ export const createPlan = (
   ] as Exclude<CorpEmployeePosition, 'Unassigned'>[];
   const $ = inPlace(ns, ns.pid);
   const $rip = runInPlace(ns, ns.pid);
-  const steps = [];
+  let currentStepIndex = 0;
+  const steps: Step[] = [];
 
   const plan = {
-    purchaseUnlock: (unlock: CorpUnlockName) => {
+    buyUnlock: (unlock: CorpUnlockName) => {
       const isDone = () => $.corporation['hasUnlock'](unlock);
       const canStart = async () => {
         const cost = await $.corporation['getUnlockCost'](unlock);
@@ -84,7 +91,7 @@ export const createPlan = (
         if (!corp.divisions.includes(divisionName)) return false;
         const division = await $.corporation['getDivision'](divisionName);
         return $rip((division) => {
-          for (const cityName of CITIES) {
+          for (const cityName of Object.values(ns.enums.CityName)) {
             if (!division.cities.includes(cityName)) return false;
             if (!ns.corporation['hasWarehouse'](division.name, cityName)) return false;
           }
@@ -92,7 +99,7 @@ export const createPlan = (
         })(division);
       };
       const canStart = async () => {
-        const corp = ns.corporation['getCorporation']();
+        const corp = await $.corporation['getCorporation']();
         return corp.funds >= totalCost;
       };
       const complete = async () => {
@@ -336,6 +343,24 @@ export const createPlan = (
           : `Await investment offer of $${ns.format.number(minimum)}`;
       steps.push(step(description, { isDone, canStart, complete }));
     },
+
+    isComplete: () => currentStepIndex === steps.length,
+
+    advance: async () => {
+      let currentStep: Step;
+      while ((currentStep = steps[currentStepIndex])) {
+        if (await currentStep.isDone()) {
+          currentStepIndex++;
+        } else if ((await currentStep.canStart()) && (await currentStep.complete())) {
+          currentStepIndex++;
+        } else {
+          break;
+        }
+      }
+    },
+
+    getReport: (mapper = (str: string, isDone: boolean) => `${isDone ? '✓' : ' '} ${str}`) =>
+      steps.map((step) => step.description).map((str, i) => mapper(str, i < currentStepIndex)),
   };
 
   return plan;

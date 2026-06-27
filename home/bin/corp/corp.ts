@@ -13,6 +13,7 @@ import { $manageAgriculture } from './manage/agriculture';
 import { $manageChemicals } from './manage/chemicals';
 import { $manageTobacco } from './manage/tobacco';
 import { table } from '../../lib/table';
+import { getTobaccoPlan } from './plans/tobacco-plan';
 
 export async function main(ns: NS) {
   typeof ns.corporation.createCorporation;
@@ -34,12 +35,17 @@ export async function main(ns: NS) {
   await $createDivision(ns)('Agriculture');
   const materialData = await $getMaterialData(ns);
   const industryData = await $getIndustryData(ns);
+  const plan = getTobaccoPlan(ns, industryData, materialData);
 
   while (true) {
     const STATES = ['START', 'PURCHASE', 'PRODUCTION', 'EXPORT', 'SALE'];
     const lastAction = await ns.corporation.nextUpdate();
     const prevIndex = STATES.indexOf(lastAction);
     const nextAction = STATES.at(prevIndex + 1 - STATES.length);
+
+    if (lastAction === 'START') {
+      await plan.advance();
+    }
 
     if (nextAction !== 'START') {
       await $unlock(ns);
@@ -66,12 +72,13 @@ export async function main(ns: NS) {
               return `${f(have)}/${f(need)}`;
             }),
           ]);
-          ns.clearLog();
           ns.print(table(ns, columns, rows, { colors: true }));
         }
       }
       const { dividendEarnings } = await $.corporation['getCorporation']();
       putMoneyData(ns, { dividendEarnings });
     }
+    ns.clearLog();
+    ns.print(plan.getReport().join('\n'));
   }
 }
