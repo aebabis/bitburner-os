@@ -57,7 +57,6 @@ export type StaticData = {
   purchasedServerLimit: number;
   purchasedServerMaxRam: number;
   purchasedServerCosts: Record<number, number>;
-  requiredAugRam: number;
   bitNodeMultipliers: { HacknetNodeMoney: number | null };
   hacknetMultipliers: HacknetMultipliers;
   favorToDonate: number;

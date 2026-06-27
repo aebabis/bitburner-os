@@ -1,5 +1,5 @@
 import { AnyHostService, Service } from '../../lib/service';
-import { getStaticData, getRamData } from '../../lib/data-store';
+import { getStaticData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 import { getGoals } from '../../lib/goals/goals';
 
@@ -11,14 +11,9 @@ const isRemoteApiConnected = () => {
   }
 };
 
-const mostRootRam = (ns: NS) => {
-  const { rootServers = [] } = getRamData(ns) || {};
-  return Math.max(0, ...rootServers.map((server: { maxRam: number }) => server.maxRam));
-};
-
 export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
-  const { requiredAugRam, purchasedServerCosts, resetInfo } = getStaticData(ns);
+  const { purchasedServerCosts, resetInfo } = getStaticData(ns);
   const { disableGang, disableCorporation } = resetInfo.bitNodeOptions;
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
@@ -61,7 +56,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
     ns.corporation.canCreateCorporation(mustSelfFund) === 'Success';
-  const canAutopilot = () => hasSingularity() && requiredAugRam <= mostRootRam(ns);
   const preferBlade = () => inBladeNode() && getGoals(ns).prerequisites('BLADES_JOIN').length > 0;
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
@@ -82,7 +76,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/don.ts'),
     AnyHostService(ns, enableCorp, corpReady)('/bin/corp/corp.ts'),
-    AnyHostService(ns, hasSingularity, canAutopilot)('/bin/self/control.ts'),
+    AnyHostService(ns, hasSingularity, always)('/bin/self/control.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/hinter.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),

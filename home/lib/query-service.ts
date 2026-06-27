@@ -1,40 +1,4 @@
-import { getStaticData, getRamData, getPlayerData, getMoneyData } from './data-store';
-
-const cache = <T>(func: (ns: NS) => T) => {
-  let data: T | undefined;
-  return (ns: NS) => {
-    if (data === undefined) data = func(ns);
-    return data;
-  };
-};
-
-const getRamInfo = cache((ns: NS) => {
-  const { purchasedServerCosts, requiredAugRam } = getStaticData(ns);
-  return (
-    purchasedServerCosts && {
-      purchasedServerCosts,
-      requiredAugRam,
-    }
-  );
-});
-
-export const getAugRamCost = cache((ns: NS) => {
-  const { purchasedServerCosts, requiredAugRam } = getRamInfo(ns);
-  return purchasedServerCosts[requiredAugRam];
-});
-
-const getPoolRamStatus = (ns: NS) => {
-  const { rootServers, purchasedServers } = getRamData(ns);
-  const homeRam = rootServers?.find((s) => s.hostname === 'home')?.maxRam ?? 0;
-  const pool1Ram = purchasedServers?.[0]?.maxRam || 0;
-  return { homeRam, pool1Ram };
-};
-
-export const needsAugRam = (ns: NS) => {
-  const { requiredAugRam } = getStaticData(ns);
-  const { homeRam, pool1Ram } = getPoolRamStatus(ns);
-  return homeRam < requiredAugRam * 2 && pool1Ram < requiredAugRam;
-};
+import { getStaticData, getPlayerData, getMoneyData } from './data-store';
 
 export const shouldWorkHaveFocus = (ns: NS) => {
   const { isPlayerActive } = getPlayerData(ns);
