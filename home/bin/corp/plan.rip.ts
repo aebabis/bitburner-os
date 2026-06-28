@@ -412,7 +412,7 @@ export const createPlan = (
         }
       };
       steps.push(
-        step(`Purchase upgrades: ${JSON.stringify(upgrades).replaceAll(/{}"/, '')}`, {
+        step(`Purchase upgrades: ${JSON.stringify(upgrades).replaceAll(/{}"/g, '')}`, {
           isDone,
           canStart,
           complete,
