@@ -21,7 +21,7 @@ const go = async (ns: NS) => {
   if (resetInfo.currentNode === 8) {
     ns.exec('/bin/self/buy-ram.ts', 'home');
   }
-  const tasks = getAllServices(ns, player).filter((t) => t.isViable());
+  const services = getAllServices(ns, player).filter((t) => t.isViable());
 
   const lastRuns: Record<string, number> = {};
   const lastCancellations: Record<string, number> = {};
@@ -29,15 +29,15 @@ const go = async (ns: NS) => {
 
   const showServices = () => {
     ns.clearLog();
-    const taskData = tasks.map((task) => task.toData());
-    writeServices(ns, taskData);
-    ns.print(getTableString(ns, taskData));
+    const serviceData = services.map((service) => service.toData());
+    writeServices(ns, serviceData);
+    ns.print(getTableString(ns, serviceData));
   };
 
   const updateTasks = () => {
     for (const order of checkQueue(ns)) {
       const { identifier, type, force } = order;
-      const task = tasks.find((task) => task.matches(identifier));
+      const task = services.find((task) => task.matches(identifier));
       if (task == null) throw new Error(`No task matching "${identifier}"`);
       if (type === ENABLE) task.enable(force);
       if (type === DISABLE) task.disable();
@@ -87,16 +87,11 @@ const go = async (ns: NS) => {
   while (true) {
     await handleExecRequests();
     putPlayerData(ns, { player: player(ns) });
-    const poolContext = {
-      freePool: getRootServers(ns)
-        .filter((s) => s.hostname !== 'home')
-        .reduce((sum, s) => sum + s.ramUnused, 0),
-    };
-    for (const task of tasks) {
+    for (const service of services) {
       try {
         updateTasks();
         showServices();
-        await task.check(poolContext);
+        await service.check();
       } catch (error) {
         console.error(error);
         if (error?.name === 'ScriptDeath') throw error;

@@ -134,21 +134,7 @@ export const createPlan = (
     ) => {
       const cities = cityName != null ? [cityName] : CITIES;
       let wasCompleted = false; // assignEmployees overrides post-competion isDone check because results are asyncronous
-      const isDone = () =>
-        wasCompleted ||
-        $rip(
-          (
-            divisionName: DivisionName,
-            cities: CityName[],
-            employeeAllocation: EmployeeCounts,
-            seq: typeof EMPLOYEE_SEQUENCE,
-          ) =>
-            cities
-              .map((cityName) => ns.corporation['getOffice'](divisionName, cityName).employeeJobs)
-              .every((jobs) =>
-                employeeAllocation.every((count, index) => jobs[seq[index]] === count),
-              ),
-        )(divisionName, cities, employeeAllocation, EMPLOYEE_SEQUENCE);
+      const isDone = () => wasCompleted;
       const canStart = async () => true;
       const complete = async () => {
         const jobsToAssign = employeeAllocation.reduce((a, b) => a + b, 0);
@@ -300,6 +286,27 @@ export const createPlan = (
           complete,
         }),
       );
+      return plan;
+    },
+
+    advertise: (divisionName: DivisionName, targetLevel: number) => {
+      const $stillNeeded = async () => {
+        const currentLevel = await $.corporation['getHireAdVertCount'](divisionName);
+        return currentLevel < targetLevel;
+      };
+      const isDone = async () => !(await $stillNeeded());
+      const canStart = async () => {
+        const { funds } = await $.corporation['getCorporation']();
+        const cost = await $.corporation['getHireAdVertCost'](divisionName);
+        return funds >= cost;
+      };
+      const complete = async () => {
+        while (await $stillNeeded()) {
+          await $.corporation['hireAdVert'](divisionName);
+        }
+        return true;
+      };
+      steps.push(step('Advertise', { isDone, canStart, complete }));
       return plan;
     },
 

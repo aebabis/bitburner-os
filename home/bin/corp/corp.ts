@@ -5,8 +5,6 @@ import {
   $createDivision,
   $getIndustryData,
   $getMaterialData,
-  $openOffices,
-  $unlock,
 } from './corp.rip';
 import { BOOST_MATERIALS, DivisionNames } from './constants';
 import { $manageAgriculture } from './manage/agriculture';
@@ -31,6 +29,7 @@ export async function main(ns: NS) {
     }
   }
   ns.ui.openTail();
+  ns.ui.resizeTail(700, 300);
 
   await $createDivision(ns)('Agriculture');
   const materialData = await $getMaterialData(ns);
