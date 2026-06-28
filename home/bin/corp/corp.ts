@@ -48,9 +48,6 @@ export async function main(ns: NS) {
     }
 
     if (nextAction !== 'START') {
-      await $unlock(ns);
-      await $openOffices(ns);
-
       const { divisions } = await $.corporation['getCorporation']();
       if (divisions.includes(DivisionNames['Agriculture'])) {
         await $manageAgriculture(ns, materialData, industryData)(divisions);

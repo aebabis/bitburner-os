@@ -113,7 +113,7 @@ export const createPlan = (
             if (!division.cities.includes(cityName)) {
               await $.corporation['expandCity'](divisionName, cityName);
             }
-            if (!ns.corporation['hasWarehouse'](division.name, cityName)) {
+            if (!(await $.corporation['hasWarehouse'](division.name, cityName))) {
               await $.corporation['purchaseWarehouse'](divisionName, cityName);
             }
           }
@@ -133,27 +133,43 @@ export const createPlan = (
       cityName?: CityName,
     ) => {
       const cities = cityName != null ? [cityName] : CITIES;
+      let wasCompleted = false; // assignEmployees overrides post-competion isDone check because results are asyncronous
       const isDone = () =>
-        $rip((divisionName: DivisionName, cities: CityName[], employeeAllocation: EmployeeCounts) =>
-          cities
-            .map((cityName) => ns.corporation['getOffice'](divisionName, cityName).employeeJobs)
-            .every((jobs) =>
-              employeeAllocation.every((count, index) => jobs[EMPLOYEE_SEQUENCE[index]] === count),
-            ),
-        )(divisionName, cities, employeeAllocation);
-      const canStart = async () => true;
-      const complete = () =>
+        wasCompleted ||
         $rip(
-          (divisionName: DivisionName, cities: CityName[], employeeAllocation: EmployeeCounts) => {
+          (
+            divisionName: DivisionName,
+            cities: CityName[],
+            employeeAllocation: EmployeeCounts,
+            seq: typeof EMPLOYEE_SEQUENCE,
+          ) =>
+            cities
+              .map((cityName) => ns.corporation['getOffice'](divisionName, cityName).employeeJobs)
+              .every((jobs) =>
+                employeeAllocation.every((count, index) => jobs[seq[index]] === count),
+              ),
+        )(divisionName, cities, employeeAllocation, EMPLOYEE_SEQUENCE);
+      const canStart = async () => true;
+      const complete = async () => {
+        const jobsToAssign = employeeAllocation.reduce((a, b) => a + b, 0);
+        for (const cityName of CITIES) {
+          const office = await $.corporation['getOffice'](divisionName, cityName);
+          let numNeeded = jobsToAssign - office.numEmployees;
+          while (numNeeded > 0) {
+            if (!(await $.corporation['hireEmployee'](divisionName, cityName))) return false;
+          }
+        }
+        return (wasCompleted = await $rip(
+          (
+            divisionName: DivisionName,
+            cities: CityName[],
+            employeeAllocation: EmployeeCounts,
+            seq: typeof EMPLOYEE_SEQUENCE,
+          ) => {
             let allSet = true;
             for (const cityName of cities) {
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
-                ns.corporation['setJobAssignment'](
-                  divisionName,
-                  cityName,
-                  EMPLOYEE_SEQUENCE[roleIndex],
-                  0,
-                );
+                ns.corporation['setJobAssignment'](divisionName, cityName, seq[roleIndex], 0);
               }
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
                 allSet =
@@ -161,14 +177,15 @@ export const createPlan = (
                   ns.corporation['setJobAssignment'](
                     divisionName,
                     cityName,
-                    EMPLOYEE_SEQUENCE[roleIndex],
+                    seq[roleIndex],
                     employeeAllocation[roleIndex],
                   );
               }
             }
             return allSet;
           },
-        )(divisionName, cities, employeeAllocation);
+        )(divisionName, cities, employeeAllocation, EMPLOYEE_SEQUENCE));
+      };
       const officeName = cityName ? cityName : 'all locations';
       steps.push(
         step(`Assign ${divisionName} employees in ${officeName}: ${employeeAllocation}`, {
@@ -229,6 +246,7 @@ export const createPlan = (
           { isDone, canStart, complete },
         ),
       );
+      plan.assignEmployees(divisionName, employeeAllocation, cityName);
       return plan;
     },
 

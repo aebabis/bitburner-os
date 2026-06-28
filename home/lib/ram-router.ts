@@ -17,7 +17,8 @@ export const HACKER_POLICY = (ns: NS): RamPolicy => ({
 
 const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
-    if (script === '/bin/access.ts' || script === '/bin/nerd.ts') return 0;
+    if (script === '/bin/access.ts' || script === '/bin/nerd.ts' || script === '/bin/corp/corp.ts')
+      return 0;
     return highPriority ? 2 : 4;
   },
 };
@@ -100,7 +101,9 @@ export const execOnBestServer = (
   const eligible = rootServers.filter((s) => ns.getScriptRam(script, s.hostname) > 0);
   const isValid = (s: RamInfo) => s.ramAvailableTo(process) >= ramRequired;
   const isUsable = (s: RamInfo) => s.ramAvailableTo(process) >= scriptRam;
-  const server = eligible.find(isValid) ?? eligible.find(isUsable);
+  const server =
+    eligible.filter(isValid).sort(by((s) => s.ramAvailableTo(process)))[0] ??
+    eligible.find(isUsable);
 
   if (server != null) {
     const maxThreads = Math.floor(server.ramAvailableTo(process) / scriptRam);

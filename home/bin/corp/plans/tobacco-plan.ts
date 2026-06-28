@@ -11,6 +11,6 @@ export const getTobaccoPlan = (
   createPlan(ns, industryData, materialData)
     .openDivision('Agriculture', AgDiv)
     .assignEmployees(AgDiv, [1, 1, 0, 1, 0, 0])
-    .expandOffices(AgDiv, [1, 1, 1, 1, 1, 1])
+    .expandOffices(AgDiv, [1, 2, 1, 1, 1, 0])
     .expandWarehouses(AgDiv, 2)
     .buyUnlock('Smart Supply');
