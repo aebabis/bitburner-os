@@ -1,6 +1,21 @@
 import { inPlace, runInPlace } from '../../lib/in-place';
 import { DivisionName } from './constants';
 
+type Step = {
+  description: string;
+  isDone: () => Promise<boolean>;
+  canStart: () => Promise<boolean>;
+  complete: () => Promise<boolean>;
+};
+
+export const getIndustrySetupCost =
+  (ns: NS, industryData: Record<CorpIndustryName, CorpIndustryData>) =>
+  (industryName: CorpIndustryName) => {
+    const constants = ns.corporation.getConstants();
+    const setupCost = 6 * (constants.officeInitialCost + constants.warehouseInitialCost);
+    return industryData[industryName].startingCost + setupCost;
+  };
+
 const step = (
   description: string,
   {
@@ -46,12 +61,6 @@ export const createPlan = (
   materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
 ) => {
   type EmployeeCounts = [number, number, number, number, number, number];
-  type Step = {
-    description: string;
-    isDone: () => Promise<boolean>;
-    canStart: () => Promise<boolean>;
-    complete: () => Promise<boolean>;
-  };
   const CITIES = Object.values(ns.enums.CityName);
   const EMPLOYEE_SEQUENCE = [
     'Operations',
@@ -83,9 +92,7 @@ export const createPlan = (
     },
 
     openDivision: (industryName: CorpIndustryName, divisionName: DivisionName) => {
-      const constants = ns.corporation.getConstants();
-      const setupCost = 6 * (constants.officeInitialCost + constants.warehouseInitialCost);
-      const totalCost = industryData[industryName].startingCost + setupCost;
+      const totalCost = getIndustrySetupCost(ns, industryData)(industryName);
       const isDone = async () => {
         const corp = await $.corporation['getCorporation']();
         if (!corp.divisions.includes(divisionName)) return false;
@@ -123,7 +130,71 @@ export const createPlan = (
         }
         return true;
       };
-      steps.push(step(`Open ${divisionName}`, { isDone, canStart, complete }));
+      const desc = `Open ${divisionName} ($${ns.format.number(totalCost)})`;
+      steps.push(step(desc, { isDone, canStart, complete }));
+      return plan;
+    },
+
+    setupExport: (
+      fromDivision: DivisionName,
+      toDivision: DivisionName,
+      material: CorpMaterialName,
+      amount = '(-IPROD-IINV)/10',
+    ) => {
+      let wasCompleted = false; // assignEmployees overrides post-competion isDone check because results are asyncronous
+      const isDone = async () => wasCompleted;
+      const canStart = async () => true;
+      const complete = async () => {
+        for (const cityName of CITIES) {
+          await $.corporation['cancelExportMaterial'](
+            fromDivision,
+            cityName,
+            toDivision,
+            cityName,
+            material,
+          );
+          await $.corporation['exportMaterial'](
+            fromDivision,
+            cityName,
+            toDivision,
+            cityName,
+            material,
+            amount,
+          );
+        }
+        return true;
+      };
+      const desc = `Setup Export of ${material} from ${fromDivision} to ${toDivision}`;
+      steps.push(step(desc, { isDone, canStart, complete }));
+      return plan;
+    },
+
+    enableSmartSupply: (divisionName: DivisionName, cityName?: CityName) => {
+      const cities = cityName != null ? [cityName] : CITIES;
+      const isDone = async () => {
+        for (const cityName of cities) {
+          const warehouse = await $.corporation['getWarehouse'](divisionName, cityName);
+          if (!warehouse.smartSupplyEnabled) {
+            return false;
+          }
+        }
+        return true;
+      };
+      const canStart = async () => true;
+      const complete = async () => {
+        for (const cityName of cities) {
+          await $.corporation['setSmartSupply'](divisionName, cityName, true);
+        }
+        return true;
+      };
+      const officeName = cityName ? cityName : 'all locations';
+      steps.push(
+        step(`Enable ${divisionName} Smart Supply in ${officeName}`, {
+          isDone,
+          canStart,
+          complete,
+        }),
+      );
       return plan;
     },
 
@@ -134,7 +205,7 @@ export const createPlan = (
     ) => {
       const cities = cityName != null ? [cityName] : CITIES;
       let wasCompleted = false; // assignEmployees overrides post-competion isDone check because results are asyncronous
-      const isDone = () => wasCompleted;
+      const isDone = async () => wasCompleted;
       const canStart = async () => true;
       const complete = async () => {
         const jobsToAssign = employeeAllocation.reduce((a, b) => a + b, 0);
@@ -155,7 +226,8 @@ export const createPlan = (
             let allSet = true;
             for (const cityName of cities) {
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
-                ns.corporation['setJobAssignment'](divisionName, cityName, seq[roleIndex], 0);
+                allSet &&
+                  ns.corporation['setJobAssignment'](divisionName, cityName, seq[roleIndex], 0);
               }
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
                 allSet =
@@ -351,7 +423,7 @@ export const createPlan = (
 
     waitForInvestment: (investmentNumber: number, minimum?: number) => {
       const isDone = async () =>
-        (await $.corporation['getInvestmentOffer']()).round >= investmentNumber;
+        (await $.corporation['getInvestmentOffer']()).round > investmentNumber;
       const canStart = async () => {
         if (minimum == null) {
           // If a minimum is not specified, allow consumer script
@@ -367,6 +439,7 @@ export const createPlan = (
           ? `Await completion of investment round ${investmentNumber}`
           : `Await investment offer of $${ns.format.number(minimum)}`;
       steps.push(step(description, { isDone, canStart, complete }));
+      return plan;
     },
 
     isComplete: () => currentStepIndex === steps.length,

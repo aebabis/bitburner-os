@@ -49,7 +49,7 @@ export async function main(ns: NS) {
     if (nextAction !== 'START') {
       const { divisions } = await $.corporation['getCorporation']();
       if (divisions.includes(DivisionNames['Agriculture'])) {
-        await $manageAgriculture(ns, materialData, industryData)(divisions);
+        await $manageAgriculture(ns, materialData, industryData)();
       }
       if (divisions.includes(DivisionNames['Chemical'])) {
         await $manageChemicals(ns, materialData, industryData)();

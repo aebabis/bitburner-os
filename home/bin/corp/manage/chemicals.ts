@@ -7,7 +7,6 @@ import {
   $getWarehouse,
   $handleMorale,
   $sell,
-  $transfer,
 } from '../corp.rip';
 
 export const $manageChemicals =
@@ -48,15 +47,6 @@ export const $manageChemicals =
         cityName,
         warehouse.size,
         outputVolume,
-      );
-      const CHEM_TSL = Math.floor(10 / materialData['Chemicals'].size);
-      await $transfer(ns)(
-        divisionName,
-        cityName,
-        DivisionNames['Agriculture'],
-        cityName,
-        'Chemicals',
-        `(-IPROD-IINV+${CHEM_TSL})/10`,
       );
       await $sell(ns)(divisionName, cityName, 'Chemicals', 'MAX', 'MP');
     }
