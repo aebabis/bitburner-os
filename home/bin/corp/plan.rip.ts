@@ -162,7 +162,7 @@ export const createPlan = (
             amount,
           );
         }
-        return true;
+        return (wasCompleted = true);
       };
       const desc = `Setup Export of ${material} from ${fromDivision} to ${toDivision}`;
       steps.push(step(desc, { isDone, canStart, complete }));
@@ -209,9 +209,10 @@ export const createPlan = (
       const canStart = async () => true;
       const complete = async () => {
         const jobsToAssign = employeeAllocation.reduce((a, b) => a + b, 0);
-        for (const cityName of CITIES) {
+        for (const cityName of cities) {
           const office = await $.corporation['getOffice'](divisionName, cityName);
           let numNeeded = jobsToAssign - office.numEmployees;
+          if (numNeeded) console.log('still need ' + numNeeded + ' employees in ' + cityName);
           while (numNeeded > 0) {
             if (!(await $.corporation['hireEmployee'](divisionName, cityName))) return false;
           }
@@ -226,7 +227,8 @@ export const createPlan = (
             let allSet = true;
             for (const cityName of cities) {
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
-                allSet &&
+                allSet =
+                  allSet &&
                   ns.corporation['setJobAssignment'](divisionName, cityName, seq[roleIndex], 0);
               }
               for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
@@ -448,10 +450,19 @@ export const createPlan = (
       let currentStep: Step;
       while ((currentStep = steps[currentStepIndex])) {
         if (await currentStep.isDone()) {
+          console.log(currentStep.description, 'done');
           currentStepIndex++;
-        } else if ((await currentStep.canStart()) && (await currentStep.complete())) {
-          currentStepIndex++;
+        } else if (await currentStep.canStart()) {
+          console.log(currentStep.description, 'starting');
+          if (await currentStep.complete()) {
+            console.log(currentStep.description, 'succeeded');
+            currentStepIndex++;
+          } else {
+            console.log(currentStep.description, 'failed');
+            break;
+          }
         } else {
+          console.log('could not complete ' + currentStep.description, 'waiting to next cycle');
           break;
         }
       }
