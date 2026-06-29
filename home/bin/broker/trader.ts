@@ -6,7 +6,7 @@ import { putMoneyData } from '../../lib/data-store.ts';
 
 const getSpendableFunds = (ns: NS) => {
   const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
-  const reserveParam = requiredOnHand || 1e9;
+  const reserveParam = typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
   const money = ns.getServerMoneyAvailable('home');
   return Math.max(0, money - reserveParam);
 };
