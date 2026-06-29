@@ -35,10 +35,10 @@ const go = async (ns: NS) => {
 
   const updateTasks = () => {
     for (const order of checkQueue(ns)) {
-      const { identifier, type, force } = order;
+      const { identifier, type } = order;
       const task = services.find((task) => task.matches(identifier));
       if (task == null) throw new Error(`No task matching "${identifier}"`);
-      if (type === ENABLE) task.enable(force);
+      if (type === ENABLE) task.enable();
       if (type === DISABLE) task.disable();
     }
   };
@@ -92,7 +92,7 @@ const go = async (ns: NS) => {
         await service.check();
       } catch (error) {
         console.error(error);
-        if (error?.name === 'ScriptDeath') throw error;
+        if (error instanceof Error && error?.name === 'ScriptDeath') throw error;
       }
     }
 
@@ -108,6 +108,6 @@ export async function main(ns: NS) {
     await go(ns);
   } catch (error) {
     console.error(error);
-    if (error?.name === 'ScriptDeath') throw error;
+    if (error instanceof Error && error?.name === 'ScriptDeath') throw error;
   }
 }

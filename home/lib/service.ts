@@ -36,12 +36,12 @@ export const Service =
     const shortname = script.split('/').pop()?.split('.')[0] ?? '';
     const ram = getStaticData(ns).scriptRam[script.replace(/^[/]/, '')];
     const isPlanner = script.includes(ns.getScriptName());
-    let pid = isPlanner ? ns.pid : getExistingPid(ns, desc);
+    let pid = isPlanner ? ns.pid : getExistingPid(ns, desc) || null;
     let lastStart = 0;
     let enabled = true;
     let lastHost: string | null = null;
 
-    const isRunning = () => pid && ns.isRunning(pid);
+    const isRunning = () => !!(pid && ns.isRunning(pid));
     const mayRun = () => enabled && condition(ns);
 
     const lastRunning = () => (isRunning() ? (lastStart = Date.now()) : lastStart);

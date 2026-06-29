@@ -12,7 +12,7 @@ type ServiceData = {
   status: string;
   isRunning: boolean;
   allowed: boolean;
-  pid: number;
+  pid: number | null;
   desc: string;
   ram: number;
 };
@@ -23,7 +23,7 @@ export const getTableString = (ns: NS, taskData: ServiceData[]) => {
   return table(
     ns,
     ['ID', 'NAME', '', 'PID', 'DESC'],
-    taskData.map(({ id, name, status, pid, desc }) => [id, name, status, pid, desc]),
+    taskData.map(({ id, name, status, pid, desc }) => [id, name, status, pid || '', desc]),
   );
 };
 
