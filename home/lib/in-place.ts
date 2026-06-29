@@ -164,8 +164,14 @@ const getPort = (id: string) => {
  * }
  * ```
  */
-export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS> =>
-  getProxy(ns, port)(ns);
+export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS> => {
+  // Reserves 1.6 GB of RAM so that ramOverride can give it to
+  // run processes. Assumes your program will not call these (without the use of inPlace)
+  typeof ns.dnet.heartbleed;
+  typeof ns.hackAnalyzeThreads;
+
+  return getProxy(ns, port)(ns);
+};
 
 export const runInPlace =
   (ns: NS, port = getPort(ns.getScriptName())) =>
@@ -174,8 +180,3 @@ export const runInPlace =
     const script = getBodyScript(ns)(action);
     return runScript(ns, port)(script, ...args) as Promise<ReturnType<F>>;
   };
-
-// Reserves 1.6 GB of RAM so that ramOverride can give it to
-// run processes. Assumes your program will not call these (without the use of inPlace)
-typeof heartbleed;
-typeof hackAnalyzeThreads;
