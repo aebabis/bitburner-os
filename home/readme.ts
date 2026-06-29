@@ -37,6 +37,10 @@ const UTILITIES = {
     command: 'bin/dispatch.ts',
     desc: 'Tell planner to run a program',
   },
+  eval: {
+    command: 'usr/eval.ts',
+    desc: 'Run "ns.api.call()" from the command line',
+  },
   liquidate: {
     command: 'dispatch usr/liquidate.ts',
     desc: 'Sell all stocks and stop spending',
