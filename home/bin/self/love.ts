@@ -125,6 +125,7 @@ export async function main(ns: NS) {
   const runPort = randPort();
   const $ = inPlace(ns, runPort);
 
+  await ns.sleep(200); // Hack to prevent RAM contention during initial scheduler cycle
   await $.singularity['applyToCompany']("Joe's Guns", 'Employee');
 
   const CRIMES = {} as Record<CrimeType, CrimeStats>;

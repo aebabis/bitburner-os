@@ -97,7 +97,7 @@ const runScript =
     await ns.nextPortWrite(port);
     const restoredRam = ns.ramOverride(startingRam);
     if (restoredRam !== startingRam) {
-      throw new Error('Failed to restore RAM from ' + restoredRam + ' to ' + startingRam);
+      throw new Error(`Failed to restore RAM from ${restoredRam} to ${startingRam} (${script})`);
     }
     const result = ns.readPort(port);
     if (result === 'NULL PORT DATA') {
