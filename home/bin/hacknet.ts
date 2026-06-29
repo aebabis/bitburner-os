@@ -1,5 +1,4 @@
 import { getNodes, getBestPurchase } from '../lib/hacknet';
-import { logger } from '../lib/logger';
 import { getTimeToMilestone } from '../lib/goals/goals';
 import { getMoneyData, putMoneyData } from '../lib/data-store';
 
@@ -17,7 +16,7 @@ export async function main(ns: NS) {
     ns.sleep(10000);
 
     try {
-      const purchase = await getBestPurchase(ns);
+      const purchase = getBestPurchase(ns);
       const timeToGoal = getTimeToMilestone(ns);
       if (timeToGoal != null && purchase.breakEvenTime > timeToGoal) {
         const hours = (purchase.breakEvenTime / 60 / 60).toFixed(2);
@@ -33,7 +32,6 @@ export async function main(ns: NS) {
         waitMessageShown = false;
       } else {
         if (!waitMessageShown && Date.now() - lastMessageTime > 10000) {
-          await logger(ns).log(`WA: ${purchase.toString()}`);
           ns.print(`WA: ${purchase.toString()}`);
           waitMessageShown = true;
           lastMessageTime = Date.now();
@@ -41,7 +39,6 @@ export async function main(ns: NS) {
         await ns.sleep(1000);
       }
     } catch (error) {
-      await logger(ns).error(error);
       await ns.sleep(1000);
     }
   }

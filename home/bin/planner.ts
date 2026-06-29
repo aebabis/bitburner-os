@@ -4,7 +4,6 @@ import {
   putSchedulerReportData,
   getStaticData,
 } from '../lib/data-store';
-import { logger } from '../lib/logger';
 
 import { ENABLE, DISABLE, writeServices, checkQueue, getTableString } from '../lib/service-api';
 import { getAllServices } from './services/services';
@@ -49,7 +48,6 @@ const go = async (ns: NS) => {
     for (const taskData of delegated) {
       const { script, host, numThreads, args, ticket, highPriority } = taskData;
       if (ns.getScriptRam(script, 'home') === 0) {
-        logger(ns).error(`No such script: ${script}`);
         if (ticket != null && !(await closeTicket(ns)(ticket))) droppedTickets++;
         continue;
       }
@@ -95,7 +93,6 @@ const go = async (ns: NS) => {
       } catch (error) {
         console.error(error);
         if (error?.name === 'ScriptDeath') throw error;
-        await logger(ns).error(error);
       }
     }
 
@@ -110,7 +107,7 @@ export async function main(ns: NS) {
   try {
     await go(ns);
   } catch (error) {
+    console.error(error);
     if (error?.name === 'ScriptDeath') throw error;
-    await logger(ns).error(error);
   }
 }

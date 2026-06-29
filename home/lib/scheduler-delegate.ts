@@ -1,6 +1,5 @@
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
 import Ports from './ports';
-import { logger } from './logger';
 import { getSchedulerReportData, putSchedulerReportData } from './data-store';
 
 const desc = (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) =>
@@ -71,7 +70,7 @@ export const getDelegatedTasks = async (ns: NS) => {
     try {
       tasks.push(...messages);
     } catch (error) {
-      await logger(ns).error(error); // TODO: Pretty
+      console.error(error);
     }
   }
   return tasks;
