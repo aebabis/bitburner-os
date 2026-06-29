@@ -6,8 +6,7 @@ const win = eval('window');
 
 const ACTIVITY_TIMEOUT = 20000;
 
-const MAIN_FUNCTION_ERROR =
-  'cannot be run because it does not have a main function.';
+const MAIN_FUNCTION_ERROR = 'cannot be run because it does not have a main function.';
 const DYNAMIC_LOAD_ERROR = 'loading dynamically imported module';
 const ERRORS = [MAIN_FUNCTION_ERROR, DYNAMIC_LOAD_ERROR];
 
@@ -16,16 +15,13 @@ const autoClosePopUps = (ns: NS) => {
   let timeout = 1;
   const check = () => {
     const popup = doc.querySelector('.MuiModal-root');
-    if (
-      popup != null &&
-      ERRORS.some((error) => popup.innerText.includes(error))
-    ) {
+    if (popup != null && ERRORS.some((error) => popup.innerText.includes(error))) {
       popup.children[0].click();
       timeout = 1;
     } else {
       timeout = Math.min(1000, timeout * 2);
     }
-    timer = setTimeout(check, timeout);
+    timer = +setTimeout(check, timeout);
   };
 
   const stop = () => clearTimeout(timer);
@@ -54,8 +50,7 @@ const terminalTracker = (ns: NS) => {
   let lastTerminalActivity = Date.now();
 
   const update = (event: KeyboardEvent) => {
-    if (event.target?.id === 'terminal-input')
-      lastTerminalActivity = Date.now();
+    if (event.target?.id === 'terminal-input') lastTerminalActivity = Date.now();
   };
 
   doc.body.addEventListener('keypress', update, true);
@@ -105,17 +100,13 @@ export async function main(ns: NS) {
     const timeSinceTerminalActivity = Date.now() - getLastTerminalActivity();
 
     if (timeSincePlayerActivity < 2000) indicator.style.color = 'green';
-    else if (timeSincePlayerActivity < ACTIVITY_TIMEOUT)
-      indicator.style.color = 'yellow';
+    else if (timeSincePlayerActivity < ACTIVITY_TIMEOUT) indicator.style.color = 'yellow';
     else indicator.style.color = 'red';
 
     isPlayerActive = timeSincePlayerActivity < ACTIVITY_TIMEOUT;
     isPlayerUsingTerminal = timeSinceTerminalActivity < ACTIVITY_TIMEOUT;
 
-    if (
-      isPlayerActive !== wasPlayerActive ||
-      isPlayerUsingTerminal !== wasPlayerUsingTerminal
-    )
+    if (isPlayerActive !== wasPlayerActive || isPlayerUsingTerminal !== wasPlayerUsingTerminal)
       putPlayerData(ns, { isPlayerActive, isPlayerUsingTerminal });
 
     if (hasSingularity) setFocus(ns, !isPlayerActive);

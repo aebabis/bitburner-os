@@ -12,7 +12,7 @@ export const rmi =
           return true;
         }
       } catch (error) {
-        if (error?.name === 'ScriptDeath') throw error;
+        if (error instanceof Error && error?.name === 'ScriptDeath') throw error;
         if (!retry) return false;
       }
     }
