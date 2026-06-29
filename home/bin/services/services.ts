@@ -31,6 +31,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   const gangKarma = currentNode === 2 ? 0 : -54000;
   const mustSelfFund = currentNode !== 3;
+  const corpCost = mustSelfFund ? 150e9 : 0;
   const isCriminal = (faction: FactionName) => CRIMINAL_ORGANIZATIONS.includes(faction);
 
   // Predicates for service viability (relevance).
@@ -55,13 +56,13 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangReady = () => factions().some(isCriminal) && ns.heart.break() <= gangKarma;
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
-    ns.corporation.canCreateCorporation(mustSelfFund) === 'Success';
+    (ns.corporation.canCreateCorporation(mustSelfFund) === 'Success' && money() >= corpCost);
   const preferBlade = () => inBladeNode() && getGoals(ns).prerequisites('BLADES_JOIN').length > 0;
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
 
-  return [
+  const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
     AnyHostService(ns, hasSingularity, canWork)('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
@@ -83,4 +84,11 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
   ];
+  if (currentNode === 3) {
+    const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');
+    const corp = services.splice(corpIndex, 1)[0];
+    const accessIndex = services.findIndex((service) => service.script === '/bin/access.ts');
+    services.splice(accessIndex + 1, 0, corp);
+  }
+  return services;
 };
