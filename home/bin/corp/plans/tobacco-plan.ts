@@ -37,12 +37,24 @@ export const getTobaccoPlan = (
     .setupExport(AgDiv, ChemDiv, 'Plants') // Replace old one so tobacco gets 1st dibs
     .assignEmployees(TobDiv, [1, 1, 0, 1, 0, 0])
     .expandWarehouses(TobDiv, 2)
+    .expandOffices(TobDiv, [0, 0, 0, 0, 6, 0])
     .expandOffices(TobDiv, [14, 10, 8, 10, 8, 0], 'Sector-12')
-    .expandOffices(TobDiv, [5, 5, 5, 5, 20, 0], 'Aevum')
     .advertise(TobDiv, 1)
 
     .expandWarehouses(AgDiv, 4)
+    .purchaseUpgrades({ 'Smart Factories': 3, 'Smart Storage': 3 })
+    .expandWarehouses(TobDiv, 3)
     .purchaseUpgrades({
-      'Smart Factories': 3,
-      'Smart Storage': 3,
-    });
+      'Smart Factories': 10,
+      'Smart Storage': 10,
+      'Project Insight': 10,
+      'Wilson Analytics': 3,
+    })
+    .expandWarehouses(AgDiv, 5)
+    .expandWarehouses(TobDiv, 6)
+    .purchaseUpgradesByCost(2e9)
+
+    .waitForInvestment(3, 15e11)
+
+    .purchaseUpgrades({ 'Project Insight': 40 })
+    .purchaseUpgrades({ 'Smart Factories': 20, 'Smart Storage': 20, 'Wilson Analytics': 5 });

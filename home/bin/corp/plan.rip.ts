@@ -277,6 +277,9 @@ export const createPlan = (
               .map((cityName) => {
                 const office = ns.corporation['getOffice'](divisionName, cityName);
                 const spotsNeeded = targetSize - office.size;
+                if (spotsNeeded <= 0) {
+                  return 0;
+                }
                 return ns.corporation['getOfficeSizeUpgradeCost'](
                   divisionName,
                   cityName,
@@ -415,6 +418,60 @@ export const createPlan = (
       };
       steps.push(
         step(`Purchase upgrades: ${JSON.stringify(upgrades).replaceAll(/{}"/g, '')}`, {
+          isDone,
+          canStart,
+          complete,
+        }),
+      );
+      return plan;
+    },
+
+    purchaseUpgradesByCost: (priceLimit: number) => {
+      const UPGRADE_NAMES: CorpUpgradeName[] = [
+        'Smart Factories',
+        'Smart Storage',
+        'Wilson Analytics',
+        'Nuoptimal Nootropic Injector Implants',
+        'Speech Processor Implants',
+        'Neural Accelerators',
+        'FocusWires',
+        'ABC SalesBots',
+        'Project Insight',
+      ];
+      const isDone = () =>
+        $rip((UPGRADE_NAMES: CorpUpgradeName[], priceLimit: number) =>
+          UPGRADE_NAMES.every(
+            (upgrade) => ns.corporation['getUpgradeLevelCost'](upgrade) > priceLimit,
+          ),
+        )(UPGRADE_NAMES, priceLimit);
+      const canStart = async () => true;
+      const complete = async () => {
+        while (true) {
+          const { funds } = await $.corporation['getCorporation']();
+          const [upgrade, cost] = await $rip((UPGRADE_NAMES: CorpUpgradeName[]) => {
+            const cost = (upgrade: CorpUpgradeName) =>
+              ns.corporation['getUpgradeLevelCost'](upgrade);
+            return UPGRADE_NAMES.map(
+              (upgrade) => [upgrade, cost(upgrade)] as [CorpUpgradeName, number],
+            ).reduce(([u1, c1], [u2, c2]) => (c1 < c2 ? [u1, c1] : [u2, c2]));
+          })(UPGRADE_NAMES);
+
+          if (cost > priceLimit) {
+            console.log('Price of ' + upgrade, cost);
+            return true;
+          } else if (cost > funds) {
+            return false;
+          } else {
+            try {
+              await $.corporation['levelUpgrade'](upgrade);
+            } catch (error) {
+              return false;
+            }
+          }
+        }
+      };
+      steps.push(
+        step(`Purchase upgrades under $${ns.format.number(priceLimit)}`, {
           isDone,
           canStart,
           complete,

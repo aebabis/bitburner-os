@@ -38,7 +38,21 @@ export const $manageTobacco =
 
     if (currentProduct == null) return;
 
-    const hasTA2 = await $.corporation['hasResearched'](divisionName, 'Market-TA.II');
+    let hasTA2 = await $.corporation['hasResearched'](divisionName, 'Market-TA.II');
+    if (!hasTA2) {
+      const hasTA1 = await $.corporation['hasResearched'](divisionName, 'Market-TA.I');
+      const ta1Cost = hasTA1
+        ? 0
+        : await $.corporation['getResearchCost'](divisionName, 'Market-TA.I');
+      const ta2Cost = await $.corporation['getResearchCost'](divisionName, 'Market-TA.II');
+      if (division.researchPoints >= ta1Cost + ta2Cost + 10000) {
+        if (!hasTA1) {
+          await $.corporation['research'](divisionName, 'Market-TA.I');
+        }
+        await $.corporation['research'](divisionName, 'Market-TA.II');
+        hasTA2 = true;
+      }
+    }
 
     const report = {} as Record<CityName, { boostMaterialProgress: BoostMaterialProgress }>;
     for (const cityName of division.cities) {

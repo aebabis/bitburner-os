@@ -272,6 +272,10 @@ export const $manageProducts =
     brand2: string,
   ) => {
     const $ = inPlace(ns, ns.pid);
+    const corp = await $.corporation['getCorporation']();
+    if (corp.funds < 2e9) {
+      return;
+    }
     if (currentProducts.length === 0) {
       await $.corporation['makeProduct'](divisionName, hq, brand1, 1e9, 1e9);
       return null;
