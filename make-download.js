@@ -36,8 +36,8 @@ ${files.join('\n')}
 
 export async function main(ns: NS) {
   const { branch } = ns.flags([['branch', 'main']]);
-  if (_[0] != null) {
-    ns.tprint('\\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH');
+  if (ns.args[0] != null) {
+    ns.tprint('\\u001b[31mUnrecognized parameter(s): ' + ns.args[0] + '. To set a branch use --branch BRANCH');
     return;
   }
   for (const file of FILES) {

@@ -18,8 +18,9 @@ const FILES = [
   '/bin/corp/corp.ts',
   '/bin/corp/manage/agriculture.ts',
   '/bin/corp/manage/chemicals.ts',
-  '/bin/corp/manage/report.ts',
   '/bin/corp/manage/tobacco.ts',
+  '/bin/corp/plan.rip.ts',
+  '/bin/corp/plans/tobacco-plan.ts',
   '/bin/dashboard.ts',
   '/bin/dispatch.ts',
   '/bin/eight-gig.ts',
@@ -53,12 +54,9 @@ const FILES = [
   '/bin/trailblazer.ts',
   '/bin/wolf.ts',
   '/bin/workers/grow.ts',
-  '/bin/workers/growshot.ts',
   '/bin/workers/hack.ts',
-  '/bin/workers/hackshot.ts',
   '/bin/workers/share.ts',
   '/bin/workers/weaken.ts',
-  '/bin/workers/weakshot.ts',
   'books.ts',
   '/boot/boot.ts',
   '/boot/call-graph.ts',
@@ -94,7 +92,6 @@ const FILES = [
   '/lib/hacknet.ts',
   '/lib/in-place.ts',
   '/lib/layout.ts',
-  '/lib/logger.ts',
   '/lib/modal.ts',
   '/lib/nav.ts',
   '/lib/nmap.rip.ts',
@@ -119,9 +116,11 @@ const FILES = [
   'update.ts',
   '/usr/bitflume.ts',
   '/usr/data.ts',
+  '/usr/eval.ts',
   '/usr/liquidate.ts',
   '/usr/make-cct.ts',
   '/usr/nmap.ts',
+  '/usr/path.ts',
   '/usr/read.ts',
   '/usr/reset.ts',
   '/usr/servers.ts',
@@ -132,9 +131,11 @@ const FILES = [
 
 export async function main(ns: NS) {
   const { branch } = ns.flags([['branch', 'main']]);
-  if (_[0] != null) {
+  if (ns.args[0] != null) {
     ns.tprint(
-      '\u001b[31mUnrecognized parameter(s): ' + _ + '. To set a branch use --branch BRANCH',
+      '\u001b[31mUnrecognized parameter(s): ' +
+        ns.args[0] +
+        '. To set a branch use --branch BRANCH',
     );
     return;
   }
