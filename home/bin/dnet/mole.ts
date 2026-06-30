@@ -30,6 +30,20 @@ function romanToInt(numeralString: string) {
     .reduce((a, b) => a + b, 0);
 }
 
+function* permutationGenerator(arr: string[]): Generator<string> {
+  if (arr.length <= 1) {
+    yield arr.join('');
+    return;
+  }
+  for (let i = 0; i < arr.length; i++) {
+    const current = arr[i];
+    const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for (const permutation of permutationGenerator(remaining)) {
+      yield [current, ...permutation].join('');
+    }
+  }
+}
+
 const NO_PASSWORD = [
   'There is no password',
   'The password is not set',
@@ -102,6 +116,20 @@ const crackPassword = async (ns: NS, hostname: string, details: DarknetServerDet
         }
       }
     }
+  } else if (details.passwordHint.startsWith('I accidentally sorted the password: ')) {
+    const generator = permutationGenerator(details.data.split(''));
+    generator.next(); // Discard first result
+    for (const item of generator) {
+      const result = await ns.dnet.authenticate(hostname, item);
+      if (result.success) return true;
+    }
+    return false;
+  } else if (details.passwordHint.startsWith('The password is shuffled ')) {
+    for (const item of permutationGenerator(details.data.split(''))) {
+      const result = await ns.dnet.authenticate(hostname, item);
+      if (result.success) return true;
+    }
+    return false;
   } else {
     ns.print('No password strategy for: ' + hostname);
     return false;
@@ -109,6 +137,9 @@ const crackPassword = async (ns: NS, hostname: string, details: DarknetServerDet
 };
 
 const authenticate = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
+  if (details.passwordHint.startsWith('The password is shuffled')) {
+    return await crackPassword(ns, hostname, details);
+  }
   const password = getPassword(details);
   if (password == null) {
     return await crackPassword(ns, hostname, details);
