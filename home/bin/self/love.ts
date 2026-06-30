@@ -224,6 +224,10 @@ export async function main(ns: NS) {
     }
     await $sing(ns, runPort)(root);
 
+    if (ns.getServerMaxRam('home') <= 64) {
+      await $.singularity['upgradeHomeRam']();
+    }
+
     if (findGoal('HACKING_XP') && canGoToSchool) {
       if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
       await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus(ns));
