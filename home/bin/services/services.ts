@@ -61,6 +61,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
+  const hasDarkscape = () => ns.fileExists('DarkscapeNavigator.exe', 'home');
 
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
@@ -83,6 +84,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
+    Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
   ];
   if (currentNode === 3) {
     const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');
