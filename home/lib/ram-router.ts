@@ -1,4 +1,3 @@
-import { THREADPOOL } from '../etc/config';
 import { by } from './util';
 import { getHostnames } from './data-store';
 
@@ -17,7 +16,11 @@ export const HACKER_POLICY = (ns: NS): RamPolicy => ({
 
 const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
-    if (script === '/bin/access.ts' || script === '/bin/nerd.ts' || script === '/bin/corp/corp.ts')
+    if (
+      script === '/bin/self/love.ts' ||
+      script === '/bin/nerd.ts' ||
+      script === '/bin/corp/corp.ts'
+    )
       return 0;
     return highPriority ? 2 : 4;
   },
@@ -55,17 +58,11 @@ export const getRamAllowances = (ns: NS): RamAllowances => {
   };
 };
 
-export const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
+const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
   getHostnames(ns)
     .filter(ns.hasRootAccess)
     .map((h) => getRamInfo(ns, h, policy))
     .sort(by((s) => -s.ramUnused));
-
-export const getPurchasedServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
-  getHostnames(ns)
-    .filter((h) => h.startsWith(THREADPOOL))
-    .sort()
-    .map((h) => getRamInfo(ns, h, policy));
 
 export type ExecResult = {
   pid: number;

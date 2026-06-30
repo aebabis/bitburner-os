@@ -2,7 +2,6 @@ import Ports from './ports.ts';
 import {
   PORT_HOSTNAMES,
   PORT_STATIC_DATA,
-  PORT_SCH_RAM_DATA,
   PORT_SCH_REPORTING,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
@@ -78,19 +77,6 @@ export type StaticData = {
 export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
-
-type ServerRamInfo = {
-  hostname: string;
-  maxRam: number;
-  ramUsed: number;
-  ramUnused: number;
-};
-type RamData = {
-  rootServers?: Server[];
-  purchasedServers?: ServerRamInfo[];
-};
-export const getRamData = (ns: NS): RamData => readData(ns, PORT_SCH_RAM_DATA) || {};
-export const putRamData = (ns: NS, data: RamData) => replaceData(ns, PORT_SCH_RAM_DATA, data);
 
 export type PlayerData = {
   player: Player;

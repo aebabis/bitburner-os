@@ -1,11 +1,5 @@
 import { replacer } from '../lib/ports.ts';
-import {
-  getHostnames,
-  getStaticData,
-  getPlayerData,
-  getMoneyData,
-  getRamData,
-} from '../lib/data-store.ts';
+import { getHostnames, getStaticData, getPlayerData, getMoneyData } from '../lib/data-store.ts';
 
 export async function main(ns: NS) {
   const OPTIONS = {
@@ -13,7 +7,6 @@ export async function main(ns: NS) {
     static: getStaticData,
     player: getPlayerData,
     money: getMoneyData,
-    ram: getRamData,
   };
   const usage = () => ns.tprint(`USAGE: data [ ${Object.keys(OPTIONS).sort().join(' | ')} ]`);
   const [input = ''] = ns.args;

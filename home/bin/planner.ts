@@ -1,14 +1,9 @@
-import {
-  putPlayerData,
-  putRamData,
-  putSchedulerReportData,
-  getStaticData,
-} from '../lib/data-store';
+import { putPlayerData, putSchedulerReportData, getStaticData } from '../lib/data-store';
 
 import { ENABLE, DISABLE, writeServices, checkQueue, getTableString } from '../lib/service-api';
 import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
-import { execOnBestServer, getRootServers, getPurchasedServers } from '../lib/ram-router';
+import { execOnBestServer } from '../lib/ram-router';
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
 
 const player = (ns: NS) => ns.getPlayer();
@@ -65,11 +60,6 @@ const go = async (ns: NS) => {
   };
 
   const updateReports = () => {
-    const rootServers = getRootServers(ns);
-    putRamData(ns, {
-      rootServers: rootServers as any,
-      purchasedServers: getPurchasedServers(ns) as any,
-    });
     putSchedulerReportData(ns, {
       lastRuns,
       lastCancellations,

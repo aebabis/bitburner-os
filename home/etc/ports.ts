@@ -2,7 +2,6 @@ let port = 1;
 
 export const PORT_SCH_DELEGATE_TASK = port++;
 export const PORT_SCH_RETURN = port++;
-export const PORT_SCH_RAM_DATA = port++;
 export const PORT_SCH_REPORTING = port++;
 
 export const PORT_SERVICES_LIST = port++;
