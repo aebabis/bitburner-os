@@ -210,7 +210,7 @@ interface FactionGoalTreeProps {
   purchasedAugmentations: string[];
   ownedAugs: string[];
   money: number;
-  estimatedStockValue: number;
+  estimatedStockValue?: number;
   totalIncome: number;
   formulas: Formulas; // TODO: Use ReturnType<formulas>
   karma: number;

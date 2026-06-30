@@ -184,7 +184,7 @@ export async function main(ns: NS) {
           purchasedAugmentations,
           ownedAugs,
           money: player.money ?? 0,
-          referenceIncome: totalIncome,
+          totalIncome,
           formulas,
           karma: ns.heart.break(),
         };

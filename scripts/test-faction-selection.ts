@@ -1,11 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import {
-  getAccessibleFactions,
-  findOptimalBatch,
-  MAX_AUGS,
-} from '../home/lib/aug-select.js';
+import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 const NEUROFLUX = 'NeuroFlux Governor';
@@ -16,10 +12,7 @@ const selectAugmentations = (
   player: any,
   formulas?: any,
   factionRep: Record<string, number> = {},
-  {
-    moneyRate = Infinity,
-    repRate,
-  }: { moneyRate?: number; repRate?: number } = {},
+  { moneyRate = Infinity, repRate }: { moneyRate?: number; repRate?: number } = {},
 ) => {
   formulas ??= getMockFormulas(staticData);
   const {
@@ -45,12 +38,11 @@ const selectAugmentations = (
   const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
   const batchOpts = { moneyRate, repRate };
 
-  let bestFaction: string | null = null,
+  let bestFaction: FactionName | null = null,
     bestUtility = -Infinity;
   for (const faction of getAccessibleFactions(staticData, player, ownedAugs)) {
     const faugs: string[] = factionAugmentations[faction] ?? [];
-    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0)
-      continue;
+    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0) continue;
     const { utility } = findOptimalBatch(
       faction,
       staticData,
@@ -79,14 +71,10 @@ const selectAugmentations = (
   const nfCount = batch.filter((a) => a === NEUROFLUX).length;
   const unique: string[] = batch
     .filter((a) => a !== NEUROFLUX)
-    .sort(
-      (a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0),
-    );
+    .sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
   const order = new Set<string>();
   for (const aug of unique) {
-    for (const prereq of (
-      (augmentationPrereqs as Record<string, string[]>)[aug] ?? []
-    )
+    for (const prereq of ((augmentationPrereqs as Record<string, string[]>)[aug] ?? [])
       .filter(stillNeeds)
       .reverse())
       order.add(prereq);
@@ -94,10 +82,7 @@ const selectAugmentations = (
   }
   return {
     faction: bestFaction,
-    augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(
-      0,
-      MAX_AUGS,
-    ),
+    augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS),
   };
 };
 
@@ -164,6 +149,7 @@ const makeStaticData = (
   );
 
   return {
+    resetInfo: { lastAugReset: 0, lastNodeReset: 0, currentNode: 1, ownedAugs: new Map() },
     augmentationStats,
     augmentationPrices,
     augmentationRepReqs,
@@ -281,13 +267,9 @@ test('faction with significant current rep is preferred over higher raw utility'
   // With 45k rep in TBH: both TBH augs have remainingRep=0.
   // Batch [TBH_A, TBH_B]: marginalRep=0, cost=overhead only, utility=6.0/7200≈0.000833
   // BitRunners: cost=overhead only, utility=4.0/7200≈0.000556 — TBH wins.
-  const { faction: withRep } = selectAugmentations(
-    [],
-    data,
-    PLAYER,
-    undefined,
-    { 'The Black Hand': 45_000 },
-  );
+  const { faction: withRep } = selectAugmentations([], data, PLAYER, undefined, {
+    'The Black Hand': 45_000,
+  });
   assert.equal(withRep, 'The Black Hand');
 });
 
@@ -367,10 +349,7 @@ test('select The Syndicate over The Covenant when combat augs are still needed',
   };
   const { faction } = selectAugmentations(ownedAugs, staticData, player);
   assert(faction !== null, 'a faction should be selected');
-  assert(
-    faction !== 'The Covenant',
-    'The Covenant should not win when accessible factions remain',
-  );
+  assert(faction !== 'The Covenant', 'The Covenant should not win when accessible factions remain');
 });
 
 test('cannot select faction when player is excluded by their employment', () => {

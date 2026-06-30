@@ -1,11 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import {
-  getAccessibleFactions,
-  findOptimalBatch,
-  MAX_AUGS,
-} from '../home/lib/aug-select.js';
+import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 // Realistic early BN4 rates: modest hacking income, typical faction work rep gain.
@@ -24,22 +20,21 @@ const select = (
   data.augmentationRepReqs[NEUROFLUX] *= 1.14 ** numNeuroflux;
   data.augmentationPrices[NEUROFLUX] *= 1.14 ** numNeuroflux;
 
-  const player = { skills: { hacking: 585 }, factions: [] };
-  const formulas = getMockFormulas(data);
+  const player = { skills: { hacking: 585 }, factions: [] } as any;
+  const formulas = getMockFormulas(data as any);
   const batchOpts = { moneyRate };
   const stillNeeds = (aug: string) => !owned.includes(aug);
 
-  let bestFaction: string | null = null,
+  let bestFaction: FactionName | null = null,
     bestUtility = -Infinity;
-  for (const faction of getAccessibleFactions(data, player, owned)) {
-    const faugs: string[] = data.factionAugmentations[faction] ?? [];
-    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0)
-      continue;
+  for (const faction of getAccessibleFactions(data as any, player, owned)) {
+    const faugs: string[] = (data.factionAugmentations as any)[faction] ?? [];
+    if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0) continue;
     const { utility } = findOptimalBatch(
       faction,
-      data,
+      data as any,
       player,
-      formulas,
+      formulas as any,
       factionRep,
       owned,
       batchOpts,
@@ -53,9 +48,9 @@ const select = (
 
   const { batch }: { batch: string[] } = findOptimalBatch(
     bestFaction,
-    data,
+    data as any,
     player,
-    formulas,
+    formulas as any,
     factionRep,
     owned,
     batchOpts,
@@ -65,14 +60,10 @@ const select = (
   const nfCount = batch.filter((a) => a === NEUROFLUX).length;
   const unique: string[] = batch
     .filter((a) => a !== NEUROFLUX)
-    .sort(
-      (a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0),
-    );
+    .sort((a, b) => (augmentationPrices[b] ?? 0) - (augmentationPrices[a] ?? 0));
   const order = new Set<string>();
   for (const aug of unique) {
-    for (const prereq of (
-      (augmentationPrereqs as Record<string, string[]>)[aug] ?? []
-    )
+    for (const prereq of ((augmentationPrereqs as Record<string, string[]>)[aug] ?? [])
       .filter(stillNeeds)
       .reverse())
       order.add(prereq);
@@ -80,10 +71,7 @@ const select = (
   }
   return {
     faction: bestFaction,
-    augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(
-      0,
-      MAX_AUGS,
-    ),
+    augmentations: [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS),
   };
 };
 
@@ -97,10 +85,7 @@ describe('selectAugmentations', () => {
 
       it('should select more than 1 augmentation', () => {
         const { augmentations } = select([]);
-        assert(
-          augmentations.length > 1,
-          `${augmentations.length} augs selected`,
-        );
+        assert(augmentations.length > 1, `${augmentations.length} augs selected`);
       });
     });
 
@@ -108,10 +93,7 @@ describe('selectAugmentations', () => {
       it('should select more than 1 augmentation', () => {
         const aug1 = select([]);
         const aug2 = select(aug1.augmentations);
-        assert(
-          aug2.augmentations.length > 1,
-          `${aug2.augmentations.length} augs selected`,
-        );
+        assert(aug2.augmentations.length > 1, `${aug2.augmentations.length} augs selected`);
       });
     });
 
@@ -129,9 +111,7 @@ describe('selectAugmentations', () => {
           const uniqueLeft = (staticData as any).augmentations.filter(
             (a: string) => a !== 'NeuroFlux Governor',
           );
-          console.log(
-            'Got to DataJack with ' + uniqueLeft.length + ' augs to buy',
-          );
+          console.log('Got to DataJack with ' + uniqueLeft.length + ' augs to buy');
           // QLink and The Red Pill require endgame factions whose cost is dominated by
           // training overhead when player skills are empty. A realistic test needs a
           // player whose stats grow with each run.

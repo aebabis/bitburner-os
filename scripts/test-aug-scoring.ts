@@ -24,8 +24,7 @@ test('hacking aug outscores equivalent combat aug', () => {
   const hackingStats = { ...neutralStats, hacking: 1.1 };
   const combatStats = { ...neutralStats, strength: 1.1 };
   assert.ok(
-    scoreAug(hackingStats, DEFAULT_AUG_WEIGHTS) >
-      scoreAug(combatStats, DEFAULT_AUG_WEIGHTS),
+    scoreAug(hackingStats, DEFAULT_AUG_WEIGHTS) > scoreAug(combatStats, DEFAULT_AUG_WEIGHTS),
   );
 });
 
@@ -84,8 +83,10 @@ test('scoreAug produces correct score for full Multipliers object with one non-t
 });
 
 test('hacknet cost multiplier below 1.0 produces positive score', () => {
+  // DEFAULT_AUG_WEIGHTS assigns 0 weight to hacknet stats, so use custom weights
+  const weights = { ...DEFAULT_AUG_WEIGHTS, hacknet_node_purchase_cost: 2 };
   const stats = { ...neutralStats, hacknet_node_purchase_cost: 0.9 };
-  assert.ok(scoreAug(stats, DEFAULT_AUG_WEIGHTS) > 0);
+  assert.ok(scoreAug(stats, weights) > 0);
 });
 
 test('utility ordering is stable across multiple sorts', () => {
@@ -98,7 +99,6 @@ test('utility ordering is stable across multiple sorts', () => {
     return { name: e.name, utility: e.time > 0 ? value / e.time : 0 };
   });
 
-  const sort = () =>
-    [...entries].sort((a, b) => b.utility - a.utility).map((e) => e.name);
+  const sort = () => [...entries].sort((a, b) => b.utility - a.utility).map((e) => e.name);
   assert.deepStrictEqual(sort(), sort());
 });
