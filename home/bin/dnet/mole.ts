@@ -54,6 +54,10 @@ const PASSWORD_IS = [
 const getPassword = (details: DarknetServerDetails) => {
   if (details.passwordLength === 0) return '';
 
+  if (details.passwordHint.startsWith('The password is the value of the number')) {
+    return romanToInt(details.data).toString();
+  }
+
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return details.data || details.passwordHint.split(' ').pop()!;
   }
@@ -68,10 +72,6 @@ const getPassword = (details: DarknetServerDetails) => {
   }
   if (details.passwordHint === 'Type the numbers to prove you are human') {
     return details.data.replaceAll(/[^0-9]/g, '');
-  }
-  if (details.passwordHint.startsWith('The password is the value of the number')) {
-    console.log(details.data, romanToInt(details.data));
-    return romanToInt(details.data).toString();
   }
   return null;
 };
