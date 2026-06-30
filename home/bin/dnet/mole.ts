@@ -54,19 +54,24 @@ const PASSWORD_IS = [
 const getPassword = (details: DarknetServerDetails) => {
   if (details.passwordLength === 0) return '';
 
+  if (details.passwordHint === 'Type the numbers to prove you are human') {
+    return details.data.replaceAll(/[^0-9]/g, '');
+  }
+
   if (details.passwordHint.startsWith('The password is the value of the number')) {
     return romanToInt(details.data).toString();
   }
 
-  if (details.passwordHint.match(/password is the base \d+ number \d+ in base 10/)) {
+  if (details.passwordHint.match(/password is the base \d+ number [^ ]+ in base 10/)) {
     const [base, number] = details.data.split(',');
-    return number
-      .split('')
-      .map(Number)
-      .reverse()
-      .map((d, i) => d * (+base) ** i)
-      .reduce((a, b) => a + b, 0)
-      .toString();
+    return parseInt(number, +base).toString();
+  }
+
+  if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
+    if (details.passwordLength === 0) return '';
+    if (details.passwordLength === 4) return '0000';
+    if (details.passwordLength === 5) return Math.random() < 0.5 ? '12345' : 'admin';
+    if (details.passwordLength === 8) return 'password';
   }
 
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
@@ -75,22 +80,38 @@ const getPassword = (details: DarknetServerDetails) => {
   if (NO_PASSWORD.includes(details.passwordHint)) {
     return '';
   }
-  if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
-    if (details.passwordLength === 0) return '';
-    if (details.passwordLength === 4) return '0000';
-    if (details.passwordLength === 5) return Math.random() < 0.5 ? '12345' : 'admin';
-    if (details.passwordLength === 8) return 'password';
-  }
-  if (details.passwordHint === 'Type the numbers to prove you are human') {
-    return details.data.replaceAll(/[^0-9]/g, '');
-  }
   return null;
+};
+
+const crackPassword = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
+  if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
+    const password = new Array(details.passwordLength).fill(null);
+    for (let d = 0; d <= 9; d++) {
+      const digit = d.toString();
+      const nextAttempt = password.map((d) => (d == null ? digit : d)).join('');
+      const result = await ns.dnet.authenticate(hostname, nextAttempt);
+      if (result.success) return true;
+      const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
+      const hints = scrape.logs.map((text) => JSON.parse(text));
+      for (const { data, passwordAttempted } of hints) {
+        if (typeof data === 'string') {
+          const correct = data.split(',').map((v) => v === 'yes');
+          for (let i = 0; i < correct.length; i++) {
+            if (correct[i]) password[i] = passwordAttempted[i];
+          }
+        }
+      }
+    }
+  } else {
+    ns.print('No password strategy for: ' + hostname);
+    return false;
+  }
 };
 
 const authenticate = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
   const password = getPassword(details);
   if (password == null) {
-    ns.print('No password strategy for: ' + hostname);
+    return await crackPassword(ns, hostname, details);
   } else {
     if (ns.dnet.connectToSession(hostname, password).success) {
       ns.print(`${hostname}: "${password}", (reconnected)`);
@@ -113,7 +134,7 @@ const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 export async function main(ns: NS) {
   const caches = ns.ls(ns.getHostname(), '.cache');
   for (const cache of caches) {
-    ns.tprint(ns.dnet.openCache(cache));
+    ns.dnet.openCache(cache);
   }
   if (ns.getHostname() === 'darkweb') {
     ns.disableLog('ALL');
