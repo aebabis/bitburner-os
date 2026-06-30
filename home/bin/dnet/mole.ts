@@ -58,6 +58,17 @@ const getPassword = (details: DarknetServerDetails) => {
     return romanToInt(details.data).toString();
   }
 
+  if (details.passwordHint.match(/password is the base \d+ number \d+ in base 10/)) {
+    const [base, number] = details.data.split(',');
+    return number
+      .split('')
+      .map(Number)
+      .reverse()
+      .map((d, i) => d * (+base) ** i)
+      .reduce((a, b) => a + b, 0)
+      .toString();
+  }
+
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return details.data || details.passwordHint.split(' ').pop()!;
   }
