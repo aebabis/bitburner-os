@@ -70,6 +70,15 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     if (ns.dnet.connectToSession(hostname, password).success) return true;
     return (await ns.dnet.authenticate(hostname, password)).success;
   };
+  const tryPasswords =
+    (...passwords: string[]) =>
+    async () => {
+      for (const password of passwords) {
+        if (ns.dnet.connectToSession(hostname, password).success) return true;
+        if ((await ns.dnet.authenticate(hostname, password)).success) return true;
+      }
+      return false;
+    };
 
   if (details.passwordLength === 0 || NO_PASSWORD.some((text) => text === details.passwordHint)) {
     return recitePassword('');
@@ -87,8 +96,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
     if (details.passwordLength === 0) return recitePassword('');
     if (details.passwordLength === 4) return recitePassword('0000');
-    if (details.passwordLength === 5)
-      return recitePassword(Math.random() < 0.5 ? '12345' : 'admin');
+    if (details.passwordLength === 5) return tryPasswords('12345', 'admin');
     if (details.passwordLength === 8) return recitePassword('password');
   }
 
