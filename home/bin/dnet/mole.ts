@@ -273,21 +273,34 @@ const authenticate = async (ns: NS, hostname: string, details: DarknetServerDeta
 
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
+// const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
+const DARKNET_FILES = 12289108104000;
+type DarknetFiles = Record<string, Record<string, string>>;
+const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>) => {
+  const handle = ns.getPortHandle(DARKNET_FILES);
+  if (handle.empty()) {
+    handle.write({});
+  }
+  const data = handle.read() as DarknetFiles;
+  data[hostname] = files;
+  ns.clearPort(DARKNET_FILES);
+  ns.writePort(DARKNET_FILES, data);
+};
+
 export async function main(ns: NS) {
   const caches = ns.ls(ns.getHostname(), '.cache');
   for (const cache of caches) {
     ns.dnet.openCache(cache);
   }
-  if (ns.getHostname() === 'darkweb') {
-    // ns.disableLog('ALL');
-    // ns.ui.openTail();
-    // ns.ui.moveTail(250, 2);
-    // ns.ui.resizeTail(700, 500);
-    // ns.print('labreport');
-    // ns.print(await ns.dnet.labreport());
-    // ns.print('labrader');
-    // ns.print(await ns.dnet.labradar());
-  }
+  const filesToSteal = ns.ls(ns.getHostname()).filter((file) => !file.endsWith('.ts'));
+  const fileMap = filesToSteal.reduce(
+    (map, filename) => {
+      map[filename] = ns.read(filename);
+      return map;
+    },
+    {} as Record<string, string>,
+  );
+  putDarknetFiles(ns, ns.getHostname(), fileMap);
 
   while (true) {
     const connections = ns.dnet.probe();
