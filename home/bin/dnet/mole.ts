@@ -44,6 +44,71 @@ function* permutationGenerator(arr: string[]): Generator<string> {
   }
 }
 
+function* numeralSequenceGenerator(length: number): Generator<string> {
+  if (length === 0) {
+    yield '';
+    return;
+  }
+  for (const end of numeralSequenceGenerator(length - 1)) {
+    for (const numeral of '0123456789') {
+      yield numeral + end;
+    }
+  }
+}
+
+const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetails) => async () => {
+  type MastermindRule = { password: string; exact: number; wrongPlace: number };
+  if (details.passwordLength > 3) {
+    return false;
+  }
+  const rules = [] as MastermindRule[];
+  const matches = (password: string, rule: MastermindRule) => {
+    const numExact = [...password]
+      .map((c, i) => +(c === rule.password[i]))
+      .reduce((a, b) => a + b, 0);
+    if (numExact !== rule.exact) return false;
+    const passwordCounts = new Array(10).fill(0) as number[];
+    const ruleCounts = new Array(10).fill(0) as number[];
+    for (const c of password) passwordCounts[+c] += 1;
+    for (const c of rule.password) ruleCounts[+c] += 1;
+    const numSame = passwordCounts
+      .map((count, i) => Math.min(count, ruleCounts[i]))
+      .reduce((a, b) => a + b);
+    if (numSame - numExact !== rule.wrongPlace) return false;
+    return true;
+  };
+  for (const possibleGuess of numeralSequenceGenerator(details.passwordLength)) {
+    if (rules.every((rule) => matches(possibleGuess, rule))) {
+      const result = await ns.dnet.authenticate(hostname, possibleGuess);
+      if (result.success) return true;
+      const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
+      for (const log of logs) {
+        try {
+          const hint = JSON.parse(log);
+          const newRule = {
+            password: hint.passwordAttempted,
+            exact: +hint.data[0],
+            wrongPlace: +hint.data[1],
+          };
+          if (
+            !rules.find(
+              ({ password, exact, wrongPlace }) =>
+                password === newRule.password &&
+                exact === newRule.exact &&
+                wrongPlace === newRule.wrongPlace,
+            )
+          ) {
+            rules.push(newRule);
+          }
+        } catch (error) {
+          // JSON error
+        }
+      }
+    }
+  }
+  return false; // Should not happen
+};
+
 const NO_PASSWORD = [
   'There is no password',
   'The password is not set',
@@ -83,6 +148,9 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   if (details.passwordLength === 0 || NO_PASSWORD.some((text) => text === details.passwordHint)) {
     return recitePassword('');
   }
+  if (details.passwordHint === 'Only a true master may pass') {
+    return mastermindSolver(ns, hostname, details);
+  }
   if (details.passwordHint === 'Type the numbers to prove you are human') {
     return recitePassword(details.data.replaceAll(/[^0-9]/g, ''));
   }
@@ -109,7 +177,13 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         const result = await ns.dnet.authenticate(hostname, nextAttempt);
         if (result.success) return true;
         const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
-        const hints = scrape.logs.map((text) => JSON.parse(text));
+        const hints = scrape.logs.map((text) => {
+          try {
+            return JSON.parse(text);
+          } catch {
+            return {};
+          }
+        });
         for (const { data, passwordAttempted } of hints) {
           if (typeof data === 'string') {
             const correct = data.split(',').map((v) => v === 'yes');
@@ -133,10 +207,36 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       return false;
     };
   }
-  if (details.passwordHint.startsWith('The password is shuffled ')) {
+  if (
+    details.passwordHint.startsWith('The password is shuffled ') ||
+    details.passwordHint.startsWith('The PIN uses ')
+  ) {
     return async () => {
       for (const item of permutationGenerator(details.data.split(''))) {
         const result = await ns.dnet.authenticate(hostname, item);
+        if (result.success) return true;
+      }
+      return false;
+    };
+  }
+  if (details.passwordHint.startsWith('The password is a number between ')) {
+    return async () => {
+      let lower = 0;
+      let upper = +'9'.repeat(details.passwordLength);
+      while (lower <= upper) {
+        const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
+        for (const log of logs) {
+          try {
+            const { data, passwordAttempted } = JSON.parse(log);
+            if (data === 'Lower') {
+              upper = Math.min(upper, +passwordAttempted - 1);
+            } else {
+              lower = Math.max(lower, +passwordAttempted + 1);
+            }
+          } catch {}
+        }
+        const mid = Math.floor((lower + upper) / 2);
+        const result = await ns.dnet.authenticate(hostname, mid.toString());
         if (result.success) return true;
       }
       return false;
@@ -165,10 +265,10 @@ export async function main(ns: NS) {
     ns.dnet.openCache(cache);
   }
   if (ns.getHostname() === 'darkweb') {
-    ns.disableLog('ALL');
-    ns.ui.openTail();
-    ns.ui.moveTail(250, 2);
-    ns.ui.resizeTail(700, 500);
+    // ns.disableLog('ALL');
+    // ns.ui.openTail();
+    // ns.ui.moveTail(250, 2);
+    // ns.ui.resizeTail(700, 500);
     // ns.print('labreport');
     // ns.print(await ns.dnet.labreport());
     // ns.print('labrader');
