@@ -258,7 +258,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   }
   if (details.passwordHint === "It's the dog's name") {
     return async () => {
-      const data = ns.peek(12289108104000) as Record<string, Record<string, string>>;
+      const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
       const possibleDogNames = new Set<string>();
       for (const servers of Object.values(data)) {
         for (const [filename, content] of Object.entries(servers)) {
@@ -271,6 +271,19 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       }
       for (const password of possibleDogNames) {
         await ns.dnet.authenticate(hostname, password);
+      }
+    };
+  }
+  if (details.passwordHint.includes('password buffer')) {
+    return async () => {
+      const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
+      const files = Object.values(data).flatMap((servers) => Object.values(servers));
+      const matchingFiles = files.filter((file) => file.includes(hostname));
+      for (const file of matchingFiles) {
+        const match = file.match(/"([^"]+)"/);
+        if (match) {
+          await ns.dnet.authenticate(hostname, match[1]);
+        }
       }
     };
   }
