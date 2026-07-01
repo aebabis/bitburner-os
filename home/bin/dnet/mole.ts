@@ -313,6 +313,12 @@ export async function main(ns: NS) {
 }
 `;
 
+const GO_PHISHING = `
+export async function main(ns: NS) {
+  await ns.dnet.phishingAttack();
+}
+`;
+
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
 // const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
@@ -338,7 +344,7 @@ const clearBlockages = (ns: NS) => {
   if (ns.dnet.getBlockedRam()) {
     const script = 'ns.dnet.memoryReallocation.ts';
     const ramCost = 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation');
-    if (!ns.read(script)) ns.write(script, MEMORY_REALLOCATION);
+    if (!ns.read(script)) ns.write(script, MEMORY_REALLOCATION, 'w');
     const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
     const threads = Math.floor(ramAvailable / ramCost);
     if (threads) ns.exec(script, ns.getHostname(), threads);
@@ -351,7 +357,7 @@ const checkCaches = (ns: NS) => {
   if (caches.length) {
     const script = 'ns.dnet.openCaches.ts';
     const ramCost = 1.6 + ns.getFunctionRamCost('dnet.openCache');
-    if (!ns.read(script)) ns.write(script, OPEN_CACHES);
+    if (!ns.read(script)) ns.write(script, OPEN_CACHES, 'w');
     const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
     if (ramAvailable > ramCost) ns.exec(script, hostname, 1, ...caches);
   }
@@ -367,6 +373,16 @@ const stealFiles = (ns: NS) => {
     {} as Record<string, string>,
   );
   putDarknetFiles(ns, ns.getHostname(), fileMap);
+};
+
+const goPhishing = (ns: NS) => {
+  const hostname = ns.getHostname();
+  const script = 'ns.dnet.phishingAttack.ts';
+  const ramCost = 1.6 + ns.getFunctionRamCost('dnet.phishingAttack');
+  if (!ns.read(script)) ns.write(script, GO_PHISHING, 'w');
+  const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+  const threads = Math.floor(ramAvailable / ramCost);
+  if (threads) ns.exec(script, ns.getHostname(), threads);
 };
 
 const checkVersion = (ns: NS, hostname: string) => {
@@ -396,6 +412,7 @@ export async function main(ns: NS) {
     clearBlockages(ns);
     checkCaches(ns);
     stealFiles(ns);
+    goPhishing(ns);
     for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await authenticate(ns, hostname, details))) {
