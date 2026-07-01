@@ -82,7 +82,7 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
   };
   for (const possibleGuess of numeralSequenceGenerator(details.passwordLength)) {
     if (rules.every((rule) => matches(possibleGuess, rule))) {
-      const result = await ns.dnet.authenticate(hostname, possibleGuess);
+      const result = await authenticate(ns)(hostname, possibleGuess);
       if (result.success) return true;
       const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
       for (const log of logs) {
@@ -136,14 +136,14 @@ const PASSWORD_IS = [
 const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => {
   const recitePassword = (password: string) => async () => {
     if (ns.dnet.connectToSession(hostname, password).success) return true;
-    return (await ns.dnet.authenticate(hostname, password)).success;
+    return (await authenticate(ns)(hostname, password)).success;
   };
   const tryPasswords =
     (...passwords: string[]) =>
     async () => {
       for (const password of passwords) {
         if (ns.dnet.connectToSession(hostname, password).success) return true;
-        if ((await ns.dnet.authenticate(hostname, password)).success) return true;
+        if ((await authenticate(ns)(hostname, password)).success) return true;
       }
       return false;
     };
@@ -182,7 +182,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       for (const message of logs) {
         for (const [numerals] of message.matchAll(/\d+/g)) {
           if (numerals.length === details.passwordLength) {
-            const result = await ns.dnet.authenticate(hostname, numerals);
+            const result = await authenticate(ns)(hostname, numerals);
             if (result.success) return true;
           }
         }
@@ -196,7 +196,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       for (let d = 0; d <= 9; d++) {
         const digit = d.toString();
         const nextAttempt = password.map((d) => (d == null ? digit : d)).join('');
-        const result = await ns.dnet.authenticate(hostname, nextAttempt);
+        const result = await authenticate(ns)(hostname, nextAttempt);
         if (result.success) return true;
         const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
         const hints = scrape.logs.map((text) => {
@@ -223,7 +223,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     generator.next(); // Discard first result
     return async () => {
       for (const item of generator) {
-        const result = await ns.dnet.authenticate(hostname, item);
+        const result = await authenticate(ns)(hostname, item);
         if (result.success) return true;
       }
       return false;
@@ -235,7 +235,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   ) {
     return async () => {
       for (const item of permutationGenerator(details.data.split(''))) {
-        const result = await ns.dnet.authenticate(hostname, item);
+        const result = await authenticate(ns)(hostname, item);
         if (result.success) return true;
       }
       return false;
@@ -258,7 +258,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
           } catch {}
         }
         const mid = Math.floor((lower + upper) / 2);
-        const result = await ns.dnet.authenticate(hostname, mid.toString());
+        const result = await authenticate(ns)(hostname, mid.toString());
         if (result.success) return true;
       }
       return false;
@@ -278,7 +278,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         }
       }
       for (const password of possibleDogNames) {
-        const result = await ns.dnet.authenticate(hostname, password);
+        const result = await authenticate(ns)(hostname, password);
         if (result.success) return true;
       }
     };
@@ -291,7 +291,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       for (const file of matchingFiles) {
         const match = file.match(/"([^"]+)"/);
         if (match) {
-          const result = await ns.dnet.authenticate(hostname, match[1]);
+          const result = await authenticate(ns)(hostname, match[1]);
           if (result.success) return true;
         }
       }
@@ -321,13 +321,11 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
             const { passwordAttempted, data: isDivisible } = JSON.parse(log);
             if (isDivisible === 'true') divisors.add(+passwordAttempted);
             else nonDivisors.add(+passwordAttempted);
-            ns.tprint([...divisors]);
-            ns.tprint([...nonDivisors]);
           } catch {}
         }
         const password = getNextAttempt();
         if (password == null) return false;
-        const result = await ns.dnet.authenticate(hostname, password);
+        const result = await authenticate(ns)(hostname, password);
         if (result.success) return true;
       }
     };
@@ -338,7 +336,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   return null;
 };
 
-const authenticate = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
+const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
   const cracker = getCracker(ns, hostname, details);
   if (cracker == null) {
     ns.print('No password strategy for: ' + hostname);
@@ -412,6 +410,19 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
   ns.writePort(DARKNET_FILES, data);
 };
 
+const DARKNET_PASSWORDS = DARKNET_FILES + 1;
+const authenticate = (ns: NS) => async (hostname: string, password: string) => {
+  const result = await ns.dnet.authenticate(hostname, password);
+  if (result.success) {
+    const port = ns.getPortHandle(DARKNET_PASSWORDS);
+    const passwords = (port.empty() ? {} : port.peek()) as Record<string, string>;
+    passwords[hostname] = password;
+    port.clear();
+    port.write(passwords);
+  }
+  return result;
+};
+
 const checkStorm = (ns: NS) => {
   ns.dnet.unleashStormSeed();
 };
@@ -453,18 +464,9 @@ const setStasis = (ns: NS, shouldLink = true) => {
   const { name, ramCost } = getHelperScript(ns)(HELPER_SCRIPTS.SET_STASIS);
   if (ns.ramOverride(ramCost) !== ramCost) {
     for (const ps of ns.ps()) {
-      if (ps.pid !== ns.pid) ns.kill(ps.pid);
-    }
-    if (ns.ramOverride(ramCost) !== ramCost) {
-      ns.tprint(
-        ns.getHostname() +
-          ': Unable to set ramOverride to: ' +
-          ramCost +
-          ' (' +
-          ns.getRunningScript()?.dynamicRamUsage +
-          ')',
-      );
-      return false;
+      if (ps.pid !== ns.pid) {
+        ns.kill(ps.pid);
+      }
     }
   }
   ns['spawn'](name, { spawnDelay: 0 }, shouldLink, ns.getScriptName());
@@ -473,20 +475,21 @@ const setStasis = (ns: NS, shouldLink = true) => {
 const updateLocks = (ns: NS) => {
   const hostname = ns.getHostname();
   const stasisServers = ns.dnet.getStasisLinkedServers();
-  const minStasisDepth = Math.max(1, ...stasisServers.map(ns.dnet.getDepth));
+  const minStasisDepth = Math.min(1, ...stasisServers.map(ns.dnet.getDepth));
+  const maxStasisDepth = Math.max(1, ...stasisServers.map(ns.dnet.getDepth));
   const depth = ns.dnet.getDepth();
   const hasStasis = stasisServers.includes(hostname);
   const spotsLeft = ns.dnet.getStasisLinkLimit() - stasisServers.length;
   if (hasStasis) {
-    if (depth < minStasisDepth) {
+    if (depth < maxStasisDepth) {
       setStasis(ns, false);
     } else if (depth === minStasisDepth && spotsLeft === 0) {
       setStasis(ns, false);
     }
   } else {
-    if (depth > minStasisDepth) {
+    if (depth > maxStasisDepth) {
       setStasis(ns, true);
-    } else if (depth === minStasisDepth && spotsLeft > 1) {
+    } else if (depth === maxStasisDepth && spotsLeft > 1) {
       setStasis(ns, true);
     }
   }
@@ -528,7 +531,7 @@ export async function main(ns: NS) {
     updateLocks(ns);
     for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
-      if (details.hasSession || (await authenticate(ns, hostname, details))) {
+      if (details.hasSession || (await gainAccess(ns, hostname, details))) {
         checkVersion(ns, hostname);
       }
     }
