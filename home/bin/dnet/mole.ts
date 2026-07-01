@@ -67,14 +67,9 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
       .map((c, i) => +(c === rule.password[i]))
       .reduce((a, b) => a + b, 0);
     if (numExact !== rule.exact) return false;
-    const passwordCounts = new Array(10).fill(0) as number[];
-    const ruleCounts = new Array(10).fill(0) as number[];
-    for (const c of password) passwordCounts[+c] += 1;
-    for (const c of rule.password) ruleCounts[+c] += 1;
-    const numSame = passwordCounts
-      .map((count, i) => Math.min(count, ruleCounts[i]))
-      .reduce((a, b) => a + b);
-    if (numSame - numExact !== rule.wrongPlace) return false;
+    // TODO: make two lists of non matching characters (using filter)
+    // and measure what they have in common. If common characters
+    // fewer than `wrongPlace` a match isn't possible.
     return true;
   };
   for (const possibleGuess of numeralSequenceGenerator(details.passwordLength)) {
