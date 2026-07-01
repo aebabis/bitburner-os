@@ -51,8 +51,16 @@ function* numeralSequenceGenerator(length: number): Generator<string> {
   }
   for (const end of numeralSequenceGenerator(length - 1)) {
     for (const numeral of '0123456789') {
-      yield numeral + end;
+      yield end + numeral;
     }
+  }
+}
+
+function* counter(length: number): Generator<number> {
+  if (length <= 0) return;
+  const max = 10 ** length - 1;
+  for (let num = 1; num <= max; num++) {
+    yield num;
   }
 }
 
@@ -155,6 +163,11 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   if (details.passwordHint.match(/password is the base \d+ number [^ ]+ in base 10/)) {
     const [base, number] = details.data.split(',');
     return recitePassword(parseInt(number, +base).toString());
+  }
+  if (details.passwordHint === 'The password is the evaluation of this expression') {
+    if (details.data.match(/^[0-9\+\-\*\/ ]+$/)) {
+      return recitePassword(eval(details.data));
+    }
   }
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
     if (details.passwordLength === 0) return recitePassword('');
@@ -286,7 +299,38 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     };
   }
   if (details.passwordHint.startsWith('The password is divisible by ')) {
-    return async () => {};
+    const divisors = new Set([1]);
+    const nonDivisors = new Set<number>();
+    const numbers = counter(details.passwordLength);
+    numbers.next();
+
+    const getNextAttempt = () => {
+      while (true) {
+        const number = numbers.next().value;
+        if (number == null) return null;
+        const meetsDivisors = [...divisors].every((d) => number % d === 0);
+        const meetsNonDivisors = [...nonDivisors].every((d) => number % d !== 0);
+        if (meetsDivisors && meetsNonDivisors) return number.toString();
+      }
+    };
+    return async () => {
+      while (true) {
+        const { logs } = await ns.dnet.heartbleed(hostname);
+        for (const log of logs) {
+          try {
+            const { passwordAttempted, data: isDivisible } = JSON.parse(log);
+            if (isDivisible === 'true') divisors.add(+passwordAttempted);
+            else nonDivisors.add(+passwordAttempted);
+            ns.tprint([...divisors]);
+            ns.tprint([...nonDivisors]);
+          } catch {}
+        }
+        const password = getNextAttempt();
+        if (password == null) return false;
+        const result = await ns.dnet.authenticate(hostname, password);
+        if (result.success) return true;
+      }
+    };
   }
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return recitePassword(details.data || details.passwordHint.split(' ').pop()!);
