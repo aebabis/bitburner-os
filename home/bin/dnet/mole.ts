@@ -65,98 +65,87 @@ const PASSWORD_IS = [
   "It's set to ",
 ];
 
-const getPassword = (details: DarknetServerDetails) => {
-  if (details.passwordLength === 0) return '';
+const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => {
+  const recitePassword = (password: string) => async () => {
+    if (ns.dnet.connectToSession(hostname, password).success) return true;
+    return (await ns.dnet.authenticate(hostname, password)).success;
+  };
 
+  if (details.passwordLength === 0 || NO_PASSWORD.some((text) => text === details.passwordHint)) {
+    return recitePassword('');
+  }
   if (details.passwordHint === 'Type the numbers to prove you are human') {
-    return details.data.replaceAll(/[^0-9]/g, '');
+    return recitePassword(details.data.replaceAll(/[^0-9]/g, ''));
   }
-
   if (details.passwordHint.startsWith('The password is the value of the number')) {
-    return romanToInt(details.data).toString();
+    return recitePassword(romanToInt(details.data).toString());
   }
-
   if (details.passwordHint.match(/password is the base \d+ number [^ ]+ in base 10/)) {
     const [base, number] = details.data.split(',');
-    return parseInt(number, +base).toString();
+    return recitePassword(parseInt(number, +base).toString());
   }
-
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
-    if (details.passwordLength === 0) return '';
-    if (details.passwordLength === 4) return '0000';
-    if (details.passwordLength === 5) return Math.random() < 0.5 ? '12345' : 'admin';
-    if (details.passwordLength === 8) return 'password';
+    if (details.passwordLength === 0) return recitePassword('');
+    if (details.passwordLength === 4) return recitePassword('0000');
+    if (details.passwordLength === 5)
+      return recitePassword(Math.random() < 0.5 ? '12345' : 'admin');
+    if (details.passwordLength === 8) return recitePassword('password');
   }
 
-  if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
-    return details.data || details.passwordHint.split(' ').pop()!;
+  if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
+    return async () => {
+      const password = new Array(details.passwordLength).fill(null);
+      for (let d = 0; d <= 9; d++) {
+        const digit = d.toString();
+        const nextAttempt = password.map((d) => (d == null ? digit : d)).join('');
+        const result = await ns.dnet.authenticate(hostname, nextAttempt);
+        if (result.success) return true;
+        const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
+        const hints = scrape.logs.map((text) => JSON.parse(text));
+        for (const { data, passwordAttempted } of hints) {
+          if (typeof data === 'string') {
+            const correct = data.split(',').map((v) => v === 'yes');
+            for (let i = 0; i < correct.length; i++) {
+              if (correct[i]) password[i] = passwordAttempted[i];
+            }
+          }
+        }
+      }
+      return false;
+    };
   }
-  if (NO_PASSWORD.includes(details.passwordHint)) {
-    return '';
+  if (details.passwordHint.startsWith('I accidentally sorted the password: ')) {
+    const generator = permutationGenerator(details.data.split(''));
+    generator.next(); // Discard first result
+    return async () => {
+      for (const item of generator) {
+        const result = await ns.dnet.authenticate(hostname, item);
+        if (result.success) return true;
+      }
+      return false;
+    };
+  }
+  if (details.passwordHint.startsWith('The password is shuffled ')) {
+    return async () => {
+      for (const item of permutationGenerator(details.data.split(''))) {
+        const result = await ns.dnet.authenticate(hostname, item);
+        if (result.success) return true;
+      }
+      return false;
+    };
+  }
+  if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
+    return recitePassword(details.data || details.passwordHint.split(' ').pop()!);
   }
   return null;
 };
 
-const crackPassword = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
-  if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
-    const password = new Array(details.passwordLength).fill(null);
-    for (let d = 0; d <= 9; d++) {
-      const digit = d.toString();
-      const nextAttempt = password.map((d) => (d == null ? digit : d)).join('');
-      const result = await ns.dnet.authenticate(hostname, nextAttempt);
-      if (result.success) return true;
-      const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
-      const hints = scrape.logs.map((text) => JSON.parse(text));
-      for (const { data, passwordAttempted } of hints) {
-        if (typeof data === 'string') {
-          const correct = data.split(',').map((v) => v === 'yes');
-          for (let i = 0; i < correct.length; i++) {
-            if (correct[i]) password[i] = passwordAttempted[i];
-          }
-        }
-      }
-    }
-  } else if (details.passwordHint.startsWith('I accidentally sorted the password: ')) {
-    const generator = permutationGenerator(details.data.split(''));
-    generator.next(); // Discard first result
-    for (const item of generator) {
-      const result = await ns.dnet.authenticate(hostname, item);
-      if (result.success) return true;
-    }
-    return false;
-  } else if (details.passwordHint.startsWith('The password is shuffled ')) {
-    for (const item of permutationGenerator(details.data.split(''))) {
-      const result = await ns.dnet.authenticate(hostname, item);
-      if (result.success) return true;
-    }
-    return false;
-  } else {
-    ns.print('No password strategy for: ' + hostname);
-    return false;
-  }
-};
-
 const authenticate = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
-  if (details.passwordHint.startsWith('The password is shuffled')) {
-    return await crackPassword(ns, hostname, details);
-  }
-  const password = getPassword(details);
-  if (password == null) {
-    return await crackPassword(ns, hostname, details);
+  const cracker = getCracker(ns, hostname, details);
+  if (cracker == null) {
+    ns.print('No password strategy for: ' + hostname);
   } else {
-    if (ns.dnet.connectToSession(hostname, password).success) {
-      ns.print(`${hostname}: "${password}", (reconnected)`);
-      return true;
-    } else {
-      const result = await ns.dnet.authenticate(hostname, password);
-      if (result.success) {
-        ns.print(`${hostname}: "${password}", (connected)`);
-        return true;
-      } else {
-        ns.print(`ERROR${hostname}: "${password}", (failed)`);
-        return false;
-      }
-    }
+    return cracker();
   }
 };
 
