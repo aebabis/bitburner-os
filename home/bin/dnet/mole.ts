@@ -282,6 +282,9 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       }
     };
   }
+  if (details.passwordHint.startsWith('The password is divisible by ')) {
+    return async () => {};
+  }
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return recitePassword(details.data || details.passwordHint.split(' ').pop()!);
   }
@@ -303,6 +306,13 @@ export async function main(ns: NS) {
 }
 `;
 
+const OPEN_CACHES = `
+export async function main(ns: NS) {
+  for (const cache of ns.args as string[])
+    ns.dnet.openCache(cache);
+}
+`;
+
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
 // const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
@@ -320,14 +330,12 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
 };
 
 const clearBlockages = (ns: NS) => {
+  const hostname = ns.getHostname();
   if (ns.dnet.getBlockedRam()) {
     const memScript = 'ns.dnet.memoryReallocation.ts';
     const ramCost = 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation');
-    if (!ns.read(memScript)) {
-      ns.write(memScript, MEMORY_REALLOCATION);
-    }
-    const ramAvailable =
-      ns.getServerMaxRam(ns.getHostname()) - ns.getServerUsedRam(ns.getHostname());
+    if (!ns.read(memScript)) ns.write(memScript, MEMORY_REALLOCATION);
+    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
     const threads = Math.floor(ramAvailable / ramCost);
     if (threads) ns.exec(memScript, ns.getHostname(), threads);
   }
@@ -336,8 +344,12 @@ const clearBlockages = (ns: NS) => {
 const checkCaches = (ns: NS) => {
   const hostname = ns.getHostname();
   const caches = ns.ls(hostname, '.cache');
-  for (const cache of caches) {
-    ns.dnet.openCache(cache);
+  if (caches.length) {
+    const script = 'ns.dnet.openCaches.ts';
+    const ramCost = 1.6 + ns.getFunctionRamCost('dnet.openCache');
+    if (!ns.read(script)) ns.write(script, OPEN_CACHES);
+    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+    if (ramAvailable > ramCost) ns.exec(script, hostname, 1, ...caches);
   }
 };
 
