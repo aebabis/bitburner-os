@@ -265,7 +265,8 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         }
       }
       for (const password of possibleDogNames) {
-        await ns.dnet.authenticate(hostname, password);
+        const result = await ns.dnet.authenticate(hostname, password);
+        if (result.success) return true;
       }
     };
   }
@@ -277,9 +278,11 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       for (const file of matchingFiles) {
         const match = file.match(/"([^"]+)"/);
         if (match) {
-          await ns.dnet.authenticate(hostname, match[1]);
+          const result = await ns.dnet.authenticate(hostname, match[1]);
+          if (result.success) return true;
         }
       }
+      return false;
     };
   }
   if (details.passwordHint.startsWith('The password is divisible by ')) {
@@ -300,24 +303,43 @@ const authenticate = async (ns: NS, hostname: string, details: DarknetServerDeta
   }
 };
 
-const MEMORY_REALLOCATION = `
-export async function main(ns: NS) {
-  await ns.dnet.memoryReallocation();
-}
-`;
+const HELPER_SCRIPTS = {
+  MEMORY_REALLOCATION: {
+    name: 'ns.dnet.memoryReallocation.ts',
+    source: `
+      export async function main(ns: NS) {
+        await ns.dnet.memoryReallocation();
+      }` as string,
+    ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation'),
+  },
+  OPEN_CACHES: {
+    name: 'ns.dnet.openCaches.ts',
+    source: `
+      export async function main(ns: NS) {
+        for (const cache of ns.args as string[])
+          ns.dnet.openCache(cache);
+      }` as string,
+    ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.openCache'),
+  },
+  GO_PHISHING: {
+    name: 'ns.dnet.phishingAttack.ts',
+    source: `
+      export async function main(ns: NS) {
+        await ns.dnet.phishingAttack();
+      }` as string,
+    ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.phishingAttack'),
+  },
+} as const;
 
-const OPEN_CACHES = `
-export async function main(ns: NS) {
-  for (const cache of ns.args as string[])
-    ns.dnet.openCache(cache);
-}
-`;
-
-const GO_PHISHING = `
-export async function main(ns: NS) {
-  await ns.dnet.phishingAttack();
-}
-`;
+const getHelperScript =
+  (ns: NS, hostname = ns.getHostname()) =>
+  (script: (typeof HELPER_SCRIPTS)[keyof typeof HELPER_SCRIPTS]) => {
+    if (!ns.read(script.name)) ns.write(script.name, script.source, 'w');
+    const ramCost = script.ramCost(ns);
+    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+    const maxThreads = Math.floor(ramAvailable / ramCost);
+    return { name: script.name, ramCost, maxThreads };
+  };
 
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
@@ -339,15 +361,10 @@ const checkStorm = (ns: NS) => {
   ns.dnet.unleashStormSeed();
 };
 
-const clearBlockages = (ns: NS) => {
-  const hostname = ns.getHostname();
+const clearBlockages = (ns: NS, hostname = ns.getHostname()) => {
   if (ns.dnet.getBlockedRam()) {
-    const script = 'ns.dnet.memoryReallocation.ts';
-    const ramCost = 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation');
-    if (!ns.read(script)) ns.write(script, MEMORY_REALLOCATION, 'w');
-    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-    const threads = Math.floor(ramAvailable / ramCost);
-    if (threads) ns.exec(script, ns.getHostname(), threads);
+    const { name, maxThreads } = getHelperScript(ns, hostname)(HELPER_SCRIPTS.MEMORY_REALLOCATION);
+    if (maxThreads) ns.exec(name, ns.getHostname(), maxThreads);
   }
 };
 
@@ -355,11 +372,8 @@ const checkCaches = (ns: NS) => {
   const hostname = ns.getHostname();
   const caches = ns.ls(hostname, '.cache');
   if (caches.length) {
-    const script = 'ns.dnet.openCaches.ts';
-    const ramCost = 1.6 + ns.getFunctionRamCost('dnet.openCache');
-    if (!ns.read(script)) ns.write(script, OPEN_CACHES, 'w');
-    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-    if (ramAvailable > ramCost) ns.exec(script, hostname, 1, ...caches);
+    const { name, maxThreads } = getHelperScript(ns)(HELPER_SCRIPTS.OPEN_CACHES);
+    if (maxThreads >= 1) ns.exec(name, hostname, 1, ...caches);
   }
 };
 
@@ -376,13 +390,8 @@ const stealFiles = (ns: NS) => {
 };
 
 const goPhishing = (ns: NS) => {
-  const hostname = ns.getHostname();
-  const script = 'ns.dnet.phishingAttack.ts';
-  const ramCost = 1.6 + ns.getFunctionRamCost('dnet.phishingAttack');
-  if (!ns.read(script)) ns.write(script, GO_PHISHING, 'w');
-  const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-  const threads = Math.floor(ramAvailable / ramCost);
-  if (threads) ns.exec(script, ns.getHostname(), threads);
+  const { name, maxThreads } = getHelperScript(ns)(HELPER_SCRIPTS.GO_PHISHING);
+  if (maxThreads) ns.exec(name, ns.getHostname(), maxThreads);
 };
 
 const checkVersion = (ns: NS, hostname: string) => {
@@ -399,7 +408,12 @@ const checkVersion = (ns: NS, hostname: string) => {
         ns.kill(ps.pid);
         if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
           ns.scp(script, hostname);
-          ns.exec(script, hostname);
+          const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+          if (ramAvailable < 10) {
+            clearBlockages(ns, hostname);
+          } else {
+            ns.exec(script, hostname);
+          }
         }
       }
     }
