@@ -1,14 +1,11 @@
 /*
  NAME                                 RAM     
- dnet.heartbleed                      0.60GB  
  dnet.setStasisLink                   12.00GB 
  dnet.getStasisLinkLimit              0.00GB  
  dnet.getStasisLinkedServers          0.00GB  
  dnet.induceServerMigration           4.00GB  
  dnet.unleashStormSeed                0.10GB  
  dnet.isDarknetServer                 0.10GB  
- dnet.memoryReallocation              1.00GB  
- dnet.getBlockedRam                   0.00GB  
  dnet.getDepth                        0.10GB  
  dnet.phishingAttack                  2.00GB  
  dnet.getDarknetInstability           0.00GB  
@@ -18,10 +15,13 @@
 import { ERROR } from '../../lib/colors';
 
 /* USED
+ dnet.getBlockedRam                   0.00GB  
+ dnet.memoryReallocation              1.00GB  
  dnet.openCache                       2.00GB  
  dnet.probe                           0.20GB  
  dnet.getServerDetails                0.10GB  
  dnet.authenticate                    0.40GB  
+ dnet.heartbleed                      0.60GB  
  dnet.connectToSession                0.05GB  
  dnet.nextMutation                    0.00GB  
 */

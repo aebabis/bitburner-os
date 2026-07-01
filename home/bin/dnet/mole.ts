@@ -256,6 +256,24 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       return false;
     };
   }
+  if (details.passwordHint === "It's the dog's name") {
+    return async () => {
+      const data = ns.peek(12289108104000) as Record<string, Record<string, string>>;
+      const possibleDogNames = new Set<string>();
+      for (const servers of Object.values(data)) {
+        for (const [filename, content] of Object.entries(servers)) {
+          if (filename.includes('dog')) {
+            for (const name of content.split(/[^a-z]+/)) {
+              possibleDogNames.add(name);
+            }
+          }
+        }
+      }
+      for (const password of possibleDogNames) {
+        await ns.dnet.authenticate(hostname, password);
+      }
+    };
+  }
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return recitePassword(details.data || details.passwordHint.split(' ').pop()!);
   }
