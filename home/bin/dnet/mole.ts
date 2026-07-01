@@ -373,6 +373,17 @@ const HELPER_SCRIPTS = {
       }` as string,
     ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.phishingAttack'),
   },
+  SET_STASIS: {
+    name: 'ns.dnet.setStasisLink.ts',
+    source: `
+      export async function main(ns: NS) {
+        const [shouldLink, callback] = ns.args as [boolean, string];
+        await ns.dnet.setStasisLink(shouldLink);
+        ns.spawn(callback, { spawnDelay: 0 });
+      }` as string,
+    ramCost: (ns: NS) =>
+      1.6 + ns.getFunctionRamCost('dnet.setStasisLink') + ns.getFunctionRamCost('spawn'),
+  },
 } as const;
 
 const getHelperScript =
@@ -438,6 +449,49 @@ const goPhishing = (ns: NS) => {
   if (maxThreads) ns.exec(name, ns.getHostname(), maxThreads);
 };
 
+const setStasis = (ns: NS, shouldLink = true) => {
+  const { name, ramCost } = getHelperScript(ns)(HELPER_SCRIPTS.SET_STASIS);
+  if (ns.ramOverride(ramCost) !== ramCost) {
+    for (const ps of ns.ps()) {
+      if (ps.pid !== ns.pid) ns.kill(ps.pid);
+    }
+    if (ns.ramOverride(ramCost) !== ramCost) {
+      ns.tprint(
+        ns.getHostname() +
+          ': Unable to set ramOverride to: ' +
+          ramCost +
+          ' (' +
+          ns.getRunningScript()?.dynamicRamUsage +
+          ')',
+      );
+      return false;
+    }
+  }
+  ns['spawn'](name, { spawnDelay: 0 }, shouldLink, ns.getScriptName());
+};
+
+const updateLocks = (ns: NS) => {
+  const hostname = ns.getHostname();
+  const stasisServers = ns.dnet.getStasisLinkedServers();
+  const minStasisDepth = Math.max(1, ...stasisServers.map(ns.dnet.getDepth));
+  const depth = ns.dnet.getDepth();
+  const hasStasis = stasisServers.includes(hostname);
+  const spotsLeft = ns.dnet.getStasisLinkLimit() - stasisServers.length;
+  if (hasStasis) {
+    if (depth < minStasisDepth) {
+      setStasis(ns, false);
+    } else if (depth === minStasisDepth && spotsLeft === 0) {
+      setStasis(ns, false);
+    }
+  } else {
+    if (depth > minStasisDepth) {
+      setStasis(ns, true);
+    } else if (depth === minStasisDepth && spotsLeft > 1) {
+      setStasis(ns, true);
+    }
+  }
+};
+
 const checkVersion = (ns: NS, hostname: string) => {
   const script = ns.getScriptName();
   const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
@@ -471,6 +525,7 @@ export async function main(ns: NS) {
     checkCaches(ns);
     stealFiles(ns);
     goPhishing(ns);
+    updateLocks(ns);
     for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await authenticate(ns, hostname, details))) {
