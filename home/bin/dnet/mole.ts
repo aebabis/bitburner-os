@@ -461,6 +461,7 @@ const goPhishing = (ns: NS) => {
 };
 
 const setStasis = (ns: NS, shouldLink = true) => {
+  if (ns.ps().find((ps) => ps.filename === HELPER_SCRIPTS.SET_STASIS.name)) return;
   const { name, ramCost } = getHelperScript(ns)(HELPER_SCRIPTS.SET_STASIS);
   if (ns.ramOverride(ramCost) !== ramCost) {
     for (const ps of ns.ps()) {
@@ -468,6 +469,7 @@ const setStasis = (ns: NS, shouldLink = true) => {
         ns.kill(ps.pid);
       }
     }
+    if (ns.ramOverride(ramCost) !== ramCost) return;
   }
   ns['spawn'](name, { spawnDelay: 0 }, shouldLink, ns.getScriptName());
 };
@@ -509,7 +511,10 @@ const checkVersion = (ns: NS, hostname: string) => {
         ns.kill(ps.pid);
         if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
           ns.scp(script, hostname);
-          const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+          const ramAvailable =
+            ns.getServerMaxRam(hostname) -
+            ns.getServerUsedRam(hostname) -
+            ns.dnet.getBlockedRam(hostname);
           if (ramAvailable < 10) {
             clearBlockages(ns, hostname);
           } else {
