@@ -168,6 +168,20 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     if (details.passwordLength === 8) return recitePassword('password');
   }
 
+  if (details.passwordHint === "(I'm busy browsing social media at the cafe)") {
+    return async () => {
+      const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
+      for (const message of logs) {
+        for (const [numerals] of message.matchAll(/\d+/g)) {
+          if (numerals.length === details.passwordLength) {
+            const result = await ns.dnet.authenticate(hostname, numerals);
+            if (result.success) return true;
+          }
+        }
+      }
+      return false;
+    };
+  }
   if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
     return async () => {
       const password = new Array(details.passwordLength).fill(null);
