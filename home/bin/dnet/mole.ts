@@ -313,13 +313,6 @@ export async function main(ns: NS) {
 }
 `;
 
-const STORM_SEED = `
-export async function main(ns: NS) {
-  for (const cache of ns.args as string[])
-    ns.dnet.openCache(cache);
-}
-`;
-
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
 // const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
@@ -388,7 +381,7 @@ const checkVersion = (ns: NS, hostname: string) => {
       const otherVersion = getVersion(ps.filename);
       if (version > otherVersion) {
         ns.kill(ps.pid);
-        if (!ns.isRunning(script, hostname)) {
+        if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
           ns.scp(script, hostname);
           ns.exec(script, hostname);
         }
