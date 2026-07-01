@@ -271,6 +271,12 @@ const authenticate = async (ns: NS, hostname: string, details: DarknetServerDeta
   }
 };
 
+const MEMORY_REALLOCATION = `
+export async function main(ns: NS) {
+  await ns.dnet.memoryReallocation();
+}
+`;
+
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
 // const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
@@ -287,11 +293,29 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
   ns.writePort(DARKNET_FILES, data);
 };
 
-export async function main(ns: NS) {
-  const caches = ns.ls(ns.getHostname(), '.cache');
+const clearBlockages = (ns: NS) => {
+  if (ns.dnet.getBlockedRam()) {
+    const memScript = 'ns.dnet.memoryReallocation.ts';
+    const ramCost = 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation');
+    if (!ns.read(memScript)) {
+      ns.write(memScript, MEMORY_REALLOCATION);
+    }
+    const ramAvailable =
+      ns.getServerMaxRam(ns.getHostname()) - ns.getServerUsedRam(ns.getHostname());
+    const threads = Math.floor(ramAvailable / ramCost);
+    if (threads) ns.exec(memScript, ns.getHostname(), threads);
+  }
+};
+
+const checkCaches = (ns: NS) => {
+  const hostname = ns.getHostname();
+  const caches = ns.ls(hostname, '.cache');
   for (const cache of caches) {
     ns.dnet.openCache(cache);
   }
+};
+
+const stealFiles = (ns: NS) => {
   const filesToSteal = ns.ls(ns.getHostname()).filter((file) => !file.endsWith('.ts'));
   const fileMap = filesToSteal.reduce(
     (map, filename) => {
@@ -301,26 +325,31 @@ export async function main(ns: NS) {
     {} as Record<string, string>,
   );
   putDarknetFiles(ns, ns.getHostname(), fileMap);
+};
 
+export async function main(ns: NS) {
+  const script = ns.getScriptName();
   while (true) {
-    const connections = ns.dnet.probe();
-    for (const hostname of connections) {
+    clearBlockages(ns);
+    checkCaches(ns);
+    stealFiles(ns);
+    for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await authenticate(ns, hostname, details))) {
         const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
         if (otherMoles.length === 0) {
-          ns.scp(ns.getScriptName(), hostname);
-          ns.exec(ns.getScriptName(), hostname);
+          ns.scp(script, hostname);
+          ns.exec(script, hostname);
         } else {
           for (const ps of otherMoles) {
-            const version = getVersion(ns.getScriptName());
+            const version = getVersion(script);
             const otherVersion = getVersion(ps.filename);
             if (version < otherVersion) return;
             if (version > otherVersion) {
               ns.kill(ps.pid);
-              if (ns.isRunning(ns.getScriptName(), hostname)) {
-                ns.scp(ns.getScriptName(), hostname);
-                ns.exec(ns.getScriptName(), hostname, 1, ns.args[0]);
+              if (ns.isRunning(script, hostname)) {
+                ns.scp(script, hostname);
+                ns.exec(script, hostname);
               }
             }
           }
