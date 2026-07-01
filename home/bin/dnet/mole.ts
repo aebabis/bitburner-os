@@ -251,7 +251,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       return false;
     };
   }
-  if (details.passwordHint === "It's the dog's name") {
+  if (details.passwordHint.includes("dog's name")) {
     return async () => {
       const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
       const possibleDogNames = new Set<string>();
@@ -313,6 +313,13 @@ export async function main(ns: NS) {
 }
 `;
 
+const STORM_SEED = `
+export async function main(ns: NS) {
+  for (const cache of ns.args as string[])
+    ns.dnet.openCache(cache);
+}
+`;
+
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
 // const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
@@ -329,15 +336,19 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
   ns.writePort(DARKNET_FILES, data);
 };
 
+const checkStorm = (ns: NS) => {
+  ns.dnet.unleashStormSeed();
+};
+
 const clearBlockages = (ns: NS) => {
   const hostname = ns.getHostname();
   if (ns.dnet.getBlockedRam()) {
-    const memScript = 'ns.dnet.memoryReallocation.ts';
+    const script = 'ns.dnet.memoryReallocation.ts';
     const ramCost = 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation');
-    if (!ns.read(memScript)) ns.write(memScript, MEMORY_REALLOCATION);
+    if (!ns.read(script)) ns.write(script, MEMORY_REALLOCATION);
     const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
     const threads = Math.floor(ramAvailable / ramCost);
-    if (threads) ns.exec(memScript, ns.getHostname(), threads);
+    if (threads) ns.exec(script, ns.getHostname(), threads);
   }
 };
 
@@ -365,35 +376,38 @@ const stealFiles = (ns: NS) => {
   putDarknetFiles(ns, ns.getHostname(), fileMap);
 };
 
-export async function main(ns: NS) {
+const checkVersion = (ns: NS, hostname: string) => {
   const script = ns.getScriptName();
+  const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
+  if (otherMoles.length === 0) {
+    ns.scp(script, hostname);
+    ns.exec(script, hostname);
+  } else {
+    for (const ps of otherMoles) {
+      const version = getVersion(script);
+      const otherVersion = getVersion(ps.filename);
+      if (version > otherVersion) {
+        ns.kill(ps.pid);
+        if (!ns.isRunning(script, hostname)) {
+          ns.scp(script, hostname);
+          ns.exec(script, hostname);
+        }
+      }
+    }
+  }
+};
+
+export async function main(ns: NS) {
   while (true) {
+    checkStorm(ns);
     clearBlockages(ns);
     checkCaches(ns);
     stealFiles(ns);
     for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await authenticate(ns, hostname, details))) {
-        const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
-        if (otherMoles.length === 0) {
-          ns.scp(script, hostname);
-          ns.exec(script, hostname);
-        } else {
-          for (const ps of otherMoles) {
-            const version = getVersion(script);
-            const otherVersion = getVersion(ps.filename);
-            if (version < otherVersion) return;
-            if (version > otherVersion) {
-              ns.kill(ps.pid);
-              if (ns.isRunning(script, hostname)) {
-                ns.scp(script, hostname);
-                ns.exec(script, hostname);
-              }
-            }
-          }
-        }
+        checkVersion(ns, hostname);
       }
-      await ns.dnet.heartbleed(hostname);
     }
     await ns.dnet.nextMutation();
   }

@@ -4,7 +4,6 @@
  dnet.getStasisLinkLimit              0.00GB  
  dnet.getStasisLinkedServers          0.00GB  
  dnet.induceServerMigration           4.00GB  
- dnet.unleashStormSeed                0.10GB  
  dnet.isDarknetServer                 0.10GB  
  dnet.getDepth                        0.10GB  
  dnet.phishingAttack                  2.00GB  
@@ -24,6 +23,7 @@ import { ERROR } from '../../lib/colors';
  dnet.heartbleed                      0.60GB  
  dnet.connectToSession                0.05GB  
  dnet.nextMutation                    0.00GB  
+ dnet.unleashStormSeed                0.10GB  
 */
 
 /* WONDER
