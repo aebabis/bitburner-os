@@ -12,7 +12,7 @@
 // requiredCharismaSkill: number;
 // isStationary: boolean;
 //
-function romanToInt(numeralString: string) {
+const romanToInt = (numeralString: string) => {
   const numeralValues = {
     I: 1,
     V: 5,
@@ -28,7 +28,16 @@ function romanToInt(numeralString: string) {
     .map((num) => numeralValues[num])
     .map((num, i, arr) => (num < arr[i + 1] ? -num : num))
     .reduce((a, b) => a + b, 0);
-}
+};
+
+const solveXor = (input: string) => {
+  const [cypher, mask] = input.split(';');
+  const masks = mask.split(' ').map((n) => parseInt(n, 2));
+  return [...cypher]
+    .map((c, i) => c.charCodeAt(0) ^ masks[i])
+    .map((n) => String.fromCharCode(n))
+    .join('');
+};
 
 function* permutationGenerator(arr: string[]): Generator<string> {
   if (arr.length <= 1) {
@@ -112,6 +121,113 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
   return false; // Should not happen
 };
 
+// The password is the largest prime factor of
+
+type Coord = `${number},${number}`;
+const mazeSolver = (ns: NS, hostname: string, details: DarknetServerDetails) => async () => {
+  if (ns.dnet.getStasisLinkedServers().includes(ns.getHostname())) {
+    ns.disableLog('ALL');
+    ns.ui.openTail();
+  }
+  const maze = {} as Record<Coord, boolean | undefined>;
+  const stepToNewSpot = (coords: readonly [number, number]) => {
+    const directions = [
+      { name: 'north', dx: 0, dy: -1 },
+      { name: 'east', dx: 1, dy: 0 },
+      { name: 'south', dx: 0, dy: 1 },
+      { name: 'west', dx: -1, dy: 0 },
+    ] as const;
+    const [startX, startY] = coords;
+    const startCoord: Coord = `${startX},${startY}`;
+    const queue = directions
+      .filter(({ dx, dy }) => maze[`${startX + dx},${startY + dy}`])
+      .map(({ name, dx, dy }) => ({ x: startX + dx * 2, y: startY + dy * 2, firstStep: name }));
+    ns.print(queue);
+    const seen = new Set<Coord>([startCoord]);
+    while (queue.length) {
+      const { x, y, firstStep } = queue.shift()!;
+      const currentCoord: Coord = `${x},${y}`;
+      ns.print('considering: ' + currentCoord + ':' + maze[currentCoord]);
+      if (maze[currentCoord] === undefined) return firstStep;
+      for (const { dx, dy } of directions) {
+        ns.print('  looking: ' + `${x + dx},${y + dy}` + ':' + maze[`${x + dx},${y + dy}`]);
+        if (!maze[`${x + dx},${y + dy}`]) continue;
+        const nx = x + dx * 2;
+        const ny = y + dy * 2;
+        const nCoord: Coord = `${nx},${ny}`;
+        ns.print('    seen: ' + seen.has(nCoord));
+        if (!seen.has(nCoord)) {
+          seen.add(nCoord);
+          queue.push({ x: nx, y: ny, firstStep });
+        }
+      }
+      ns.print(queue.length);
+    }
+    return 'south';
+  };
+  const printMaze = () => {
+    const allCoords = [...Object.keys(maze).map((coord) => coord.split(',').map(Number))];
+    const maxX = Math.max(...allCoords.map(([x]) => x));
+    const maxY = Math.max(...allCoords.map(([, y]) => y));
+    const rows = [] as string[][];
+    for (let y = 0; y <= maxY; y++) {
+      const row = [] as string[];
+      rows.push(row);
+      for (let x = 0; x <= maxX; x++) {
+        const coord = `${x},${y}` as Coord;
+        if (x % 2 === 0 && y % 2 === 0) row.push('█');
+        else if (maze[coord]) row.push(' ');
+        else if (maze[coord] === false) row.push('█');
+        else row.push('?');
+      }
+    }
+    ns.print(rows.map((row) => row.join('')).join('\n') + '\n\n');
+  };
+  type LabReport = {
+    coords: [number, number];
+    north: boolean;
+    east: boolean;
+    south: boolean;
+    west: boolean;
+  };
+  const labreports = {} as Record<Coord, LabReport>;
+  while (true) {
+    try {
+      const labreport = await ns.dnet.labreport();
+      if (!labreport.coords) {
+        await ns.sleep(100);
+        continue;
+      }
+      const { coords, north, east, south, west } = labreport as LabReport;
+      const [x, y] = coords;
+      maze[`${x},${y}`] = true;
+      maze[`${x},${y - 1}`] = north;
+      maze[`${x + 1},${y}`] = east;
+      maze[`${x},${y + 1}`] = south;
+      maze[`${x - 1},${y}`] = west;
+      ns.clearLog();
+      const nextStep = stepToNewSpot(coords);
+      if (nextStep) {
+        printMaze();
+        const result = await authenticate(ns)(hostname, nextStep);
+        if (result.success) return true;
+      }
+    } catch (error) {
+      ns.tprint(error);
+      return false;
+    }
+  }
+  // TODO: Use heartbleed info to update map
+  /* {
+  "passwordAttempted": "s",
+  "code": 401,
+  "message": "You have moved to 1,3.",
+  "data": "█ █
+           █@█
+           █ █"
+} */
+};
+
 const NO_PASSWORD = [
   'There is no password',
   'The password is not set',
@@ -154,19 +270,27 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   if (details.passwordHint === 'Only a true master may pass') {
     return mastermindSolver(ns, hostname, details);
   }
+  if (details.passwordHint.startsWith('You have discovered a dark, mysterious maze')) {
+    return mazeSolver(ns, hostname, details);
+  }
   if (details.passwordHint === 'Type the numbers to prove you are human') {
     return recitePassword(details.data.replaceAll(/[^0-9]/g, ''));
   }
   if (details.passwordHint.startsWith('The password is the value of the number')) {
     return recitePassword(romanToInt(details.data).toString());
   }
-  if (details.passwordHint.match(/password is the base \d+ number [^ ]+ in base 10/)) {
+  if (details.passwordHint.match(/password is the base [^ ]+ number [^ ]+ in base 10/)) {
     const [base, number] = details.data.split(',');
     return recitePassword(parseInt(number, +base).toString());
   }
   if (details.passwordHint === 'The password is the evaluation of this expression') {
-    if (details.data.match(/^[0-9\+\-\*\/ ]+$/)) {
-      return recitePassword(eval(details.data));
+    const expr = details.data
+      .replaceAll(/[➕]/g, '+')
+      .replaceAll(/[➖]/g, '-')
+      .replaceAll(/[÷]/g, '/')
+      .replaceAll(/[ҳ]/g, '*');
+    if (expr.match(/^[0-9\+\-\*\\(\)/ ]+$/)) {
+      return recitePassword(eval(expr));
     }
   }
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
@@ -176,6 +300,25 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     if (details.passwordLength === 8) return recitePassword('password');
   }
 
+  if (details.passwordHint === "It's a common password") {
+    return async () => {
+      const LEAD = 'Some common passwords include ';
+      const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
+      const servers = Object.values(data);
+      const files = servers.flatMap((server) => Object.values(server));
+      const passwords = new Set(
+        files
+          .filter((content) => content.startsWith(LEAD))
+          .flatMap((str) => str.replace(LEAD, '').split(' '))
+          .filter((str) => str.length === details.passwordLength),
+      );
+      for (const password of passwords) {
+        const result = await authenticate(ns)(hostname, password);
+        if (result.success) return true;
+      }
+      return false;
+    };
+  }
   if (details.passwordHint === "(I'm busy browsing social media at the cafe)") {
     return async () => {
       const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
@@ -189,6 +332,13 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       }
       return false;
     };
+  }
+  if (details.passwordHint.startsWith('The password is the largest prime factor of')) {
+    let num = +details.data;
+    for (let f = 2; f * f <= num; f++) {
+      while (num % f === 0) num /= f;
+    }
+    return recitePassword(num.toString());
   }
   if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
     return async () => {
@@ -241,16 +391,23 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       return false;
     };
   }
-  if (details.passwordHint.startsWith('The password is a number between ')) {
+  if (details.passwordHint.startsWith('XOR mask encrypted password')) {
+    return recitePassword(solveXor(details.data));
+  }
+  if (
+    details.passwordHint.startsWith('The password is a number between ') ||
+    details.passwordHint.startsWith('The password is between')
+  ) {
     return async () => {
-      let lower = 0;
-      let upper = +'9'.repeat(details.passwordLength);
+      const [h1, h2] = (details.data ?? '').split(',');
+      let lower = h1 ? parseInt(h1) || romanToInt(h1) : 0;
+      let upper = h2 ? parseInt(h2) || romanToInt(h2) : +'9'.repeat(details.passwordLength);
       while (lower <= upper) {
         const { logs } = await ns.dnet.heartbleed(hostname, { peek: true });
         for (const log of logs) {
           try {
             const { data, passwordAttempted } = JSON.parse(log);
-            if (data === 'Lower') {
+            if (data === 'Lower' || data === 'ALTUS NIMIS') {
               upper = Math.min(upper, +passwordAttempted - 1);
             } else {
               lower = Math.max(lower, +passwordAttempted + 1);
@@ -350,7 +507,8 @@ const HELPER_SCRIPTS = {
     name: 'ns.dnet.memoryReallocation.ts',
     source: `
       export async function main(ns: NS) {
-        await ns.dnet.memoryReallocation();
+        const [target] = ns.args as string[];
+        await ns.dnet.memoryReallocation(target);
       }` as string,
     ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.memoryReallocation'),
   },
@@ -417,6 +575,7 @@ const authenticate = (ns: NS) => async (hostname: string, password: string) => {
     const port = ns.getPortHandle(DARKNET_PASSWORDS);
     const passwords = (port.empty() ? {} : port.peek()) as Record<string, string>;
     passwords[hostname] = password;
+    passwords['654321'] = '1889';
     port.clear();
     port.write(passwords);
   }
@@ -430,7 +589,7 @@ const checkStorm = (ns: NS) => {
 const clearBlockages = (ns: NS, hostname = ns.getHostname(), target = hostname) => {
   if (ns.dnet.getBlockedRam(target)) {
     const { name, maxThreads } = getHelperScript(ns, hostname)(HELPER_SCRIPTS.MEMORY_REALLOCATION);
-    if (maxThreads) ns.exec(name, ns.getHostname(), maxThreads);
+    if (maxThreads) ns.exec(name, hostname, maxThreads, target);
   }
 };
 
@@ -501,25 +660,31 @@ const updateLocks = (ns: NS) => {
   }
 };
 
-const checkVersion = (ns: NS, hostname: string) => {
+const checkNeighborVersion = (ns: NS, neighbor: string) => {
   const script = ns.getScriptName();
+  const scriptRam = ns.getScriptRam(script);
+  const reallocRam = HELPER_SCRIPTS.MEMORY_REALLOCATION.ramCost(ns);
 
   const startScript = () => {
-    ns.scp(script, hostname);
-    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-    if (ramAvailable < ns.getScriptRam(script)) {
-      clearBlockages(ns, ns.getHostname(), hostname);
-    } else if (
-      ramAvailable <
-      ns.getScriptRam(script) + HELPER_SCRIPTS.MEMORY_REALLOCATION.ramCost(ns)
-    ) {
-      clearBlockages(ns, hostname);
+    ns.scp(script, neighbor);
+    const blockedRam = ns.dnet.getBlockedRam(neighbor);
+    if (blockedRam) {
+      // If there is blocked ram, the goal is to get the server self-sufficient
+      // as quickly as possible. A server is self sufficient when it can unblock
+      // its own RAM while still running mole
+      const usableRam = ns.getServerMaxRam(neighbor) - blockedRam;
+      if (usableRam >= scriptRam + reallocRam) {
+        ns.exec(script, neighbor);
+      } else {
+        clearBlockages(ns, ns.getHostname(), neighbor);
+        clearBlockages(ns, neighbor);
+      }
     } else {
-      ns.exec(script, hostname);
+      ns.exec(script, neighbor);
     }
   };
 
-  const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
+  const otherMoles = ns.ps(neighbor).filter((ps) => ps.filename.includes('mole'));
   if (otherMoles.length === 0) {
     startScript();
   } else {
@@ -528,7 +693,7 @@ const checkVersion = (ns: NS, hostname: string) => {
       const otherVersion = getVersion(ps.filename);
       if (version > otherVersion) ns.kill(ps.pid);
     }
-    if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
+    if (!ns.ps(neighbor).some((ps) => ps.filename === script)) {
       startScript();
     }
   }
@@ -536,18 +701,18 @@ const checkVersion = (ns: NS, hostname: string) => {
 
 export async function main(ns: NS) {
   while (true) {
-    checkStorm(ns);
+    // checkStorm(ns);
     clearBlockages(ns);
     checkCaches(ns);
     stealFiles(ns);
-    goPhishing(ns);
     updateLocks(ns);
     for (const hostname of ns.dnet.probe()) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await gainAccess(ns, hostname, details))) {
-        checkVersion(ns, hostname);
+        checkNeighborVersion(ns, hostname);
       }
     }
+    goPhishing(ns);
     await ns.dnet.nextMutation();
   }
 }
