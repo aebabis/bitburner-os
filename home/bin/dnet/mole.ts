@@ -427,8 +427,8 @@ const checkStorm = (ns: NS) => {
   ns.dnet.unleashStormSeed();
 };
 
-const clearBlockages = (ns: NS, hostname = ns.getHostname()) => {
-  if (ns.dnet.getBlockedRam()) {
+const clearBlockages = (ns: NS, hostname = ns.getHostname(), target = hostname) => {
+  if (ns.dnet.getBlockedRam(target)) {
     const { name, maxThreads } = getHelperScript(ns, hostname)(HELPER_SCRIPTS.MEMORY_REALLOCATION);
     if (maxThreads) ns.exec(name, ns.getHostname(), maxThreads);
   }
@@ -507,7 +507,12 @@ const checkVersion = (ns: NS, hostname: string) => {
   const startScript = () => {
     ns.scp(script, hostname);
     const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
-    if (ramAvailable < 10) {
+    if (ramAvailable < ns.getScriptRam(script)) {
+      clearBlockages(ns, ns.getHostname(), hostname);
+    } else if (
+      ramAvailable <
+      ns.getScriptRam(script) + HELPER_SCRIPTS.MEMORY_REALLOCATION.ramCost(ns)
+    ) {
       clearBlockages(ns, hostname);
     } else {
       ns.exec(script, hostname);
