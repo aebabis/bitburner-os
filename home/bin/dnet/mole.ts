@@ -477,9 +477,13 @@ const setStasis = (ns: NS, shouldLink = true) => {
 const updateLocks = (ns: NS) => {
   const hostname = ns.getHostname();
   const stasisServers = ns.dnet.getStasisLinkedServers();
-  const minStasisDepth = Math.min(1, ...stasisServers.map(ns.dnet.getDepth));
-  const maxStasisDepth = Math.max(1, ...stasisServers.map(ns.dnet.getDepth));
   const depth = ns.dnet.getDepth();
+  if (stasisServers.length === 0) {
+    if (depth > 0) setStasis(ns, true);
+    return;
+  }
+  const minStasisDepth = Math.min(...stasisServers.map(ns.dnet.getDepth));
+  const maxStasisDepth = Math.max(...stasisServers.map(ns.dnet.getDepth));
   const hasStasis = stasisServers.includes(hostname);
   const spotsLeft = ns.dnet.getStasisLinkLimit() - stasisServers.length;
   if (hasStasis) {
@@ -499,29 +503,28 @@ const updateLocks = (ns: NS) => {
 
 const checkVersion = (ns: NS, hostname: string) => {
   const script = ns.getScriptName();
+
+  const startScript = () => {
+    ns.scp(script, hostname);
+    const ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
+    if (ramAvailable < 10) {
+      clearBlockages(ns, hostname);
+    } else {
+      ns.exec(script, hostname);
+    }
+  };
+
   const otherMoles = ns.ps(hostname).filter((ps) => ps.filename.includes('mole'));
   if (otherMoles.length === 0) {
-    ns.scp(script, hostname);
-    ns.exec(script, hostname);
+    startScript();
   } else {
     for (const ps of otherMoles) {
       const version = getVersion(script);
       const otherVersion = getVersion(ps.filename);
-      if (version > otherVersion) {
-        ns.kill(ps.pid);
-        if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
-          ns.scp(script, hostname);
-          const ramAvailable =
-            ns.getServerMaxRam(hostname) -
-            ns.getServerUsedRam(hostname) -
-            ns.dnet.getBlockedRam(hostname);
-          if (ramAvailable < 10) {
-            clearBlockages(ns, hostname);
-          } else {
-            ns.exec(script, hostname);
-          }
-        }
-      }
+      if (version > otherVersion) ns.kill(ps.pid);
+    }
+    if (!ns.ps(hostname).some((ps) => ps.filename === script)) {
+      startScript();
     }
   }
 };
