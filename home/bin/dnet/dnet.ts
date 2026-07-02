@@ -112,9 +112,11 @@ export async function main(ns: NS) {
       for (const stasisServer of ns.dnet.getStasisLinkedServers()) {
         if (
           ns.dnet.getServerDetails(stasisServer).hasSession ||
-          ns.dnet.connectToSession(stasisServer, getPassword(stasisServer))
+          ns.dnet.connectToSession(stasisServer, getPassword(stasisServer)).success
         ) {
           runLatest(ns, baseName, current, stasisServer);
+        } else {
+          ns.print('Unable to connect to: ' + stasisServer);
         }
       }
     }
