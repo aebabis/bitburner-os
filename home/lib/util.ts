@@ -55,25 +55,31 @@ export const small = (number: string | number) =>
     )
     .join('');
 
-const logBinomCoeff = (n: number, k: number): number => {
-  let r = 0;
-  for (let i = 0; i < k; i++) r += Math.log(n - i) - Math.log(i + 1);
-  return r;
+// Standard normal quantile function (inverse CDF), via Winitzki's closed-form
+// approximation of erfinv. Accurate to within ~1.3e-4, which is plenty for an estimate.
+const normalQuantile = (p: number): number => {
+  const a = 0.147;
+  const x = 2 * p - 1;
+  const ln1mx2 = Math.log(1 - x * x);
+  const t = 2 / (Math.PI * a) + ln1mx2 / 2;
+  const inner = Math.sqrt(t * t - ln1mx2 / a) - t;
+  return Math.sign(x) * Math.sqrt(2 * inner);
 };
 
-const binomPMF = (n: number, k: number, p: number): number => {
-  if (p === 0) return k === 0 ? 1 : 0;
-  if (p === 1) return k === n ? 1 : 0;
-  return Math.exp(logBinomCoeff(n, k) + k * Math.log(p) + (n - k) * Math.log(1 - p));
-};
-
-// Largest k such that P(X >= k) >= confidence, where X ~ Binomial(n, p)
+// Largest k such that P(X >= k) >= confidence, where X ~ Binomial(n, p).
+// Estimated via the normal approximation to the binomial (de Moivre-Laplace,
+// valid by the CLT) with a continuity correction, so this is O(1) instead of
+// O(n) - the exact CDF sum is too slow once n gets into the thousands+.
 export const binomLowerBound = (n: number, p: number, confidence: number): number => {
+  if (p <= 0) return 0;
+  if (p >= 1) return n;
   const threshold = 1 - confidence;
-  let cdf = 0;
-  for (let k = 0; k <= n; k++) {
-    if (cdf > threshold) return k - 1;
-    cdf += binomPMF(n, k, p);
-  }
-  return n;
+  if (threshold <= 0) return 0;
+  if (threshold >= 1) return n;
+
+  const mean = n * p;
+  const stdDev = Math.sqrt(mean * (1 - p));
+  const z = normalQuantile(threshold);
+  const k = Math.floor(mean + z * stdDev + 0.5);
+  return Math.max(0, Math.min(n, k));
 };
