@@ -239,13 +239,13 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
 
       const radarRows = radar.message.split('\n') as string[];
       const offset = Math.floor(radarRows.length / 2);
-      for (let dy = -offset; dy < radarRows.length; dy++) {
-        for (let dx = -offset; dx < radarRows.length; dx++) {
+      for (let dy = -offset; dy <= offset; dy++) {
+        for (let dx = -offset; dx <= offset; dx++) {
           const c = radarRows[dy + offset][dx + offset];
           const coord = `${x + dx},${y + dy}` as Coord;
           if (c === '█') maze[coord] = false;
           else if (c === ' ') maze[coord] = true;
-          else if (c === 'X') maze[coord] = 'X';
+          else if (c === 'X') maze[coord] = true; // TODO
         }
       }
 
@@ -883,6 +883,10 @@ const checkNeighborVersion = (ns: NS, neighbor: string) => {
     for (const ps of otherMoles) {
       const version = getVersion(script);
       const otherVersion = getVersion(ps.filename);
+      if (version < otherVersion) {
+        ns.ui.closeTail(ns.pid);
+        ns.exit();
+      }
       if (version > otherVersion) {
         ns.ui.closeTail(ps.pid);
         ns.kill(ps.pid);
@@ -894,6 +898,15 @@ const checkNeighborVersion = (ns: NS, neighbor: string) => {
   }
 };
 
+const getTargets = (ns: NS) =>
+  ns.dnet.probe().sort((h1, h2) => {
+    const s1 = ns.dnet.getServerDetails(h1);
+    const s2 = ns.dnet.getServerDetails(h2);
+    if (s1.isStationary) return -1;
+    if (s2.isStationary) return -1;
+    return s1.difficulty - s2.difficulty;
+  });
+
 export async function main(ns: NS) {
   ns.ui.setTailTitle(`${ns.getScriptName()} (${ns.getHostname()})`);
   while (true) {
@@ -902,7 +915,7 @@ export async function main(ns: NS) {
     checkCaches(ns);
     stealFiles(ns);
     updateLocks(ns);
-    for (const hostname of ns.dnet.probe()) {
+    for (const hostname of getTargets(ns)) {
       const details = ns.dnet.getServerDetails(hostname);
       if (details.hasSession || (await gainAccess(ns, hostname, details))) {
         checkNeighborVersion(ns, hostname);
