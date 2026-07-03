@@ -8,6 +8,7 @@ import { ERROR } from '../../lib/colors';
  dnet.getServerDetails                0.10GB  
  dnet.authenticate                    0.40GB  
  dnet.heartbleed                      0.60GB  
+ dnet.labradar                        0.00GB 
  dnet.labreport                       0.00GB  
  dnet.connectToSession                0.05GB  
  dnet.nextMutation                    0.00GB  
@@ -22,7 +23,6 @@ import { ERROR } from '../../lib/colors';
 
 /* WONDER
  dnet.promoteStock                    2.00GB  
- dnet.labradar                        0.00GB 
  dnet.induceServerMigration           4.00GB  
  dnet.isDarknetServer                 0.10GB  
  dnet.getDarknetInstability           0.00GB  
@@ -78,7 +78,7 @@ const getVersioner = (ns: NS, filename: string) => {
   return downloadLatest;
 };
 
-const runLatest = (ns: NS, baseName: string, current: string, hostname: string) => {
+const ensureLatest = (ns: NS, baseName: string, current: string, hostname: string) => {
   const runningVersions = ns.ps(hostname).filter((ps) => ps.filename.startsWith(baseName));
   for (const ps of runningVersions) {
     if (ps.filename !== current) {
@@ -88,9 +88,10 @@ const runLatest = (ns: NS, baseName: string, current: string, hostname: string) 
     }
   }
   if (!ns.ps(hostname).find((ps) => ps.filename === current)) {
-    ns.print('Launching ' + current + ' on ' + hostname);
     if (hostname !== DARKWEB) ns.scp(current, hostname, DARKWEB);
-    ns.exec(current, hostname);
+    if (ns.exec(current, hostname)) {
+      ns.print('Started ' + current + ' on ' + hostname);
+    }
   }
 };
 
@@ -106,18 +107,16 @@ export async function main(ns: NS) {
   ns.ui.openTail();
 
   while (true) {
-    const { baseName, recent, current } = getVersions();
-    if (current !== recent) {
-      runLatest(ns, baseName, current, DARKWEB);
-      for (const stasisServer of ns.dnet.getStasisLinkedServers()) {
-        if (
-          ns.dnet.getServerDetails(stasisServer).hasSession ||
-          ns.dnet.connectToSession(stasisServer, getPassword(stasisServer)).success
-        ) {
-          runLatest(ns, baseName, current, stasisServer);
-        } else {
-          ns.print('Unable to connect to: ' + stasisServer);
-        }
+    const { baseName, current } = getVersions();
+    ensureLatest(ns, baseName, current, DARKWEB);
+    for (const stasisServer of ns.dnet.getStasisLinkedServers()) {
+      if (
+        ns.dnet.getServerDetails(stasisServer).hasSession ||
+        ns.dnet.connectToSession(stasisServer, getPassword(stasisServer)).success
+      ) {
+        ensureLatest(ns, baseName, current, stasisServer);
+      } else {
+        ns.print('Unable to connect to: ' + stasisServer);
       }
     }
     await ns.dnet.nextMutation();

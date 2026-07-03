@@ -12,7 +12,38 @@
 // requiredCharismaSkill: number;
 // isStationary: boolean;
 //
+const EU_COUNTRIES = [
+  'Austria',
+  'Belgium',
+  'Bulgaria',
+  'Croatia',
+  'Cyprus',
+  'Czechia',
+  'Czech',
+  'Denmark',
+  'Estonia',
+  'Finland',
+  'France',
+  'Germany',
+  'Greece',
+  'Hungary',
+  'Ireland',
+  'Italy',
+  'Latvia',
+  'Lithuania',
+  'Luxembourg',
+  'Malta',
+  'Netherlands',
+  'Poland',
+  'Portugal',
+  'Romania',
+  'Slovakia',
+  'Slovenia',
+  'Spain',
+  'Sweden',
+];
 const romanToInt = (numeralString: string) => {
+  if (numeralString === 'nulla') return 0;
   const numeralValues = {
     I: 1,
     V: 5,
@@ -123,7 +154,6 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
 };
 
 // The password is the largest prime factor of
-
 type Coord = `${number},${number}`;
 const mazeSolver = (ns: NS, hostname: string) => async () => {
   if (ns.dnet.getStasisLinkedServers().includes(ns.getHostname())) {
@@ -194,10 +224,11 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
   while (true) {
     try {
       const labreport = await ns.dnet.labreport();
-      if (!labreport.coords) {
-        await ns.sleep(100);
-        continue;
+      const radar = await ns.dnet.labradar();
+      if (!labreport.coords || !radar.success) {
+        return false;
       }
+
       const { coords, north, east, south, west } = labreport as LabReport;
       const [x, y] = coords;
       maze[`${x},${y}`] = true;
@@ -205,10 +236,24 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
       maze[`${x + 1},${y}`] = east;
       maze[`${x},${y + 1}`] = south;
       maze[`${x - 1},${y}`] = west;
+
+      const radarRows = radar.message.split('\n') as string[];
+      const offset = Math.floor(radarRows.length / 2);
+      for (let dy = -offset; dy < radarRows.length; dy++) {
+        for (let dx = -offset; dx < radarRows.length; dx++) {
+          const c = radarRows[dy + offset][dx + offset];
+          const coord = `${x + dx},${y + dy}` as Coord;
+          if (c === '█') maze[coord] = false;
+          else if (c === ' ') maze[coord] = true;
+          else if (c === 'X') maze[coord] = 'X';
+        }
+      }
+
       ns.clearLog();
       const nextStep = stepToNewSpot(coords);
       if (nextStep) {
         printMaze();
+        ns.print(radar.success && radar.message);
         const result = await authenticate(ns)(hostname, nextStep);
         if (result.success) return true;
       }
@@ -248,6 +293,27 @@ const PASSWORD_IS = [
   'The PIN is ',
   "It's set to ",
 ];
+
+const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+const UPPER = LOWER.toUpperCase();
+const ALPHA = [...LOWER, ...UPPER];
+const NUMERIC = [...'0123456789'];
+const ALPHANUMERIC = [...ALPHA, ...NUMERIC];
+
+type PasswordFormat = 'numeric' | 'alphabetic' | 'alphanumeric' | 'ASCII' | 'unicode';
+const getSequence = (passwordFormat: PasswordFormat) => {
+  switch (passwordFormat) {
+    case 'numeric':
+      return NUMERIC;
+    case 'alphabetic':
+      return ALPHA;
+    case 'alphanumeric':
+      return ALPHANUMERIC;
+    case 'ASCII':
+    case 'unicode':
+  }
+  throw new Error('Unsupported: ' + passwordFormat);
+};
 
 const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => {
   const recitePassword = (password: string) => async () => {
@@ -291,6 +357,58 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     const [base, number] = details.data.split(',');
     return recitePassword(parseInt(number, +base).toString());
   }
+  if (details.passwordHint === 'My favorite EU country') {
+    return tryPasswords(...EU_COUNTRIES.filter((str) => str.length === details.passwordLength));
+  }
+  if (details.passwordHint === '!!🌶️!!') {
+    return async () => {
+      ns.disableLog('ALL');
+      ns.print(hostname);
+      const charset = getSequence(details.passwordFormat);
+      const charCounts = {} as Record<string, number>;
+      ns.print('charset: ' + charset);
+
+      const update = async () => {
+        const { success, logs } = await ns.dnet.heartbleed(hostname);
+        if (!success) return false;
+        for (const log of logs) {
+          try {
+            const { data, passwordAttempted } = JSON.parse(log);
+            ns.print('detected: ' + passwordAttempted);
+            const charsUsed = [...new Set(passwordAttempted as string)];
+            ns.print('          ' + charsUsed);
+            if (charsUsed.length === 1) {
+              charCounts[passwordAttempted[0]] = data.split('🌶️').length - 1;
+            }
+          } catch {}
+        }
+        return true;
+      };
+
+      await update();
+      while (Object.values(charCounts).reduce((a, b) => a + b, 0) < details.passwordLength) {
+        for (const c of charset) {
+          const password = new Array(details.passwordLength).fill(c).join('');
+          ns.print(password);
+          if ((await authenticate(ns)(hostname, password)).success) return true;
+          await update();
+          ns.print(hostname, charCounts);
+        }
+      }
+
+      const reducedCharset = Object.entries(charCounts).flatMap(([c, count]) =>
+        new Array(count).fill(c),
+      );
+      ns.print(reducedCharset);
+
+      for (const password of permutationGenerator(reducedCharset)) {
+        ns.print('Trying: ' + password);
+        const result = await authenticate(ns)(hostname, password);
+        if (result.success) return true;
+      }
+      return false;
+    };
+  }
   if (details.passwordHint === 'The password is the evaluation of this expression') {
     const expr = details.data
       .replaceAll(/[➕]/g, '+')
@@ -317,7 +435,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       const passwords = new Set(
         files
           .filter((content) => content.startsWith(LEAD))
-          .flatMap((str) => str.replace(LEAD, '').split(' '))
+          .flatMap((str) => str.replace(LEAD, '').replaceAll(',', '').split(' '))
           .filter((str) => str.length === details.passwordLength),
       );
       for (const password of passwords) {
@@ -446,7 +564,9 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         for (const [filename, content] of Object.entries(servers)) {
           if (filename.includes('dog')) {
             for (const name of content.split(/[^a-z]+/)) {
-              possibleDogNames.add(name);
+              if (name.length === details.passwordLength) {
+                possibleDogNames.add(name);
+              }
             }
           }
         }
@@ -512,15 +632,18 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
 };
 
 const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
+  const storedPassword = getPassword(ns)(hostname);
+  if (storedPassword != null && (await authenticate(ns)(hostname, storedPassword)).success)
+    return true;
   const cracker = getCracker(ns, hostname, details);
   if (cracker == null) {
     ns.print('No password strategy for: ' + hostname);
   } else {
     try {
-      return cracker();
+      return await cracker();
     } catch (error) {
-      ns.tprint(error);
-      ns.tprint(hostname);
+      ns.ui.openTail();
+      ns.print('\u001b[38;5;124m' + error);
     }
   }
 };
@@ -539,8 +662,11 @@ const HELPER_SCRIPTS = {
     name: 'ns.dnet.openCaches.ts',
     source: `
       export async function main(ns: NS) {
-        for (const cache of ns.args as string[])
-          ns.dnet.openCache(cache);
+        for (const cache of ns.args as string[]) {
+          try {
+            ns.dnet.openCache(cache);
+          } catch {}
+        }
       }` as string,
     ramCost: (ns: NS) => 1.6 + ns.getFunctionRamCost('dnet.openCache'),
   },
@@ -601,13 +727,18 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
 };
 
 const DARKNET_PASSWORDS = DARKNET_FILES + 1;
+const getPassword = (ns: NS) => (hostname: string) =>
+  (ns.peek(12289108104001)[hostname] as string) ?? null;
 const authenticate = (ns: NS) => async (hostname: string, password: string) => {
   const result = await ns.dnet.authenticate(hostname, password);
+  const port = ns.getPortHandle(DARKNET_PASSWORDS);
+  const passwords = (port.empty() ? {} : port.peek()) as Record<string, string>;
   if (result.success) {
-    const port = ns.getPortHandle(DARKNET_PASSWORDS);
-    const passwords = (port.empty() ? {} : port.peek()) as Record<string, string>;
     passwords[hostname] = password;
-    passwords['654321'] = '1889';
+    port.clear();
+    port.write(passwords);
+  } else if (passwords[hostname] === password) {
+    delete passwords[hostname];
     port.clear();
     port.write(passwords);
   }
@@ -657,6 +788,7 @@ const setStasis = (ns: NS, shouldLink = true) => {
   if (ns.ramOverride(ramCost) !== ramCost) {
     for (const ps of ns.ps()) {
       if (ps.pid !== ns.pid) {
+        ns.ui.closeTail(ps.pid);
         ns.kill(ps.pid);
       }
     }
@@ -681,11 +813,12 @@ const updateLocks = (ns: NS) => {
 
   if (server.isStationary || stasisLimit === 0 || depth < 1) return;
 
+  const connections = ns.dnet.probe().map(ns.dnet.getServerDetails);
+  const adjacentGoal = connections.find(({ modelId }) => modelId === '(The Labyrinth)');
+
   if (stasisLimit === 1) {
     // Leap-frogging not possible. Just wait until someone gets to the bottom
-    const connections = ns.dnet.probe().map(ns.dnet.getServerDetails);
-    const goal = connections.find(({ modelId }) => modelId === '(The Labyrinth)');
-    const touchingGoal = goal != null;
+    const touchingGoal = adjacentGoal != null;
     if (hasStasis && !touchingGoal) {
       setStasis(ns, false);
     } else if (!hasStasis && spotsLeft > 0 && touchingGoal) {
@@ -699,14 +832,13 @@ const updateLocks = (ns: NS) => {
     if (hasStasis) {
       if (depth < maxStasisDepth) {
         setStasis(ns, false);
-      } else if (depth === minStasisDepth && spotsLeft === 0) {
+      } else if (depth === minStasisDepth && spotsLeft === 0 && adjacentGoal == null) {
         setStasis(ns, false);
       }
     } else {
-      ns.print('can stay');
       if (depth > maxStasisDepth) {
         setStasis(ns, true);
-      } else if (depth === maxStasisDepth && spotsLeft > 1) {
+      } else if (depth === maxStasisDepth && (spotsLeft > 1 || adjacentGoal != null)) {
         setStasis(ns, true);
       }
     }
@@ -744,7 +876,10 @@ const checkNeighborVersion = (ns: NS, neighbor: string) => {
     for (const ps of otherMoles) {
       const version = getVersion(script);
       const otherVersion = getVersion(ps.filename);
-      if (version > otherVersion) ns.kill(ps.pid);
+      if (version > otherVersion) {
+        ns.ui.closeTail(ps.pid);
+        ns.kill(ps.pid);
+      }
     }
     if (!ns.ps(neighbor).some((ps) => ps.filename === script)) {
       startScript();
@@ -753,6 +888,7 @@ const checkNeighborVersion = (ns: NS, neighbor: string) => {
 };
 
 export async function main(ns: NS) {
+  ns.ui.setTailTitle(`${ns.getScriptName()} (${ns.getHostname()})`);
   while (true) {
     checkStorm(ns);
     clearBlockages(ns);
