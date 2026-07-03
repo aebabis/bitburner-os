@@ -258,6 +258,7 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
         if (result.success) return true;
       }
     } catch (error) {
+      console.error(error);
       ns.tprint(error);
       return false;
     }
@@ -304,16 +305,51 @@ type PasswordFormat = 'numeric' | 'alphabetic' | 'alphanumeric' | 'ASCII' | 'uni
 const getSequence = (passwordFormat: PasswordFormat) => {
   switch (passwordFormat) {
     case 'numeric':
-      return NUMERIC;
+      return NUMERIC.slice();
     case 'alphabetic':
-      return ALPHA;
+      return ALPHA.slice();
     case 'alphanumeric':
-      return ALPHANUMERIC;
+      return ALPHANUMERIC.slice();
     case 'ASCII':
     case 'unicode':
   }
   throw new Error('Unsupported: ' + passwordFormat);
 };
+
+type JsonLog = {
+  message: string;
+  data: string;
+  passwordAttempted: string;
+  code: number;
+};
+type HeartbleedSolverLogs = {
+  logs: string[];
+  textLogs: string[];
+  jsonLogs: JsonLog[];
+};
+
+const heartbleedSolver =
+  (ns: NS, hostname: string, options: HeartbleedOptions = { peek: true }) =>
+  (getNextPassword: (logs: HeartbleedSolverLogs) => string | null) =>
+  async () => {
+    while (true) {
+      const { success, logs } = await ns.dnet.heartbleed(hostname, options);
+      if (!success) return false;
+      const textLogs = [] as string[];
+      const jsonLogs = [] as JsonLog[];
+      for (const log of logs) {
+        try {
+          jsonLogs.push(JSON.parse(log));
+        } catch {
+          textLogs.push(log);
+        }
+      }
+      const password = getNextPassword({ logs, textLogs, jsonLogs });
+      if (password == null) return false;
+      const result = await authenticate(ns)(hostname, password);
+      if (result.success) return true;
+    }
+  };
 
 const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => {
   const recitePassword = (password: string) => async () => {
@@ -377,7 +413,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
             ns.print('detected: ' + passwordAttempted);
             const charsUsed = [...new Set(passwordAttempted as string)];
             ns.print('          ' + charsUsed);
-            if (charsUsed.length === 1) {
+            if (passwordAttempted && charsUsed.length === 1) {
               charCounts[passwordAttempted[0]] = data.split('🌶️').length - 1;
             }
           } catch {}
@@ -468,38 +504,28 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     return recitePassword(num.toString());
   }
   if (details.passwordHint.startsWith("you are one who's'nt authorized")) {
-    return async () => {
-      const password = new Array(details.passwordLength).fill(null);
-      const numerals = '0123456789';
-      const letters = 'abcdefghijklmnopqrstuvwxyz';
-      const sequence =
-        details.passwordFormat === 'numeric'
-          ? numerals
-          : [...letters, ...letters.toLocaleUpperCase(), ...numerals];
-      for (const d of sequence) {
-        const nextAttempt = password.map((s) => (s == null ? d : s)).join('');
-        const result = await authenticate(ns)(hostname, nextAttempt);
-        if (result.success) return true;
-        const scrape = await ns.dnet.heartbleed(hostname, { peek: true });
-        if (!scrape.success) return false;
-        const hints = scrape.logs.map((text) => {
-          try {
-            return JSON.parse(text);
-          } catch {
-            return {};
-          }
-        });
-        for (const { data, passwordAttempted } of hints) {
-          if (typeof data === 'string') {
-            const correct = data.split(',').map((v) => v === 'yes');
-            for (let i = 0; i < correct.length; i++) {
-              if (correct[i]) password[i] = passwordAttempted[i];
+    const password = new Array(details.passwordLength).fill(null);
+    let sequence = getSequence(details.passwordFormat);
+    return heartbleedSolver(
+      ns,
+      hostname,
+    )(({ jsonLogs }) => {
+      for (const { data, passwordAttempted } of jsonLogs) {
+        if (typeof data === 'string') {
+          const correct = data.split(',').map((v) => v === 'yes');
+          for (let i = 0; i < correct.length; i++) {
+            if (correct[i]) {
+              password[i] = passwordAttempted[i];
+              sequence = sequence.filter((c) => c !== password[i]);
             }
           }
         }
       }
-      return false;
-    };
+      const d = sequence.shift();
+      if (!d) return null;
+      sequence.push(d);
+      return password.map((s) => (s == null ? d : s)).join('');
+    });
   }
   if (details.passwordHint.startsWith('I accidentally sorted the password: ')) {
     const generator = permutationGenerator(details.data.split(''));
