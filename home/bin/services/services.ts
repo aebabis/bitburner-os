@@ -71,6 +71,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, hasThief, useThief)('/bin/thief.ts'),
     AnyHostService(ns, always, canPurchaseServers, { interval: 1000 })('/bin/sysadmin.ts'),
     AnyHostService(ns)('/bin/dashboard.ts'),
+    Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, useWolf)('/bin/nerd.ts'),
     AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/trader.ts'),
@@ -84,7 +85,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns)('/bin/stalker.ts'),
-    Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
   ];
   if (currentNode === 3) {
     const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');
