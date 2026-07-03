@@ -16,6 +16,7 @@ import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
 import { SHARE } from '../etc/filenames';
+import { getNextBitnode } from '../lib/bitnode-sequence';
 
 const H = BRIGHT.BOLD;
 
@@ -60,19 +61,25 @@ const getRunStats = (ns: NS) => {
   const bnTime = formatTime((Date.now() - resetInfo.lastNodeReset) / 1000);
   const augTime = formatTime(augRunningTime);
   const time = hasFullUptime ? uptime : uptime + '/' + augTime;
-  const stock = hasTix ? ns.format.number(estimatedStockValue, 1) : 'T̶I̶X̶';
+  const stock = hasTix
+    ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padEnd(6))
+    : DIM('  TIX'.padEnd(6));
+  const nextBitnode = getNextBitnode(resetInfo);
+  const nextBnLevel = (resetInfo.ownedSF.get(nextBitnode) ?? 0) + 1;
   return [
     ' ' + H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
     H('CASH') + MONEY(` $${ns.format.number(money, 1).padEnd(6)}`),
-    H('PORTFOLIO') + MONEY(` $${stock}`),
+    H('PORTFOLIO') + stock,
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
     getWork(ns),
-    ' ',
+    '',
     getSpecialAugs(ns),
+    '',
+    `→ ${nextBitnode}.${nextBnLevel}`,
   ].join('  ');
 };
 
@@ -214,8 +221,8 @@ const getSpecialAugs = (ns: NS) => {
     // getDisplay('', 'CR', 22, 46),
     getDisplay('Neuroreceptor Management Implant', 'NR', 220),
     getDisplay('DataJack', 'DJ', 166),
-    getDisplay('The Red Pill', 'RP', 124),
     getDisplay('QLink', 'QL', 27),
+    getDisplay('The Red Pill', 'RP', 124),
   ];
   if (!(resetInfo.ownedSF.has(4) || resetInfo.currentNode === 4)) {
     specialAugDisplays.unshift(
