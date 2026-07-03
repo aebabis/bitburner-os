@@ -581,25 +581,18 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     };
   }
   if (details.passwordHint.includes("dog's name")) {
-    return async () => {
-      const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
-      const possibleDogNames = new Set<string>();
-      for (const servers of Object.values(data)) {
-        for (const [filename, content] of Object.entries(servers)) {
-          if (filename.includes('dog')) {
-            for (const name of content.split(/[^a-z]+/)) {
-              if (name.length === details.passwordLength) {
-                possibleDogNames.add(name);
-              }
-            }
-          }
-        }
-      }
-      for (const password of possibleDogNames) {
-        const result = await authenticate(ns)(hostname, password);
-        if (result.success) return true;
-      }
-    };
+    const data = ns.peek(DARKNET_FILES) as Record<string, Record<string, string>>;
+    const servers = Object.values(data);
+    const possibleDogNames = [
+      ...new Set(
+        servers.flatMap((server) =>
+          Object.entries(server)
+            .filter(([filename]) => filename.includes('dog'))
+            .flatMap(([, content]) => content.split(/[^a-z]+/)),
+        ),
+      ),
+    ].filter((name) => name.length === details.passwordLength);
+    return tryPasswords(...possibleDogNames);
   }
   if (details.passwordHint.includes('password buffer')) {
     return async () => {
