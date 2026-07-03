@@ -51,6 +51,7 @@ const getRunStats = (ns: NS) => {
     return Math.min(prevSF + 1, maxSF);
   };
 
+  const hasTix = ns.stock.hasTixApiAccess();
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${resetInfo.currentNode}`;
   const uptime = formatTime(onlineRunningTime);
@@ -59,7 +60,7 @@ const getRunStats = (ns: NS) => {
   const bnTime = formatTime((Date.now() - resetInfo.lastNodeReset) / 1000);
   const augTime = formatTime(augRunningTime);
   const time = hasFullUptime ? uptime : uptime + '/' + augTime;
-  const stock = ns.format.number(estimatedStockValue, 1);
+  const stock = hasTix ? ns.format.number(estimatedStockValue, 1) : 'T̶I̶X̶';
   return [
     ' ' + H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
     H('UP') + ' ' + time,

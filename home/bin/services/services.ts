@@ -17,7 +17,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const { disableGang, disableCorporation } = resetInfo.bitNodeOptions;
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
-  const stockStarterCost = stockConstants.MarketDataTixApi4SCost + stockConstants.TixApiCost;
+  const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
@@ -52,7 +52,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useAngel = () => preferAngel() || !hasThief;
   const useThief = () => !preferAngel() || !hasAngel;
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
-  const couldTrade = () => ns.stock.has4SDataTixApi() || money() >= stockStarterCost;
+  const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= stockStarterCost;
   const gangReady = () => factions().some(isCriminal) && ns.heart.break() <= gangKarma;
   const corpReady = () =>
     ns.corporation.hasCorporation() ||

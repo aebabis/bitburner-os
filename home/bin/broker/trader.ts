@@ -27,6 +27,42 @@ const $getMaxPurchase = async (ns: NS, symbol: string, maxPurchase: number, mone
     }
   })(symbol, maxPurchase, money);
 
+const $getPositions = (ns: NS, symbols: string[]) =>
+  runInPlace(
+    ns,
+    ns.pid,
+  )((symbols: string[]) => {
+    const result = {} as Record<string, [number, number, number, number]>;
+    for (const sym of symbols) result[sym] = ns.stock['getPosition'](sym);
+    return result;
+  })(symbols);
+
+const $getForecasts = (ns: NS, symbols: string[]) =>
+  runInPlace(
+    ns,
+    ns.pid,
+  )((symbols: string[]) => {
+    const result = {} as Record<string, number>;
+    for (const sym of symbols) result[sym] = ns.stock['getForecast'](sym);
+    return result;
+  })(symbols);
+
+const $getPortfolioValue = (
+  ns: NS,
+  symbols: string[],
+  positions: Record<string, [number, number, number, number]>,
+) =>
+  runInPlace(
+    ns,
+    ns.pid,
+  )((symbols, positions) => {
+    let total = 0;
+    for (const sym of symbols) {
+      total += ns.stock['getSaleGain'](sym, positions[sym][0], 'L');
+    }
+    return total;
+  })(symbols, positions);
+
 export async function main(ns: NS) {
   // Reserve RAM
   ns.stock.buyStock;
@@ -40,11 +76,18 @@ export async function main(ns: NS) {
   while (!(await $.stock['purchaseTixApi']())) {
     await ns.sleep(1000);
   }
-  while (!(await $.stock['purchase4SMarketDataTixApi']())) {
-    await ns.sleep(1000);
-  }
 
   const symbols = await $.stock['getSymbols']();
+
+  if (!(await $.stock['purchase4SMarketDataTixApi']())) {
+    // If we don't yet have 4S API, we record stock value
+    // and exit. This branch only exists to support accounting
+    // of stocks found on the darkweb.
+    const positions = await $getPositions(ns, symbols);
+    const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
+    putMoneyData(ns, { estimatedStockValue });
+    return;
+  }
 
   const maxShares = await $rip((symbols: string[]) => {
     const result = {} as Record<string, number>;
@@ -55,23 +98,8 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
 
-    const positions = await runInPlace(
-      ns,
-      ns.pid,
-    )((symbols: string[]) => {
-      const result = {} as Record<string, [number, number, number, number]>;
-      for (const sym of symbols) result[sym] = ns.stock['getPosition'](sym);
-      return result;
-    })(symbols);
-
-    const forecasts = await runInPlace(
-      ns,
-      ns.pid,
-    )((symbols: string[]) => {
-      const result = {} as Record<string, number>;
-      for (const sym of symbols) result[sym] = ns.stock['getForecast'](sym);
-      return result;
-    })(symbols);
+    const positions = await $getPositions(ns, symbols);
+    const forecasts = await $getForecasts(ns, symbols);
 
     // Sell all stocks forecast to drop
     for (const sym of symbols) {
@@ -99,17 +127,10 @@ export async function main(ns: NS) {
       moneyToSpend -= shares * price;
     }
 
-    const estimatedStockValue = await $rip((symbols, positions) => {
-      let total = 0;
-      for (const sym of symbols) {
-        total += ns.stock['getSaleGain'](sym, positions[sym][0], 'L');
-      }
-      return total;
-    })(symbols, positions);
-
-    ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
+    const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
     putMoneyData(ns, { estimatedStockValue });
 
+    ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
     const prices = await runInPlace(
       ns,
       ns.pid,
