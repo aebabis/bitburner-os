@@ -610,37 +610,27 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     };
   }
   if (details.passwordHint.startsWith('The password is divisible by ')) {
-    const divisors = new Set([1]);
+    const max = 10 ** details.passwordLength - 1;
+    const divisors = new Set<number>();
     const nonDivisors = new Set<number>();
-    const numbers = counter(details.passwordLength);
-    numbers.next();
-
-    const getNextAttempt = () => {
-      while (true) {
-        const number = numbers.next().value;
-        if (number == null) return null;
-        const meetsDivisors = [...divisors].every((d) => number % d === 0);
-        const meetsNonDivisors = [...nonDivisors].every((d) => number % d !== 0);
-        if (meetsDivisors && meetsNonDivisors) return number.toString();
+    let current = 0;
+    return heartbleedSolver(
+      ns,
+      hostname,
+    )(({ jsonLogs }) => {
+      current++;
+      for (const { passwordAttempted, data: isDivisible } of jsonLogs) {
+        if (isDivisible === 'true') divisors.add(+passwordAttempted);
+        else nonDivisors.add(+passwordAttempted);
       }
-    };
-    return async () => {
       while (true) {
-        const { logs, success } = await ns.dnet.heartbleed(hostname);
-        if (!success) return false;
-        for (const log of logs) {
-          try {
-            const { passwordAttempted, data: isDivisible } = JSON.parse(log);
-            if (isDivisible === 'true') divisors.add(+passwordAttempted);
-            else nonDivisors.add(+passwordAttempted);
-          } catch {}
-        }
-        const password = getNextAttempt();
-        if (password == null) return false;
-        const result = await authenticate(ns)(hostname, password);
-        if (result.success) return true;
+        if (current >= max) return null;
+        const meetsDivisors = [...divisors].every((d) => current % d === 0);
+        const meetsNonDivisors = [...nonDivisors].every((d) => current % d !== 0);
+        if (meetsDivisors && meetsNonDivisors) return current.toString();
+        current++;
       }
-    };
+    });
   }
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
     return recitePassword(details.data || details.passwordHint.split(' ').pop()!);
