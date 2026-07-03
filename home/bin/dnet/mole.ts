@@ -286,6 +286,7 @@ const DEFAULT_PASSWORD = [
   "It's still the factory settings",
   "It's still the default",
 ];
+const SHUFFLED_PASSWORD = ['The password is shuffled ', 'The PIN uses ', 'The key is made from '];
 const PASSWORD_IS = [
   'The secret is ',
   'The password is ',
@@ -365,6 +366,13 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       }
       return false;
     };
+  const tryPermutations = (generator: Generator<string>) => async () => {
+    for (const item of generator) {
+      const result = await authenticate(ns)(hostname, item);
+      if (result.success) return true;
+    }
+    return false;
+  };
 
   if (details.passwordLength === 0 || NO_PASSWORD.some((text) => text === details.passwordHint)) {
     return recitePassword('');
@@ -538,18 +546,8 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       return false;
     };
   }
-  if (
-    details.passwordHint.startsWith('The password is shuffled ') ||
-    details.passwordHint.startsWith('The PIN uses ') ||
-    details.passwordHint.startsWith('The key is made from ')
-  ) {
-    return async () => {
-      for (const item of permutationGenerator(details.data.split(''))) {
-        const result = await authenticate(ns)(hostname, item);
-        if (result.success) return true;
-      }
-      return false;
-    };
+  if (SHUFFLED_PASSWORD.some((text) => details.passwordHint.startsWith(text))) {
+    return tryPermutations(permutationGenerator(details.data.split('')));
   }
   if (details.passwordHint.startsWith('XOR mask encrypted password')) {
     return recitePassword(solveXor(details.data));
