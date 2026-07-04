@@ -656,10 +656,11 @@ const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetail
   }
 };
 
-// const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
-const DARKNET_FILES = 12289108104000;
-const DARKNET_PASSWORDS = DARKNET_FILES + 1;
-const DARKNET_CACHE_HISTORY = DARKNET_PASSWORDS + 1;
+let port = 12289108104000;
+const DARKNET_FILES = port++;
+const DARKNET_PASSWORDS = port++;
+const DARKNET_CACHE_HISTORY = port++;
+const DARKNET_CONNECTIONS = port++;
 
 const HELPER_SCRIPTS = {
   MEMORY_REALLOCATION: {
@@ -754,6 +755,14 @@ const authenticate = (ns: NS) => async (hostname: string, password: string) => {
     port.write(passwords);
   }
   return result;
+};
+
+const saveConnections = (ns: NS) => (hostname: string, connections: string[]) => {
+  const port = ns.getPortHandle(DARKNET_CONNECTIONS);
+  const connectionMap = (port.empty() ? {} : port.peek()) as Record<string, string[]>;
+  connectionMap[hostname] = connections;
+  port.clear();
+  port.write(connectionMap);
 };
 
 const checkStorm = (ns: NS) => {
@@ -902,14 +911,17 @@ const checkNeighborVersion = (ns: NS, neighbor: string) => {
   }
 };
 
-const getTargets = (ns: NS) =>
-  ns.dnet.probe().sort((h1, h2) => {
+const getTargets = (ns: NS) => {
+  const connections = ns.dnet.probe();
+  saveConnections(ns)(ns.getHostname(), connections);
+  return connections.sort((h1, h2) => {
     const s1 = ns.dnet.getServerDetails(h1);
     const s2 = ns.dnet.getServerDetails(h2);
     if (s1.isStationary) return -1;
     if (s2.isStationary) return -1;
     return s1.difficulty - s2.difficulty;
   });
+};
 
 export async function main(ns: NS) {
   ns.ui.setTailTitle(`${ns.getScriptName()} (${ns.getHostname()})`);

@@ -114,7 +114,15 @@ export async function main(ns: NS) {
   const getVersions = getVersioner(ns, '/bin/dnet/mole.ts');
   const getPassword = (hostname: string) => ns.peek(12289108104001)[hostname] ?? '';
 
-  ns.ui.openTail();
+  for (const ps of ns.ps('darkweb')) {
+    if (ps.filename === '/bin/dnet/dhud.tsx') {
+      ns.ui.closeTail(ps.pid);
+      ns.kill(ns.pid);
+    }
+  }
+
+  ns.scp('/bin/dnet/dhud.tsx', 'darkweb', 'home');
+  ns.exec('/bin/dnet/dhud.tsx', 'darkweb');
 
   while (true) {
     const { baseName, current } = getVersions();
