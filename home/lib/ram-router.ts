@@ -105,8 +105,9 @@ export const execOnBestServer = (
   if (server != null) {
     const maxThreads = Math.floor(server.ramAvailableTo(process) / scriptRam);
     const threads = Math.min(numThreads, maxThreads);
+    const options = typeof threadOrOptions === 'object' ? { ...threadOrOptions, threads } : threads;
     if (threads > 0) {
-      const pid = ns.exec(script, server.hostname, threads, ...args);
+      const pid = ns.exec(script, server.hostname, options, ...args);
       if (pid !== 0) return { pid, hostname: server.hostname, threads };
     }
   }
