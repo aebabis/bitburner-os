@@ -153,6 +153,11 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
   return false; // Should not happen
 };
 
+const WALL = '█' as const;
+const HALL = ' ' as const;
+const GOAL = 'X' as const;
+type MAZE_CELL = typeof WALL | typeof HALL | typeof GOAL;
+
 // The password is the largest prime factor of
 type Coord = `${number},${number}`;
 const mazeSolver = (ns: NS, hostname: string) => async () => {
@@ -160,7 +165,7 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
     ns.disableLog('ALL');
     ns.ui.openTail();
   }
-  const maze = {} as Record<Coord, boolean | undefined>;
+  const maze = {} as Record<Coord, MAZE_CELL | undefined>;
   const stepToNewSpot = (coords: readonly [number, number]) => {
     const directions = [
       { name: 'north', dx: 0, dy: -1 },
@@ -171,7 +176,7 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
     const [startX, startY] = coords;
     const startCoord: Coord = `${startX},${startY}`;
     const queue = directions
-      .filter(({ dx, dy }) => maze[`${startX + dx},${startY + dy}`])
+      .filter(({ dx, dy }) => maze[`${startX + dx},${startY + dy}`] === HALL)
       .map(({ name, dx, dy }) => ({ x: startX + dx * 2, y: startY + dy * 2, firstStep: name }));
     ns.print(queue);
     const seen = new Set<Coord>([startCoord]);
@@ -179,10 +184,10 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
       const { x, y, firstStep } = queue.shift()!;
       const currentCoord: Coord = `${x},${y}`;
       ns.print('considering: ' + currentCoord + ':' + maze[currentCoord]);
-      if (maze[currentCoord] === undefined) return firstStep;
+      if (maze[currentCoord] === GOAL || maze[currentCoord] === undefined) return firstStep;
       for (const { dx, dy } of directions) {
         ns.print('  looking: ' + `${x + dx},${y + dy}` + ':' + maze[`${x + dx},${y + dy}`]);
-        if (!maze[`${x + dx},${y + dy}`]) continue;
+        if (maze[`${x + dx},${y + dy}`] === WALL) continue;
         const nx = x + dx * 2;
         const ny = y + dy * 2;
         const nCoord: Coord = `${nx},${ny}`;
@@ -196,7 +201,7 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
     }
     return 'south';
   };
-  const printMaze = () => {
+  const printMaze = (currX: number, currY: number) => {
     const allCoords = [...Object.keys(maze).map((coord) => coord.split(',').map(Number))];
     const maxX = Math.max(...allCoords.map(([x]) => x));
     const maxY = Math.max(...allCoords.map(([, y]) => y));
@@ -206,10 +211,8 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
       rows.push(row);
       for (let x = 0; x <= maxX; x++) {
         const coord = `${x},${y}` as Coord;
-        if (x % 2 === 0 && y % 2 === 0) row.push('█');
-        else if (maze[coord]) row.push(' ');
-        else if (maze[coord] === false) row.push('█');
-        else row.push('?');
+        if (x === currX && y === currY) row.push('@');
+        else row.push(maze[coord] ?? '?');
       }
     }
     ns.print(rows.map((row) => row.join('')).join('\n') + '\n\n');
@@ -231,11 +234,11 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
 
       const { coords, north, east, south, west } = labreport as LabReport;
       const [x, y] = coords;
-      maze[`${x},${y}`] = true;
-      maze[`${x},${y - 1}`] = north;
-      maze[`${x + 1},${y}`] = east;
-      maze[`${x},${y + 1}`] = south;
-      maze[`${x - 1},${y}`] = west;
+      maze[`${x},${y}`] = HALL;
+      maze[`${x},${y - 1}`] = north ? HALL : WALL;
+      maze[`${x + 1},${y}`] = east ? HALL : WALL;
+      maze[`${x},${y + 1}`] = south ? HALL : WALL;
+      maze[`${x - 1},${y}`] = west ? HALL : WALL;
 
       const radarRows = radar.message.split('\n') as string[];
       const offset = Math.floor(radarRows.length / 2);
@@ -243,16 +246,14 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
         for (let dx = -offset; dx <= offset; dx++) {
           const c = radarRows[dy + offset][dx + offset];
           const coord = `${x + dx},${y + dy}` as Coord;
-          if (c === '█') maze[coord] = false;
-          else if (c === ' ') maze[coord] = true;
-          else if (c === 'X') maze[coord] = true; // TODO
+          if (c === '█' || c === ' ' || c === 'X') maze[coord] = c;
         }
       }
 
       ns.clearLog();
       const nextStep = stepToNewSpot(coords);
       if (nextStep) {
-        printMaze();
+        printMaze(x, y);
         ns.print(radar.success && radar.message);
         const result = await authenticate(ns)(hostname, nextStep);
         if (result.success) return true;
@@ -655,6 +656,11 @@ const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetail
   }
 };
 
+// const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
+const DARKNET_FILES = 12289108104000;
+const DARKNET_PASSWORDS = DARKNET_FILES + 1;
+const DARKNET_CACHE_HISTORY = DARKNET_PASSWORDS + 1;
+
 const HELPER_SCRIPTS = {
   MEMORY_REALLOCATION: {
     name: 'ns.dnet.memoryReallocation.ts',
@@ -671,7 +677,8 @@ const HELPER_SCRIPTS = {
       export async function main(ns: NS) {
         for (const cache of ns.args as string[]) {
           try {
-            ns.dnet.openCache(cache);
+            const result = ns.dnet.openCache(cache);
+            ns.writePort(${DARKNET_CACHE_HISTORY}, result);
           } catch {}
         }
       }` as string,
@@ -719,8 +726,6 @@ const getHelperScript =
 
 const getVersion = (script: string) => parseInt(script.split('-v').pop()!) || 0;
 
-// const DARKNET_FILES = [...'DARKNET'].map((c)=>c.charCodeAt(0)).reduce((a,b)=>a*b);
-const DARKNET_FILES = 12289108104000;
 type DarknetFiles = Record<string, Record<string, string>>;
 const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>) => {
   const handle = ns.getPortHandle(DARKNET_FILES);
@@ -733,7 +738,6 @@ const putDarknetFiles = (ns: NS, hostname: string, files: Record<string, string>
   ns.writePort(DARKNET_FILES, data);
 };
 
-const DARKNET_PASSWORDS = DARKNET_FILES + 1;
 const getPassword = (ns: NS) => (hostname: string) =>
   (ns.peek(12289108104001)[hostname] as string) ?? null;
 const authenticate = (ns: NS) => async (hostname: string, password: string) => {

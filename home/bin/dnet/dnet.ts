@@ -1,4 +1,5 @@
 import { ERROR } from '../../lib/colors';
+import { putMoneyData } from '../../lib/data-store';
 
 /* USED
  dnet.getBlockedRam                   0.00GB  
@@ -95,8 +96,17 @@ const ensureLatest = (ns: NS, baseName: string, current: string, hostname: strin
   }
 };
 
+const NUMBER_SUFFIXES = ' kmbtqQsSon';
+const getMultiplier = (suffix: string) => {
+  if (suffix === '') return 1;
+  const power =
+    suffix[0] === 'e' ? parseInt(suffix.slice(1)) : NUMBER_SUFFIXES.indexOf(suffix[0]) * 3;
+  return 10 ** power;
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+  let totalDarknetIncome = 0;
   if (ns.getHostname() !== 'home') {
     const name = ns.getScriptName().split('/').pop()!;
     throw new Error(`darknet launcher (${name}) assumes it runs on home`);
@@ -120,5 +130,17 @@ export async function main(ns: NS) {
       }
     }
     await ns.dnet.nextMutation();
+
+    const cachePort = ns.getPortHandle(12289108104002);
+    while (!cachePort.empty()) {
+      const { message } = cachePort.read() as CacheResult;
+      const moneyGained = message.match(/\$(\d+\.\d+)([kmbtqQsSon]|(?:e\d+))?/);
+      if (moneyGained) {
+        const [, num, suffix] = moneyGained;
+        totalDarknetIncome += +num * getMultiplier(suffix);
+      }
+    }
+    const darknetIncome = totalDarknetIncome / ns.getRunningScript()!.onlineRunningTime;
+    putMoneyData(ns, { darknetIncome });
   }
 }
