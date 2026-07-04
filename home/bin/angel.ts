@@ -266,6 +266,7 @@ export async function main(ns: NS) {
   let totalRam = 0;
   const assign = (script: string, threads: number, additionalMsec: number) => {
     if (threads === 0) return () => {};
+    if (additionalMsec < 0) return null;
     const allocations: [string, number][] = [];
     let threadsRemaining = threads;
     while (threadsRemaining > 0) {
@@ -282,6 +283,7 @@ export async function main(ns: NS) {
   };
 
   let frameCount = 0;
+  let lastSleep = Date.now();
   for (const [hackThreads, growThreads, weakThreads] of batch) {
     frameCount++;
     if (frameCount > FRAME_LIMIT) {
@@ -297,6 +299,10 @@ export async function main(ns: NS) {
       weak();
     } else {
       break;
+    }
+    if (Date.now() - lastSleep > 200) {
+      await ns.sleep(0);
+      lastSleep = Date.now();
     }
   }
 
