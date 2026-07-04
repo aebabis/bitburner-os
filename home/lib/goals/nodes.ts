@@ -13,6 +13,7 @@ export type GoalType =
   | 'FACTION_REP'
   | 'FACTION_FAVOR'
   | 'BLADES_JOIN'
+  | 'LABYRINTH'
   | 'COMBAT_LEVELS'
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
@@ -254,4 +255,8 @@ export const factionFavorGoal = (
       ownTime: () => (repRate > 0 ? remaining / repRate : null),
     },
   );
+};
+
+export const labyrinthGoal = (labyAugsHeld: number) => {
+  return goal('LABYRINTH', 'Acquire labyrinth aug #' + (labyAugsHeld + 1), () => false);
 };

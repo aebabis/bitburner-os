@@ -9,6 +9,7 @@ import {
   rebootGoal,
   homeRamGoal,
   karmaGoal,
+  labyrinthGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
@@ -31,7 +32,7 @@ export const getGoals = (ns: NS): Goal => {
   } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
-  const { currentNode, ownedSF } = staticData.resetInfo;
+  const { currentNode, ownedSF, ownedAugs: installedAugs } = staticData.resetInfo;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
   const { totalIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns) as unknown as Formulas;
@@ -100,7 +101,7 @@ export const getGoals = (ns: NS): Goal => {
   }
 
   const THE_BLADE = "The Blade's Simulacrum";
-  const hasBlade = staticData.resetInfo.ownedAugs.has(THE_BLADE);
+  const hasBlade = installedAugs.has(THE_BLADE);
   if ([6, 7].includes(currentNode) && !hasBlade) {
     if (hasBladeburnerReadyMults(player)) {
       return getBladeburnerTree(
@@ -116,6 +117,18 @@ export const getGoals = (ns: NS): Goal => {
   if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
     return reevaluateGoal(moneyPrereqGoal(target, estimatedStockValue + money, totalIncome));
+  }
+
+  const THE_RED_PILL = 'The Red Pill';
+  if (currentNode === 15 && !installedAugs.has(THE_RED_PILL)) {
+    const CHARISMA_TARGETS = [300, 600, 1500, 2500, 3000, 3500, 4000, 4000];
+    const isLabyAug = (aug: string) => aug.match(/^The [a-zA-Z0-9]+ of [a-zA-Z]+/);
+    const installedLabyAugs = [...installedAugs.keys()].filter(isLabyAug);
+    const hasQueuedLabyAug = purchasedAugmentations.some(isLabyAug);
+    const currentCharismaTarget = CHARISMA_TARGETS[installedLabyAugs.length];
+    if (!hasQueuedLabyAug && player.skills.charisma >= currentCharismaTarget) {
+      return reevaluateGoal(labyrinthGoal(installedLabyAugs.length));
+    }
   }
 
   const universityGains = formulas.work.universityGains(
