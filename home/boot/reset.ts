@@ -29,6 +29,12 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Wiping tmp/');
   for (const file of ns.ls('home')) if (file.startsWith('tmp')) ns.rm(file, 'home');
 
+  // Deleting old logs
+  tprint(ns)(STR + '  Pruning log/');
+  const resetLogs = ns.ls('home').filter((file) => file.match(/log\/reset\-\d+\.txt/));
+  const history = 50;
+  for (const file of resetLogs.slice(0, -history)) ns.rm(file, 'home');
+
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);
 }
