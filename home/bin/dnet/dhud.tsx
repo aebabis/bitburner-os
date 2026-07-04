@@ -1,7 +1,7 @@
-const DARKNET_CONNECTIONS = 12289108104003;
+import { DarknetData } from './ports';
 
 const showNetwork = (ns: NS) => {
-  const connections = ns.peek(DARKNET_CONNECTIONS) as Record<string, string[]> | null;
+  const connections = DarknetData.getNetwork(ns);
   if (connections == null) return;
   const rows = Object.entries(connections).sort(([h1], [h2]) => h1.localeCompare(h2));
   ns.printRaw(

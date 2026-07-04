@@ -121,7 +121,7 @@ export async function main(ns: NS) {
     }
   }
 
-  ns.scp('/bin/dnet/dhud.tsx', 'darkweb', 'home');
+  ns.scp(ns.ls('home', '/bin/dnet/'), 'darkweb', 'home');
   ns.exec('/bin/dnet/dhud.tsx', 'darkweb');
 
   while (true) {
