@@ -13,7 +13,7 @@ const go = async (ns: NS) => {
 
   const { resetInfo } = getStaticData(ns);
   if (resetInfo == null) {
-    ns.exec('stop.ts', 'home', 1, 'start.ts');
+    if (await ns.prompt('Boot?', { type: 'boolean' })) ns.exec('stop.ts', 'home', 1, 'start.ts');
   }
   if (resetInfo.currentNode === 8) {
     ns.exec('/bin/self/buy-ram.ts', 'home');
