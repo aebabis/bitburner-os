@@ -115,9 +115,9 @@ export async function main(ns: NS) {
   const getPassword = (hostname: string) => ns.peek(12289108104001)[hostname] ?? '';
 
   for (const ps of ns.ps('darkweb')) {
-    if (ps.filename === '/bin/dnet/dhud.tsx') {
+    if (ps.filename === 'bin/dnet/dhud.tsx') {
       ns.ui.closeTail(ps.pid);
-      ns.kill(ns.pid);
+      ns.kill(ps.pid);
     }
   }
 
