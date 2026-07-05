@@ -1,5 +1,6 @@
 import { ERROR } from '../../lib/colors';
 import { putMoneyData } from '../../lib/data-store';
+import { DarknetData } from './ports';
 
 /* USED
  dnet.getBlockedRam                   0.00GB  
@@ -101,19 +102,8 @@ const cleanNetworkMap = (ns: NS) => {
   if (network == null) return;
   const isOnline = (hostname: string) => ns.dnet.getServerDetails(hostname).isOnline;
   for (const [hostname, neighbors] of Object.entries(network)) {
-    network[hostname] = neighbors.filter(isOnline);
-  }
-  const nonAccessedServers = {} as Record<string, Set<string>>;
-  for (const [hostname, neighbors] of Object.entries(network)) {
-    for (const neighbor of neighbors) {
-      if (network[neighbor] == null) {
-        if (nonAccessedServers[neighbor] == null) nonAccessedServers[neighbor] = new Set<string>();
-        nonAccessedServers[neighbor].add(hostname);
-      }
-    }
-  }
-  for (const [hostname, neighbors] of Object.entries(nonAccessedServers)) {
-    network[hostname] = [...neighbors];
+    if (!isOnline(hostname)) delete network[hostname];
+    else network[hostname] = neighbors.filter(isOnline);
   }
   DarknetData.saveNetwork(ns, network);
 };
@@ -134,7 +124,9 @@ export async function main(ns: NS) {
     throw new Error(`darknet launcher (${name}) assumes it runs on home`);
   }
   const getVersions = getVersioner(ns, '/bin/dnet/mole.ts');
-  const getPassword = (hostname: string) => ns.peek(12289108104001)[hostname] ?? '';
+  const getPassword = (hostname: string) => DarknetData.getPassword(ns)(hostname) ?? '';
+
+  DarknetData.reset(ns);
 
   for (const ps of ns.ps('darkweb')) {
     if (ps.filename === 'bin/dnet/dhud.tsx') {
@@ -172,5 +164,9 @@ export async function main(ns: NS) {
     }
     const darknetIncome = totalDarknetIncome / ns.getRunningScript()!.onlineRunningTime;
     putMoneyData(ns, { darknetIncome });
+
+    await ns.sleep(1);
+
+    cleanNetworkMap(ns);
   }
 }

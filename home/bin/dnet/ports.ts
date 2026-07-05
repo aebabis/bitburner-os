@@ -25,6 +25,13 @@ export const DarknetData = (() => {
       DARKNET_CONNECTIONS,
     },
 
+    reset: (ns: NS) => {
+      ns.clearPort(DARKNET_FILES);
+      ns.clearPort(DARKNET_PASSWORDS);
+      ns.clearPort(DARKNET_CACHE_HISTORY);
+      ns.clearPort(DARKNET_CONNECTIONS);
+    },
+
     getPassword: (ns: NS) => (hostname: string) =>
       (ns.peek(DARKNET_PASSWORDS)[hostname] as string) ?? null,
 

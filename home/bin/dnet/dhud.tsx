@@ -18,10 +18,23 @@ let sort = 'access' as DarkwebServerSort;
 type DarkwebServerComparator = (a: [string, string[]], b: [string, string[]]) => number;
 
 const showNetwork = (ns: NS) => {
-  const connections = DarknetData.getNetwork(ns);
-  if (connections == null) return;
+  const network = DarknetData.getNetwork(ns);
+  if (network == null) return;
   const passwordData = DarknetData.getPasswords(ns);
   const stasisServers = ns.dnet.getStasisLinkedServers();
+
+  const nonAccessedServers = {} as Record<string, Set<string>>;
+  for (const [hostname, neighbors] of Object.entries(network)) {
+    for (const neighbor of neighbors) {
+      if (network[neighbor] == null) {
+        if (nonAccessedServers[neighbor] == null) nonAccessedServers[neighbor] = new Set<string>();
+        nonAccessedServers[neighbor].add(hostname);
+      }
+    }
+  }
+  for (const [hostname, neighbors] of Object.entries(nonAccessedServers)) {
+    network[hostname] = [...neighbors];
+  }
 
   const comparator: DarkwebServerComparator = sort === 'alpha' ?
   ([h1], [h2]) => h1.localeCompare(h2) :
@@ -32,7 +45,7 @@ const showNetwork = (ns: NS) => {
     else return +canAccessH1 - +canAccessH2;
   }
 
-  const rows = Object.entries(connections)
+  const rows = Object.entries(network)
     .filter(([hostname]) => ns.dnet.getServerDetails(hostname).isOnline)
     .sort(comparator);
   const getListingColor = (hostname: string) => {
