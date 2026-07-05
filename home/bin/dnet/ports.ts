@@ -60,21 +60,13 @@ export const DarknetData = (() => {
     getNetwork: (ns: NS) => {
       const port = ns.getPortHandle(DARKNET_CONNECTIONS);
       if (port.empty()) return null;
-      const network = port.peek() as DarknetMap;
-      const nonAccessedServers = {} as Record<string, Set<string>>;
-      for (const [hostname, neighbors] of Object.entries(network)) {
-        for (const neighbor of neighbors) {
-          if (network[neighbor] == null) {
-            if (nonAccessedServers[neighbor] == null)
-              nonAccessedServers[neighbor] = new Set<string>();
-            nonAccessedServers[neighbor].add(hostname);
-          }
-        }
-      }
-      for (const [hostname, neighbors] of Object.entries(nonAccessedServers)) {
-        network[hostname] = [...neighbors];
-      }
-      return network;
+      return port.peek() as DarknetMap;
+    },
+
+    saveNetwork: (ns: NS, map: DarknetMap) => {
+      const port = ns.getPortHandle(DARKNET_CONNECTIONS);
+      port.clear();
+      port.write(map);
     },
   };
 })();

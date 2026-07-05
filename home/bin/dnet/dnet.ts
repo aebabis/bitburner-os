@@ -96,6 +96,28 @@ const ensureLatest = (ns: NS, baseName: string, current: string, hostname: strin
   }
 };
 
+const cleanNetworkMap = (ns: NS) => {
+  const network = DarknetData.getNetwork(ns);
+  if (network == null) return;
+  const isOnline = (hostname: string) => ns.dnet.getServerDetails(hostname).isOnline;
+  for (const [hostname, neighbors] of Object.entries(network)) {
+    network[hostname] = neighbors.filter(isOnline);
+  }
+  const nonAccessedServers = {} as Record<string, Set<string>>;
+  for (const [hostname, neighbors] of Object.entries(network)) {
+    for (const neighbor of neighbors) {
+      if (network[neighbor] == null) {
+        if (nonAccessedServers[neighbor] == null) nonAccessedServers[neighbor] = new Set<string>();
+        nonAccessedServers[neighbor].add(hostname);
+      }
+    }
+  }
+  for (const [hostname, neighbors] of Object.entries(nonAccessedServers)) {
+    network[hostname] = [...neighbors];
+  }
+  DarknetData.saveNetwork(ns, network);
+};
+
 const NUMBER_SUFFIXES = ' kmbtqQsSon';
 const getMultiplier = (suffix: string) => {
   if (suffix === '') return 1;
