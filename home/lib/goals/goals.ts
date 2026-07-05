@@ -120,7 +120,7 @@ export const getGoals = (ns: NS): Goal => {
   }
 
   const THE_RED_PILL = 'The Red Pill';
-  if (currentNode === 15 && !installedAugs.has(THE_RED_PILL)) {
+  if (currentNode === 15 && !ownedAugs.includes(THE_RED_PILL)) {
     const CHARISMA_TARGETS = [300, 600, 1500, 2500, 3000, 3500, 4000, 4000];
     const isLabyAug = (aug: string) => aug.match(/^The [a-zA-Z0-9]+ of [a-zA-Z]+/);
     const installedLabyAugs = [...installedAugs.keys()].filter(isLabyAug);
