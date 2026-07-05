@@ -64,8 +64,7 @@ const getRunStats = (ns: NS) => {
   const stock = hasTix
     ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padEnd(6))
     : DIM('  TIX'.padEnd(6));
-  const nextBitnode = getNextBitnode(resetInfo);
-  const nextBnLevel = (resetInfo.ownedSF.get(nextBitnode) ?? 0) + 1;
+  const [nextBN, nextLevel] = getNextBitnode(resetInfo);
   return [
     ' ' + H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
     H('UP') + ' ' + time,
@@ -79,7 +78,7 @@ const getRunStats = (ns: NS) => {
     '',
     getSpecialAugs(ns),
     '',
-    `→ ${nextBitnode}.${nextBnLevel}`,
+    `→ ${nextBN}.${nextLevel}`,
   ].join('  ');
 };
 
@@ -362,8 +361,8 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getSourceFilesTable(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
-  const WIDTH = 1400;
-  const HEIGHT = 450;
+  const WIDTH = 1450;
+  const HEIGHT = 400;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
   if (clientWidth) ns.ui.moveTail(clientWidth - WIDTH - 2, 2);

@@ -31,15 +31,18 @@ const BN_SEQUENCE: [number, number][] = [
   [5, 3],
 
   [15, 3],
-  [9, 1],
+  // [9, 1],
 ];
 
-export const getNextBitnode = (resetInfo: ResetInfo) => {
+export const getNextBitnode = (resetInfo: ResetInfo): [number, number] => {
   const { currentNode, ownedSF } = resetInfo;
+  const getLevel = (bn: number) => ownedSF.get(bn) ?? 0;
   const nextUnmet = BN_SEQUENCE.find(([bn, level]) => {
-    let sfLevel = ownedSF.get(bn) ?? 0;
+    let sfLevel = getLevel(bn);
     const levelAfterInstall = bn === currentNode ? sfLevel + 1 : sfLevel;
     return levelAfterInstall < level;
   });
-  return nextUnmet?.[0] ?? 12;
+  const nextBN = nextUnmet?.[0] ?? 12;
+  const nextLevel = currentNode === nextBN ? getLevel(nextBN) + 2 : getLevel(nextBN) + 1;
+  return [nextBN, nextLevel];
 };
