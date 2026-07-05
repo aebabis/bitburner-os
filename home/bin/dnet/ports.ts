@@ -28,6 +28,11 @@ export const DarknetData = (() => {
     getPassword: (ns: NS) => (hostname: string) =>
       (ns.peek(DARKNET_PASSWORDS)[hostname] as string) ?? null,
 
+    getPasswords: (ns: NS) => {
+      const port = ns.getPortHandle(DARKNET_PASSWORDS);
+      return (port.empty() ? {} : port.peek()) as Record<string, string>;
+    },
+
     savePassword: (ns: NS) => (hostname: string, password: string) =>
       updatePassword(ns, hostname, password),
 
