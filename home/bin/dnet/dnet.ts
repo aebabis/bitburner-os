@@ -153,9 +153,7 @@ export async function main(ns: NS) {
     }
     await ns.dnet.nextMutation();
 
-    const cachePort = ns.getPortHandle(12289108104002);
-    while (!cachePort.empty()) {
-      const { message } = cachePort.read() as CacheResult;
+    for (const { message } of DarknetData.takeCacheHistory(ns)) {
       const moneyGained = message.match(/\$(\d+\.\d+)([kmbtqQsSon]|(?:e\d+))?/);
       if (moneyGained) {
         const [, num, suffix] = moneyGained;

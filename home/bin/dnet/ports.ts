@@ -75,5 +75,12 @@ export const DarknetData = (() => {
       port.clear();
       port.write(map);
     },
+
+    takeCacheHistory: (ns: NS): CacheResult[] => {
+      const cachePort = ns.getPortHandle(DARKNET_CACHE_HISTORY);
+      const history = [] as CacheResult[];
+      while (!cachePort.empty()) history.push(cachePort.read());
+      return history;
+    },
   };
 })();
