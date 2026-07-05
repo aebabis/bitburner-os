@@ -1,34 +1,48 @@
 import { nmap } from './lib/nmap';
-import { HACK } from './etc/filenames';
+import { tprint } from './boot/util';
+import { GRAY, STR } from './lib/colors';
 
 export const stop = async (ns: NS) => {
-  const processes = () =>
-    nmap(ns)
-      .flatMap((hostname) => ns.ps(hostname))
-      .filter((ps) => ps.pid !== ns.pid);
+  // Since batching can create several 1000 threads, this routine
+  // may lock up if it doesn't yield. But yielding can give other
+  // scripts a chance to spawn more processes.
+  // Since preventing lag is the priority, we iteratively kill
+  // processes until we can kill all remaining processes without
+  // needing to yield the thread.
 
-  const kill = (pid: number) => {
-    ns.ui.closeTail(pid);
-    ns.kill(pid);
-  };
+  tprint(ns)(STR.BOLD + 'SHUTTING DOWN');
 
-  for (const process of processes()) {
-    if (process.filename.match(HACK.slice(1))) {
-      kill(process.pid);
+  const hostnames = nmap(ns);
+
+  let lastRested = Date.now();
+  let killedAny = false;
+  do {
+    killedAny = false;
+    for (const hostname of hostnames) {
+      const hadProcesses = ns.killall(hostname, true);
+      killedAny = killedAny || hadProcesses;
+      if (hadProcesses) tprint(ns)(GRAY + `  killall on ${hostname}`);
+
+      // Prevent infinite loop by making kills a requirement for sleep
+      if (killedAny) {
+        const timeSinceSleep = Date.now() - lastRested;
+        if (timeSinceSleep > 200) {
+          tprint(ns)(GRAY + `  Yielding (${timeSinceSleep}ms since last sleep)`);
+          await ns.sleep(1);
+          lastRested = Date.now();
+        }
+      }
     }
-  }
-  await ns.sleep(1000);
-
-  ns.tprint('Killing all processes');
-  for (const { pid } of processes()) {
-    kill(pid);
-  }
+  } while (killedAny);
+  tprint(ns)(STR + '  Shutdown complete');
 };
 
 export async function main(ns: NS) {
+  await ns.sleep(100);
   await stop(ns);
   const [script, numThreads, ...args] = ns.args;
   if (ns.args.length > 0) {
+    tprint(ns)(GRAY + `  Executing callback: ${script} ${args.join(' ')}`);
     ns.run(script as string, numThreads as number, ...args);
   }
 }
