@@ -386,7 +386,17 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   }
   if (details.passwordHint.match(/password is the base [^ ]+ number [^ ]+ in base 10/)) {
     const [base, number] = details.data.split(',');
-    return recitePassword(parseInt(number, +base).toString());
+    const b = +base;
+    const digits = '0123456789ABCDEF';
+    const [whole, decimal = ''] = number.split('.');
+    const wholeValue = whole
+      .split('')
+      .reverse()
+      .map((d, i) => digits.indexOf(d) * b ** i);
+    const fracValue = decimal.split('').map((d, i) => digits.indexOf(d) * b ** -i);
+    const value = ~~[...wholeValue, ...fracValue].reduce((a, b) => a + b, 0);
+    ns.tprint(`base: ${base}, num: ${number}, result: ${value}`);
+    return recitePassword(value.toString());
   }
   if (details.passwordHint === 'My favorite EU country') {
     return tryPasswords(...EU_COUNTRIES.filter((str) => str.length === details.passwordLength));

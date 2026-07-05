@@ -109,9 +109,7 @@ export async function main(ns: NS) {
     showNetwork(ns);
     while (queue.length) {
       const hostname = queue.shift();
-      ns.tprint(hostname);
       for (const ps of ns.ps(hostname)) {
-        ns.tprint(ps);
         if (ps.filename.includes('mole')) ns.ui.openTail(ps.pid);
       }
     }
