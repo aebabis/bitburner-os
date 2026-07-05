@@ -96,28 +96,13 @@ function* numeralSequenceGenerator(length: number): Generator<string> {
   }
 }
 
-function* counter(length: number): Generator<number> {
-  if (length <= 0) return;
-  const max = 10 ** length - 1;
-  for (let num = 1; num <= max; num++) {
-    yield num;
-  }
-}
-
 const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetails) => async () => {
   type MastermindRule = { password: string; exact: number; wrongPlace: number };
-  if (details.passwordLength > 3) {
-    return false;
-  }
   const rules = [] as MastermindRule[];
+  ns.disableLog('ALL');
   const matches = (password: string, rule: MastermindRule) => {
-    const numExact = [...password]
-      .map((c, i) => +(c === rule.password[i]))
-      .reduce((a, b) => a + b, 0);
+    const numExact = [...password].filter((c, i) => c === rule.password[i]).length;
     if (numExact !== rule.exact) return false;
-    // TODO: make two lists of non matching characters (using filter)
-    // and measure what they have in common. If common characters
-    // fewer than `wrongPlace` a match isn't possible.
     return true;
   };
   for (const possibleGuess of numeralSequenceGenerator(details.passwordLength)) {
@@ -388,6 +373,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     return recitePassword(
       details.data
         .split(' ')
+        .filter(Boolean)
         .map((bin) => String.fromCharCode(parseInt(bin, 2)))
         .join(''),
     );

@@ -32,18 +32,27 @@ const showNetwork = (ns: NS) => {
     else return +canAccessH1 - +canAccessH2;
   }
 
-  const rows = Object.entries(connections).sort(comparator);
+  const rows = Object.entries(connections)
+    .filter(([hostname]) => ns.dnet.getServerDetails(hostname).isOnline)
+    .sort(comparator);
   const getListingColor = (hostname: string) => {
     if (stasisServers.includes(hostname)) return STASIS;
     else if (passwordData[hostname] != null || ns.ps(hostname).length > 0) return CONNECTED;
     else return NOT_CONNECTED;
   };
   const hasMole = (hostname: string) => ns.ps(hostname).some((ps) => ps.filename.includes('mole'));
+  const getHintText = (hostname: string) => {
+    const maxLength = 50;
+    const { passwordHint } = ns.dnet.getServerDetails(hostname);
+    if (passwordHint.length <= maxLength) return passwordHint;
+    else return passwordHint.slice(0, maxLength) + '...';
+  }
   ns.printRaw(
     <table style={{fontSize: 10 }}>
       <thead>
         <tr>
           <th style={{textAlign: 'left'}}>hostname</th>
+          <th style={{textAlign: 'left'}}>hint</th>
           <th style={{textAlign: 'left'}}>neighbors</th>
         </tr>
       </thead>
@@ -52,6 +61,7 @@ const showNetwork = (ns: NS) => {
         rows.map(([hostname, neighbors]) => (
           <tr>
             <td style={{ color: getListingColor(hostname) }}>{hostname}</td>
+            <td>{getHintText(hostname)}</td>
             <td>{neighbors.sort().map((neighbor) => (
               <button
                 style={{
