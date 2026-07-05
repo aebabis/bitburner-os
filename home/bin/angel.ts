@@ -220,18 +220,7 @@ export async function main(ns: NS) {
 
   const exec = (script: string, hostname: string, threads: number, additionalMsec: number) => {
     const jobId = `${workerId++}`;
-    const pid = ns.exec(
-      script,
-      hostname,
-      { threads, temporary: true },
-      target!,
-      additionalMsec,
-      jobId,
-      DEBUG,
-    );
-    if (!pid) {
-      throw new Error(`exec fail: ${script} ${hostname} ${threads} ${target}`);
-    }
+    ns.exec(script, hostname, { threads, temporary: true }, target!, additionalMsec, jobId, DEBUG);
   };
 
   const totalRamAvailable = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
