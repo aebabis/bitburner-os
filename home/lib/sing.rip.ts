@@ -100,6 +100,14 @@ const $tor = async (ns: NS, port = ns.pid) => {
   ns.writePort(TOR_PORT, purchases);
 };
 
+const $backup = async (ns: NS, port = ns.pid) =>
+  runInPlace(
+    ns,
+    port,
+  )(() => {
+    if (ns.singularity.exportGameBonus()) ns.singularity.exportGame();
+  });
+
 export const $sing =
   (ns: NS, port = ns.pid) =>
   async (goalTree: Goal) => {
@@ -107,6 +115,7 @@ export const $sing =
       await $install(ns, port);
     }
 
+    await $backup(ns, port);
     await $tor(ns, port);
 
     const factionTargets = goalTree.prerequisites('FACTION_JOIN').map((g) => g.faction!);
