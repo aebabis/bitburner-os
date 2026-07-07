@@ -27,7 +27,7 @@ export const getTableString = (ns: NS, taskData: ServiceData[]) => {
   );
 };
 
-export const getServices = (ns: NS): ServiceData[] => {
+export const getServices = (ns: NS): ServiceData[] | null => {
   return Ports(ns).getPortHandle(PORT_SERVICES_LIST).peek();
 };
 

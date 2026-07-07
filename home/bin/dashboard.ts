@@ -248,6 +248,9 @@ const getExecutionTable = (ns: NS) => {
 
 const getServiceTable = (ns: NS) => {
   const services = getServices(ns);
+  if (!services) {
+    return table(ns, ['SERVICES'], [[ERROR('error')]], { colors: true });
+  }
   const fRam = (ram: number) => (ram.toFixed(2) + 'GB').padStart(8);
   const total = services.map((service) => service.ram).reduce((a, b) => a + b, 0);
   return table(

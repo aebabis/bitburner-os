@@ -13,9 +13,11 @@ export async function main(ns: NS) {
   const [command, target] = flags._ as string[];
   const force = flags.force as boolean;
   if (command == null) {
+    const services = getServices(ns);
+    if (!services) throw new Error('Services not loaded');
     ns.tprint(
       '\n' +
-        getTableString(ns, getServices(ns)) +
+        getTableString(ns, services) +
         '\n' +
         HELP.map((row) => KEYWORD(row[0].padEnd(LEFT_PAD)) + '\n  ' + row[1]).join('\n'),
     );
@@ -24,8 +26,9 @@ export async function main(ns: NS) {
   else if (command === 'disable') disableService(ns, target);
   else if (command === 'tail') {
     const services = getServices(ns);
+    if (!services) throw new Error('Services not loaded');
     const service = services.find((service) => service.id === target || service.name === target);
-    if (service != null) ns.ui.openTail(service.pid);
+    if (service?.pid != null) ns.ui.openTail(service.pid);
     else {
       ns.tprint(`Service not found with descriptor "${target}"`);
       ns.tprint(`Available services: ${services.map((s) => s.name).join(', ')}`);

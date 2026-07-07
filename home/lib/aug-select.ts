@@ -307,7 +307,7 @@ export const getAccessibleFactions = (
   player: Player,
   ownedAugmentations: string[],
 ) => {
-  const { factionRequirements } = staticData;
+  const { factionRequirements, resetInfo } = staticData;
   return [
     ...STORY_FACTIONS,
     ...CRIMINAL_ORGANIZATIONS,
@@ -315,6 +315,9 @@ export const getAccessibleFactions = (
     'Bladeburners' as FactionName,
   ].filter((faction) => {
     if (faction === 'Bladeburners' && !player.factions.includes('Bladeburners')) {
+      return false;
+    }
+    if (faction === 'Netburners' && !(resetInfo.currentNode === 9 || resetInfo.ownedSF.has(9))) {
       return false;
     }
     const reqs = factionRequirements?.[faction] ?? [];

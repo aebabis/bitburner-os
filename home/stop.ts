@@ -15,8 +15,10 @@ export const stop = async (ns: NS) => {
 
   // Close service tails to prevent clutter
   const services = getServices(ns);
-  for (const service of services) {
-    if (service.pid != null) ns.ui.closeTail(service.pid);
+  if (services) {
+    for (const service of services) {
+      if (service.pid != null) ns.ui.closeTail(service.pid);
+    }
   }
 
   const hostnames = nmap(ns);
