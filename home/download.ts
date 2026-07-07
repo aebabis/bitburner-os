@@ -1,5 +1,4 @@
 const FILES = [
-  '/.claude/settings.local.json',
   '/bin/access.ts',
   '/bin/angel.ts',
   '/bin/blades/burners.rip.ts',
@@ -23,6 +22,11 @@ const FILES = [
   '/bin/corp/plans/tobacco-plan.ts',
   '/bin/dashboard.ts',
   '/bin/dispatch.ts',
+  '/bin/dnet/data.ts',
+  '/bin/dnet/dhud.tsx',
+  '/bin/dnet/dnet.ts',
+  '/bin/dnet/mole.ts',
+  '/bin/dnet/ports.ts',
   '/bin/eight-gig.ts',
   '/bin/gang/don.ts',
   '/bin/gang/task-table.ts',
