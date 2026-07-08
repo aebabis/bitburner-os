@@ -9,8 +9,9 @@ export async function main(ns: NS) {
   ns.singularity.getAugmentationsFromFaction;
 
   const factions = Object.values(ns.enums.FactionName) as FactionName[];
+  const companies = Object.values(ns.enums.CompanyName) as CompanyName[];
 
-  tprint(ns)(STR.BOLD + 'LOADING AUGMENTATION AND FACTION DATA');
+  tprint(ns)(STR.BOLD + 'LOADING FACTION, AUGMENTATION, AND COMPANY DATA');
 
   tprint(ns)(STR + '  Loading Augmentation Names');
   const factionAugmentations = {} as Record<FactionName, string[]>;
@@ -43,7 +44,7 @@ export async function main(ns: NS) {
     augmentationStats[aug] = await inPlace(ns).singularity['getAugmentationStats'](aug);
 
   tprint(ns)(STR + '  Loading Faction Favor');
-  const factionFavor: Record<string, number> = {};
+  const factionFavor = {} as Record<FactionName, number>;
   for (const faction of factions)
     factionFavor[faction] = await inPlace(ns).singularity['getFactionFavor'](faction);
 
@@ -58,6 +59,23 @@ export async function main(ns: NS) {
   for (const faction of factions)
     factionWorkTypes[faction] = await inPlace(ns).singularity['getFactionWorkTypes'](faction);
 
+  tprint(ns)(STR + '  Loading Company Favor');
+  const companyFavor = {} as Record<CompanyName, number>;
+  for (const company of companies)
+    companyFavor[company] = await inPlace(ns).singularity['getCompanyFavor'](company);
+
+  tprint(ns)(STR + '  Loading Company Positions');
+  const companyPositions = {} as Record<CompanyName, CompanyPositionInfo[]>;
+  for (const company of companies) {
+    const jobNames = await inPlace(ns).singularity['getCompanyPositions'](company);
+    const positions = (companyPositions[company] = [] as CompanyPositionInfo[]);
+    for (const positionName of jobNames) {
+      positions.push(
+        await inPlace(ns).singularity['getCompanyPositionInfo'](company, positionName),
+      );
+    }
+  }
+
   putStaticData(ns, {
     factionAugmentations,
     augmentations,
@@ -68,6 +86,8 @@ export async function main(ns: NS) {
     factionFavor,
     factionRequirements,
     factionWorkTypes,
+    companyFavor,
+    companyPositions,
   });
 
   // Go to next step in the boot sequence

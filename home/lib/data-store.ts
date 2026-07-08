@@ -73,6 +73,9 @@ export type StaticData = {
   factionRequirements: Record<FactionName, PlayerRequirement[]>;
   factionAugmentations: Record<FactionName, string[]>;
   factionWorkTypes: Record<FactionName, FactionWorkType[]>;
+
+  companyFavor: Record<CompanyName, number>;
+  companyPositions: Record<CompanyName, CompanyPositionInfo[]>;
 };
 export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>

@@ -100,13 +100,13 @@ const $tor = async (ns: NS, port = ns.pid) => {
   ns.writePort(TOR_PORT, purchases);
 };
 
-const $backup = async (ns: NS, port = ns.pid) =>
+const $backup = (ns: NS, port = ns.pid) =>
   runInPlace(
     ns,
     port,
   )(() => {
     if (ns.singularity.exportGameBonus()) ns.singularity.exportGame();
-  });
+  })();
 
 export const $sing =
   (ns: NS, port = ns.pid) =>

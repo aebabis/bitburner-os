@@ -395,7 +395,6 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       .map((d, i) => digits.indexOf(d) * b ** i);
     const fracValue = decimal.split('').map((d, i) => digits.indexOf(d) * b ** -i);
     const value = ~~[...wholeValue, ...fracValue].reduce((a, b) => a + b, 0);
-    ns.tprint(`base: ${base}, num: ${number}, result: ${value}`);
     return recitePassword(value.toString());
   }
   if (details.passwordHint === 'My favorite EU country') {
