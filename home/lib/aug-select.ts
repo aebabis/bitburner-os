@@ -65,7 +65,7 @@ export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, 
   Object.entries(stats)
     .map(([key, stat = 1]) => {
       const mult = stat >= 1 ? stat : 1 / stat;
-      return (mult - 1) * weights[key];
+      return (mult - 1) * weights[key as keyof Multipliers];
     })
     .reduce((a, b) => a + b, 0);
 
@@ -236,7 +236,7 @@ export const findOptimalBatch = (
     ...nfEntries,
   ].sort((a, b) => a.remainingRep - b.remainingRep);
 
-  let best = { utility: 0, batch: /** @type {string[]} */ [] };
+  let best = { utility: 0, batch: [] as string[] };
 
   for (let i = 0; i < augs.length; i++) {
     // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.
