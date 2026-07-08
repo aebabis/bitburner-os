@@ -24,10 +24,9 @@ const PALETTE = [
 ];
 
 // djb2 hash — gives each faction a stable color across restarts
-const factionColor = (/** @type {string} */ name) => {
+const factionColor = (name: string) => {
   let h = 5381;
-  for (let i = 0; i < name.length; i++)
-    h = ((h << 5) + h + name.charCodeAt(i)) | 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) + h + name.charCodeAt(i)) | 0;
   return PALETTE[Math.abs(h) % PALETTE.length];
 };
 
@@ -35,7 +34,7 @@ const fmt = new Intl.NumberFormat('en', {
   notation: 'compact',
   maximumSignificantDigits: 3,
 });
-const fmtU = (/** @type {number} */ u) => (u === 0 ? '0' : fmt.format(u));
+const fmtU = (u: number) => (u === 0 ? '0' : fmt.format(u));
 
 /**
  * @param {CanvasRenderingContext2D} ctx
@@ -45,18 +44,21 @@ const fmtU = (/** @type {number} */ u) => (u === 0 ? '0' : fmt.format(u));
  * @param {number} tMin
  * @param {number} tMax
  */
-const drawTimeAxis = (ctx, toX, { y: panelY, w }, now, tMin, tMax) => {
+const drawTimeAxis = (
+  ctx: CanvasRenderingContext2D,
+  toX: (n: number) => number,
+  { y: panelY, w }: { y: number; w: number },
+  now: number,
+  tMin: number,
+  tMax: number,
+) => {
   ctx.fillStyle = '#222';
   ctx.fillRect(LABEL_W, panelY, w - LABEL_W, AXIS_H);
   ctx.font = '9px monospace';
   ctx.textBaseline = 'alphabetic';
   const tRange = tMax - tMin;
   const tickStep = Math.ceil(tRange / 6 / 1000) * 1000;
-  for (
-    let t = Math.ceil(tMin / tickStep) * tickStep;
-    t <= tMax;
-    t += tickStep
-  ) {
+  for (let t = Math.ceil(tMin / tickStep) * tickStep; t <= tMax; t += tickStep) {
     const x = Math.round(toX(t));
     if (x < LABEL_W) continue;
     ctx.fillStyle = '#444';
@@ -126,8 +128,7 @@ export async function main(ns: NS) {
     const now = Date.now();
     const tMin = now - viewMs;
     const tMax = now;
-    const toX = (/** @type {number} */ t) =>
-      LABEL_W + ((t - tMin) / viewMs) * (w - LABEL_W);
+    const toX = (t: number) => LABEL_W + ((t - tMin) / viewMs) * (w - LABEL_W);
 
     const visible = snapshots.filter((s) => s.ts >= tMin && s.ts <= tMax);
 
@@ -136,8 +137,7 @@ export async function main(ns: NS) {
     const peakU = /** @type {Map<string, number>} */ new Map();
     for (const snap of source)
       for (const p of snap.plans)
-        if (p.utility > (peakU.get(p.faction) ?? 0))
-          peakU.set(p.faction, p.utility);
+        if (p.utility > (peakU.get(p.faction) ?? 0)) peakU.set(p.faction, p.utility);
     const topFactions = [...peakU.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, TOP_N)
@@ -153,8 +153,7 @@ export async function main(ns: NS) {
     const statsY = plotY + plotH;
 
     // Map utility to canvas Y: u=0 → bottom, u=maxU*1.1 → top
-    const toY = (/** @type {number} */ u) =>
-      plotY + plotH * (1 - u / (maxU * 1.1));
+    const toY = (u: number) => plotY + plotH * (1 - u / (maxU * 1.1));
 
     // Plot background
     ctx.fillStyle = '#111';
@@ -256,9 +255,7 @@ export async function main(ns: NS) {
 
     // Stats footer
     const lastSnap =
-      visible.length > 0
-        ? visible[visible.length - 1]
-        : snapshots[snapshots.length - 1];
+      visible.length > 0 ? visible[visible.length - 1] : snapshots[snapshots.length - 1];
     ctx.font = '11px monospace';
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#444';
