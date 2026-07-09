@@ -84,7 +84,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
-    AnyHostService(ns)('/bin/stalker.ts'),
   ];
   if (currentNode === 3) {
     const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');

@@ -229,6 +229,7 @@ export async function main(ns: NS) {
     if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
       await $win(ns, runPort);
     }
+    if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await $sing(ns, runPort)(root);
 
     if (ns.getServerMaxRam('home') <= 64) {

@@ -120,6 +120,7 @@ export async function main(ns: NS) {
     }
     const currentAction = await $getCurrentAction(ns);
     showInfo(ns)(cities, skills, hasBlade, currentAction, city, currentBlackOp);
+    ns.singularity.setFocus(focus());
     await ns.bladeburner.nextUpdate();
   }
 }
