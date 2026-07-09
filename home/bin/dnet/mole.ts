@@ -96,46 +96,41 @@ function* numeralSequenceGenerator(length: number): Generator<string> {
   }
 }
 
-const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetails) => async () => {
+const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetails) => {
   type MastermindRule = { password: string; exact: number; wrongPlace: number };
   const rules = [] as MastermindRule[];
   ns.disableLog('ALL');
   const matches = (password: string, rule: MastermindRule) => {
     const numExact = [...password].filter((c, i) => c === rule.password[i]).length;
-    if (numExact !== rule.exact) return false;
-    return true;
+    return numExact === rule.exact;
   };
-  for (const possibleGuess of numeralSequenceGenerator(details.passwordLength)) {
-    if (rules.every((rule) => matches(possibleGuess, rule))) {
-      const result = await authenticate(ns)(hostname, possibleGuess);
-      if (result.success) return true;
-      const { success, logs } = await ns.dnet.heartbleed(hostname, { peek: true });
-      if (!success) return false;
-      for (const log of logs) {
-        try {
-          const hint = JSON.parse(log);
-          const newRule = {
-            password: hint.passwordAttempted,
-            exact: +hint.data[0],
-            wrongPlace: +hint.data[1],
-          };
-          if (
-            !rules.find(
-              ({ password, exact, wrongPlace }) =>
-                password === newRule.password &&
-                exact === newRule.exact &&
-                wrongPlace === newRule.wrongPlace,
-            )
-          ) {
-            rules.push(newRule);
-          }
-        } catch (error) {
-          // JSON error
-        }
+  const generator = numeralSequenceGenerator(details.passwordLength);
+  let next = generator.next();
+  return heartbleedSolver(
+    ns,
+    hostname,
+  )(async ({ jsonLogs }, shouldYield) => {
+    for (const { data, passwordAttempted } of jsonLogs) {
+      const newRule = { password: passwordAttempted, exact: +data[0], wrongPlace: +data[1] };
+      if (
+        !rules.find(
+          ({ password, exact, wrongPlace }) =>
+            password === newRule.password &&
+            exact === newRule.exact &&
+            wrongPlace === newRule.wrongPlace,
+        )
+      ) {
+        rules.push(newRule);
       }
     }
-  }
-  return false; // Should not happen
+    while (!next.done) {
+      const guess = next.value;
+      next = generator.next();
+      if (rules.every((rule) => matches(guess, rule))) return guess;
+      if (shouldYield()) await ns.sleep(0);
+    }
+    return null;
+  });
 };
 
 const WALL = '█' as const;
@@ -317,7 +312,12 @@ type HeartbleedSolverLogs = {
 
 const heartbleedSolver =
   (ns: NS, hostname: string, options: HeartbleedOptions = { peek: true }) =>
-  (getNextPassword: (logs: HeartbleedSolverLogs) => string | null) =>
+  (
+    getNextPassword: (
+      logs: HeartbleedSolverLogs,
+      shouldYield: () => boolean,
+    ) => Promise<string | null>,
+  ) =>
   async () => {
     while (true) {
       const { success, logs } = await ns.dnet.heartbleed(hostname, options);
@@ -331,7 +331,9 @@ const heartbleedSolver =
           textLogs.push(log);
         }
       }
-      const password = getNextPassword({ logs, textLogs, jsonLogs });
+      const startTime = Date.now();
+      const shouldYield = () => Date.now() - startTime > 200;
+      const password = await getNextPassword({ logs, textLogs, jsonLogs }, shouldYield);
       if (password == null) return false;
       const result = await authenticate(ns)(hostname, password);
       if (result.success) return true;
@@ -513,7 +515,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     return heartbleedSolver(
       ns,
       hostname,
-    )(({ jsonLogs }) => {
+    )(async ({ jsonLogs }) => {
       for (const { data, passwordAttempted } of jsonLogs) {
         if (typeof data === 'string') {
           const correct = data.split(',').map((v) => v === 'yes');
@@ -613,7 +615,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     return heartbleedSolver(
       ns,
       hostname,
-    )(({ jsonLogs }) => {
+    )(async ({ jsonLogs }, shouldYield) => {
       current++;
       for (const { passwordAttempted, data: isDivisible } of jsonLogs) {
         if (isDivisible === 'true') divisors.add(+passwordAttempted);
@@ -625,6 +627,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         const meetsNonDivisors = [...nonDivisors].every((d) => current % d !== 0);
         if (meetsDivisors && meetsNonDivisors) return current.toString();
         current++;
+        if (shouldYield()) await ns.sleep(0);
       }
     });
   }
