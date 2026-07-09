@@ -198,9 +198,13 @@ export async function main(ns: NS) {
   };
 
   const factionWork = async (faction: FactionName) => {
-    (await $.singularity['workForFaction'](faction, 'hacking', focus(ns))) ||
-      (await $.singularity['workForFaction'](faction, 'field', focus(ns))) ||
-      (await $.singularity['workForFaction'](faction, 'security', focus(ns)));
+    const preferenceOrder = ['hacking', 'field', 'security'] as FactionWorkType[];
+    const workTypes = factionWorkTypes[faction];
+    const workType = preferenceOrder.find((type) => workTypes.includes(type))!;
+    const { factionName, factionWorkType } = (ns.singularity.getCurrentWork() ||
+      {}) as FactionWorkTask;
+    if (faction === factionName && workType === factionWorkType) return;
+    await $.singularity['workForFaction'](faction, workType, focus(ns));
   };
 
   const { algorithms } = ns.enums.UniversityClassType;
