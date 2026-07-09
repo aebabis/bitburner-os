@@ -621,7 +621,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         if (isDivisible === 'true') divisors.add(+passwordAttempted);
         else nonDivisors.add(+passwordAttempted);
       }
-      const step = Math.max(...divisors);
+      const step = Math.max(1, ...divisors);
       current = (1 + Math.floor(current / step)) * step;
       while (true) {
         if (current >= max) return null;
@@ -631,6 +631,41 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         current += step;
         if (shouldYield()) await ns.sleep(0);
       }
+    });
+  }
+  if (details.passwordHint === 'Ascend the highest mountain!') {
+    const max = 10 ** details.passwordLength - 1;
+    const elevations = new Array<number | undefined>(max);
+    return heartbleedSolver(
+      ns,
+      hostname,
+    )(async ({ jsonLogs }) => {
+      for (const { passwordAttempted, data: elevation } of jsonLogs) {
+        elevations[+passwordAttempted] = +elevation;
+      }
+      if (elevations[0] == null) return '0';
+      if (elevations[max] == null) return max.toString();
+
+      const findBestCandidate = (low: number, high: number): [number, number] => {
+        while (elevations[low + 1] != null) low++;
+        while (elevations[high - 1] != null) high--;
+        for (let i = low + 1; i < high; i++) {
+          const elevation = elevations[i];
+          if (elevation != null) {
+            const left = findBestCandidate(low, i);
+            const right = findBestCandidate(i, high);
+            return left[1] > right[1] ? left : right;
+          }
+        }
+        // No explored values between low and high
+        // Assume peak is in
+        const width = high - low - 1;
+        const lClimb = 10000 - elevations[low]!;
+        const rClimb = 10000 - elevations[high]!;
+        const guess = low + 1 + Math.floor((lClimb * width) / (lClimb + rClimb));
+        return [guess, Math.max(elevations[low]!, elevations[high]!) * width];
+      };
+      return findBestCandidate(0, max)[0].toString();
     });
   }
   if (PASSWORD_IS.some((text) => details.passwordHint.startsWith(text))) {
@@ -826,12 +861,12 @@ const updateLocks = (ns: NS) => {
   const hasStasis = stasisServers.includes(hostname);
   const spotsLeft = stasisLimit - stasisServers.length;
 
-  if (server.isStationary && hasStasis) {
-    setStasis(ns, false);
+  if (stasisLimit === 0) return;
+
+  if (server.isStationary || depth < 1) {
+    if (hasStasis) setStasis(ns, false);
     return;
   }
-
-  if (server.isStationary || stasisLimit === 0 || depth < 1) return;
 
   const connections = ns.dnet.probe().map(ns.dnet.getServerDetails);
   const adjacentGoal = connections.find(({ modelId }) => modelId === '(The Labyrinth)');
