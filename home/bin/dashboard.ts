@@ -110,11 +110,8 @@ const threadpoolRow = (ns: NS, server: { hostname: string; ramUsed: number; maxR
 };
 
 const threadpools = (ns: NS) => {
-  const names = Array(ns.cloud.getServerLimit())
-    .fill(null)
-    .map((_, i) => (i + 1).toString().padStart(2, '0'))
-    .map((num) => `${THREADPOOL}-${num}`);
-  return ['home', ...names]
+  const hostnames = getHostnames(ns).filter((hostname) => hostname.startsWith(THREADPOOL));
+  return ['home', ...hostnames]
     .map((hostname) => {
       try {
         return {
