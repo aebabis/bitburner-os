@@ -334,6 +334,7 @@ const heartbleedSolver =
       const startTime = Date.now();
       const shouldYield = () => Date.now() - startTime > 200;
       const password = await getNextPassword({ logs, textLogs, jsonLogs }, shouldYield);
+      ns.print(`Attempt (${hostname}): ${password}`);
       if (password == null) return false;
       const result = await authenticate(ns)(hostname, password);
       if (result.success) return true;
@@ -616,17 +617,18 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       ns,
       hostname,
     )(async ({ jsonLogs }, shouldYield) => {
-      current++;
       for (const { passwordAttempted, data: isDivisible } of jsonLogs) {
         if (isDivisible === 'true') divisors.add(+passwordAttempted);
         else nonDivisors.add(+passwordAttempted);
       }
+      const step = Math.max(...divisors);
+      current = (1 + Math.floor(current / step)) * step;
       while (true) {
         if (current >= max) return null;
         const meetsDivisors = [...divisors].every((d) => current % d === 0);
         const meetsNonDivisors = [...nonDivisors].every((d) => current % d !== 0);
         if (meetsDivisors && meetsNonDivisors) return current.toString();
-        current++;
+        current += step;
         if (shouldYield()) await ns.sleep(0);
       }
     });
