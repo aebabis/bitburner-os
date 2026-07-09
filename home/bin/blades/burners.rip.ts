@@ -1,9 +1,8 @@
 import { inPlace, runInPlace } from '../../lib/in-place';
-import { shouldWorkHaveFocus } from '../../lib/query-service';
 
 export const $train =
-  (ns: NS) => async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
-    const focus = shouldWorkHaveFocus(ns);
+  (ns: NS) =>
+  async (focus = true, stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
     await runInPlace(
       ns,
       ns.pid,

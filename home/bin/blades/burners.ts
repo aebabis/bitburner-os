@@ -1,3 +1,4 @@
+import { makeAfkTracker } from '../../lib/afk';
 import { getGoals } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
 import { $sing, $win } from '../../lib/sing.rip';
@@ -67,11 +68,14 @@ export async function main(ns: NS) {
 
   typeof ns.singularity.getOwnedAugmentations;
 
+  const afkTracker = makeAfkTracker(ns);
+  const focus = () => afkTracker.timeSinceAction() > 20000;
+
   const { ownedAugs } = await $['getResetInfo']();
   const hasBlade = ownedAugs.has("The Blade's Simulacrum");
 
   while (!(await $.bladeburner['joinBladeburnerDivision']())) {
-    await $train(ns)();
+    await $train(ns)(focus());
     await ns.sleep(1000);
   }
 
@@ -96,7 +100,7 @@ export async function main(ns: NS) {
       if (hasBlade) {
         await $startAction(ns)('General', 'Training');
       } else {
-        await $train(ns)('agility');
+        await $train(ns)(focus(), 'agility');
       }
     }
     if (cities[city].chaos > 10) {
@@ -111,7 +115,7 @@ export async function main(ns: NS) {
       } else if (hasBlade) {
         await $startAction(ns)('General', 'Training');
       } else {
-        await $train(ns)();
+        await $train(ns)(focus());
       }
     }
     const currentAction = await $getCurrentAction(ns);

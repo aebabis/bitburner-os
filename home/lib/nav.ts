@@ -61,9 +61,9 @@ export const goToTab = (ns: NS) => async (tab: Tab) => {
 };
 
 export const isTerminalBlocked = () => {
-  return globalThis['document']
-    .querySelector('#terminal li:last-child')
-    ?.innerText.match(/\[\|*-*\]/);
+  return (
+    globalThis['document'].querySelector('#terminal li:last-child') as HTMLLIElement | null
+  )?.innerText.match(/\[\|*-*\]/);
 };
 
 export const sendTerminalCommand = (ns: NS) => async (command: string) => {

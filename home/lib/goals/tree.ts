@@ -18,7 +18,6 @@ import {
   type Goal,
   type Plan,
   bladesJoinGoal,
-  reevaluateGoal,
 } from './nodes.ts';
 import {
   findOptimalBatch,

@@ -1,11 +1,4 @@
-import { getStaticData, getPlayerData, getMoneyData } from './data-store';
-
-export const shouldWorkHaveFocus = (ns: NS) => {
-  const { isPlayerActive } = getPlayerData(ns);
-  const { installedAugmentations } = getStaticData(ns);
-  if (installedAugmentations.includes('Neuroreceptor Management Implant')) return false;
-  return !isPlayerActive;
-};
+import { getStaticData, getMoneyData } from './data-store';
 
 export const hasBitNode = (ns: NS, bn: number) => {
   const { resetInfo } = getStaticData(ns);

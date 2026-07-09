@@ -3,10 +3,10 @@ import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals'
 import { Goal, GoalType } from '../../lib/goals/nodes';
 import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace } from '../../lib/in-place';
-import { shouldWorkHaveFocus as focus } from '../../lib/query-service';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
 import { $sing, $win } from '../../lib/sing.rip';
+import { makeAfkTracker } from '../../lib/afk';
 
 const TRAVEL_COST = 200_000;
 
@@ -119,8 +119,11 @@ export async function main(ns: NS) {
 
   ns.singularity.commitCrime;
 
-  const { resetInfo, factionFavor = {} as Record<FactionName, number> } = getStaticData(ns);
+  const { resetInfo, factionFavor, factionWorkTypes } = getStaticData(ns);
   const canMakeMoney = resetInfo.currentNode !== 8;
+
+  const afkTracker = makeAfkTracker(ns);
+  const focus = () => afkTracker.timeSinceAction() > 20000;
 
   const runPort = randPort();
   const $ = inPlace(ns, runPort);
@@ -145,12 +148,12 @@ export async function main(ns: NS) {
       );
     const gym = getGym(ns, city);
     if (gym) {
-      await $.singularity['gymWorkout'](gym, ns.enums.GymType[statToTrain], focus(ns));
+      await $.singularity['gymWorkout'](gym, ns.enums.GymType[statToTrain], focus());
     }
   };
 
   const goToWork = async () => {
-    await $.singularity['workForCompany']("Joe's Guns", focus(ns));
+    await $.singularity['workForCompany']("Joe's Guns", focus());
   };
 
   const makeMoney = async () => {
@@ -193,7 +196,7 @@ export async function main(ns: NS) {
   const $commitCrime = async (crime: CrimeType) => {
     const { crimeType } = (ns.singularity.getCurrentWork() || {}) as CrimeTask;
     if (crimeType !== crime) {
-      await $.singularity['commitCrime'](crime, focus(ns));
+      await $.singularity['commitCrime'](crime, focus());
     }
   };
 
@@ -204,7 +207,7 @@ export async function main(ns: NS) {
     const { factionName, factionWorkType } = (ns.singularity.getCurrentWork() ||
       {}) as FactionWorkTask;
     if (faction === factionName && workType === factionWorkType) return;
-    await $.singularity['workForFaction'](faction, workType, focus(ns));
+    await $.singularity['workForFaction'](faction, workType, focus());
   };
 
   const { algorithms } = ns.enums.UniversityClassType;
@@ -234,12 +237,12 @@ export async function main(ns: NS) {
 
     if (findGoal('HACKING_XP') && canGoToSchool) {
       if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
-      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus(ns));
+      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus());
     } else if (skills.hacking < neededHackingLevel) {
       if (city !== 'Sector-12' && money >= TRAVEL_COST) {
         await $.singularity['travelToCity']('Sector-12');
       }
-      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus(ns));
+      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus());
     } else if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
       await goToGym();
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {

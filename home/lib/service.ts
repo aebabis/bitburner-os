@@ -39,7 +39,6 @@ export const Service =
     let pid = isPlanner ? ns.pid : getExistingPid(ns, desc) || null;
     let lastStart = 0;
     let enabled = true;
-    let lastHost: string | null = null;
 
     const isRunning = () => !!(pid && ns.isRunning(pid));
     const mayRun = () => enabled && condition(ns);
@@ -70,7 +69,7 @@ export const Service =
       const running = isRunning();
       const shouldBe = mayRun();
       if (!running && shouldBe && timeSinceRun() > interval) {
-        const { pid: newPid, hostname } = execOnBestServer(
+        const { pid: newPid } = execOnBestServer(
           ns,
           script,
           target,
@@ -81,7 +80,6 @@ export const Service =
         pid = newPid || null;
         if (pid) {
           lastStart = Date.now();
-          lastHost = hostname;
         }
       } else if (running && !shouldBe) {
         stop();
