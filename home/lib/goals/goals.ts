@@ -1,4 +1,4 @@
-import { getStaticData, getPlayerData, getMoneyData } from '../data-store.ts';
+import { getStaticData, getPlayerData, getMoneyData, type StaticData } from '../data-store.ts';
 import {
   installGoal,
   reevaluateGoal,
@@ -23,6 +23,24 @@ import { getIncome } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 
+// Computes additional overhead if the player was given a free BN9
+// server at the start of the run to account for the time it would
+// take to earn the server normally.
+// Server is granted at the start of BN9 or if the player has all
+// three levels of BN9 unlocked.
+const startingServerOverhead = (
+  staticData: StaticData,
+  totalIncome: number,
+  hacknetIncome: number,
+): number => {
+  const { currentNode, ownedSF, lastAugReset, lastNodeReset } = staticData.resetInfo;
+  const isFirstCycle = lastAugReset === lastNodeReset;
+  const getsFreeHacknetServers = currentNode === 9 || ownedSF.get(9) === 3;
+  if (!getsFreeHacknetServers || !isFirstCycle) return 0;
+  const incomeRate = totalIncome - hacknetIncome;
+  return incomeRate > 0 ? staticData.startingServerValue / incomeRate : 0;
+};
+
 export const getGoals = (ns: NS): Goal => {
   const {
     player,
@@ -36,10 +54,15 @@ export const getGoals = (ns: NS): Goal => {
   const staticData = getStaticData(ns);
   const { currentNode, ownedSF, ownedAugs: installedAugs } = staticData.resetInfo;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
-  const { totalIncome = 0 } = getIncome(ns);
+  const { totalIncome = 0, hacknetIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns) as unknown as Formulas;
   const karma = ns.heart.break();
   const ownedAugs = [...staticData.installedAugmentations, ...queuedAugmentations];
+
+  const overhead =
+    computeResetOverhead(staticData) +
+    startingServerOverhead(staticData, totalIncome, hacknetIncome);
+
   const planData = {
     player,
     staticData,
@@ -51,9 +74,8 @@ export const getGoals = (ns: NS): Goal => {
     totalIncome,
     formulas,
     karma,
+    overhead,
   };
-
-  const overhead = computeResetOverhead(staticData);
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)
     .map((f) => buildFactionGoalTree(ns, f as FactionName, planData))

@@ -27,7 +27,6 @@ import {
   augValueFromStats,
   shouldEarlyInstall,
   shouldPursueFavor,
-  computeResetOverhead,
   computeRepRate,
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
@@ -213,6 +212,7 @@ interface FactionGoalTreeProps {
   totalIncome: number;
   formulas: Formulas; // TODO: Use ReturnType<formulas>
   karma: number;
+  overhead: number;
 }
 export const buildFactionGoalTree = (
   ns: NS,
@@ -228,6 +228,7 @@ export const buildFactionGoalTree = (
     totalIncome,
     formulas,
     karma,
+    overhead,
   }: FactionGoalTreeProps,
 ): Plan | null => {
   const { augmentationPrices, augmentationPrereqs, augmentationStats, factionWorkTypes } =
@@ -247,10 +248,16 @@ export const buildFactionGoalTree = (
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 
-  const { batch } = findOptimalBatch(faction, staticData, player, formulas, factionRep, ownedAugs, {
-    moneyRate,
-    joinTime,
-  });
+  const { batch } = findOptimalBatch(
+    faction,
+    staticData,
+    player,
+    formulas,
+    factionRep,
+    ownedAugs,
+    overhead,
+    { moneyRate, joinTime },
+  );
   if (batch.length === 0) return null;
 
   const augs = getPurchaseOrder(batch, augmentationPrereqs, augmentationPrices, ownedAugs);
@@ -298,6 +305,7 @@ export const buildFactionGoalTree = (
       player,
       formulas,
       staticData,
+      overhead,
     )
   ) {
     const { favorToDonate } = staticData;
@@ -305,12 +313,12 @@ export const buildFactionGoalTree = (
     const totalNeededRep = formulas.reputation.calculateFavorToRep(favorToDonate);
     const repToInstall = totalNeededRep - pastRep;
     const favorGoal = factionFavorGoal(faction, repToInstall, currentRep, repRate, joinGoal);
-    return plan([favorGoal], [], (overhead) => {
+    return plan([favorGoal], [], (nextOverhead) => {
       const tFavor = favorGoal.timeToComplete();
       if (tFavor == null || treeValue === 0) return 0;
       const donationRate = formulas.reputation.donationForRep(1, player);
       const tN1 = (repReq * donationRate + costToAug) / totalIncome;
-      return treeValue / (tFavor + computeResetOverhead(staticData) + tN1 + overhead);
+      return treeValue / (tFavor + overhead + tN1 + nextOverhead);
     });
   }
 

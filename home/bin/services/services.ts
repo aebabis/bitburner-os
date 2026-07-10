@@ -42,7 +42,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
   const corpAllowed = () => !disableCorporation && currentNode !== 8;
   const hasSingularity = () => hasNode(4);
-  const enableHacknet = () => hacknetAvailable && playerLikesHacknet;
+  const enablePool = () => currentNode === 9 || ownedSF.get(9) === 3;
+  const enableHacknet = () => hacknetAvailable && playerLikesHacknet && !enablePool();
   const enableCorp = () => corpAllowed() && (currentNode === 3 || ownedSF.get(3) === 3);
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
@@ -73,6 +74,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/dashboard.ts'),
     Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
+    AnyHostService(ns, enablePool)('/bin/pool.ts'),
     AnyHostService(ns, useWolf)('/bin/nerd.ts'),
     AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/trader.ts'),
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),

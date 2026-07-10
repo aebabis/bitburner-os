@@ -170,6 +170,7 @@ export const findOptimalBatch = (
   formulas: Formulas,
   factionRep: Record<FactionName, number>,
   ownedAugmentations: string[],
+  overhead: number,
   { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
   const {
@@ -195,8 +196,6 @@ export const findOptimalBatch = (
     (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
   const augValue = (aug: string) => augValueFromStats(resetInfo, aug, augmentationStats);
-
-  const resetOverhead = computeResetOverhead(staticData);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = computeRepRate(
@@ -254,7 +253,7 @@ export const findOptimalBatch = (
     const effectivePrice = canDonate ? totalPrice + bindingRep * donationRate : totalPrice;
     const timeForMoney = Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
     const timeForRep = canDonate || bindingRep === 0 ? 0 : bindingRep / gainRate;
-    const cost = joinTime + Math.max(timeForMoney, timeForRep) + resetOverhead;
+    const cost = joinTime + Math.max(timeForMoney, timeForRep) + overhead;
     const utility = totalValue / cost;
 
     if (utility > best.utility) best = { utility, batch: affordable.map((a) => a.name) };
@@ -281,6 +280,7 @@ export const shouldPursueFavor = (
   player: Player,
   formulas: Formulas,
   staticData: StaticData,
+  overhead: number,
 ) => {
   const { favorToDonate } = staticData;
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
@@ -290,7 +290,7 @@ export const shouldPursueFavor = (
   const donationRate = formulas.reputation.donationForRep(1, player);
 
   const tFavor = Math.max(0, repForFavor - currentRep) / repRate;
-  const tReset = computeResetOverhead(staticData);
+  const tReset = overhead;
   const tN1 = (repRequired * donationRate + augCost) / moneyRate;
   const augTimeWithFavor = tFavor + tReset + tN1;
 

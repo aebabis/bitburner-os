@@ -9,7 +9,7 @@ import {
   type Goal,
 } from '../home/lib/goals/nodes.js';
 import { isRepBound, buildFactionGoalTree } from '../home/lib/goals/tree.js';
-import { computeRepReq, computeAugCost } from '../home/lib/aug-select.js';
+import { computeRepReq, computeAugCost, computeResetOverhead } from '../home/lib/aug-select.js';
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 const mockNs = { gang: { inGang: () => false } } as any;
@@ -77,22 +77,23 @@ describe('timeToComplete', () => {
 describe('buildFactionGoalTree', () => {
   it('returns null when batch is empty', () => {
     // All augs already owned → findOptimalBatch returns [] → buildFactionGoalTree returns null.
+    const staticData = {
+      resetInfo: mockResetInfo,
+      factionRequirements: { TestFaction: [] },
+      factionAugmentations: { TestFaction: ['OwnedAug'] },
+      augmentationRepReqs: { OwnedAug: 0 },
+      augmentationPrices: { OwnedAug: 0 },
+      augmentationPrereqs: {},
+      factionFavor: {},
+      installedAugmentations: ['OwnedAug'],
+    } as any;
     const tree = buildFactionGoalTree(mockNs, 'TestFaction' as FactionName, {
       player: {
         factions: ['TestFaction' as FactionName],
         skills: {},
         location: 'Sector-12',
       } as any,
-      staticData: {
-        resetInfo: mockResetInfo,
-        factionRequirements: { TestFaction: [] },
-        factionAugmentations: { TestFaction: ['OwnedAug'] },
-        augmentationRepReqs: { OwnedAug: 0 },
-        augmentationPrices: { OwnedAug: 0 },
-        augmentationPrereqs: {},
-        factionFavor: {},
-        installedAugmentations: ['OwnedAug'],
-      } as any,
+      staticData,
       factionRep: {},
       queuedAugmentations: ['OwnedAug'],
       ownedAugs: ['OwnedAug'],
@@ -100,6 +101,7 @@ describe('buildFactionGoalTree', () => {
       totalIncome: 0,
       formulas: mockFormulas as any,
       karma: 0,
+      overhead: computeResetOverhead(staticData),
     });
     assert.equal(tree, null);
   });
@@ -108,29 +110,31 @@ describe('buildFactionGoalTree', () => {
     // money = 2×AUG_PRICE covers the correct cost (1.9×) but not the buggy cost (1.9²×),
     // so moneyGoal.isDone() distinguishes the two. It also keeps money >= resetCost so
     // the early-install path doesn't trigger, letting us inspect the moneyGoal directly.
+    const staticData = {
+      resetInfo: mockResetInfo,
+      factionRequirements: {},
+      factionAugmentations: { TestFaction: ['TargetAug'] },
+      augmentationStats: { TargetAug: { hacking: 1.5 } },
+      augmentationRepReqs: { TargetAug: 0 },
+      augmentationPrices: { TargetAug: AUG_PRICE },
+      augmentationPrereqs: {},
+      installedAugmentations: ['InstalledAug'], // 1 installed
+    } as any;
     const tree = buildFactionGoalTree(mockNs, 'TestFaction' as FactionName, {
       player: {
         factions: ['TestFaction' as FactionName],
         skills: {},
         location: 'Sector-12',
       } as any,
-      staticData: {
-        resetInfo: mockResetInfo,
-        factionRequirements: {},
-        factionAugmentations: { TestFaction: ['TargetAug'] },
-        augmentationStats: { TargetAug: { hacking: 1.5 } },
-        augmentationRepReqs: { TargetAug: 0 },
-        augmentationPrices: { TargetAug: AUG_PRICE },
-        augmentationPrereqs: {},
-        installedAugmentations: ['InstalledAug'], // 1 installed
-      } as any,
+      staticData,
       factionRep: { TestFaction: 0 },
-      purchasedAugmentations: ['InstalledAug', 'QueuedAug'], // 1 installed + 1 queued
+      queuedAugmentations: ['QueuedAug'], // 1 installed + 1 queued
       ownedAugs: ['InstalledAug', 'QueuedAug'],
       money: AUG_PRICE * 2,
       totalIncome: 1,
       formulas: mockFormulas as any,
       karma: 0,
+      overhead: computeResetOverhead(staticData),
     });
 
     assert.ok(tree);
@@ -140,27 +144,29 @@ describe('buildFactionGoalTree', () => {
     assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
   });
   it('join prereqs appear as deps of the join goal', () => {
+    const staticData = {
+      resetInfo: mockResetInfo,
+      factionRequirements: {
+        TestFaction: [{ type: 'skills', skills: { hacking: 100 } }],
+      },
+      factionAugmentations: { TestFaction: ['TestAug'] },
+      augmentationStats: { TestAug: { hacking: 1.5 } },
+      augmentationRepReqs: { TestAug: 0 },
+      augmentationPrices: { TestAug: 0 },
+      augmentationPrereqs: {},
+      installedAugmentations: [],
+    } as any;
     const tree = buildFactionGoalTree(mockNs, 'TestFaction' as FactionName, {
       player: { factions: [], skills: { hacking: 1 }, location: 'Sector-12' } as any,
-      staticData: {
-        resetInfo: mockResetInfo,
-        factionRequirements: {
-          TestFaction: [{ type: 'skills', skills: { hacking: 100 } }],
-        },
-        factionAugmentations: { TestFaction: ['TestAug'] },
-        augmentationStats: { TestAug: { hacking: 1.5 } },
-        augmentationRepReqs: { TestAug: 0 },
-        augmentationPrices: { TestAug: 0 },
-        augmentationPrereqs: {},
-        installedAugmentations: [],
-      } as any,
+      staticData,
       factionRep: {},
-      purchasedAugmentations: [],
+      queuedAugmentations: [],
       ownedAugs: [],
       money: 0,
       totalIncome: 0,
       formulas: mockFormulas as any,
       karma: 0,
+      overhead: computeResetOverhead(staticData),
     });
     assert.ok(tree);
     const joinGoal = tree.deps.flatMap((g: any) => g.prerequisites('FACTION_JOIN'))[0];
@@ -171,35 +177,39 @@ describe('buildFactionGoalTree', () => {
     );
   });
   it('rep goal requirement equals max rep requirement across batch', () => {
+    const staticData = {
+      resetInfo: mockResetInfo,
+      factionRequirements: {},
+      factionAugmentations: { TestFaction: ['AugA', 'AugB', 'AugC'] },
+      // Equal value, tightly-spaced repReqs so the 3-aug batch beats any subset:
+      // utility([A,B,C])=3v/(3k+7200) > utility([A,B])=2v/(2k+7200) > utility([A])=v/(1k+7200)
+      augmentationStats: {
+        AugA: { hacking: 1.5 },
+        AugB: { hacking: 1.5 },
+        AugC: { hacking: 1.5 },
+      },
+      augmentationRepReqs: { AugA: 1000, AugB: 2000, AugC: 3000 },
+      augmentationPrices: { AugA: 0, AugB: 0, AugC: 0 },
+      augmentationPrereqs: {},
+      installedAugmentations: [],
+    } as any;
+    // installedAugmentations.length === 0 → computeResetOverhead === OVERHEAD_BASE === 7200,
+    // matching the utility math in the comment above.
     const tree = buildFactionGoalTree(mockNs, 'TestFaction' as FactionName, {
       player: {
         factions: ['TestFaction' as FactionName],
         skills: { hacking: 195 },
         location: 'Sector-12',
       } as any,
-      staticData: {
-        resetInfo: mockResetInfo,
-        factionRequirements: {},
-        factionAugmentations: { TestFaction: ['AugA', 'AugB', 'AugC'] },
-        // Equal value, tightly-spaced repReqs so the 3-aug batch beats any subset:
-        // utility([A,B,C])=3v/(3k+7200) > utility([A,B])=2v/(2k+7200) > utility([A])=v/(1k+7200)
-        augmentationStats: {
-          AugA: { hacking: 1.5 },
-          AugB: { hacking: 1.5 },
-          AugC: { hacking: 1.5 },
-        },
-        augmentationRepReqs: { AugA: 1000, AugB: 2000, AugC: 3000 },
-        augmentationPrices: { AugA: 0, AugB: 0, AugC: 0 },
-        augmentationPrereqs: {},
-        installedAugmentations: [],
-      } as any,
+      staticData,
       factionRep: {},
-      purchasedAugmentations: [],
+      queuedAugmentations: [],
       ownedAugs: [],
       money: 0,
       totalIncome: 0,
       formulas: mockFormulas as any,
       karma: 0,
+      overhead: computeResetOverhead(staticData),
     });
     assert.ok(tree);
     const repGoal = tree.deps.find((g: any) => g.type === 'FACTION_REP')!;
@@ -209,13 +219,8 @@ describe('buildFactionGoalTree', () => {
   // Shared setup for utility/value tests: aug A with hacking:1.5 → value=(1.5-1)*10=5.0
   // repRate=N requires hacking = N * 195: factionGains(player,'hacking',0).reputation = hacking/975,
   // effectiveRepRate = reputation * 5 = N when hacking = N * 195.
-  const valueTestData = (repRate: number) => ({
-    player: {
-      factions: ['F' as FactionName],
-      skills: { hacking: repRate * 195 },
-      location: 'Sector-12',
-    } as any,
-    staticData: {
+  const valueTestData = (repRate: number) => {
+    const staticData = {
       resetInfo: mockResetInfo,
       factionRequirements: {},
       factionAugmentations: { F: ['A'] },
@@ -224,15 +229,24 @@ describe('buildFactionGoalTree', () => {
       augmentationPrices: { A: 0 },
       augmentationPrereqs: {},
       installedAugmentations: [],
-    } as any,
-    factionRep: {},
-    purchasedAugmentations: [],
-    ownedAugs: [],
-    money: 0,
-    totalIncome: 0,
-    formulas: mockFormulas as any,
-    karma: 0,
-  });
+    } as any;
+    return {
+      player: {
+        factions: ['F' as FactionName],
+        skills: { hacking: repRate * 195 },
+        location: 'Sector-12',
+      } as any,
+      staticData,
+      factionRep: {},
+      queuedAugmentations: [],
+      ownedAugs: [],
+      money: 0,
+      totalIncome: 0,
+      formulas: mockFormulas as any,
+      karma: 0,
+      overhead: computeResetOverhead(staticData),
+    };
+  };
 
   it('utility returns value / (eta + overhead)', () => {
     const tree = buildFactionGoalTree(mockNs, 'F' as FactionName, valueTestData(1));
@@ -370,13 +384,8 @@ describe('getMockFormulas reputation', () => {
 
 describe('buildFactionGoalTree path 3 (donation)', () => {
   // canDonate = true when factionFavor >= favorToDonate
-  const donationData = () => ({
-    player: {
-      factions: ['F' as FactionName],
-      skills: { hacking: 200 },
-      location: 'Sector-12',
-    } as any,
-    staticData: {
+  const donationData = () => {
+    const staticData = {
       resetInfo: mockResetInfo,
       factionRequirements: {},
       factionAugmentations: { F: ['A'] },
@@ -387,16 +396,25 @@ describe('buildFactionGoalTree path 3 (donation)', () => {
       installedAugmentations: [],
       factionFavor: { F: 150 },
       favorToDonate: 150,
-    } as any,
-    factionRep: { F: 0 },
-    purchasedAugmentations: [],
-    ownedAugs: [],
-    money: 0,
-    estimatedStockValue: 0,
-    totalIncome: 1,
-    formulas: mockFormulas as any,
-    karma: 0,
-  });
+    } as any;
+    return {
+      player: {
+        factions: ['F' as FactionName],
+        skills: { hacking: 200 },
+        location: 'Sector-12',
+      } as any,
+      staticData,
+      factionRep: { F: 0 },
+      queuedAugmentations: [],
+      ownedAugs: [],
+      money: 0,
+      estimatedStockValue: 0,
+      totalIncome: 1,
+      formulas: mockFormulas as any,
+      karma: 0,
+      overhead: computeResetOverhead(staticData),
+    };
+  };
 
   it('produces a BUY_REP action when faction has enough favor', () => {
     const tree = buildFactionGoalTree(mockNs, 'F' as FactionName, donationData());

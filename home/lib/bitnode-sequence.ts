@@ -31,7 +31,13 @@ const BN_SEQUENCE: [number, number][] = [
   [5, 3],
 
   [15, 3],
-  // [9, 1],
+
+  [12, 15],
+  [11, 1],
+  [11, 2],
+  [11, 3],
+
+  [9, 3],
 ];
 
 export const getNextBitnode = (resetInfo: ResetInfo): [number, number] => {

@@ -5,14 +5,38 @@ import { nmap, saveHostnames } from '../lib/nmap';
 import { STR } from '../lib/colors';
 import { AUG_LOG_FILE } from '../etc/config';
 
+const getStartingServerCost = (ns: NS) => {
+  if (!ns.fileExists('Formulas.exe', 'home')) {
+    return 69e9;
+  }
+  const mults = ns.getHacknetMultipliers();
+  const { hacknetServers } = ns.formulas;
+  return (
+    hacknetServers.hacknetServerCost(1, mults.purchaseCost) +
+    hacknetServers.levelUpgradeCost(1, 99, mults.levelCost) +
+    hacknetServers.coreUpgradeCost(1, 9, mults.coreCost) +
+    hacknetServers.cacheUpgradeCost(1, 4)
+  );
+};
+
 export async function main(ns: NS) {
   tprint(ns)(STR.BOLD + 'GENERATING STATIC DATA');
+
+  const resetInfo = ns.getResetInfo();
+  const isFirstInstallCycle = resetInfo.lastAugReset === resetInfo.lastNodeReset;
 
   tprint(ns)(STR + '  Precalculating static server costs');
   const purchasedServerMaxRam = ns.cloud.getRamLimit();
   const purchasedServerCosts: Record<number, number> = {};
   for (let ram = purchasedServerMaxRam; ram >= 2; ram /= 2)
     purchasedServerCosts[ram] = ns.cloud.getServerCost(ram);
+
+  let startingServerValue = 0;
+  const getsFreeHacknetServers = resetInfo.currentNode === 9 || resetInfo.ownedSF.get(9) === 3;
+  if (getsFreeHacknetServers && isFirstInstallCycle) {
+    tprint(ns)(STR + '  Calculating value of free hacknet server');
+    startingServerValue = getStartingServerCost(ns);
+  }
 
   tprint(ns)(STR + '  Storing script RAM costs');
   const scriptRam: Record<string, number> = {};
@@ -22,8 +46,7 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Caching network map');
   saveHostnames(ns);
 
-  const resetInfo = ns.getResetInfo();
-  if (resetInfo.lastAugReset === resetInfo.lastNodeReset) ns.rm(AUG_LOG_FILE, 'home');
+  if (isFirstInstallCycle) ns.rm(AUG_LOG_FILE, 'home');
 
   const serverBackdoorRequirements = nmap(ns).map((hostname) => ({
     hostname,
@@ -39,6 +62,7 @@ export async function main(ns: NS) {
     purchasedServerLimit: ns.cloud.getServerLimit(),
     purchasedServerMaxRam,
     purchasedServerCosts,
+    startingServerValue,
     favorToDonate: ns.getFavorToDonate(),
   });
 

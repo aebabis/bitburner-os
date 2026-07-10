@@ -59,6 +59,7 @@ export type StaticData = {
   bitNodeMultipliers: { HacknetNodeMoney: number | null };
   hacknetMultipliers: HacknetMultipliers;
   favorToDonate: number;
+  startingServerValue: number;
 
   materialData?: Record<CorpMaterialName, CorpMaterialConstantData>;
   industryData?: Record<CorpIndustryName, CorpIndustryData>;

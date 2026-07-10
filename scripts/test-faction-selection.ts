@@ -1,7 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
+import {
+  getAccessibleFactions,
+  findOptimalBatch,
+  computeResetOverhead,
+  MAX_AUGS,
+} from '../home/lib/aug-select.js';
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 const NEUROFLUX = 'NeuroFlux Governor';
@@ -37,6 +42,7 @@ const selectAugmentations = (
 
   const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
   const batchOpts = { moneyRate, repRate };
+  const overhead = computeResetOverhead(staticData);
 
   let bestFaction: FactionName | null = null,
     bestUtility = -Infinity;
@@ -50,6 +56,7 @@ const selectAugmentations = (
       formulas,
       factionRep,
       ownedAugs,
+      overhead,
       batchOpts,
     );
     if (utility > bestUtility) {
@@ -66,6 +73,7 @@ const selectAugmentations = (
     formulas,
     factionRep,
     ownedAugs,
+    overhead,
     batchOpts,
   );
   const nfCount = batch.filter((a) => a === NEUROFLUX).length;

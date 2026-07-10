@@ -1,6 +1,6 @@
 import { getStaticData, getPlayerData } from '../lib/data-store';
 import { table } from '../lib/table';
-import { augValueFromStats, findOptimalBatch } from '../lib/aug-select';
+import { augValueFromStats, findOptimalBatch, computeResetOverhead } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
 import { formulas as getFormulas } from '../lib/formulas';
 import { getIncome } from '../lib/query-service';
@@ -177,6 +177,7 @@ export async function main(ns: NS) {
         const formulas = getFormulas(ns);
         const ownedAugs = [...(staticData.installedAugmentations ?? []), ...queuedAugmentations];
         const moneyRate = totalIncome || Infinity;
+        const overhead = computeResetOverhead(staticData);
         const planData = {
           player,
           staticData,
@@ -187,6 +188,7 @@ export async function main(ns: NS) {
           totalIncome,
           formulas,
           karma: ns.heart.break(),
+          overhead,
         };
 
         const rows = (player.factions ?? [])
@@ -198,6 +200,7 @@ export async function main(ns: NS) {
               formulas,
               factionRep,
               ownedAugs,
+              overhead,
               { moneyRate },
             );
             const nfCount = batch.filter((a) => a === NEUROFLUX).length;

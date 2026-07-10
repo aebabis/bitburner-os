@@ -1,7 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { staticData } from './data/BN4-mock.js';
-import { getAccessibleFactions, findOptimalBatch, MAX_AUGS } from '../home/lib/aug-select.js';
+import {
+  getAccessibleFactions,
+  findOptimalBatch,
+  computeResetOverhead,
+  MAX_AUGS,
+} from '../home/lib/aug-select.js';
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 // Realistic early BN4 rates: modest hacking income, typical faction work rep gain.
@@ -23,6 +28,7 @@ const select = (
   const player = { skills: { hacking: 585 }, factions: [] } as any;
   const formulas = getMockFormulas(data as any);
   const batchOpts = { moneyRate };
+  const overhead = computeResetOverhead(data as any);
   const stillNeeds = (aug: string) => !owned.includes(aug);
 
   let bestFaction: FactionName | null = null,
@@ -37,6 +43,7 @@ const select = (
       formulas as any,
       factionRep,
       owned,
+      overhead,
       batchOpts,
     );
     if (utility > bestUtility) {
@@ -53,6 +60,7 @@ const select = (
     formulas as any,
     factionRep,
     owned,
+    overhead,
     batchOpts,
   );
   const augmentationPrices = data.augmentationPrices as Record<string, number>;
