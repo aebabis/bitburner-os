@@ -45,6 +45,15 @@ export const DEFAULT_AUG_WEIGHTS: Record<keyof Multipliers, number> = {
   bladeburner_success_chance: 0,
 };
 
+const BN9_WEIGHTS = {
+  ...DEFAULT_AUG_WEIGHTS,
+  hacknet_node_money: 20,
+  hacknet_node_purchase_cost: 20,
+  hacknet_node_ram_cost: 20,
+  hacknet_node_core_cost: 20,
+  hacknet_node_level_cost: 20,
+};
+
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
   'CashRoot Starter Kit': 0.5,
@@ -56,6 +65,8 @@ type UnityAug = keyof typeof UNITY_AUGS;
 const getAugWeights = (resetInfo: ResetInfo) => {
   if ([6, 7].includes(resetInfo.currentNode)) {
     return BN6_WEIGHTS;
+  } else if (resetInfo.currentNode === 9) {
+    return BN9_WEIGHTS;
   } else {
     return DEFAULT_AUG_WEIGHTS;
   }
