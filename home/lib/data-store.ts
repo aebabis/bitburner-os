@@ -69,7 +69,6 @@ export type StaticData = {
   augmentationRepReqs: Record<string, number>;
   augmentationPrereqs: Record<string, string[]>;
   augmentationStats: Record<string, Multipliers>;
-  purchasedAugmentations?: string[];
   factionRequirements: Record<FactionName, PlayerRequirement[]>;
   factionAugmentations: Record<FactionName, string[]>;
   factionWorkTypes: Record<FactionName, FactionWorkType[]>;
@@ -87,8 +86,13 @@ export type PlayerData = {
   currentWork?: Task | null;
   homeRamUpgradeCost?: number;
   isPlayerUsingTerminal?: boolean;
-  /** Augmentations purchased this run (and not yet installed) */
-  purchasedAugmentations: string[];
+  queuedAugmentations?: string[];
+
+  homeRam: number;
+  wseAccount: boolean;
+  accessTixApi: boolean;
+  access4SData: boolean;
+  access4SDataApi: boolean;
 };
 export const getPlayerData = (ns: NS): PlayerData => readData(ns, PORT_PLAYER_DATA) || {};
 export const putPlayerData = (ns: NS, data: Partial<PlayerData>) =>

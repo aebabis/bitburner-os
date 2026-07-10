@@ -4,7 +4,7 @@ import { AUG_LOG_FILE } from '../../../etc/config';
 import { inPlace } from '../../../lib/in-place';
 import { tprint } from '../../../boot/util';
 import { STR } from '../../../lib/colors';
-import { $getPurchasedAugmentations } from '../../../lib/sing.rip';
+import { $getQueuedAugmentations } from '../../../lib/sing.rip';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -115,9 +115,9 @@ export async function main(ns: NS) {
     print('Buying favor and NFG from highest favor faction: ' + donationFaction);
     const currentNfgRepBase = await $.singularity['getAugmentationRepReq'](NEUROFLUX);
     do {
-      const purchasedAugs = await $getPurchasedAugmentations(ns);
-      print('Purchased augs: ' + purchasedAugs);
-      const purchasedNfg = purchasedAugs.filter((name) => name === NEUROFLUX);
+      const queuedAugmentations = await $getQueuedAugmentations(ns);
+      print('Purchased augs: ' + queuedAugmentations);
+      const purchasedNfg = queuedAugmentations.filter((name) => name === NEUROFLUX);
       const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
       print('Next Rep: ' + repOfNextNeuroflux);
       const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
@@ -144,12 +144,12 @@ export async function main(ns: NS) {
     }
   }
 
-  const purchasedAugs = await $getPurchasedAugmentations(ns);
-  print(purchasedAugs.join('\n'));
+  const queuedAugmentations = await $getQueuedAugmentations(ns);
+  print(queuedAugmentations.join('\n'));
 
   ns.write('/log/last-reset.txt', ns.read(LOGFILE), 'w');
   ns.write(AUG_LOG_FILE, `${new Date().toLocaleDateString()}----------------------------\n`, 'a');
-  ns.write(AUG_LOG_FILE, purchasedAugs.join('\n') + '\n', 'a');
+  ns.write(AUG_LOG_FILE, queuedAugmentations.join('\n') + '\n', 'a');
 
   // Start all over
   await inPlace(ns).singularity['softReset']('start.ts');

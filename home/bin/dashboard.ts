@@ -42,7 +42,8 @@ const formatTime = (seconds: number | null, emptyZero = false) => {
 
 const getRunStats = (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
-  const { city, hp, numPeopleKilled, money } = getPlayerData(ns).player;
+  const { player, accessTixApi } = getPlayerData(ns);
+  const { city, hp, numPeopleKilled, money } = player;
   const { onlineRunningTime = 0 } = ns.getRunningScript('/bin/planner.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
 
@@ -52,7 +53,6 @@ const getRunStats = (ns: NS) => {
     return Math.min(prevSF + 1, maxSF);
   };
 
-  const hasTix = ns.stock.hasTixApiAccess();
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${resetInfo.currentNode}`;
   const uptime = formatTime(onlineRunningTime);
@@ -61,7 +61,7 @@ const getRunStats = (ns: NS) => {
   const bnTime = formatTime((Date.now() - resetInfo.lastNodeReset) / 1000);
   const augTime = formatTime(augRunningTime);
   const time = hasFullUptime ? uptime : uptime + '/' + augTime;
-  const stock = hasTix
+  const stock = accessTixApi
     ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padEnd(6))
     : DIM('  TIX'.padEnd(6));
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);

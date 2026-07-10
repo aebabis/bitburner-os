@@ -5,6 +5,7 @@ import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
 import { execOnBestServer } from '../lib/ram-router';
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
+import { makePlayerData } from '../lib/player-data';
 
 const player = (ns: NS) => ns.getPlayer();
 
@@ -77,7 +78,7 @@ const go = async (ns: NS) => {
 
   while (true) {
     await handleExecRequests();
-    putPlayerData(ns, { player: player(ns) });
+    putPlayerData(ns, { player: player(ns), ...makePlayerData(ns) });
     for (const service of services) {
       try {
         updateTasks();

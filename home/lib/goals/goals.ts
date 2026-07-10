@@ -27,8 +27,10 @@ export const getGoals = (ns: NS): Goal => {
   const {
     player,
     factionRep,
+    homeRam,
     homeRamUpgradeCost = 0,
-    purchasedAugmentations = [],
+    access4SDataApi,
+    queuedAugmentations = [],
   } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -37,12 +39,12 @@ export const getGoals = (ns: NS): Goal => {
   const { totalIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns) as unknown as Formulas;
   const karma = ns.heart.break();
-  const ownedAugs = [...staticData.installedAugmentations, ...purchasedAugmentations];
+  const ownedAugs = [...staticData.installedAugmentations, ...queuedAugmentations];
   const planData = {
     player,
     staticData,
     factionRep: factionRep ?? {},
-    purchasedAugmentations,
+    queuedAugmentations,
     ownedAugs,
     money,
     estimatedStockValue,
@@ -71,8 +73,7 @@ export const getGoals = (ns: NS): Goal => {
     const bootRam = staticData.scriptRam['/boot/data4.ts'];
     const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
     const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
-    const currentRam = ns.getServerMaxRam('home');
-    return rebootGoal(homeRamGoal(currentRam, targetRam, money));
+    return rebootGoal(homeRamGoal(homeRam, targetRam, money));
   }
 
   const inSlumSnakes = player.factions?.includes('Slum Snakes');
@@ -114,7 +115,7 @@ export const getGoals = (ns: NS): Goal => {
     }
   }
 
-  if (currentNode === 8 && !ns.stock.has4SDataTixApi()) {
+  if (currentNode === 8 && !access4SDataApi) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
     return reevaluateGoal(moneyPrereqGoal(target, estimatedStockValue + money, totalIncome));
   }
@@ -124,7 +125,7 @@ export const getGoals = (ns: NS): Goal => {
     const CHARISMA_TARGETS = [300, 600, 1500, 2500, 3000, 3500, 4000, 4000];
     const isLabyAug = (aug: string) => aug.match(/^The [a-zA-Z0-9]+ of [a-zA-Z]+/);
     const installedLabyAugs = [...installedAugs.keys()].filter(isLabyAug);
-    const hasQueuedLabyAug = purchasedAugmentations.some(isLabyAug);
+    const hasQueuedLabyAug = queuedAugmentations.some(isLabyAug);
     const currentCharismaTarget = CHARISMA_TARGETS[installedLabyAugs.length];
     if (!hasQueuedLabyAug && player.skills.charisma >= currentCharismaTarget) {
       return reevaluateGoal(labyrinthGoal(installedLabyAugs.length));
@@ -153,8 +154,7 @@ export const getGoals = (ns: NS): Goal => {
     const bootRam = staticData.scriptRam['/boot/data4.ts'];
     const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
     const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
-    const currentRam = ns.getServerMaxRam('home');
-    return rebootGoal(homeRamGoal(currentRam, targetRam, money));
+    return rebootGoal(homeRamGoal(homeRam, targetRam, money));
   }
 };
 

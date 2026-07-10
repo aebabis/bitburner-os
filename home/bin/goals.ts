@@ -16,8 +16,8 @@ const getAugTableData = (ns: NS) => {
     installedAugmentations,
     resetInfo,
   } = getStaticData(ns);
-  const { purchasedAugmentations = [] } = getPlayerData(ns);
-  const alreadyHave = new Set([...installedAugmentations, ...purchasedAugmentations]);
+  const { queuedAugmentations = [] } = getPlayerData(ns);
+  const alreadyHave = new Set([...installedAugmentations, ...queuedAugmentations]);
   const installedNFCount = resetInfo.ownedAugs?.get(NEUROFLUX) ?? 0;
   return {
     augmentations,
@@ -172,16 +172,16 @@ export async function main(ns: NS) {
       while (true) {
         const staticData = getStaticData(ns);
         const { augmentationStats = {} } = staticData;
-        const { player, factionRep = {}, purchasedAugmentations = [] } = getPlayerData(ns);
+        const { player, factionRep = {}, queuedAugmentations = [] } = getPlayerData(ns);
         const { totalIncome = 0 } = getIncome(ns);
         const formulas = getFormulas(ns);
-        const ownedAugs = [...(staticData.installedAugmentations ?? []), ...purchasedAugmentations];
+        const ownedAugs = [...(staticData.installedAugmentations ?? []), ...queuedAugmentations];
         const moneyRate = totalIncome || Infinity;
         const planData = {
           player,
           staticData,
           factionRep,
-          purchasedAugmentations,
+          queuedAugmentations,
           ownedAugs,
           money: player.money ?? 0,
           totalIncome,

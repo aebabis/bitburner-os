@@ -187,7 +187,7 @@ export const findOptimalBatch = (
     ? (formulas.reputation.donationForRep(1, player) ?? Infinity)
     : Infinity;
 
-  // installedAugs (not purchasedAugmentations) determine the player's current stat multipliers.
+  // installedAugs determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
 
   const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);

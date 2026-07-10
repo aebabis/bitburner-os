@@ -54,17 +54,17 @@ const $getFactionRep = (ns: NS, port: number) =>
     return factionRep;
   })();
 
-export const $getPurchasedAugmentations = (ns: NS, port = ns.pid) =>
+export const $getQueuedAugmentations = (ns: NS, port = ns.pid) =>
   runInPlace(
     ns,
     port,
   )(() => {
     const installedAugmentations = ns.singularity['getOwnedAugmentations'](false);
     const ownedAugmentations = ns.singularity['getOwnedAugmentations'](true);
-    const purchasedAugmentations = ownedAugmentations.slice();
+    const queuedAugmentations = ownedAugmentations.slice();
     for (const aug of installedAugmentations)
-      purchasedAugmentations.splice(purchasedAugmentations.indexOf(aug), 1);
-    return purchasedAugmentations;
+      queuedAugmentations.splice(queuedAugmentations.indexOf(aug), 1);
+    return queuedAugmentations;
   })();
 
 const TOR_PORT = 704 * 6047;
@@ -122,9 +122,9 @@ export const $sing =
     await $joinFactions(ns, port)(factionTargets);
 
     const factionRep = await $getFactionRep(ns, port);
-    const purchasedAugmentations = await $getPurchasedAugmentations(ns, port);
+    const queuedAugmentations = await $getQueuedAugmentations(ns, port);
 
-    const dynamicSingData = { factionRep, purchasedAugmentations };
+    const dynamicSingData = { factionRep, queuedAugmentations };
     putPlayerData(ns, dynamicSingData);
     return dynamicSingData;
   };

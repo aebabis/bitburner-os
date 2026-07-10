@@ -7,7 +7,7 @@
 - Storing data in `globalThis` and using non-NS APIs are okay for the purposes of visualizers and profiling tools. The are to be avoided for any code that makes in-game decisions. This is why the scheduler and thief use NS ports to coordinate. The only exception is the "stalker" service which sets player focus when the human is creating browser Events.
 
 ## Vocabulary
-- The game uses "purchasedAugmentations" to refer to both installed augs and augs purchased during the current run. The OS uses the term `installedAugmentations` for augmentations the player started an install cycle with; `purchasedAugmentations` should only refer to augmentations purchased during the current install cycle (`ns.getPurchasedAugmentations(true)`). `ownedAugmentations` refers to all augmentations purchased whether installed or not (the union of installed and purchased).
+- The game uses "purchasedAugmentations" to refer to both installed augs and augs purchased during the current run. The OS uses the term `installedAugmentations` for augmentations the player started an install cycle with and `queuedAugmentations` to refer to augmentations purchased during the current install cycle. `ownedAugmentations` refers to all augmentations purchased whether installed or not (the union of installed and purchased).
 
 ## Service Manager
 - Services carry two predicates: `isViable()` (boot-time constant, controls UI visibility and which services the planner tracks) and `condition()` (runtime, controls whether a viable service should currently be running). `getAllServices()` returns every service; the planner filters by `.isViable()`.

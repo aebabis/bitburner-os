@@ -94,7 +94,7 @@ describe('buildFactionGoalTree', () => {
         installedAugmentations: ['OwnedAug'],
       } as any,
       factionRep: {},
-      purchasedAugmentations: ['OwnedAug'],
+      queuedAugmentations: ['OwnedAug'],
       ownedAugs: ['OwnedAug'],
       money: 0,
       totalIncome: 0,

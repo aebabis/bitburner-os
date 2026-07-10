@@ -206,7 +206,7 @@ interface FactionGoalTreeProps {
   player: Player;
   staticData: StaticData;
   factionRep: Record<string, number>;
-  purchasedAugmentations: string[];
+  queuedAugmentations: string[];
   ownedAugs: string[];
   money: number;
   estimatedStockValue?: number;
@@ -221,7 +221,7 @@ export const buildFactionGoalTree = (
     player,
     staticData,
     factionRep,
-    purchasedAugmentations,
+    queuedAugmentations,
     ownedAugs,
     money,
     estimatedStockValue = 0,
@@ -265,8 +265,7 @@ export const buildFactionGoalTree = (
     formulas,
   );
 
-  const installedSet = new Set(staticData.installedAugmentations);
-  const numQueued = purchasedAugmentations.filter((aug) => !installedSet.has(aug)).length;
+  const numQueued = queuedAugmentations.length;
   const costToAug = computeAugCost(augs, staticData, numQueued);
   const treeValue = augs.reduce((s, aug) => s + augValue(aug), 0);
 
@@ -275,9 +274,8 @@ export const buildFactionGoalTree = (
 
   // Path 1: Early install — existing queued augs are cheaper to install now than waiting
   if (shouldEarlyInstall(numQueued, augs.length, costToAug, liquidAssets, totalIncome)) {
-    const queuedAugs = purchasedAugmentations.filter((aug) => !installedSet.has(aug));
-    const earlyValue = queuedAugs.reduce((s, aug) => s + augValue(aug), 0);
-    return plan([], queuedAugs.map(buyAugAction), (overhead) =>
+    const earlyValue = queuedAugmentations.reduce((s, aug) => s + augValue(aug), 0);
+    return plan([], queuedAugmentations.map(buyAugAction), (overhead) =>
       earlyValue > 0 ? earlyValue / overhead : 0,
     );
   }
