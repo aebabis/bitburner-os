@@ -10,6 +10,12 @@ type HashrateUpgrade = {
 const hashGainRate = (ns: NS) => (stats: NodeStats) =>
   ns.formulas.hacknetServers.hashGainRate(stats.level, stats.ramUsed ?? 0, stats.ram, stats.cores);
 
+const getNodes = (ns: NS) =>
+  new Array(ns.hacknet.numNodes())
+    .fill(0)
+    .map((_, i) => i)
+    .map(ns.hacknet.getNodeStats);
+
 const upgrade =
   (ns: NS) => (i: number, type: HashrateUpgrade['type'], cost: number, currentStats: NodeStats) => {
     const newStats = { ...currentStats };
@@ -22,10 +28,7 @@ const upgrade =
   };
 
 const getNextUpgrade = (ns: NS) => {
-  const nodes = new Array(ns.hacknet.numNodes())
-    .fill(0)
-    .map((_, i) => i)
-    .map(ns.hacknet.getNodeStats);
+  const nodes = getNodes(ns);
   if (nodes.length === 0) return null;
   return nodes
     .flatMap((server, i) => [
@@ -68,6 +71,31 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
   }
 };
 
+const getUpgradeDetails = (ns: NS, upgrade: HacknetServerHashUpgrade) => {
+  const currentLevel = ns.hacknet.getHashUpgradeLevel(upgrade);
+  const cost = ns.formulas.hacknetServers.hashUpgradeCost(upgrade, currentLevel + 1);
+  return { upgrade, currentLevel, cost };
+};
+
+const getTargetUpgrade = (ns: NS) => {
+  const goals = getGoals(ns);
+  if (isRepBound(ns, goals)) {
+    return getUpgradeDetails(ns, 'Improve Studying');
+  } else {
+    return getUpgradeDetails(ns, 'Sell for Money');
+  }
+};
+
+const getHashCapacityUpgrade = (ns: NS, ttc: number) => {
+  const nodes = getNodes(ns);
+  const totalHashGain = nodes.map(hashGainRate(ns)).reduce((a, b) => a + b, 0);
+  const maxHashCapNeeded = ttc * totalHashGain;
+  return nodes
+    .map((node, i) => ({ i, node, cost: ns.hacknet.getCacheUpgradeCost(i) }))
+    .filter(({ node }) => node.hashCapacity! < maxHashCapNeeded)
+    .reduce((a, b) => (a.cost < b.cost ? a : b));
+};
+
 export async function main(ns: NS) {
   ns.ui.openTail();
 
@@ -76,12 +104,19 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
     const goals = getGoals(ns);
-    const ttc = goals.timeToComplete();
-    if (isRepBound(ns, goals)) {
-      while (ns.hacknet.spendHashes('Improve Studying'));
-    } else {
-      // getRunningScript doesn't seem to track this
-      while (ns.hacknet.spendHashes('Sell for Money')) totalEarnings += 1e6;
+    const ttc = goals.timeToComplete() || Infinity;
+    const { upgrade, cost } = getTargetUpgrade(ns);
+    if (cost > ns.hacknet.hashCapacity()) {
+      const upgradedNeeded = getHashCapacityUpgrade(ns, ttc);
+      while (
+        upgradedNeeded.cost > ns.getServerMoneyAvailable('home') &&
+        ns.hacknet.spendHashes('Sell for Money')
+      )
+        totalEarnings += 1e6;
+      ns.hacknet.upgradeCache(upgradedNeeded.i);
+    }
+    while (ns.hacknet.spendHashes(upgrade)) {
+      if (upgrade === 'Sell for Money') totalEarnings += 1e6;
     }
     const { onlineRunningTime, offlineRunningTime } = ns.getRunningScript()!;
     const hacknetIncome = totalEarnings / (onlineRunningTime + offlineRunningTime);
