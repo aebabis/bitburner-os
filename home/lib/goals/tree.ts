@@ -37,27 +37,39 @@ const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => nu
 // Port program costs in purchase order; used to estimate backdoor access cost.
 // TODO: Exclude programs the player already owns; consider fetching costs via ns.
 const PORT_PROGRAM_COSTS = [500e3, 1500e3, 5e6, 30e6, 250e6];
-const EXP_PER_SECOND = 10;
+
+const GymStats = {
+  strength: 'str',
+  defense: 'def',
+  dexterity: 'dex',
+  agility: 'agi',
+} as const;
+const GymExp = {
+  strength: 'strExp',
+  defense: 'defExp',
+  dexterity: 'dexExp',
+  agility: 'agiExp',
+} as const;
 
 const skillTrainingTime = (
+  player: Player,
+  stat: 'hacking' | 'strength' | 'defense' | 'dexterity' | 'agility',
   requirement: number,
-  currentLevel: number,
-  stat: string,
-  installedAugs: string[],
-  augmentationStats: Record<string, Multipliers>,
-  formulas: Formulas | null,
+  formulas: Formulas,
 ) => {
-  if (!formulas) return null;
-  let levelMult = 1,
-    expMult = 1;
-  for (const aug of installedAugs) {
-    const s = augmentationStats?.[aug] as unknown as Record<string, number> | undefined;
-    if (s?.[stat] != null) levelMult *= s[stat];
-    if (s?.[`${stat}_exp`] != null) expMult *= s[`${stat}_exp`];
+  const currentLevel = player.skills[stat];
+  const mult = player.mults[stat];
+  const currentExp = formulas.skills.calculateExp(currentLevel ?? 1, mult);
+  const expReq = formulas.skills.calculateExp(requirement, mult);
+  const expNeeded = Math.max(0, expReq - currentExp);
+  if (stat === 'hacking') {
+    const { hackExp } = formulas.work.universityGains(player, 'Algorithms', 'Rothman University');
+    return expNeeded / hackExp;
+  } else {
+    const gains = formulas.work.gymGains(player, GymStats[stat], 'Powerhouse Gym');
+    const expRate = gains[GymExp[stat]];
+    return expNeeded / expRate;
   }
-  const currentExp = formulas.skills.calculateExp(currentLevel ?? 1, levelMult);
-  const expReq = formulas.skills.calculateExp(requirement, levelMult);
-  return Math.max(0, expReq - currentExp) / expMult / EXP_PER_SECOND;
 };
 
 /**
@@ -83,12 +95,7 @@ export const buildJoinSubtree = (
   },
 ) => {
   const { factions, skills, city } = player;
-  const {
-    factionRequirements,
-    installedAugmentations,
-    augmentationStats,
-    serverBackdoorRequirements,
-  } = staticData;
+  const { factionRequirements, serverBackdoorRequirements } = staticData;
 
   if (factions.includes(faction)) {
     return factionJoinGoal(faction, factions, []);
@@ -130,31 +137,14 @@ export const buildJoinSubtree = (
   const combatReq = skillReqs.strength ?? null;
 
   if (hackReq != null) {
-    const t = skillTrainingTime(
-      hackReq,
-      skills.hacking ?? 1,
-      'hacking',
-      installedAugmentations,
-      augmentationStats,
-      formulas,
-    );
+    const t = formulas ? skillTrainingTime(player, 'hacking', hackReq, formulas) : null;
     joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
     const times = formulas
-      ? COMBAT_STATS.map(
-          (stat) =>
-            skillTrainingTime(
-              combatReq,
-              skills[stat] ?? 1,
-              stat,
-              installedAugmentations,
-              augmentationStats,
-              formulas,
-            ) ?? 0,
-        )
+      ? COMBAT_STATS.map((stat) => skillTrainingTime(player, stat, combatReq, formulas) ?? 0)
       : null;
-    const t = times ? Math.max(...times) : null;
+    const t = times ? times.reduce((a, b) => a + b, 0) : null;
     joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
   }
   if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
