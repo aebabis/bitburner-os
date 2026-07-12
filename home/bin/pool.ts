@@ -88,6 +88,7 @@ const getTargetUpgrade = (ns: NS) => {
 
 const getHashCapacityUpgrade = (ns: NS, ttc: number) => {
   const nodes = getNodes(ns);
+  if (nodes.length === 0) return null;
   const totalHashGain = nodes.map(hashGainRate(ns)).reduce((a, b) => a + b, 0);
   const maxHashCapNeeded = ttc * totalHashGain;
   return nodes
@@ -108,12 +109,14 @@ export async function main(ns: NS) {
     const { upgrade, cost } = getTargetUpgrade(ns);
     if (cost > ns.hacknet.hashCapacity()) {
       const upgradedNeeded = getHashCapacityUpgrade(ns, ttc);
-      while (
-        upgradedNeeded.cost > ns.getServerMoneyAvailable('home') &&
-        ns.hacknet.spendHashes('Sell for Money')
-      )
-        totalEarnings += 1e6;
-      ns.hacknet.upgradeCache(upgradedNeeded.i);
+      if (upgradedNeeded) {
+        while (
+          upgradedNeeded.cost > ns.getServerMoneyAvailable('home') &&
+          ns.hacknet.spendHashes('Sell for Money')
+        )
+          totalEarnings += 1e6;
+        ns.hacknet.upgradeCache(upgradedNeeded.i);
+      }
     }
     while (ns.hacknet.spendHashes(upgrade)) {
       if (upgrade === 'Sell for Money') totalEarnings += 1e6;
