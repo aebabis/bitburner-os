@@ -1,4 +1,4 @@
-import { putMoneyData } from '../lib/data-store';
+import { getPlayerData, putMoneyData } from '../lib/data-store';
 import { getGoals, isRepBound } from '../lib/goals/goals';
 
 type HashrateUpgrade = {
@@ -36,14 +36,29 @@ const getNextUpgrade = (ns: NS) => {
     .reduce((a, b) => (a.utility > b.utility ? a : b));
 };
 
+const getNextNodeCost = (ns: NS, mults: Multipliers) => {
+  const numNodes = ns.hacknet.numNodes();
+  return ns.formulas.hacknetServers.hacknetServerCost(
+    numNodes + 1,
+    mults.hacknet_node_purchase_cost,
+  );
+};
+
 const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
+  const numNodes = ns.hacknet.numNodes();
+  if (numNodes === 0 && ns.hacknet.purchaseNode() === -1) {
+    return;
+  }
   while (true) {
+    const { player } = getPlayerData(ns);
+    const money = ns.getServerMoneyAvailable('home');
     const upgrade = getNextUpgrade(ns);
+    const nodeCost = getNextNodeCost(ns, player.mults);
     ns.print(upgrade);
     if (upgrade == null) return;
-    if (upgrade.cost > ns.getServerMoneyAvailable('home')) return;
+    if (upgrade.cost > money) return;
     if (ttc != null && upgrade.breakEvenTime > ttc) return;
-    if (ns.hacknet.getPurchaseNodeCost() < upgrade.cost) {
+    if (nodeCost < upgrade.cost) {
       ns.hacknet.purchaseNode();
     } else {
       if (upgrade.type === 'level') ns.hacknet.upgradeLevel(upgrade.i);
