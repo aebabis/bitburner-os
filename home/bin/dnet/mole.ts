@@ -111,6 +111,7 @@ const mastermindSolver = (ns: NS, hostname: string, details: DarknetServerDetail
     hostname,
   )(async ({ jsonLogs }, shouldYield) => {
     for (const { data, passwordAttempted } of jsonLogs) {
+      if (data == null) continue;
       const newRule = { password: passwordAttempted, exact: +data[0], wrongPlace: +data[1] };
       if (
         !rules.find(
@@ -686,6 +687,7 @@ const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetail
       return await cracker();
     } catch (error) {
       ns.ui.openTail();
+      console.error(error);
       ns.print('\u001b[38;5;124m' + error);
     }
   }
