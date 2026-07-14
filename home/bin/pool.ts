@@ -88,13 +88,13 @@ const getTargetUpgrade = (ns: NS) => {
 
 const getHashCapacityUpgrade = (ns: NS, ttc: number) => {
   const nodes = getNodes(ns);
-  if (nodes.length === 0) return null;
   const totalHashGain = nodes.map(hashGainRate(ns)).reduce((a, b) => a + b, 0);
   const maxHashCapNeeded = ttc * totalHashGain;
-  return nodes
+  const candidates = nodes
     .map((node, i) => ({ i, node, cost: ns.hacknet.getCacheUpgradeCost(i) }))
-    .filter(({ node }) => node.hashCapacity! < maxHashCapNeeded)
-    .reduce((a, b) => (a.cost < b.cost ? a : b));
+    .filter(({ node }) => node.hashCapacity! < maxHashCapNeeded);
+  if (candidates.length === 0) return null;
+  return candidates.reduce((a, b) => (a.cost < b.cost ? a : b));
 };
 
 export async function main(ns: NS) {
