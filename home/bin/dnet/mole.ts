@@ -434,7 +434,9 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         for (const c of charset) {
           const password = new Array(details.passwordLength).fill(c).join('');
           ns.print(password);
-          if ((await authenticate(ns)(hostname, password)).success) return true;
+          const result = await authenticate(ns)(hostname, password);
+          if (result.success) return true;
+          else if (result.code !== 401) return false;
           await update();
           ns.print(hostname, charCounts);
         }
@@ -449,6 +451,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
         ns.print('Trying: ' + password);
         const result = await authenticate(ns)(hostname, password);
         if (result.success) return true;
+        else if (result.code !== 401) return false;
       }
       return false;
     };
