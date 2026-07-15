@@ -6,6 +6,7 @@ import EventEmitter from 'events';
 async function* getFiles(dir) {
   const dirents = await readdir(dir, { withFileTypes: true });
   for (const dirent of dirents) {
+    if (dirent.name.startsWith('.')) continue;
     const res = resolve(dir, dirent.name);
     if (dirent.isDirectory() && !['log', 'tmp'].includes(dirent.name)) {
       yield* getFiles(res);
