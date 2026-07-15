@@ -22,7 +22,7 @@ const getSchool = (ns: NS, city: CityName) =>
 
 const getGym = (ns: NS, city: CityName) =>
   ({
-    [ns.enums.CityName.Sector12]: ns.enums.LocationName.Sector12IronGym,
+    [ns.enums.CityName.Sector12]: ns.enums.LocationName.Sector12PowerhouseGym,
     [ns.enums.CityName.Chongqing]: null,
     [ns.enums.CityName.NewTokyo]: null,
     [ns.enums.CityName.Ishima]: null,
@@ -147,7 +147,12 @@ export async function main(ns: NS) {
         skills[s1] < skills[s2] ? s1 : s2,
       );
     const gym = getGym(ns, city);
-    if (gym) {
+    const currentWork = ns.singularity.getCurrentWork();
+    const alreadyTrainingStat =
+      currentWork?.type === 'CLASS' &&
+      currentWork.location === gym &&
+      currentWork.classType === ns.enums.GymType[statToTrain];
+    if (gym != null && !alreadyTrainingStat) {
       await $.singularity['gymWorkout'](gym, ns.enums.GymType[statToTrain], focus());
     }
   };

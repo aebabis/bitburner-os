@@ -63,11 +63,12 @@ const skillTrainingTime = (
   const expReq = formulas.skills.calculateExp(requirement, mult);
   const expNeeded = Math.max(0, expReq - currentExp);
   if (stat === 'hacking') {
-    const { hackExp } = formulas.work.universityGains(player, 'Algorithms', 'Rothman University');
-    return expNeeded / hackExp;
+    const gains = formulas.work.universityGains(player, 'Algorithms', 'Rothman University');
+    const expRate = gains.hackExp * 5;
+    return expNeeded / expRate;
   } else {
     const gains = formulas.work.gymGains(player, GymStats[stat], 'Powerhouse Gym');
-    const expRate = gains[GymExp[stat]];
+    const expRate = gains[GymExp[stat]] * 5;
     return expNeeded / expRate;
   }
 };
