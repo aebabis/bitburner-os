@@ -1,5 +1,5 @@
 import { getPlayerData, putMoneyData } from '../lib/data-store';
-import { getGoals, isRepBound } from '../lib/goals/goals';
+import { getGoals } from '../lib/goals/goals';
 
 type HashrateUpgrade = {
   type: 'level' | 'ram' | 'cores';
@@ -78,8 +78,12 @@ const getUpgradeDetails = (ns: NS, upgrade: HacknetServerHashUpgrade) => {
 };
 
 const getTargetUpgrade = (ns: NS) => {
-  const goals = getGoals(ns);
-  if (isRepBound(ns, goals)) {
+  const currentWork = ns.singularity.getCurrentWork();
+  const gymTypes = Object.values(ns.enums.GymType) as string[];
+  const uniTypes = Object.values(ns.enums.UniversityClassType) as string[];
+  if (currentWork?.type === 'CLASS' && gymTypes.includes(currentWork.classType)) {
+    return getUpgradeDetails(ns, 'Improve Gym Training');
+  } else if (currentWork?.type === 'CLASS' && uniTypes.includes(currentWork.classType)) {
     return getUpgradeDetails(ns, 'Improve Studying');
   } else {
     return getUpgradeDetails(ns, 'Sell for Money');
