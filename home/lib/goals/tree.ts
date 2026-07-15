@@ -50,15 +50,23 @@ const GymExp = {
   dexterity: 'dexExp',
   agility: 'agiExp',
 } as const;
+const LEVEL_MULT_KEY = {
+  hacking: 'HackingLevelMultiplier',
+  strength: 'StrengthLevelMultiplier',
+  defense: 'DefenseLevelMultiplier',
+  dexterity: 'DexterityLevelMultiplier',
+  agility: 'AgilityLevelMultiplier',
+} as const;
 
 const skillTrainingTime = (
   player: Player,
   stat: 'hacking' | 'strength' | 'defense' | 'dexterity' | 'agility',
   requirement: number,
   formulas: Formulas,
+  bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
   const currentLevel = player.skills[stat];
-  const mult = player.mults[stat];
+  const mult = player.mults[stat] * (bitNodeMultipliers?.[LEVEL_MULT_KEY[stat]] ?? 1);
   const currentExp = formulas.skills.calculateExp(currentLevel ?? 1, mult);
   const expReq = formulas.skills.calculateExp(requirement, mult);
   const expNeeded = Math.max(0, expReq - currentExp);
@@ -138,12 +146,18 @@ export const buildJoinSubtree = (
   const combatReq = skillReqs.strength ?? null;
 
   if (hackReq != null) {
-    const t = formulas ? skillTrainingTime(player, 'hacking', hackReq, formulas) : null;
+    const t = formulas
+      ? skillTrainingTime(player, 'hacking', hackReq, formulas, staticData.bitNodeMultipliers)
+      : null;
     joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
     const times = formulas
-      ? COMBAT_STATS.map((stat) => skillTrainingTime(player, stat, combatReq, formulas) ?? 0)
+      ? COMBAT_STATS.map(
+          (stat) =>
+            skillTrainingTime(player, stat, combatReq, formulas, staticData.bitNodeMultipliers) ??
+            0,
+        )
       : null;
     const t = times ? times.reduce((a, b) => a + b, 0) : null;
     joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
