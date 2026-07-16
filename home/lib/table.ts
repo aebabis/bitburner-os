@@ -13,9 +13,9 @@ type TableColumn = {
   pad: (c: string | number, a: number) => string;
 };
 
-const headData = (column: ColumnSpec): TableColumn => {
+const headData = (column: ColumnSpec | string): TableColumn => {
   const spec: ColumnSpec = typeof column === 'string' ? {} : column;
-  const name = spec.name != null ? spec.name : /** @type {string} */ column;
+  const name = typeof column === 'string' ? column : (column.name ?? '');
   const align = spec.align || 'left';
   const process = spec.process || ((x: string | number) => x);
   const empty = spec.empty || '-';
@@ -23,7 +23,7 @@ const headData = (column: ColumnSpec): TableColumn => {
     name,
     process: (x: string | number) => {
       const str = process(x);
-      return str == null ? empty : str;
+      return str == null ? empty : str.toString();
     },
     pad: (c: string | number, a) => {
       const str = c.toString();
@@ -48,7 +48,7 @@ export const transpose = (lines: string[][], numCols: number) => {
       .map((col, i) => {
         const section = col?.shift();
         if (section && i < numCols - 1) section.push(' ');
-        return section;
+        return section || '';
       })
       .flat();
     rows.push(row);
@@ -57,7 +57,7 @@ export const transpose = (lines: string[][], numCols: number) => {
 };
 
 export const table = (
-  ns: NS,
+  _: NS,
   columns: (string | ColumnSpec)[] | null,
   data: (string | number | undefined)[][],
   options: { borders?: boolean; colors?: boolean } = {},
@@ -68,7 +68,7 @@ export const table = (
   let processedColumns: TableColumn[];
   if (columns == null) {
     if (data.length === 0) return '';
-    processedColumns = data.shift()!.map(headData);
+    processedColumns = data.shift()!.map((item) => headData(`${item ?? ''}`));
   } else {
     processedColumns = columns.map(headData);
   }
@@ -81,15 +81,9 @@ export const table = (
       .reduce((a, b) => Math.max(a, b), length(column.name)),
   );
   const lines = [
-    head(
-      processedColumns
-        .map((column, i) => column.pad(column.name, widths[i]))
-        .join(joiner),
-    ),
+    head(processedColumns.map((column, i) => column.pad(column.name, widths[i])).join(joiner)),
     ...processedData.map((row) =>
-      row
-        .map((cell, i) => processedColumns[i].pad(cell, widths[i]))
-        .join(joiner),
+      row.map((cell, i) => processedColumns[i].pad(cell, widths[i])).join(joiner),
     ),
   ].map((x) => ` ${x} `);
   return lines.join('\n');
