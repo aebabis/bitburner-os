@@ -12,6 +12,20 @@ const WORK_STATS = {
   strExp: 0,
 };
 
+// Product, across a set of installed augmentations, of each aug's multiplier for one stat.
+// Missing stats on an aug (or an unrecognized aug) default to neutral (1.0).
+// `stat` stays a loose string (rather than keyof Multipliers) because some call sites below
+// pass non-Multipliers keys like 'str_exp'; those always fall through to the 1.0 default.
+export const augMultiplier = (staticData: StaticData, stat: string, augs: string[]) =>
+  augs.reduce(
+    (mult, aug) =>
+      mult *
+      ((staticData.augmentationStats?.[aug] as unknown as Record<string, number> | undefined)?.[
+        stat
+      ] ?? 1),
+    1,
+  );
+
 const favorMult = (favor = 0) => 1 + favor / 100;
 
 const calculateSkill = (exp: number, mult = 1) =>
@@ -31,9 +45,7 @@ const calculateExp = (skill: number, mult = 1) => Math.exp((skill / mult + 200) 
  */
 export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
   const getAugMult = (stat: string) =>
-    staticData.installedAugmentations
-      .map((aug: string) => staticData.augmentationStats?.[aug]?.[stat] ?? 1)
-      .reduce((a, b) => a * b, 1);
+    augMultiplier(staticData, stat, staticData.installedAugmentations ?? []);
 
   const {
     FactionWorkExpGain = 1,
@@ -174,11 +186,11 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
   };
 };
 
-export const formulas = (ns: NS) => {
+export const formulas = (ns: NS, staticData?: StaticData) => {
   try {
     ns.formulas.hacking.weakenEffect(1);
     return ns.formulas;
   } catch (error) {
-    return getMockFormulas(getStaticData(ns));
+    return getMockFormulas(staticData ?? getStaticData(ns));
   }
 };

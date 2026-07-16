@@ -2,22 +2,25 @@ type RunnerOptions = {
   baseColor?: string;
   passColor?: string;
   failColor?: string;
+  skipColor?: string;
 };
 type Test = () => void | Promise<void>;
+type TestEntry = { test: Test; skip: boolean };
 type TestModule = {
-  tests: Record<string, Test>;
+  tests: Record<string, TestEntry>;
   submodules: Record<string, TestModule>;
 };
 
 const BASE = '\u001b[38;5;15m';
 const PASS = '\u001b[38;5;28m';
 const FAIL = '\u001b[38;5;1m';
+const SKIP = '\u001b[38;5;244m';
 
 const createModule = (): TestModule => ({ tests: {}, submodules: {} });
 
 export const setupRunner = (
   ns: NS,
-  { baseColor = BASE, passColor = PASS, failColor = FAIL } = {} as RunnerOptions,
+  { baseColor = BASE, passColor = PASS, failColor = FAIL, skipColor = SKIP } = {} as RunnerOptions,
 ) => {
   const newLineIndent = ns.getScriptName().length + 2;
   let currentModule = createModule();
@@ -33,17 +36,26 @@ export const setupRunner = (
     currentModule = parentModule;
   };
 
-  const it = (description: string, test: Test) => {
+  const registerTest = (description: string, test: Test, skip: boolean) => {
     if (currentModule.tests[description] != null) {
       throw new Error('Test with duplicate description: ' + description);
     }
-    currentModule.tests[description] = test;
+    currentModule.tests[description] = { test, skip };
   };
+
+  const it = Object.assign(
+    (description: string, test: Test) => registerTest(description, test, false),
+    { skip: (description: string, test: Test) => registerTest(description, test, true) },
+  );
 
   const test = it;
 
   const runModule = async (module: TestModule, indent = '') => {
-    for (const [testName, test] of Object.entries(module.tests)) {
+    for (const [testName, { test, skip }] of Object.entries(module.tests)) {
+      if (skip) {
+        ns.tprint(skipColor + indent + '○ ' + testName);
+        continue;
+      }
       try {
         await test();
         ns.tprint(passColor + indent + '✓ ' + testName);
