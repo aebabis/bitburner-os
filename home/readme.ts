@@ -73,6 +73,10 @@ const UTILITIES = {
     command: 'usr/services.ts',
     desc: 'View and manage installed services',
   },
+  test: {
+    command: 'home; lib/test/run-all.ts',
+    desc: 'Run unit tests on script suite utilities and libraries',
+  },
   update: {
     command: 'home; killall; ./stop.ts update.ts',
     desc: 'Download most recent code from GitHub',
