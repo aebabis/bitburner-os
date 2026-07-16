@@ -113,4 +113,11 @@ export const assert = Object.assign(assertBase, {
       isDeepEqual(actual, expected),
       message ?? `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
     ),
+  // Relative tolerance (with an absolute floor of 1) so comparisons stay meaningful across
+  // both tiny and huge magnitudes without callers having to scale the tolerance themselves.
+  close: (actual: number, expected: number, tolerance = 1e-6, message?: string) =>
+    assertBase(
+      Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected)),
+      message ?? `Expected ${actual} to be within ${tolerance * 100}% of ${expected}`,
+    ),
 });
