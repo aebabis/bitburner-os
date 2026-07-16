@@ -4,6 +4,7 @@ import { augValueFromStats, findOptimalBatch, computeResetOverhead } from '../li
 import { buildFactionGoalTree } from '../lib/goals/tree';
 import { formulas as getFormulas } from '../lib/formulas';
 import { getIncome } from '../lib/query-service';
+import { getAugWeights } from '../lib/aug-weights';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
@@ -30,9 +31,10 @@ const getAugTableData = (ns: NS) => {
 };
 
 export async function main(ns: NS) {
-  const [command, ...rest] = ns.args;
+  const [command] = ns.args;
 
   const { resetInfo } = getStaticData(ns);
+  const augWeights = getAugWeights(resetInfo);
 
   if (command === undefined) {
     // TODO: Show help?
@@ -64,7 +66,7 @@ export async function main(ns: NS) {
         .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
         .map((aug) => {
           const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
-          const value = augValueFromStats(resetInfo, aug, augmentationStats);
+          const value = augValueFromStats(augWeights, aug, augmentationStats);
           const price = (augmentationPrices[aug] ?? 0) * nfMult;
           const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
           return { aug, value, price, repReq };
@@ -112,7 +114,7 @@ export async function main(ns: NS) {
           .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
           .map((aug) => {
             const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
-            const value = augValueFromStats(resetInfo, aug, augmentationStats);
+            const value = augValueFromStats(augWeights, aug, augmentationStats);
             const price = (augmentationPrices[aug] ?? 0) * nfMult;
             const repReq = (augmentationRepReqs[aug] ?? 0) * nfMult;
             const factions = augFactions[aug] ?? [];
@@ -206,7 +208,7 @@ export async function main(ns: NS) {
             const nfCount = batch.filter((a) => a === NEUROFLUX).length;
             const nonNfCount = batch.length - nfCount;
             const value = batch.reduce(
-              (sum, aug) => sum + augValueFromStats(resetInfo, aug, augmentationStats),
+              (sum, aug) => sum + augValueFromStats(augWeights, aug, augmentationStats),
               0,
             );
             const tree = buildFactionGoalTree(ns, faction, planData);

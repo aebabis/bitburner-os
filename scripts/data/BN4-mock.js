@@ -1,5 +1,11 @@
 export const staticData = {
-  resetInfo: { lastAugReset: 0, lastNodeReset: 0, currentNode: 4, ownedAugs: new Map() },
+  resetInfo: {
+    lastAugReset: 0,
+    lastNodeReset: 0,
+    currentNode: 4,
+    ownedAugs: new Map(),
+    ownedSF: new Map(),
+  },
   installedAugmentations: [],
   bitNodeMultipliers: {
     HacknetNodeMoney: 0.05,

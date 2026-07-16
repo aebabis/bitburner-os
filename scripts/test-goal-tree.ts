@@ -13,7 +13,13 @@ import { computeRepReq, computeAugCost, computeResetOverhead } from '../home/lib
 import { getMockFormulas } from '../home/lib/formulas.js';
 
 const mockNs = { gang: { inGang: () => false } } as any;
-const mockResetInfo = { lastAugReset: 0, lastNodeReset: 0, currentNode: 1, ownedAugs: new Map() };
+const mockResetInfo = {
+  lastAugReset: 0,
+  lastNodeReset: 0,
+  currentNode: 1,
+  ownedAugs: new Map(),
+  ownedSF: new Map(),
+};
 
 describe('Goal node factories', () => {
   describe('augMoneyGoal', () => {
@@ -157,7 +163,13 @@ describe('buildFactionGoalTree', () => {
       installedAugmentations: [],
     } as any;
     const tree = buildFactionGoalTree(mockNs, 'TestFaction' as FactionName, {
-      player: { factions: [], skills: { hacking: 1 }, location: 'Sector-12' } as any,
+      player: {
+        factions: [],
+        skills: { hacking: 1 },
+        mults: { hacking: 1 },
+        exp: { hacking: 0 },
+        location: 'Sector-12',
+      } as any,
       staticData,
       factionRep: {},
       queuedAugmentations: [],

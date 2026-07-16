@@ -1,13 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreAug, DEFAULT_AUG_WEIGHTS } from '../home/lib/aug-select.js';
+import { scoreAug } from '../home/lib/aug-select.js';
+import { getAugWeights } from '../home/lib/aug-weights.js';
+
+const augWeights = getAugWeights({
+  currentNode: 4,
+  ownedSF: new Map<number, number>(),
+} as ResetInfo);
 
 const neutralStats = Object.fromEntries(
-  Object.keys(DEFAULT_AUG_WEIGHTS).map((k) => [k, 1]),
+  Object.keys(augWeights).map((k) => [k, 1]),
 ) as unknown as Multipliers;
 
 test('scoreAug returns 0 for all-1.0 multipliers', () => {
-  assert.strictEqual(scoreAug(neutralStats, DEFAULT_AUG_WEIGHTS), 0);
+  assert.strictEqual(scoreAug(neutralStats, augWeights), 0);
 });
 
 test('scoreAug returns 0 for only zero-weight stats', () => {
@@ -17,27 +23,25 @@ test('scoreAug returns 0 for only zero-weight stats', () => {
     crime_money: 2,
     crime_success: 2,
   };
-  assert.strictEqual(scoreAug(stats, DEFAULT_AUG_WEIGHTS), 0);
+  assert.strictEqual(scoreAug(stats, augWeights), 0);
 });
 
 test('hacking aug outscores equivalent combat aug', () => {
   const hackingStats = { ...neutralStats, hacking: 1.1 };
   const combatStats = { ...neutralStats, strength: 1.1 };
-  assert.ok(
-    scoreAug(hackingStats, DEFAULT_AUG_WEIGHTS) > scoreAug(combatStats, DEFAULT_AUG_WEIGHTS),
-  );
+  assert.ok(scoreAug(hackingStats, augWeights) > scoreAug(combatStats, augWeights));
 });
 
 test('scoreAug handles sparse stats (missing keys default to 1.0)', () => {
   const sparseStats = { hacking: 1.1 } as unknown as Multipliers;
-  assert.ok(scoreAug(sparseStats, DEFAULT_AUG_WEIGHTS) > 0);
+  assert.ok(scoreAug(sparseStats, augWeights) > 0);
 });
 
 test('scoreAug returns exact expected value for known multiplier', () => {
   // hacking_money weight = 10; (1.25 - 1) * 10 = 2.5
   const stats = { hacking_money: 1.25 } as unknown as Multipliers;
-  const mult = DEFAULT_AUG_WEIGHTS.hacking_money;
-  assert.strictEqual(scoreAug(stats, DEFAULT_AUG_WEIGHTS), 0.25 * mult);
+  const mult = augWeights.hacking_money;
+  assert.strictEqual(scoreAug(stats, augWeights), 0.25 * mult);
 });
 
 test('scoreAug produces correct score for full Multipliers object with one non-trivial stat', () => {
@@ -77,14 +81,14 @@ test('scoreAug produces correct score for full Multipliers object with one non-t
     bladeburner_success_chance: 1,
   } as unknown as Multipliers;
   // (1.05 - 1) * weight(hacking=10) ≈ 0.5; floating point: 1.05-1 is not exactly 0.05
-  const score = scoreAug(stats, DEFAULT_AUG_WEIGHTS);
+  const score = scoreAug(stats, augWeights);
   assert.ok(score > 0, `expected positive score, got ${score}`);
   assert.ok(Math.abs(score - 0.5) < 1e-9, `expected ~0.5, got ${score}`);
 });
 
 test('hacknet cost multiplier below 1.0 produces positive score', () => {
-  // DEFAULT_AUG_WEIGHTS assigns 0 weight to hacknet stats, so use custom weights
-  const weights = { ...DEFAULT_AUG_WEIGHTS, hacknet_node_purchase_cost: 2 };
+  // augWeights assigns 0 weight to hacknet stats, so use custom weights
+  const weights = { ...augWeights, hacknet_node_purchase_cost: 2 };
   const stats = { ...neutralStats, hacknet_node_purchase_cost: 0.9 };
   assert.ok(scoreAug(stats, weights) > 0);
 });
@@ -95,7 +99,7 @@ test('utility ordering is stable across multiple sorts', () => {
     { name: 'b', stats: { ...neutralStats, hacking: 1.25 }, time: 1500 },
     { name: 'c', stats: { ...neutralStats, strength: 1.5 }, time: 500 },
   ].map((e) => {
-    const value = scoreAug(e.stats, DEFAULT_AUG_WEIGHTS);
+    const value = scoreAug(e.stats, augWeights);
     return { name: e.name, utility: e.time > 0 ? value / e.time : 0 };
   });
 

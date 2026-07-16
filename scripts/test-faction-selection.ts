@@ -157,7 +157,13 @@ const makeStaticData = (
   );
 
   return {
-    resetInfo: { lastAugReset: 0, lastNodeReset: 0, currentNode: 1, ownedAugs: new Map() },
+    resetInfo: {
+      lastAugReset: 0,
+      lastNodeReset: 0,
+      currentNode: 1,
+      ownedAugs: new Map(),
+      ownedSF: new Map(),
+    },
     augmentationStats,
     augmentationPrices,
     augmentationRepReqs,
@@ -224,14 +230,14 @@ test('city exclusivity: player in Sector-12 cannot switch to Aevum', () => {
 test('endgame faction gated by numAugmentations requirement', () => {
   const data = makeStaticData(
     {
-      Netburners: [NB_A],
+      CyberSec: [NB_A],
       Daedalus: [hackAug(2.0, 1_000, 1)], // best possible utility, but gated
     },
     { Daedalus: 30 },
   );
   // 0 owned augs — Daedalus requires 30
   const { faction } = selectAugmentations([], data, PLAYER);
-  assert.equal(faction, 'Netburners');
+  assert.equal(faction, 'CyberSec');
 });
 
 test('endgame faction unlocks once numAugmentations threshold is met', () => {

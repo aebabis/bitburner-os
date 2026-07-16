@@ -1,58 +1,6 @@
-import { BN6_WEIGHTS } from './aug/bn6-weights.ts';
+import { AugWeights, getAugWeights } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
-
-export const DEFAULT_AUG_WEIGHTS: Record<keyof Multipliers, number> = {
-  // High — stats that increase reputation gain
-  hacking: 10,
-  hacking_chance: 10,
-  hacking_speed: 10,
-  hacking_exp: 10,
-  faction_rep: 10,
-
-  // Low-medium — rep/income acceleration
-  hacking_money: 2,
-  hacking_grow: 2,
-  company_rep: 1,
-  work_money: 1,
-
-  // Low — combat stats
-  strength: 1,
-  defense: 1,
-  dexterity: 1,
-  agility: 1,
-  strength_exp: 0.5,
-  defense_exp: 0.5,
-  dexterity_exp: 0.5,
-  agility_exp: 0.5,
-
-  // Low — hacknet (cost stats use reciprocal: lower value = better, treated as equivalent boost)
-  hacknet_node_money: 0,
-  hacknet_node_purchase_cost: 0,
-  hacknet_node_ram_cost: 0,
-  hacknet_node_core_cost: 0,
-  hacknet_node_level_cost: 0,
-
-  // Zero — not relevant for automated play in tested bitnodes
-  charisma: 0,
-  charisma_exp: 0,
-  crime_money: 0,
-  crime_success: 0,
-  dnet_money: 0,
-  bladeburner_max_stamina: 0,
-  bladeburner_stamina_gain: 0,
-  bladeburner_analysis: 0,
-  bladeburner_success_chance: 0,
-};
-
-const BN9_WEIGHTS = {
-  ...DEFAULT_AUG_WEIGHTS,
-  hacknet_node_money: 20,
-  hacknet_node_purchase_cost: 20,
-  hacknet_node_ram_cost: 20,
-  hacknet_node_core_cost: 20,
-  hacknet_node_level_cost: 20,
-};
 
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
@@ -61,16 +9,6 @@ const UNITY_AUGS = {
   'The Red Pill': 10,
 };
 type UnityAug = keyof typeof UNITY_AUGS;
-
-const getAugWeights = (resetInfo: ResetInfo) => {
-  if ([6, 7].includes(resetInfo.currentNode)) {
-    return BN6_WEIGHTS;
-  } else if (resetInfo.currentNode === 9) {
-    return BN9_WEIGHTS;
-  } else {
-    return DEFAULT_AUG_WEIGHTS;
-  }
-};
 
 export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, number>) =>
   Object.entries(stats)
@@ -113,13 +51,13 @@ export const MAX_AUGS = 6;
 const NEUROFLUX = 'NeuroFlux Governor';
 
 export const augValueFromStats = (
-  resetInfo: ResetInfo,
+  augWeights: AugWeights,
   aug: string,
   augmentationStats?: Record<string, Multipliers>,
 ) => {
   if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug as UnityAug];
   const stats = augmentationStats?.[aug];
-  return stats != null ? scoreAug(stats, getAugWeights(resetInfo)) : 0;
+  return stats != null ? scoreAug(stats, augWeights) : 0;
 };
 
 export const computeRepReq = (augs: string[], staticData: StaticData) => {
@@ -194,6 +132,8 @@ export const findOptimalBatch = (
     factionWorkTypes,
   } = staticData;
 
+  const augWeights = getAugWeights(resetInfo);
+
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
     ? (formulas.reputation.donationForRep(1, player) ?? Infinity)
@@ -206,7 +146,7 @@ export const findOptimalBatch = (
   const getNeededAugs = (fac: FactionName) =>
     (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (aug: string) => augValueFromStats(resetInfo, aug, augmentationStats);
+  const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = computeRepRate(

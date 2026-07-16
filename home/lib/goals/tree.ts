@@ -30,6 +30,7 @@ import {
   computeRepRate,
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
+import { getAugWeights } from '../aug-weights.ts';
 
 const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => number): Plan =>
   Object.assign(installGoal(deps, actions), { utility });
@@ -237,7 +238,8 @@ export const buildFactionGoalTree = (
 ): Plan | null => {
   const { augmentationPrices, augmentationPrereqs, augmentationStats, factionWorkTypes } =
     staticData;
-  const augValue = (aug: string) => augValueFromStats(staticData.resetInfo, aug, augmentationStats);
+  const augWeights = getAugWeights(staticData.resetInfo);
+  const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
 
   const moneyRate = totalIncome || Infinity;
   const liquidAssets = money + estimatedStockValue;
