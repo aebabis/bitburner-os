@@ -65,9 +65,8 @@ const skillTrainingTime = (
   formulas: Formulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
-  const currentLevel = player.skills[stat];
   const mult = player.mults[stat] * (bitNodeMultipliers?.[LEVEL_MULT_KEY[stat]] ?? 1);
-  const currentExp = formulas.skills.calculateExp(currentLevel ?? 1, mult);
+  const currentExp = player.exp[stat];
   const expReq = formulas.skills.calculateExp(requirement, mult);
   const expNeeded = Math.max(0, expReq - currentExp);
   if (stat === 'hacking') {
