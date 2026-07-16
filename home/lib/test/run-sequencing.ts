@@ -1,4 +1,4 @@
-import { setupRunner } from '../test-runner';
+import { setupRunner, assert } from '../test-runner';
 import { staticData } from './data/BN4-mock';
 import {
   getAccessibleFactions,
@@ -16,7 +16,7 @@ const MONEY_RATE = 10e3;
 const NEUROFLUX = 'NeuroFlux Governor';
 
 export async function main(ns: NS) {
-  const { describe, it, assert, runSuite } = setupRunner(ns);
+  const { describe, it, runSuite } = setupRunner(ns);
 
   const select = (
     ns: NS,

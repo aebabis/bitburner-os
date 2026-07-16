@@ -1,4 +1,4 @@
-import { setupRunner } from '../test-runner';
+import { setupRunner, assert } from '../test-runner';
 import { staticData } from './data/BN4-mock';
 import {
   getAccessibleFactions,
@@ -205,7 +205,7 @@ const makeStaticData = (
 const PLAYER = mockPlayer({ hacking: 100 }, { factions: [] });
 
 export async function main(ns: NS) {
-  const { describe, it, assert, runSuite } = setupRunner(ns);
+  const { describe, it, runSuite } = setupRunner(ns);
 
   describe('faction selection', () => {
     it('fresh start → CyberSec (higher-value batch wins over more augs at lower value)', () => {

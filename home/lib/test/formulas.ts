@@ -1,4 +1,4 @@
-import { setupRunner } from '../test-runner';
+import { setupRunner, assert } from '../test-runner';
 import { getMockFormulas, hasFormulas } from '../formulas';
 import { getStaticData } from '../data-store';
 
@@ -7,7 +7,7 @@ import { getStaticData } from '../data-store';
 // check -- a suite that can silently degrade to testing the mock against itself would stop
 // being a meaningful accuracy baseline. Acquire Formulas.exe to run this suite.
 export async function main(ns: NS) {
-  const { describe, it, assert, runSuite } = setupRunner(ns);
+  const { describe, it, runSuite } = setupRunner(ns);
 
   if (!hasFormulas(ns)) {
     ns.tprint('ERROR Acquire Formulas.exe to run this suite.');

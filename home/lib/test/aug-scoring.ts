@@ -1,9 +1,9 @@
-import { setupRunner } from '../test-runner';
+import { setupRunner, assert } from '../test-runner';
 import { scoreAug } from '../aug-select';
 import { getAugWeights } from '../aug-weights';
 
 export async function main(ns: NS) {
-  const { describe, it, assert, runSuite } = setupRunner(ns);
+  const { describe, it, runSuite } = setupRunner(ns);
 
   const augWeights = getAugWeights({
     currentNode: 4,

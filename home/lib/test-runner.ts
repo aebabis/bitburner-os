@@ -11,6 +11,33 @@ type TestModule = {
   submodules: Record<string, TestModule>;
 };
 
+// Assertion signatures (asserts condition) are only honored through a binding whose type was
+// explicitly declared -- an inferred Object.assign() type isn't enough, even for destructured
+// call sites like `const { assert } = setupRunner(ns)`. Hence the explicit annotations here and
+// on setupRunner's return type below.
+type AssertFn = {
+  (condition: unknown, message?: string): asserts condition;
+  ok(condition: unknown, message?: string): asserts condition;
+  equal(actual: unknown, expected: unknown, message?: string): void;
+  notEqual(actual: unknown, expected: unknown, message?: string): void;
+  deepEqual(actual: unknown, expected: unknown, message?: string): void;
+  close(actual: number, expected: number, tolerance?: number, message?: string): void;
+};
+
+type ItFn = {
+  (description: string, test: Test): void;
+  skip: (description: string, test: Test) => void;
+};
+
+type Runner = {
+  describe: (moduleName: string, builder: () => void) => void;
+  it: ItFn;
+  test: ItFn;
+  runSuite: () => Promise<void>;
+  expect: () => never;
+  assert: AssertFn;
+};
+
 const BASE = '\u001b[38;5;15m';
 const PASS = '\u001b[38;5;28m';
 const FAIL = '\u001b[38;5;1m';
@@ -21,7 +48,7 @@ const createModule = (): TestModule => ({ tests: {}, submodules: {} });
 export const setupRunner = (
   ns: NS,
   { baseColor = BASE, passColor = PASS, failColor = FAIL, skipColor = SKIP } = {} as RunnerOptions,
-) => {
+): Runner => {
   const newLineIndent = ns.getScriptName().length + 2;
   let currentModule = createModule();
 
@@ -95,12 +122,14 @@ const isDeepEqual = (a: unknown, b: unknown): boolean => {
   );
 };
 
-const assertBase = (condition: boolean, message?: string) => {
+// `asserts condition` (matching node:assert's typing) lets TS narrow the checked value's type
+// after the call, e.g. `assert.ok(tree); tree.deps` without a redundant non-null check.
+function assertBase(condition: unknown, message?: string): asserts condition {
   if (!condition) throw new Error(message ?? 'Assertion failed');
-};
+}
 
-export const assert = Object.assign(assertBase, {
-  ok: (condition: unknown, message?: string) => assertBase(Boolean(condition), message),
+export const assert: AssertFn = Object.assign(assertBase, {
+  ok: (condition: unknown, message?: string): asserts condition => assertBase(condition, message),
   equal: (actual: unknown, expected: unknown, message?: string) =>
     assertBase(Object.is(actual, expected), message ?? `Expected ${expected}, got ${actual}`),
   notEqual: (actual: unknown, expected: unknown, message?: string) =>
