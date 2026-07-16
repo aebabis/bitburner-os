@@ -3,7 +3,7 @@ type RunnerOptions = {
   passColor?: string;
   failColor?: string;
 };
-type Test = () => void;
+type Test = () => void | Promise<void>;
 type TestModule = {
   tests: Record<string, Test>;
   submodules: Record<string, TestModule>;
@@ -42,10 +42,10 @@ export const setupRunner = (
 
   const test = it;
 
-  const runModule = (module: TestModule, indent = '') => {
+  const runModule = async (module: TestModule, indent = '') => {
     for (const [testName, test] of Object.entries(module.tests)) {
       try {
-        test();
+        await test();
         ns.tprint(passColor + indent + '✓ ' + testName);
       } catch (error) {
         ns.tprint(
@@ -55,15 +55,15 @@ export const setupRunner = (
     }
     for (const [moduleName, submodule] of Object.entries(module.submodules)) {
       ns.tprint(baseColor + indent + '➤ ' + moduleName);
-      runModule(submodule, indent + '  ');
+      await runModule(submodule, indent + '  ');
     }
   };
 
-  const start = () => {
-    runModule(currentModule);
+  const runSuite = async () => {
+    await runModule(currentModule);
   };
 
-  return { describe, it, test, start, expect, assert };
+  return { describe, it, test, runSuite, expect, assert };
 };
 
 export const expect = () => {
