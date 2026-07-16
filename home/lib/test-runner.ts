@@ -70,6 +70,35 @@ export const expect = () => {
   throw new Error('Not supported yet');
 };
 
-export const assert = (condition: boolean, message?: string) => {
+const isDeepEqual = (a: unknown, b: unknown): boolean => {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every(
+    (key) =>
+      key in b &&
+      isDeepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+  );
+};
+
+const assertBase = (condition: boolean, message?: string) => {
   if (!condition) throw new Error(message ?? 'Assertion failed');
 };
+
+export const assert = Object.assign(assertBase, {
+  ok: (condition: unknown, message?: string) => assertBase(Boolean(condition), message),
+  equal: (actual: unknown, expected: unknown, message?: string) =>
+    assertBase(Object.is(actual, expected), message ?? `Expected ${expected}, got ${actual}`),
+  notEqual: (actual: unknown, expected: unknown, message?: string) =>
+    assertBase(
+      !Object.is(actual, expected),
+      message ?? `Expected values to differ, both were ${actual}`,
+    ),
+  deepEqual: (actual: unknown, expected: unknown, message?: string) =>
+    assertBase(
+      isDeepEqual(actual, expected),
+      message ?? `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    ),
+});
