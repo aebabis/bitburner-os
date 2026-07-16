@@ -16,7 +16,13 @@ export async function main(ns: NS) {
 
   const staticData = getStaticData(ns);
   const player = ns.getPlayer();
-  const mock = getMockFormulas(staticData);
+  // Query live rather than reading cached PlayerData -- this suite cares about exactness at the
+  // moment it runs, not the RAM cost tradeoff that makes production callers prefer the cache.
+  const mock = getMockFormulas(staticData, {
+    sharePower: ns.getSharePower(),
+    studyMult: ns.hacknet.getStudyMult(),
+    trainingMult: ns.hacknet.getTrainingMult(),
+  });
   const real = ns.formulas;
 
   const describeDiff = (context: string, actual: number, expected: number) =>
@@ -32,11 +38,24 @@ export async function main(ns: NS) {
     actual: ReturnType<typeof real.work.factionGains>,
     expected: ReturnType<typeof real.work.factionGains>,
     context: string,
+    notes: Partial<Record<keyof typeof expected, string>> = {},
   ) => {
     for (const key of Object.keys(expected) as (keyof typeof expected)[]) {
-      assertClose(actual[key] ?? 0, expected[key] ?? 0, `${context}: ${key}`);
+      const note = notes[key];
+      assertClose(
+        actual[key] ?? 0,
+        expected[key] ?? 0,
+        note ? `${context}: ${key} (${note})` : `${context}: ${key}`,
+      );
     }
   };
+
+  // backdoorDiscount (formulas.ts) infers "backdoored" from hacking level alone, which is wrong
+  // right after an aug/BN reset: the level bar is trivially cleared again but the player hasn't
+  // had time to re-backdoor low-priority servers like gyms/universities. A money mismatch here
+  // shortly after a reset is this known gap, not necessarily a new regression.
+  const BACKDOOR_NOTE =
+    'expected to occasionally disagree just after an aug/BN reset -- see backdoorDiscount in formulas.ts';
 
   describe('mock formulas vs real ns.formulas', () => {
     describe('skills', () => {
@@ -142,6 +161,7 @@ export async function main(ns: NS) {
             mock.work.gymGains(player, gymType, 'Iron Gym'),
             real.work.gymGains(player, gymType, 'Iron Gym'),
             `gymType=${gymType}`,
+            { money: BACKDOOR_NOTE },
           );
         });
       }
@@ -154,6 +174,7 @@ export async function main(ns: NS) {
             mock.work.universityGains(player, classType, 'Rothman University'),
             real.work.universityGains(player, classType, 'Rothman University'),
             `classType=${classType}`,
+            { money: BACKDOOR_NOTE },
           );
         });
       }

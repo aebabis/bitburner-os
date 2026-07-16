@@ -1,4 +1,4 @@
-import { getPlayerData, putMoneyData } from '../lib/data-store';
+import { getPlayerData, putMoneyData, putPlayerData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 
 type HashrateUpgrade = {
@@ -128,6 +128,10 @@ export async function main(ns: NS) {
     const { onlineRunningTime, offlineRunningTime } = ns.getRunningScript()!;
     const hacknetIncome = totalEarnings / (onlineRunningTime + offlineRunningTime);
     putMoneyData(ns, { hacknetIncome });
+    putPlayerData(ns, {
+      studyMult: ns.hacknet.getStudyMult(),
+      trainingMult: ns.hacknet.getTrainingMult(),
+    });
 
     if (ns.fileExists('Formulas.exe', 'home')) {
       upgradeHacknetServers(ns, ttc);

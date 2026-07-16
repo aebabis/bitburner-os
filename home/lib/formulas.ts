@@ -1,4 +1,27 @@
-import { getStaticData, StaticData } from './data-store.ts';
+import { getPlayerData, getStaticData, StaticData } from './data-store.ts';
+
+// Hostname each gym/university location is backed by, for the backdoor-discount heuristic below.
+const GYM_HOSTNAMES: Record<string, string> = {
+  'Iron Gym': 'iron-gym',
+  'Crush Fitness Gym': 'crush-fitness',
+  'Millenium Fitness Gym': 'millenium-fitness',
+  'Snap Fitness Gym': 'snap-fitness',
+  'Powerhouse Gym': 'powerhouse-fitness',
+};
+const UNIVERSITY_HOSTNAMES: Record<string, string> = {
+  'Rothman University': 'rothman-uni',
+  'Summit University': 'summit-uni',
+  'ZB Institute of Technology': 'zb-institute',
+};
+
+// Approximates the real game's 10% "backdoor installed" discount on gym/university costs by
+// checking whether the player's hacking skill clears that server's backdoor requirement.
+// Ignores port-opening prereqs and whether the player has actually run backdoor there.
+const backdoorDiscount = (staticData: StaticData, player: Person, hostname: string | undefined) => {
+  const requirement = staticData.serverBackdoorRequirements?.find((r) => r.hostname === hostname);
+  if (!requirement) return 1;
+  return (player.skills?.hacking ?? 0) >= requirement.requiredHackingLevel ? 0.9 : 1;
+};
 
 const WORK_STATS = {
   agiExp: 0,
@@ -62,21 +85,31 @@ const calculateExp = (skill: number, mult = 1) => {
 const LOG_1_02 = 0.019802627296179712;
 const MAX_FAVOR = 35331;
 
+type MockFormulasOptions = {
+  // Static approximation of ns.getSharePower() -- pass the live value for exact comparisons
+  // (e.g. the mock-vs-real correctness suite); production callers default to "not sharing".
+  sharePower?: number;
+  // ns.hacknet.getStudyMult()/getTrainingMult(). Both cost RAM to query directly, so production
+  // callers should source these from cached PlayerData (see pool.ts) rather than call live.
+  studyMult?: number;
+  trainingMult?: number;
+};
+
 /**
  * Mock of the ns.formulas namespace for use when Formulas.exe is not available.
  * Pass ns.formulas directly when it is available; use this otherwise.
  * Multipliers are read from each call's `player.mults`, matching the real API's contract, so
  * callers must pass a fully-populated Person (see buildPerson in test/fixtures.ts) rather than
  * relying on staticData.installedAugmentations to be reflected automatically.
- * Known gaps vs. the real API (not modeled here): hacknet hash training/study bonuses, the
- * backdoor discount on gym/university costs, the live share bonus (sharePower is a static
- * approximation, not ns.getSharePower()), and the SF15 darknet charisma bonus.
  * @param {{
  *   hacknetMultipliers?: { production: number },
  *   bitNodeMultipliers?: BitNodeMultipliers
  * }} staticData
  */
-export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
+export const getMockFormulas = (
+  staticData: StaticData,
+  { sharePower = 1, studyMult = 1, trainingMult = 1 }: MockFormulasOptions = {},
+) => {
   const mult = (player: Person, stat: keyof Multipliers) => player.mults?.[stat] ?? 1;
 
   const {
@@ -90,6 +123,14 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
   const defaultProdMult = (staticData.hacknetMultipliers?.production ?? 1) * HacknetNodeMoney;
 
   const factionRepMult = (player: Person) => FactionWorkRepGain * mult(player, 'faction_rep');
+
+  // SF15 (Source-File level 3+) grants a passive charisma bonus folded into faction rep gain.
+  // ownedSF is the same underlying map activeSourceFileLvl reads from, modulo the rare
+  // bitNodeOptions.sourceFileOverrides case (challenge-mode SF overrides) which isn't modeled.
+  const darknetCharismaBonus = (player: Person, scalar: number) =>
+    (staticData.resetInfo?.ownedSF?.get(15) ?? 0) >= 3
+      ? (player.skills?.charisma ?? 0) * scalar
+      : 0;
 
   return {
     skills: { calculateExp, calculateSkill },
@@ -126,7 +167,10 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
             ...WORK_STATS,
             hackExp: (2 / 5) * mult(player, 'hacking_exp') * FactionWorkExpGain,
             reputation:
-              (((player.skills?.hacking ?? 1) + intelligence / 3) / 975) *
+              (((player.skills?.hacking ?? 1) +
+                intelligence / 3 +
+                darknetCharismaBonus(player, 0.1)) /
+                975) *
               factionRepMult(player) *
               intelligenceBonus *
               favorMult(favor) *
@@ -140,7 +184,8 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
             (player.skills.dexterity ?? 0) +
             (player.skills.agility ?? 0) +
             (player.skills.charisma ?? 0) +
-            ((player.skills.hacking ?? 0) + intelligence) * sharePower;
+            ((player.skills.hacking ?? 0) + intelligence + darknetCharismaBonus(player, 0.3)) *
+              sharePower;
           return {
             ...WORK_STATS,
             hackExp: (1 / 5) * mult(player, 'hacking_exp') * FactionWorkExpGain,
@@ -162,6 +207,7 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
             (player.skills.defense ?? 0) +
             (player.skills.dexterity ?? 0) +
             (player.skills.agility ?? 0) +
+            darknetCharismaBonus(player, 0.3) +
             ((player.skills.hacking ?? 0) + intelligence) * sharePower;
           return {
             ...WORK_STATS,
@@ -179,7 +225,6 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
         }
         throw new Error(`Not yet implemented: ${workType}`);
       },
-      // Money ignores the real game's backdoor discount on the gym's server (not modeled here).
       gymGains: (player: Person, gymType: GymType, locationName: LocationName) => {
         const gameCPS = 5;
         const gymMap: Record<
@@ -201,15 +246,15 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
         const gym = gymMap[gymType];
         const location = locations[locationName];
         const expScale = location.expMult / gameCPS;
+        const discount = backdoorDiscount(staticData, player, GYM_HOSTNAMES[locationName]);
         return {
           ...WORK_STATS,
-          [gym.expField]: expScale * mult(player, gym.multStat),
-          money: (-120 * location.costMult) / gameCPS,
+          [gym.expField]: expScale * mult(player, gym.multStat) * trainingMult,
+          money: (-120 * location.costMult * discount) / gameCPS,
         };
       },
-      // Money ignores the real game's backdoor discount on the university's server (not modeled
-      // here). intExp is per the real Classes data but, like the real game, isn't multiplier-scaled
-      // -- there is no intelligence_exp Multipliers key.
+      // intExp is per the real Classes data but, like the real game, isn't multiplier-scaled --
+      // there is no intelligence_exp Multipliers key.
       universityGains: (
         player: Person,
         classType: UniversityClassType,
@@ -234,13 +279,14 @@ export const getMockFormulas = (staticData: StaticData, sharePower = 1) => {
         };
         const classs = classes[classType];
         const location = locations[locationName];
-        const expScale = location.expMult / gameCPS;
+        const expScale = (location.expMult / gameCPS) * studyMult;
+        const discount = backdoorDiscount(staticData, player, UNIVERSITY_HOSTNAMES[locationName]);
         return {
           ...WORK_STATS,
           hackExp: (classs.hackExp ?? 0) * expScale * mult(player, 'hacking_exp'),
           chaExp: (classs.chaExp ?? 0) * expScale * mult(player, 'charisma_exp'),
           intExp: classs.intExp * expScale,
-          money: (classs.money * location.costMult) / gameCPS,
+          money: (classs.money * location.costMult * discount) / gameCPS,
         };
       },
     },
@@ -260,5 +306,8 @@ export const hasFormulas = (ns: NS): boolean => {
   }
 };
 
-export const formulas = (ns: NS, staticData?: StaticData) =>
-  hasFormulas(ns) ? ns.formulas : getMockFormulas(staticData ?? getStaticData(ns));
+export const formulas = (ns: NS, staticData?: StaticData) => {
+  if (hasFormulas(ns)) return ns.formulas;
+  const { studyMult, trainingMult } = getPlayerData(ns);
+  return getMockFormulas(staticData ?? getStaticData(ns), { studyMult, trainingMult });
+};

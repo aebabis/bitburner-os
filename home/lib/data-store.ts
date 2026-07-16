@@ -88,6 +88,8 @@ export type PlayerData = {
   homeRamUpgradeCost?: number;
   isPlayerUsingTerminal?: boolean;
   queuedAugmentations?: string[];
+  studyMult?: number;
+  trainingMult?: number;
 
   homeRam: number;
   wseAccount: boolean;
