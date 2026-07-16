@@ -115,15 +115,15 @@ export async function main(ns: NS) {
       });
 
       it('should eventually buy DataJack', () => {
-        let run = 0;
+        let runNum = 0;
         let augsObtained: string[] = [];
         while (true) {
-          const moneyRate = 10 * 10 ** run;
+          const moneyRate = 10 * 10 ** runNum;
           const aug = select(ns, augsObtained, {}, moneyRate);
           console.log(aug.faction);
           console.log(aug.augmentations.join('\n') + '\n');
           augsObtained = [...augsObtained, ...aug.augmentations];
-          run++;
+          runNum++;
           if (aug.augmentations.includes('DataJack')) {
             const uniqueLeft = (staticData as any).augmentations.filter(
               (a: string) => a !== 'NeuroFlux Governor',
@@ -134,7 +134,7 @@ export async function main(ns: NS) {
             // player whose stats grow with each run.
             // TODO: add an endgame test with progressive player skills.
             break;
-          } else if (run === 100) {
+          } else if (runNum === 100) {
             throw new Error('Took too long');
           }
         }
