@@ -1,4 +1,0 @@
-export async function main(ns: NS) {
-  ns.disableLog('ALL');
-  ns.singularity.installAugmentations('start.ts');
-}

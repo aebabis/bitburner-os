@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip/schema.json",
   "entry": [
+    "home/download.ts",
     "home/readme.ts",
     "home/start.ts",
     "home/stop.ts",
@@ -23,7 +24,6 @@
     "home/bin/trailblazer.ts",
     "home/bin/nvim.ts",
     "home/bin/share.ts",
-    "home/bin/stalker.ts",
     "home/boot/boot.ts",
     "home/boot/reset.ts",
     "home/boot/ui.ts",
