@@ -7,10 +7,10 @@ const builder = (code: string): Color => {
       valueOf: () => result,
       toString: () => result,
       toJSON: () => result,
-    };
+    } as unknown as string;
   };
   func.toString = func.valueOf = func.toJSON = () => code;
-  return func;
+  return func as unknown as Color;
 };
 
 type TermColor = Color & { BOLD: Color };
