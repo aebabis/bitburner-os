@@ -95,7 +95,8 @@ export const fewestHops = (track: number[]) => {
 };
 
 export const mergeIntervals = (intervals: [number, number][]) => {
-  const result = [intervals.shift()];
+  if (intervals.length === 0) return [];
+  const result = [intervals.shift()!];
   for (let [left, right] of intervals) {
     let i = 0;
     while (i < result.length) {
@@ -136,7 +137,7 @@ const fixParens = (str: string, index = 0, balance = 0): string[] => {
 export const fixParensOpt = (str: string) => {
   const solns = fixParens(str);
   let bestLen = 0;
-  let map = /** @type {Record<string, boolean>} */ {};
+  let map: Record<string, boolean> = {};
   for (const soln of solns) {
     if (soln.length > bestLen) {
       bestLen = soln.length;
@@ -163,8 +164,8 @@ export const pathToCorner = (grid: number[][]) => {
   const h = grid.length;
   const w = grid[0].length;
   const k = (x: number, y: number) => `${x},${y}`;
-  const map = new Map();
-  const gset = (x: number, y: number, v: number) => !map.get(k(x, y)) && map.set(k(x, y), v);
+  const map = new Map<string, string>();
+  const gset = (x: number, y: number, v: string) => !map.get(k(x, y)) && map.set(k(x, y), v);
   map.set(k(0, 0), '');
   for (const [coords, path] of map) {
     const [x, y] = coords.split(',').map(Number);
