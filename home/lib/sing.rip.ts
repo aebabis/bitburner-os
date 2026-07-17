@@ -12,7 +12,7 @@ export const $win = (ns: NS, port: number) =>
     ns['exec']('/bin/self/actualize.ts', 'home');
   })();
 
-const $install = async (ns: NS, port: number) => {
+export const $install = async (ns: NS, port: number) => {
   const hostnames = await $nmap(ns, port)();
   return runInPlace(
     ns,
@@ -111,10 +111,6 @@ const $backup = (ns: NS, port = ns.pid) =>
 export const $sing =
   (ns: NS, port = ns.pid) =>
   async (goalTree: Goal) => {
-    if (goalTree.type === 'INSTALL' && goalTree.deps.every((g) => g.isDone())) {
-      await $install(ns, port);
-    }
-
     await $backup(ns, port);
     await $tor(ns, port);
 

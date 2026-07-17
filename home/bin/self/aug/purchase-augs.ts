@@ -3,16 +3,13 @@ import { formulas } from '../../../lib/formulas';
 import { AUG_LOG_FILE } from '../../../etc/config';
 import { inPlace } from '../../../lib/in-place';
 import { tprint } from '../../../boot/util';
-import { STR } from '../../../lib/colors';
+import { ERROR, STR } from '../../../lib/colors';
 import { $getQueuedAugmentations } from '../../../lib/sing.rip';
+import { nmap } from '../../../lib/nmap';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
 export async function main(ns: NS) {
-  ns.disableLog('ALL');
-  tprint(ns)(STR.BOLD + 'INSTALLING');
-  tprint(ns)(STR + '  Stopping all programs');
-
   // Reserve RAM
   ns.singularity.purchaseAugmentation;
 
@@ -22,10 +19,20 @@ export async function main(ns: NS) {
     throw new Error('purchase-augs must be run on home');
   }
 
-  const { factions } = ns.getPlayer();
-
+  const { money, factions } = ns.getPlayer();
   const root = getGoals(ns);
   const actions = root.type === 'INSTALL' ? root.actions : [];
+
+  if (money < root.prerequisites('AUG_MONEY')[0]?.requirement) {
+    ns.tprint(ERROR + 'Premature call to purchase-augs');
+    ns.exec('start.ts', 'home', 1);
+    throw new Error('Premature call to purchase-augs');
+  }
+
+  ns.disableLog('ALL');
+  tprint(ns)(STR.BOLD + 'INSTALLING');
+  tprint(ns)(STR + '  Stopping all programs');
+  for (const hostname of nmap(ns)) ns['killall'](hostname, true);
 
   const targetAugmentations = actions.flatMap((a) => (a.type === 'BUY_AUG' ? [a.name] : []));
 

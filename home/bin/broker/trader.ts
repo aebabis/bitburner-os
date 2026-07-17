@@ -95,36 +95,53 @@ export async function main(ns: NS) {
     return result;
   })(symbols);
 
+  let dumpMode = false;
+
   while (true) {
     ns.clearLog();
 
+    const ttc = getGoals(ns).timeToComplete() ?? 0;
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
 
-    // Sell all stocks forecast to drop
-    for (const sym of symbols) {
-      const [shares] = positions[sym];
-      if (forecasts[sym] < 0.5 && shares > 0) {
-        if ((await $.stock['getSaleGain'](sym, shares, 'L')) > 0) {
-          await $.stock['sellStock'](sym, shares);
+    if (dumpMode) dumpMode = ttc < 600;
+    else dumpMode = ttc < 300;
+
+    if (dumpMode) {
+      for (const sym of symbols) {
+        const [shares] = positions[sym];
+        if (shares > 0) {
+          if ((await $.stock['getSaleGain'](sym, shares, 'L')) > 0) {
+            await $.stock['sellStock'](sym, shares);
+          }
         }
       }
-    }
+    } else {
+      // Sell all stocks forecast to drop
+      for (const sym of symbols) {
+        const [shares] = positions[sym];
+        if (forecasts[sym] < 0.5 && shares > 0) {
+          if ((await $.stock['getSaleGain'](sym, shares, 'L')) > 0) {
+            await $.stock['sellStock'](sym, shares);
+          }
+        }
+      }
 
-    const eligiblePurchases = symbols
-      .filter((sym) => forecasts[sym] > 0.51)
-      .filter((sym) => positions[sym][0] < maxShares[sym])
-      .sort(by((sym) => -forecasts[sym]));
+      const eligiblePurchases = symbols
+        .filter((sym) => forecasts[sym] > 0.51)
+        .filter((sym) => positions[sym][0] < maxShares[sym])
+        .sort(by((sym) => -forecasts[sym]));
 
-    let moneyToSpend = getSpendableFunds(ns);
+      let moneyToSpend = getSpendableFunds(ns);
 
-    while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
-      const sym = eligiblePurchases.shift()!;
-      const maxPurchase = maxShares[sym] - positions[sym][0];
-      const shares = await $getMaxPurchase(ns, sym, maxPurchase, moneyToSpend);
-      const price = await $.stock['buyStock'](sym, shares);
-      positions[sym][0] += shares;
-      moneyToSpend -= shares * price;
+      while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
+        const sym = eligiblePurchases.shift()!;
+        const maxPurchase = maxShares[sym] - positions[sym][0];
+        const shares = await $getMaxPurchase(ns, sym, maxPurchase, moneyToSpend);
+        const price = await $.stock['buyStock'](sym, shares);
+        positions[sym][0] += shares;
+        moneyToSpend -= shares * price;
+      }
     }
 
     const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
@@ -146,7 +163,7 @@ export async function main(ns: NS) {
       .map((sym) => [
         sym,
         ns.format.number(positions[sym][0]),
-        forecasts[sym].toFixed(3) || '',
+        forecasts[sym].toFixed(3).replace(/^0/, '') || '',
         '$' + ns.format.number(prices[sym]),
       ]);
     ns.print(table(ns, columns, rows, { colors: true }));

@@ -5,8 +5,9 @@ import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace } from '../../lib/in-place';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
-import { $sing, $win } from '../../lib/sing.rip';
+import { $install, $sing, $win } from '../../lib/sing.rip';
 import { makeAfkTracker } from '../../lib/afk';
+import { formulas, hasFormulas } from '../../lib/formulas';
 
 const TRAVEL_COST = 200_000;
 
@@ -205,10 +206,15 @@ export async function main(ns: NS) {
     }
   };
 
-  const factionWork = async (faction: FactionName) => {
-    const preferenceOrder = ['hacking', 'field', 'security'] as FactionWorkType[];
+  const factionWork = async (player: Player, faction: FactionName) => {
+    const form = hasFormulas(ns) ? ns.formulas : formulas(ns);
     const workTypes = factionWorkTypes[faction];
-    const workType = preferenceOrder.find((type) => workTypes.includes(type))!;
+    const { workType } = workTypes
+      .map((workType) => ({
+        workType,
+        reputation: form.work.factionGains(player, workType, 0).reputation,
+      }))
+      .reduce((a, b) => (a.reputation > b.reputation ? a : b));
     const { factionName, factionWorkType } = (ns.singularity.getCurrentWork() ||
       {}) as FactionWorkTask;
     if (faction === factionName && workType === factionWorkType) return;
@@ -251,6 +257,17 @@ export async function main(ns: NS) {
     if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
       await $win(ns, runPort);
     }
+    if (rootGoal.type === 'INSTALL' && rootGoal.deps.every((g) => g.isDone())) {
+      // Make sure stocks have been sold before proceeding
+      if (
+        rootGoal
+          .prerequisites('AUG_MONEY')
+          .every(({ requirement }) => requirement < ns.getPlayer().money)
+      ) {
+        await $install(ns, runPort);
+      }
+    }
+
     if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await $sing(ns, runPort)(rootGoal);
 
@@ -273,7 +290,7 @@ export async function main(ns: NS) {
     } else if (!isRepBound(ns, rootGoal) && workFaction != null && canMakeMoney) {
       await makeMoney();
     } else if (workFaction != null) {
-      await factionWork(workFaction);
+      await factionWork(ns.getPlayer(), workFaction);
     } else {
       const locationGoal = findGoal('LOCATION');
       if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
@@ -291,7 +308,7 @@ export async function main(ns: NS) {
           ns.getPlayer().factions.includes(faction),
         );
         if (grindFaction) {
-          await factionWork(grindFaction);
+          await factionWork(ns.getPlayer(), grindFaction);
         } else {
           makeMoney(); // For stats
         }
