@@ -191,7 +191,7 @@ export const killsGoal = (killsRequired: number, numPeopleKilled: number) => ({
   ...goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
     ownTime: () => (killsRequired - numPeopleKilled) * 3,
   }),
-  requirement: numPeopleKilled,
+  requirement: killsRequired,
 });
 
 export const karmaGoal = (karmaRequired: number, karma: number, deps: Goal[] = []) => ({
