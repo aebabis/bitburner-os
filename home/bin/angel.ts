@@ -34,7 +34,7 @@ const getHackableServer = (ns: NS, hostname: string): HackableServer => {
   return server as HackableServer;
 };
 
-const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY(ns));
+const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY);
 
 const getWeakThreads = (ns: NS, targetDecrease: number) => {
   let threads = 1;

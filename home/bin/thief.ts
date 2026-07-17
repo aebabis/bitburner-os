@@ -4,7 +4,7 @@ import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 
-const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY(ns));
+const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY);
 
 const SPACING = 50;
 const FRAME_SPACING = 200;

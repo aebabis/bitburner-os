@@ -9,10 +9,9 @@ export type RamPolicy = {
   /** Returns GB to deduct from the non-home pool (for service RMI overhead). */
 };
 
-/** Policy for batch hacking programs (thief, angel): large home reserve + pool awareness. */
-export const HACKER_POLICY = (ns: NS): RamPolicy => ({
+export const HACKER_POLICY: RamPolicy = {
   homeReserve: () => 16,
-});
+};
 
 const DEFAULT_POLICY: RamPolicy = {
   homeReserve: ({ script, highPriority }) => {
@@ -54,6 +53,8 @@ export const getRamAllowances = (ns: NS): RamAllowances => {
   const rootServers = getRootServers(ns);
   const maxRam = rootServers.map((server) => server.maxRam).reduce((a, b) => a + b, 0);
   return {
+    serviceRam: Infinity,
+    hackingRam: (maxRam * 9) / 10,
     sharingRam: maxRam / 10,
   };
 };
