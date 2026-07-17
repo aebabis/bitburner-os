@@ -297,6 +297,8 @@ export const getMockFormulas = (
   };
 };
 
+export type MockFormulas = ReturnType<typeof getMockFormulas>;
+
 export const hasFormulas = (ns: NS): boolean => {
   try {
     ns.formulas.hacking.weakenEffect(1);

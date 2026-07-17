@@ -32,7 +32,7 @@ import {
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 import { getAugWeights } from '../aug-weights.ts';
-import { getMockFormulas } from '../formulas.ts';
+import { getMockFormulas, MockFormulas } from '../formulas.ts';
 
 const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => number): Plan =>
   Object.assign(installGoal(deps, actions), { utility });
@@ -65,7 +65,7 @@ const skillTrainingTime = (
   player: Player,
   stat: 'hacking' | 'strength' | 'defense' | 'dexterity' | 'agility',
   requirement: number,
-  formulas: Formulas,
+  formulas: MockFormulas | Formulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
   const mult = player.mults[stat] * (bitNodeMultipliers?.[LEVEL_MULT_KEY[stat]] ?? 1);
@@ -95,14 +95,14 @@ export const buildJoinSubtree = (
     money,
     totalIncome,
     karma,
-    formulas = null,
+    formulas,
   }: {
     player: Player;
     staticData: StaticData;
     money: number;
     totalIncome: number;
     karma: number;
-    formulas: Formulas | null;
+    formulas: MockFormulas | Formulas;
   },
 ) => {
   const { factions, skills, city } = player;
@@ -338,7 +338,6 @@ export const buildFactionGoalTree = (
   if (
     !canDonate &&
     shouldPursueFavor(
-      faction,
       repReq,
       costToAug,
       currentRep,

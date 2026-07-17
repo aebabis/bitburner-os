@@ -1,7 +1,7 @@
 import { AugWeights, getAugWeights } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
-import { getMockFormulas } from './formulas.ts';
+import { getMockFormulas, MockFormulas } from './formulas.ts';
 
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
@@ -98,7 +98,7 @@ export const computeRepRate = (
   factionFavor: Record<FactionName, number> | undefined,
   player: Player,
   lastAugReset: number,
-  formulas: Formulas,
+  formulas: MockFormulas | Formulas,
 ): number => {
   if (faction === 'Bladeburners') {
     const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
@@ -221,7 +221,6 @@ export const findOptimalBatch = (
  * augTimeWithoutFavor: max(t_rep, t_money) (direct grind this cycle)
  */
 export const shouldPursueFavor = (
-  faction: FactionName,
   repRequired: number,
   augCost: number,
   currentRep: number,
@@ -230,7 +229,7 @@ export const shouldPursueFavor = (
   moneyRate: number,
   liquidAssets: number,
   player: Player,
-  formulas: Formulas,
+  formulas: MockFormulas | Formulas,
   staticData: StaticData,
   overhead: number,
 ) => {
