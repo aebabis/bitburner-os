@@ -129,8 +129,9 @@ const threadpools = (ns: NS) => {
 
 const threadpoolTable = (ns: NS) => {
   const { purchasedServerLimit } = getStaticData(ns);
-  const third = Math.ceil(purchasedServerLimit / 3);
   const data = threadpools(ns);
+  const numServers = Math.max(data.length, purchasedServerLimit);
+  const third = Math.ceil(numServers / 3);
   const left = data.slice(0, third);
   const middle = data.slice(third, third * 2);
   const right = data.slice(third * 2);
