@@ -101,8 +101,11 @@ export async function main(ns: NS) {
           installedNFCount,
         } = getAugTableData(ns);
         const { totalIncome = 0 } = getIncome(ns);
-        const { player: augLivePlayer, factionRep = /** @type {Record<string, number>} */ {} } =
-          getPlayerData(ns);
+        const { player: augLivePlayer, factionRep } = getPlayerData(ns);
+        if (factionRep == null) {
+          ns.tprint('Faction rep not loaded');
+          return;
+        }
 
         const { factionAugmentations, factionFavor: augLiveFactionFavor } = getStaticData(ns);
         const augLiveFormulas = getFormulas(ns);
@@ -174,8 +177,12 @@ export async function main(ns: NS) {
       while (true) {
         const staticData = getStaticData(ns);
         const { augmentationStats = {} } = staticData;
-        const { player, factionRep = {}, queuedAugmentations = [] } = getPlayerData(ns);
+        const { player, factionRep, queuedAugmentations = [] } = getPlayerData(ns);
         const { totalIncome = 0 } = getIncome(ns);
+        if (factionRep == null) {
+          ns.tprint('Faction rep not loaded');
+          return;
+        }
         const formulas = getFormulas(ns);
         const ownedAugs = [...(staticData.installedAugmentations ?? []), ...queuedAugmentations];
         const moneyRate = totalIncome || Infinity;
@@ -217,7 +224,14 @@ export async function main(ns: NS) {
               times == null || times.some((t) => t == null)
                 ? null
                 : Math.max(...(times as number[]));
-            return [faction, value, utility, nfCount, nonNfCount, eta];
+            return [faction, value, utility, nfCount, nonNfCount, eta] as [
+              FactionName,
+              number,
+              number,
+              number,
+              number,
+              number | null,
+            ];
           })
           .sort((a, b) => b[2] - a[2]);
 

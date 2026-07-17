@@ -1,6 +1,7 @@
 import { AugWeights, getAugWeights } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
+import { getMockFormulas } from './formulas.ts';
 
 // Augs with no stats have hard-coded evaluations
 const UNITY_AUGS = {
@@ -116,7 +117,7 @@ export const findOptimalBatch = (
   faction: FactionName,
   staticData: StaticData,
   player: Player,
-  formulas: Formulas,
+  formulas: ReturnType<typeof getMockFormulas>,
   factionRep: Record<FactionName, number>,
   ownedAugmentations: string[],
   overhead: number,

@@ -32,6 +32,7 @@ import {
 } from '../aug-select.ts';
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 import { getAugWeights } from '../aug-weights.ts';
+import { getMockFormulas } from '../formulas.ts';
 
 const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => number): Plan =>
   Object.assign(installGoal(deps, actions), { utility });
@@ -252,7 +253,7 @@ interface FactionGoalTreeProps {
   money: number;
   estimatedStockValue?: number;
   totalIncome: number;
-  formulas: Formulas; // TODO: Use ReturnType<formulas>
+  formulas: ReturnType<typeof getMockFormulas>;
   karma: number;
   overhead: number;
 }
