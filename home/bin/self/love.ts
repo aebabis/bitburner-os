@@ -218,10 +218,26 @@ export async function main(ns: NS) {
   const { algorithms } = ns.enums.UniversityClassType;
 
   while (true) {
-    const root = getGoals(ns);
-    const prereqs = root.prerequisites();
-    const findGoal = (type: GoalType) => prereqs.find((g) => g.type === type);
-    const workFaction = await getWorkFaction($, root, ns.getPlayer().factions);
+    const rootGoal = getGoals(ns);
+
+    const reduce = (root: Goal): Goal[] => {
+      const relevant = new Set<Goal>([root]);
+      for (const goal of root.deps) {
+        if (goal.isDone()) continue;
+        let target = goal;
+        if (goal.type === 'EITHER') {
+          target = goal.deps.reduce((a, b) =>
+            (a.timeToComplete() ?? Infinity) < (b.timeToComplete() ?? Infinity) ? a : b,
+          );
+        }
+        for (const child of reduce(target)) relevant.add(child);
+      }
+      return [...relevant];
+    };
+
+    const relevantGoals = reduce(rootGoal);
+    const findGoal = (type: GoalType) => relevantGoals.find((g) => g.type === type);
+    const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
     const { city, money, skills } = ns.getPlayer();
     const school = getSchool(ns, city);
@@ -235,7 +251,7 @@ export async function main(ns: NS) {
       await $win(ns, runPort);
     }
     if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
-    await $sing(ns, runPort)(root);
+    await $sing(ns, runPort)(rootGoal);
 
     if (ns.getServerMaxRam('home') <= 64) {
       await $.singularity['upgradeHomeRam']();
@@ -253,7 +269,7 @@ export async function main(ns: NS) {
       await goToGym();
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
       await $commitCrime('Homicide');
-    } else if (!isRepBound(ns, root) && canMakeMoney) {
+    } else if (!isRepBound(ns, rootGoal) && canMakeMoney) {
       await makeMoney();
     } else if (workFaction != null) {
       await factionWork(workFaction);

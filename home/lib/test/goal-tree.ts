@@ -1,6 +1,7 @@
 import { setupRunner, assert } from '../test-runner';
 import {
   augMoneyGoal,
+  eitherGoal,
   factionJoinGoal,
   factionRepGoal,
   installGoal,
@@ -53,6 +54,33 @@ export async function main(ns: NS) {
         // karma is negative in Bitburner; -100 satisfies a -54 requirement
         assert.equal(karmaGoal(-54, -100).isDone(), true);
         assert.equal(karmaGoal(-54, -20).isDone(), false);
+      });
+    });
+
+    describe('eitherGoal', () => {
+      it('isDone() is true when any branch is done', () => {
+        const done = augMoneyGoal(0, 0, 1);
+        const notDone = augMoneyGoal(1000, 0, 0);
+        assert.equal(eitherGoal([notDone, done]).isDone(), true);
+        assert.equal(eitherGoal([notDone]).isDone(), false);
+      });
+
+      it('timeToComplete() is the min across branches', () => {
+        const slow = augMoneyGoal(1000, 0, 1); // 1000s
+        const fast = augMoneyGoal(100, 0, 1); // 100s
+        assert.equal(eitherGoal([slow, fast]).timeToComplete(), 100);
+      });
+
+      it('timeToComplete() ignores null branches when another is finite', () => {
+        const blocked = augMoneyGoal(1000, 0, 0); // rate 0 -> null
+        const finite = augMoneyGoal(100, 0, 1); // 100s
+        assert.equal(eitherGoal([blocked, finite]).timeToComplete(), 100);
+      });
+
+      it('timeToComplete() is null when every branch is null', () => {
+        const a = augMoneyGoal(1000, 0, 0);
+        const b = augMoneyGoal(2000, 0, 0);
+        assert.equal(eitherGoal([a, b]).timeToComplete(), null);
       });
     });
   });
@@ -192,6 +220,66 @@ export async function main(ns: NS) {
         'join goal should have a HACKING_LEVEL dep',
       );
     });
+    it('someCondition skill branches (e.g. Daedalus) become an EITHER join prereq', () => {
+      const staticData = {
+        resetInfo: mockResetInfo,
+        factionRequirements: {
+          TestFaction: [
+            {
+              type: 'someCondition',
+              conditions: [
+                { type: 'skills', skills: { hacking: 2500 } },
+                {
+                  type: 'skills',
+                  skills: { strength: 1500, defense: 1500, dexterity: 1500, agility: 1500 },
+                },
+              ],
+            },
+          ],
+        },
+        factionAugmentations: { TestFaction: ['TestAug'] },
+        augmentationStats: { TestAug: { hacking: 1.5 } },
+        augmentationRepReqs: { TestAug: 0 },
+        augmentationPrices: { TestAug: 0 },
+        augmentationPrereqs: {},
+        installedAugmentations: [],
+      } as any;
+      const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
+        player: {
+          factions: [],
+          // Hacking branch already satisfied; combat branch is not.
+          skills: { hacking: 2500, strength: 1, defense: 1, dexterity: 1, agility: 1 },
+          mults: { hacking: 1, strength: 1, defense: 1, dexterity: 1, agility: 1 },
+          exp: { hacking: 0, strength: 0, defense: 0, dexterity: 0, agility: 0 },
+          location: 'Sector-12',
+        } as any,
+        staticData,
+        factionRep: {},
+        queuedAugmentations: [],
+        ownedAugs: [],
+        money: 0,
+        totalIncome: 0,
+        formulas: mockFormulas as any,
+        karma: 0,
+        overhead: computeResetOverhead(staticData),
+      });
+      assert.ok(tree);
+      const joinGoal = tree.deps.flatMap((g: any) => g.prerequisites('FACTION_JOIN'))[0];
+      assert.ok(joinGoal, 'join goal should exist');
+      const eitherDep = joinGoal.deps.find((d: any) => d.type === 'EITHER');
+      assert.ok(eitherDep, 'join goal should have a single EITHER dep for the someCondition');
+      assert.equal(
+        eitherDep.isDone(),
+        true,
+        'already-met hacking branch should satisfy the EITHER goal',
+      );
+      assert.equal(
+        eitherDep.timeToComplete(),
+        0,
+        'time should be the min across branches (0, since hacking is already met)',
+      );
+    });
+
     it('rep goal requirement equals max rep requirement across batch', () => {
       const staticData = {
         resetInfo: mockResetInfo,

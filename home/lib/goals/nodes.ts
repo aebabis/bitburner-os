@@ -21,7 +21,8 @@ export type GoalType =
   | 'KARMA'
   | 'LOCATION'
   | 'MONEY'
-  | 'AUG_MONEY';
+  | 'AUG_MONEY'
+  | 'EITHER';
 
 export type Action =
   | { type: 'BUY_REP'; faction: FactionName; amount: number }
@@ -255,6 +256,26 @@ export const factionFavorGoal = (
       ownTime: () => (repRate > 0 ? remaining / repRate : null),
     },
   );
+};
+
+// Disjunction: satisfied once any branch is satisfied. Unlike deps (AND, aggregated
+// via max), estimated time is the min across branches since only one need complete.
+export const eitherGoal = (branches: Goal[]) => {
+  const base = goal(
+    'EITHER',
+    branches.map((b) => b.desc).join(' OR '),
+    () => branches.some((b) => b.isDone()),
+    { deps: branches, ownTime: () => 0 },
+  );
+  let _ttc: number | null | undefined;
+  return {
+    ...base,
+    timeToComplete: (): number | null => {
+      if (_ttc !== undefined) return _ttc;
+      const times = branches.map((b) => b.timeToComplete()).filter((t): t is number => t != null);
+      return (_ttc = times.length > 0 ? Math.min(...times) : null);
+    },
+  };
 };
 
 export const labyrinthGoal = (labyAugsHeld: number) => {

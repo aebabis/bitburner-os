@@ -4,6 +4,7 @@ import {
   buyAugAction,
   buyRepAction,
   factionJoinGoal,
+  eitherGoal,
   hackingLevelGoal,
   combatLevelsGoal,
   killsGoal,
@@ -162,6 +163,42 @@ export const buildJoinSubtree = (
     const t = times ? times.reduce((a, b) => a + b, 0) : null;
     joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
   }
+  // Some factions (e.g. Daedalus) gate on alternative skill paths, e.g.
+  // (hacking >= X) OR (all combat stats >= Y), expressed via someCondition.
+  const buildSkillGoal = (req: Partial<Skills>) => {
+    if (req.hacking) {
+      const hReq = req.hacking;
+      const t = formulas
+        ? skillTrainingTime(player, 'hacking', hReq, formulas, staticData.bitNodeMultipliers)
+        : null;
+      return hackingLevelGoal(hReq, skills.hacking ?? 0, t);
+    }
+    const cReq = Math.max(0, ...COMBAT_STATS.map((stat) => req[stat] ?? 0));
+    if (cReq > 0) {
+      const times = formulas
+        ? COMBAT_STATS.map(
+            (stat) =>
+              skillTrainingTime(player, stat, cReq, formulas, staticData.bitNodeMultipliers) ?? 0,
+          )
+        : null;
+      const t = times ? times.reduce((a, b) => a + b, 0) : null;
+      return combatLevelsGoal(cReq, skills, t);
+    }
+    return null;
+  };
+  const someConditionGoals = requirements
+    .filter((r) => r.type === 'someCondition')
+    .map((r) => {
+      const branches = r.conditions
+        .filter((c) => c.type === 'skills')
+        .map((c) => buildSkillGoal(c.skills))
+        .filter((g): g is Goal => g != null);
+      if (branches.length === 0) return null;
+      return branches.length === 1 ? branches[0] : eitherGoal(branches);
+    })
+    .filter((g): g is Goal => g != null);
+  joinPrereqs.push(...someConditionGoals);
+
   if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
   if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
   const totalMoneyTarget = moneyTarget + bdMoney;
