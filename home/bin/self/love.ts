@@ -270,7 +270,7 @@ export async function main(ns: NS) {
       await goToGym();
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
       await $commitCrime('Homicide');
-    } else if (!isRepBound(ns, rootGoal) && canMakeMoney) {
+    } else if (!isRepBound(ns, rootGoal) && workFaction != null && canMakeMoney) {
       await makeMoney();
     } else if (workFaction != null) {
       await factionWork(workFaction);
