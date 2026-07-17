@@ -1,6 +1,6 @@
 import { getStaticData, putPlayerData } from '../../lib/data-store';
 import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals';
-import { Goal, GoalType } from '../../lib/goals/nodes';
+import { Goal, GoalOfType, GoalType } from '../../lib/goals/nodes';
 import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace } from '../../lib/in-place';
 import { $nmap } from '../../lib/nmap.rip';
@@ -236,7 +236,8 @@ export async function main(ns: NS) {
     };
 
     const relevantGoals = reduce(rootGoal);
-    const findGoal = (type: GoalType) => relevantGoals.find((g) => g.type === type);
+    const findGoal = <T extends GoalType>(type: T) =>
+      relevantGoals.find((g): g is GoalOfType<T> => g.type === type);
     const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
     const { city, money, skills } = ns.getPlayer();
@@ -278,7 +279,7 @@ export async function main(ns: NS) {
       if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
         await goToGym();
       } else if (locationGoal?.isDone() === false) {
-        await $.singularity['travelToCity'](locationGoal.requirement as unknown as CityName);
+        await $.singularity['travelToCity'](locationGoal.city);
       } else if (canMakeMoney) {
         await makeMoney();
       } else {

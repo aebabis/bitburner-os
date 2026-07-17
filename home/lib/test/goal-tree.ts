@@ -176,7 +176,7 @@ export async function main(ns: NS) {
       });
 
       assert.ok(tree);
-      const moneyGoal = tree.deps.find((g: any) => g.type === 'AUG_MONEY')!;
+      const moneyGoal = tree.deps.find((g) => g.type === 'AUG_MONEY')!;
       // correct: requirement = 1.9^1 × price = 1.9M ≤ money (2M) → isDone
       // bug:     requirement = 1.9^2 × price = 3.61M > money (2M) → not done
       assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
@@ -316,7 +316,7 @@ export async function main(ns: NS) {
         overhead: computeResetOverhead(staticData),
       });
       assert.ok(tree);
-      const repGoal = tree.deps.find((g: any) => g.type === 'FACTION_REP')!;
+      const repGoal = tree.deps.find((g) => g.type === 'FACTION_REP')!;
       assert.equal(repGoal.requirement, 3000);
     });
 
@@ -535,7 +535,7 @@ export async function main(ns: NS) {
     it('money goal includes donation cost', () => {
       const tree = buildFactionGoalTree(ns, 'F' as FactionName, donationData());
       assert.ok(tree);
-      const moneyGoal = tree.deps.find((g: any) => g.type === 'AUG_MONEY')!;
+      const moneyGoal = tree.deps.find((g) => g.type === 'AUG_MONEY')!;
       // donationForRep(50000, player) = 50000 * 1e6 / 1 = 5e10; augCost = 1e6
       const expectedDonation = mockFormulas.reputation.donationForRep(50_000, {} as Person);
       assert.equal(moneyGoal.requirement, 1_000_000 + expectedDonation);

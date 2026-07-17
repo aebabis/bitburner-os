@@ -28,63 +28,90 @@ export type Action =
   | { type: 'BUY_REP'; faction: FactionName; amount: number }
   | { type: 'BUY_AUG'; name: string };
 
-export type Plan = Goal & { utility: (overhead: number) => number };
-
-export type Goal = {
-  type: GoalType;
+type GoalCommon<T extends GoalType> = {
+  type: T;
   desc: string;
   isDone: () => boolean;
   toString: () => string;
-  requirement: number | CityName | undefined;
-  faction: FactionName | undefined;
   deps: Goal[];
   actions: Action[];
   ownTime: () => number | null;
   timeToComplete: () => number | null;
-  prerequisites: (typeFilter?: GoalType) => Goal[];
+  prerequisites: {
+    (): Goal[];
+    <U extends GoalType>(typeFilter: U): GoalOfType<U>[];
+  };
 };
+
+// Goal types whose only extra data is a numeric target.
+type NumericRequirementType =
+  | 'HACKING_LEVEL'
+  | 'HACKING_XP'
+  | 'COMBAT_LEVELS'
+  | 'KILLS'
+  | 'KARMA'
+  | 'MONEY'
+  | 'AUG_MONEY';
+
+type PlainGoalType = Exclude<
+  GoalType,
+  NumericRequirementType | 'LOCATION' | 'FACTION_REP' | 'FACTION_FAVOR' | 'FACTION_JOIN'
+>;
+
+// Distributes over T so each literal in a multi-member group (e.g. NumericRequirementType)
+// becomes its own discriminated union member instead of one member with a union-valued `type`
+// — required for `Extract<Goal, { type: T }>` (see GoalOfType) to resolve per literal.
+type Distribute<T extends GoalType, Extra> = T extends GoalType ? GoalCommon<T> & Extra : never;
+
+export type Goal =
+  | Distribute<PlainGoalType, unknown>
+  | Distribute<NumericRequirementType, { requirement: number }>
+  | Distribute<'LOCATION', { city: CityName }>
+  | Distribute<'FACTION_REP' | 'FACTION_FAVOR', { requirement: number; faction: FactionName }>
+  | Distribute<'FACTION_JOIN', { faction: FactionName }>;
+
+export type GoalOfType<T extends GoalType> = Extract<Goal, { type: T }>;
+
+export type Plan = Goal & { utility: (overhead: number) => number };
 
 export const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'] as const;
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 interface GoalProps {
-  requirement?: number | CityName;
-  faction?: FactionName;
   deps?: Goal[];
   actions?: Action[];
   ownTime?: () => number | null;
 }
-export const goal = (
-  type: GoalType,
+const goal = <T extends GoalType>(
+  type: T,
   desc: string,
   isDone: () => boolean,
-  { requirement, faction, deps = [], actions = [], ownTime = () => null }: GoalProps = {},
-): Goal => {
+  { deps = [], actions = [], ownTime = () => null }: GoalProps = {},
+): GoalCommon<T> => {
   let _ttc: number | null;
+  const prerequisites = ((typeFilter?: GoalType) => {
+    const seen = new Set<Goal>();
+    const result: Goal[] = [];
+    const walk = (goalDeps: Goal[]) => {
+      for (const dep of goalDeps) {
+        if (seen.has(dep)) continue;
+        seen.add(dep);
+        if (typeFilter == null || dep.type === typeFilter) result.push(dep);
+        walk(dep.deps);
+      }
+    };
+    walk(deps);
+    return result;
+  }) as GoalCommon<T>['prerequisites'];
   return {
     type,
     desc,
     isDone,
-    requirement,
-    faction,
     deps,
     actions,
     ownTime,
     toString: () => (isDone() ? desc : C(56)(desc)),
-    prerequisites(typeFilter?: GoalType): Goal[] {
-      const seen = new Set<Goal>();
-      const result: Goal[] = [];
-      const walk = (goalDeps: Goal[]) => {
-        for (const dep of goalDeps) {
-          if (seen.has(dep)) continue;
-          seen.add(dep);
-          if (typeFilter == null || dep.type === typeFilter) result.push(dep);
-          walk(dep.deps);
-        }
-      };
-      walk(deps);
-      return result;
-    },
+    prerequisites,
     timeToComplete() {
       if (_ttc !== undefined) return _ttc;
       if (isDone()) return (_ttc = 0);
@@ -128,65 +155,82 @@ export const hackingLevelGoal = (
   hackReq: number,
   currentHacking: number,
   trainingTime: number | null = null,
-) =>
-  goal('HACKING_LEVEL', `Hacking ≥ ${hackReq}`, () => currentHacking >= hackReq, {
-    requirement: hackReq,
+) => ({
+  ...goal('HACKING_LEVEL', `Hacking ≥ ${hackReq}`, () => currentHacking >= hackReq, {
     ownTime: () => trainingTime,
-  });
+  }),
+  requirement: hackReq,
+});
 
 export const hackingXpGoal = (
   xpReq: number,
   currentXp: number,
   trainingTime: number | null = null,
-) =>
-  goal('HACKING_XP', `Hacking XP ≥ ${xpReq}`, () => currentXp >= xpReq, {
-    requirement: xpReq,
+) => ({
+  ...goal('HACKING_XP', `Hacking XP ≥ ${xpReq}`, () => currentXp >= xpReq, {
     ownTime: () => trainingTime,
-  });
+  }),
+  requirement: xpReq,
+});
 
 export const combatLevelsGoal = (
   combatReq: number,
   currentSkills: Skills,
   trainingTime: number | null = null,
-) =>
-  goal(
+) => ({
+  ...goal(
     'COMBAT_LEVELS',
     `Combat stats ≥ ${combatReq}`,
     () => COMBAT_STATS.every((stat) => currentSkills[stat] >= combatReq),
-    { requirement: combatReq, ownTime: () => trainingTime },
-  );
+    { ownTime: () => trainingTime },
+  ),
+  requirement: combatReq,
+});
 
-export const killsGoal = (killsRequired: number, numPeopleKilled: number) =>
-  goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
-    requirement: numPeopleKilled,
+export const killsGoal = (killsRequired: number, numPeopleKilled: number) => ({
+  ...goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
     ownTime: () => (killsRequired - numPeopleKilled) * 3,
-  });
+  }),
+  requirement: numPeopleKilled,
+});
 
-export const karmaGoal = (karmaRequired: number, karma: number, deps: Goal[] = []) =>
-  goal('KARMA', `Have ${karmaRequired} karma`, () => karmaRequired >= karma, {
+export const karmaGoal = (karmaRequired: number, karma: number, deps: Goal[] = []) => ({
+  ...goal('KARMA', `Have ${karmaRequired} karma`, () => karmaRequired >= karma, {
     deps,
-    requirement: karmaRequired,
     ownTime: () => -(karmaRequired - karma),
-  });
+  }),
+  requirement: karmaRequired,
+});
 
-export const moneyPrereqGoal = (moneyTarget: number, currentMoney: number, totalIncome: number) =>
-  goal('MONEY', `Have ${fmtMoney(moneyTarget)}`, () => currentMoney >= moneyTarget, {
-    requirement: moneyTarget,
+export const moneyPrereqGoal = (
+  moneyTarget: number,
+  currentMoney: number,
+  totalIncome: number,
+) => ({
+  ...goal('MONEY', `Have ${fmtMoney(moneyTarget)}`, () => currentMoney >= moneyTarget, {
     ownTime: () => (totalIncome > 0 ? Math.max(0, moneyTarget - currentMoney) / totalIncome : null),
-  });
+  }),
+  requirement: moneyTarget,
+});
 
-export const locationGoal = (location: CityName, currentLocation: CityName) =>
-  goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
-    requirement: location,
+export const locationGoal = (location: CityName, currentLocation: CityName) => ({
+  ...goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
     ownTime: () => 0,
-  });
+  }),
+  city: location,
+});
 
-export const factionJoinGoal = (faction: FactionName, factions: FactionName[], deps: Goal[] = []) =>
-  goal('FACTION_JOIN', 'Join ' + faction, () => factions.includes(faction), {
-    faction,
+export const factionJoinGoal = (
+  faction: FactionName,
+  factions: FactionName[],
+  deps: Goal[] = [],
+) => ({
+  ...goal('FACTION_JOIN', 'Join ' + faction, () => factions.includes(faction), {
     deps,
     ownTime: () => 0,
-  });
+  }),
+  faction,
+});
 
 export const bladesJoinGoal = (inBlades: boolean, deps: Goal[] = []) =>
   goal('BLADES_JOIN', 'Join the blades', () => inBlades, {
@@ -200,31 +244,26 @@ export const factionRepGoal = (
   currentRep: number,
   dep: Goal,
   repRate = 0,
-) =>
-  goal('FACTION_REP', `Gain ${requirement} rep (${faction})`, () => currentRep >= requirement, {
-    requirement,
-    faction,
+) => ({
+  ...goal('FACTION_REP', `Gain ${requirement} rep (${faction})`, () => currentRep >= requirement, {
     deps: [dep],
     ownTime: () => (repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null),
-  });
+  }),
+  requirement,
+  faction,
+});
 
-export const augMoneyGoal = (
-  costToAug: number | undefined,
-  liquidAssets: number,
-  totalIncome: number,
-) =>
-  goal(
+export const augMoneyGoal = (costToAug: number, liquidAssets: number, totalIncome: number) => ({
+  ...goal(
     'AUG_MONEY',
-    'Save ' + (costToAug != null ? fmtMoney(costToAug) : '?') + ' for augmentations',
-    () => costToAug != null && liquidAssets >= costToAug,
+    'Save ' + fmtMoney(costToAug) + ' for augmentations',
+    () => liquidAssets >= costToAug,
     {
-      requirement: costToAug,
-      ownTime: () =>
-        costToAug != null && totalIncome > 0
-          ? Math.max(0, costToAug - liquidAssets) / totalIncome
-          : null,
+      ownTime: () => (totalIncome > 0 ? Math.max(0, costToAug - liquidAssets) / totalIncome : null),
     },
-  );
+  ),
+  requirement: costToAug,
+});
 
 export const buyAugAction = (name: string): Action => ({
   type: 'BUY_AUG',
@@ -245,17 +284,19 @@ export const factionFavorGoal = (
   dep: Goal,
 ) => {
   const remaining = Math.max(0, neededRep - currentRep);
-  return goal(
-    'FACTION_FAVOR',
-    `${neededRep} rep for favor (${faction})`,
-    () => currentRep >= neededRep,
-    {
-      requirement: neededRep,
-      faction,
-      deps: [dep],
-      ownTime: () => (repRate > 0 ? remaining / repRate : null),
-    },
-  );
+  return {
+    ...goal(
+      'FACTION_FAVOR',
+      `${neededRep} rep for favor (${faction})`,
+      () => currentRep >= neededRep,
+      {
+        deps: [dep],
+        ownTime: () => (repRate > 0 ? remaining / repRate : null),
+      },
+    ),
+    requirement: neededRep,
+    faction,
+  };
 };
 
 // Disjunction: satisfied once any branch is satisfied. Unlike deps (AND, aggregated

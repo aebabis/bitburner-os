@@ -192,11 +192,11 @@ export const buildJoinSubtree = (
       const branches = r.conditions
         .filter((c) => c.type === 'skills')
         .map((c) => buildSkillGoal(c.skills))
-        .filter((g): g is Goal => g != null);
+        .filter((g) => g != null);
       if (branches.length === 0) return null;
       return branches.length === 1 ? branches[0] : eitherGoal(branches);
     })
-    .filter((g): g is Goal => g != null);
+    .filter((g) => g != null);
   joinPrereqs.push(...someConditionGoals);
 
   if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
