@@ -90,6 +90,7 @@ export type PlayerData = {
   queuedAugmentations?: string[];
   studyMult?: number;
   trainingMult?: number;
+  hasGift?: boolean;
 
   homeRam: number;
   wseAccount: boolean;

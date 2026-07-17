@@ -42,6 +42,7 @@ type RamAllowances = {
   serviceRam: number;
   hackingRam: number;
   sharingRam: number;
+  stanekRam: number;
 };
 
 // TODO: sharingRam and hackingRam come from same pool
@@ -56,6 +57,7 @@ export const getRamAllowances = (ns: NS): RamAllowances => {
     serviceRam: Infinity,
     hackingRam: (maxRam * 9) / 10,
     sharingRam: maxRam / 10,
+    stanekRam: maxRam / 10, // Takes from hack RAM as able
   };
 };
 

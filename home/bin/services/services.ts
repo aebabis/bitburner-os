@@ -48,6 +48,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
+  const canStanek = () => hasNode(13);
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
@@ -86,6 +87,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
+    AnyHostService(ns, canStanek, always)('/bin/stanek.ts'),
   ];
   if (currentNode === 3) {
     const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');
