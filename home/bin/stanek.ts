@@ -1,8 +1,98 @@
 import { CHARGE } from '../etc/filenames';
-import { getStaticData, putPlayerData } from '../lib/data-store';
+import { getPlayerData, getStaticData, putPlayerData } from '../lib/data-store';
 import { getRamAllowances, getWorkerRam } from '../lib/ram-router';
 
+type FragmentPosition = [number, number, number, number];
+type FragmentFocus = GymType | 'hack' | 'cha' | 'bb';
+
+const HACK_6_5 = (): FragmentPosition[] => [
+  [1, 3, 0, 0],
+  [5, 0, 1, 6],
+  [3, 3, 2, 5],
+  [0, 2, 3, 1],
+  [1, 1, 2, 103],
+  [0, 0, 1, 7],
+  [3, 0, 2, 21],
+];
+
+const S_6_5 = (activeId: number): FragmentPosition[] => [
+  [2, 1, 2, activeId],
+  [0, 0, 0, 101],
+  [0, 1, 2, 105],
+  [4, 0, 1, 101],
+  [0, 3, 0, 102],
+  [3, 2, 3, 106],
+];
+const T_6_5 = (activeId: number): FragmentPosition[] => [
+  [2, 1, 0, activeId],
+  [3, 2, 3, 106],
+  [4, 0, 1, 101],
+  [0, 0, 0, 101],
+  [0, 1, 3, 103],
+  [1, 2, 3, 107],
+];
+const L_6_5 = (activeId: number): FragmentPosition[] => [
+  [2, 1, 2, activeId],
+  [3, 2, 3, 106],
+  [4, 0, 1, 101],
+  [0, 0, 0, 101],
+  [0, 1, 3, 103],
+  [1, 2, 0, 105],
+];
+
+const getLayout = (focus: FragmentFocus, width: number, height: number) => {
+  if (width === 6 && height === 5) {
+    if (focus === 'bb') return S_6_5(30);
+    if (focus === 'hack') return HACK_6_5();
+    if (focus === 'str') return T_6_5(10);
+    if (focus === 'def') return L_6_5(12);
+    if (focus === 'dex') return L_6_5(14);
+    if (focus === 'agi') return S_6_5(16);
+    if (focus === 'cha') return S_6_5(18);
+  }
+  throw new Error(`Layout not found: ${focus} (${width}x${height})`);
+};
+
+const setupGift = (ns: NS, positions: FragmentPosition[]) => {
+  ns.stanek.clearGift();
+  for (const [x, y, rotation, id] of positions) {
+    ns.stanek.placeFragment(x, y, rotation, id);
+  }
+};
+
+const codifyLayout = (ns: NS) => `
+  '${ns.stanek.giftWidth()},${ns.stanek.giftHeight()}': [
+    ${ns.stanek
+      .activeFragments()
+      .map(({ x, y, rotation, id }) => `[${x},${y},${rotation},${id}]`)
+      .join('\n')}`;
+
+const getFocus = (ns: NS, resetInfo: ResetInfo): FragmentFocus => {
+  const { currentWork } = getPlayerData(ns);
+  if ([6, 7].includes(resetInfo.currentNode) && ns.bladeburner.inBladeburner()) {
+    return 'bb';
+  }
+  if (resetInfo.currentNode === 15) {
+    return 'cha';
+  }
+  if (currentWork?.type === 'CLASS') {
+    if (Object.values(ns.enums.GymType).includes(currentWork.classType as GymType)) {
+      return currentWork.classType as GymType;
+    }
+  }
+  return 'hack';
+};
+
+const areLayoutsSame = (layout1: FragmentPosition[], layout2: FragmentPosition[]) => {
+  const set1 = new Set(layout1.map((position) => position.join(',')));
+  const set2 = new Set(layout2.map((position) => position.join(',')));
+  if (set1.size !== set2.size) return false;
+  return [...set1].every((position) => set2.has(position));
+};
+
 export async function main(ns: NS) {
+  const { resetInfo } = getStaticData(ns);
+
   ns.disableLog('ALL');
 
   while (!ns.stanek.acceptGift()) await ns.sleep(50);
@@ -13,14 +103,27 @@ export async function main(ns: NS) {
 
   const chargeThreads = new Map<number, number>();
 
+  ns.tprint(codifyLayout(ns));
+
   while (true) {
     ns.clearLog();
-    ns.print(ns.stanek.giftWidth() + 'x' + ns.stanek.giftHeight());
-    ns.print(ns.stanek.fragmentDefinitions());
     const currentThreads = [...chargeThreads.entries()]
       .filter(([pid]) => ns.isRunning(pid))
       .map(([, threads]) => threads)
       .reduce((a, b) => a + b, 0);
+
+    const currentLayout = ns.stanek
+      .activeFragments()
+      .map(({ x, y, rotation, id }) => [x, y, rotation, id] as FragmentPosition);
+
+    const focus = getFocus(ns, resetInfo);
+    const width = ns.stanek.giftWidth();
+    const height = ns.stanek.giftHeight();
+    const layout = getLayout(focus, width, height);
+
+    if (!areLayoutsSame(currentLayout, layout)) {
+      setupGift(ns, layout);
+    }
 
     const coords = ns.stanek
       .activeFragments()
@@ -34,7 +137,6 @@ export async function main(ns: NS) {
       ns.print('Current threads: ' + currentThreads + '/' + desiredThreads);
       if (currentThreads < desiredThreads) {
         let threadsNeeded = desiredThreads - currentThreads;
-        ns.print(`Need ${threadsNeeded} more threads`);
         const workerRam = getWorkerRam(ns, CHARGE);
         for (const [hostname, ram] of Object.entries(workerRam)) {
           const threads = Math.min(Math.floor(ram / RAM_PER_SHARE), threadsNeeded);
