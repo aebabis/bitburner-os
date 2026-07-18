@@ -42,7 +42,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
   const corpAllowed = () => !disableCorporation && currentNode !== 8;
   const hasSingularity = () => hasNode(4);
-  const enablePool = () => currentNode === 9 || ownedSF.get(9) === 3;
+  const enablePool = () => currentNode === 9 || ownedSF.has(9);
   const enableHacknet = () => hacknetAvailable && playerLikesHacknet && !enablePool();
   const enableCorp = () => corpAllowed() && (currentNode === 3 || ownedSF.get(3) === 3);
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
