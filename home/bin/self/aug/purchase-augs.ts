@@ -141,6 +141,16 @@ export async function main(ns: NS) {
     print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
+  // Buy free augmentations last
+  await $.singularity['purchaseAugmentation'](
+    'Church of the Machine God',
+    "Stanek's Gift - Awakening",
+  );
+  await $.singularity['purchaseAugmentation'](
+    'Church of the Machine God',
+    "Stanek's Gift - Serenity",
+  );
+
   if (ns.gang.inGang()) {
     print('Buying gang items');
     const gangMembers = await $.gang['getMemberNames']();
