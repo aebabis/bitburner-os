@@ -44,7 +44,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasSingularity = () => hasNode(4);
   const enablePool = () => currentNode === 9 || ownedSF.has(9);
   const enableHacknet = () => hacknetAvailable && playerLikesHacknet && !enablePool();
-  const enableCorp = () => corpAllowed() && (currentNode === 3 || ownedSF.get(3) === 3);
+  const enableCorp = () => corpAllowed() && currentNode === 3; // TODO: Enable for BN12 plateu
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
@@ -89,11 +89,20 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns, canStanek, always)('/bin/stanek.ts'),
   ];
+  const findServiceIndex = (script: string) =>
+    services.findIndex((service) => service.script === script);
+  const removeService = (script: string) => services.splice(findServiceIndex(script), 1)[0];
+  const insertService = (service: (typeof services)[number], after?: string) => {
+    const index = after ? findServiceIndex(after) + 1 : services.length;
+    services.splice(index, 0, service);
+  };
   if (currentNode === 3) {
-    const corpIndex = services.findIndex((service) => service.script === '/bin/corp/corp.ts');
-    const corp = services.splice(corpIndex, 1)[0];
-    const accessIndex = services.findIndex((service) => service.script === '/bin/access.ts');
-    services.splice(accessIndex + 1, 0, corp);
+    const corp = removeService('/bin/corp/corp.ts');
+    insertService(corp, '/bin/access.ts');
+  }
+  if (ns.getServerMaxRam('home') >= 128) {
+    services.push(removeService('/bin/angel.ts'));
+    services.push(removeService('/bin/thief.ts'));
   }
   return services;
 };
