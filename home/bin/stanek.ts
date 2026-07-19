@@ -38,7 +38,15 @@ const L_6_5 = (activeId: number): FragmentPosition[] => [
   [0, 1, 3, 103],
   [1, 2, 0, 105],
 ];
-
+const HACK_6_6 = (): FragmentPosition[] => [
+  [4, 1, 3, 0],
+  [1, 1, 0, 104],
+  [3, 2, 1, 105],
+  [2, 4, 2, 1],
+  [0, 4, 2, 5],
+  [0, 1, 3, 6],
+  [1, 0, 1, 25],
+];
 const HACK_7_6 = (): FragmentPosition[] => [
   [1, 1, 2, 100],
   [3, 2, 2, 105],
@@ -61,6 +69,8 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'dex') return L_6_5(14);
     if (focus === 'agi') return S_6_5(16);
     if (focus === 'cha') return S_6_5(18);
+  } else if (width === 6 && height === 6) {
+    return HACK_6_6();
   } else if (width >= 6 && height >= 5) {
     if (focus === 'hack') return HACK_7_6();
     else return getLayout(focus, 6, 5);
