@@ -120,7 +120,14 @@ export async function main(ns: NS) {
 
   ns.disableLog('ALL');
 
-  while (!ns.stanek.acceptGift()) await ns.sleep(50);
+  try {
+    ns.stanek.activeFragments();
+  } catch {
+    // Dodge RAM cost of acceptGift, as it only happens once.
+    // Calling it here instead of bootloader allows service manager override.
+    ns.stanek['acceptGift']();
+    return;
+  }
 
   putPlayerData(ns, { hasGift: true });
 
