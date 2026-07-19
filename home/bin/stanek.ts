@@ -14,7 +14,6 @@ const HACK_6_5 = (): FragmentPosition[] => [
   [0, 0, 1, 7],
   [3, 0, 2, 21],
 ];
-
 const S_6_5 = (activeId: number): FragmentPosition[] => [
   [2, 1, 2, activeId],
   [0, 0, 0, 101],
@@ -40,6 +39,19 @@ const L_6_5 = (activeId: number): FragmentPosition[] => [
   [1, 2, 0, 105],
 ];
 
+const HACK_7_6 = (): FragmentPosition[] => [
+  [1, 1, 2, 100],
+  [3, 2, 2, 105],
+  [3, 0, 2, 0],
+  [0, 0, 2, 6],
+  [0, 1, 2, 21],
+  [5, 0, 1, 5],
+  [5, 3, 3, 7],
+  [4, 3, 3, 1],
+  [0, 5, 2, 20],
+  [0, 3, 0, 25],
+];
+
 const getLayout = (focus: FragmentFocus, width: number, height: number) => {
   if (width === 6 && height === 5) {
     if (focus === 'bb') return S_6_5(30);
@@ -49,6 +61,9 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'dex') return L_6_5(14);
     if (focus === 'agi') return S_6_5(16);
     if (focus === 'cha') return S_6_5(18);
+  } else if (width >= 6 && height >= 5) {
+    if (focus === 'hack') return HACK_7_6();
+    else return getLayout(focus, 6, 5);
   }
   throw new Error(`Layout not found: ${focus} (${width}x${height})`);
 };
