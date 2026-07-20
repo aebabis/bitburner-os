@@ -70,7 +70,8 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'agi') return S_6_5(16);
     if (focus === 'cha') return S_6_5(18);
   } else if (width === 6 && height === 6) {
-    return HACK_6_6();
+    if (focus === 'hack') return HACK_6_6();
+    else return getLayout(focus, 6, 5);
   } else if (width >= 6 && height >= 5) {
     if (focus === 'hack') return HACK_7_6();
     else return getLayout(focus, 6, 5);
@@ -156,6 +157,7 @@ export async function main(ns: NS) {
     if (!areLayoutsSame(currentLayout, layout)) {
       setupGift(ns, layout);
     }
+    ns.print('FOCUS: ' + focus);
 
     const coords = ns.stanek
       .activeFragments()
