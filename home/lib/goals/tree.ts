@@ -5,6 +5,7 @@ import {
   buyRepAction,
   factionJoinGoal,
   eitherGoal,
+  mutexGoal,
   hackingLevelGoal,
   combatLevelsGoal,
   killsGoal,
@@ -154,15 +155,16 @@ export const buildJoinSubtree = (
     joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
-    const times = formulas
-      ? COMBAT_STATS.map(
-          (stat) =>
-            skillTrainingTime(player, stat, combatReq, formulas, staticData.bitNodeMultipliers) ??
-            0,
-        )
-      : null;
-    const t = times ? times.reduce((a, b) => a + b, 0) : null;
-    joinPrereqs.push(combatLevelsGoal(combatReq, skills, t));
+    joinPrereqs.push(
+      mutexGoal(
+        COMBAT_STATS.map((stat) => {
+          const t = formulas
+            ? skillTrainingTime(player, stat, combatReq, formulas, staticData.bitNodeMultipliers)
+            : null;
+          return combatLevelsGoal(combatReq, stat, skills, t);
+        }),
+      ),
+    );
   }
   // Some factions (e.g. Daedalus) gate on alternative skill paths, e.g.
   // (hacking >= X) OR (all combat stats >= Y), expressed via someCondition.
@@ -176,14 +178,14 @@ export const buildJoinSubtree = (
     }
     const cReq = Math.max(0, ...COMBAT_STATS.map((stat) => req[stat] ?? 0));
     if (cReq > 0) {
-      const times = formulas
-        ? COMBAT_STATS.map(
-            (stat) =>
-              skillTrainingTime(player, stat, cReq, formulas, staticData.bitNodeMultipliers) ?? 0,
-          )
-        : null;
-      const t = times ? times.reduce((a, b) => a + b, 0) : null;
-      return combatLevelsGoal(cReq, skills, t);
+      return mutexGoal(
+        COMBAT_STATS.map((stat) => {
+          const t = formulas
+            ? skillTrainingTime(player, stat, cReq, formulas, staticData.bitNodeMultipliers)
+            : null;
+          return combatLevelsGoal(cReq, stat, skills, t);
+        }),
+      );
     }
     return null;
   };
@@ -404,8 +406,8 @@ export const getBladeburnerTree = (
   const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
   const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
-  const cbGoal = combatLevelsGoal(100, player.skills);
-  const joinBlades = bladesJoinGoal(inBladeburner, [cbGoal]);
+  const cbGoals = COMBAT_STATS.map((stat) => combatLevelsGoal(100, stat, player.skills));
+  const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals)]);
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [joinBlades]);
   const repGoal = factionRepGoal('Bladeburners', bladeRepCost, currentRep, joinBladeFaction);
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);

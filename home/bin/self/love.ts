@@ -244,6 +244,7 @@ export async function main(ns: NS) {
     const relevantGoals = reduce(rootGoal);
     const findGoal = <T extends GoalType>(type: T) =>
       relevantGoals.find((g): g is GoalOfType<T> => g.type === type);
+    const combatGoal = findGoal('COMBAT_LEVELS');
     const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
     const { city, money, skills } = ns.getPlayer();
@@ -283,8 +284,8 @@ export async function main(ns: NS) {
         await $.singularity['travelToCity']('Sector-12');
       }
       await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus());
-    } else if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
-      await goToGym();
+    } else if (combatGoal != null) {
+      await goToGym(combatGoal.stat);
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
       await $commitCrime('Homicide');
     } else if (!isRepBound(ns, rootGoal) && workFaction != null && canMakeMoney) {
@@ -293,9 +294,7 @@ export async function main(ns: NS) {
       await factionWork(ns.getPlayer(), workFaction);
     } else {
       const locationGoal = findGoal('LOCATION');
-      if (findGoal('COMBAT_LEVELS')?.isDone() === false) {
-        await goToGym();
-      } else if (locationGoal?.isDone() === false) {
+      if (locationGoal?.isDone() === false) {
         await $.singularity['travelToCity'](locationGoal.city);
       } else if (canMakeMoney) {
         await makeMoney();

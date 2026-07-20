@@ -22,7 +22,8 @@ export type GoalType =
   | 'LOCATION'
   | 'MONEY'
   | 'AUG_MONEY'
-  | 'EITHER';
+  | 'EITHER'
+  | 'MUTEX';
 
 export type Action =
   | { type: 'BUY_REP'; faction: FactionName; amount: number }
@@ -47,7 +48,6 @@ type GoalCommon<T extends GoalType> = {
 type NumericRequirementType =
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
-  | 'COMBAT_LEVELS'
   | 'KILLS'
   | 'KARMA'
   | 'MONEY'
@@ -55,7 +55,12 @@ type NumericRequirementType =
 
 type PlainGoalType = Exclude<
   GoalType,
-  NumericRequirementType | 'LOCATION' | 'FACTION_REP' | 'FACTION_FAVOR' | 'FACTION_JOIN'
+  | NumericRequirementType
+  | 'LOCATION'
+  | 'FACTION_REP'
+  | 'FACTION_FAVOR'
+  | 'FACTION_JOIN'
+  | 'COMBAT_LEVELS'
 >;
 
 // Distributes over T so each literal in a multi-member group (e.g. NumericRequirementType)
@@ -68,13 +73,15 @@ export type Goal =
   | Distribute<NumericRequirementType, { requirement: number }>
   | Distribute<'LOCATION', { city: CityName }>
   | Distribute<'FACTION_REP' | 'FACTION_FAVOR', { requirement: number; faction: FactionName }>
-  | Distribute<'FACTION_JOIN', { faction: FactionName }>;
+  | Distribute<'FACTION_JOIN', { faction: FactionName }>
+  | Distribute<'COMBAT_LEVELS', { requirement: number; stat: CombatStat }>;
 
 export type GoalOfType<T extends GoalType> = Extract<Goal, { type: T }>;
 
 export type Plan = Goal & { utility: (overhead: number) => number };
 
 export const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'] as const;
+export type CombatStat = (typeof COMBAT_STATS)[number];
 export const NEUROFLUX = 'NeuroFlux Governor';
 
 interface GoalProps {
@@ -175,16 +182,18 @@ export const hackingXpGoal = (
 
 export const combatLevelsGoal = (
   combatReq: number,
+  stat: CombatStat,
   currentSkills: Skills,
   trainingTime: number | null = null,
 ) => ({
   ...goal(
     'COMBAT_LEVELS',
-    `Combat stats ≥ ${combatReq}`,
-    () => COMBAT_STATS.every((stat) => currentSkills[stat] >= combatReq),
+    `${stat[0].toUpperCase()}${stat.slice(1)} ≥ ${combatReq}`,
+    () => currentSkills[stat] >= combatReq,
     { ownTime: () => trainingTime },
   ),
   requirement: combatReq,
+  stat,
 });
 
 export const killsGoal = (killsRequired: number, numPeopleKilled: number) => ({
@@ -315,6 +324,31 @@ export const eitherGoal = (branches: Goal[]) => {
       if (_ttc !== undefined) return _ttc;
       const times = branches.map((b) => b.timeToComplete()).filter((t): t is number => t != null);
       return (_ttc = times.length > 0 ? Math.min(...times) : null);
+    },
+  };
+};
+
+// Conjunction where parts contend for the same actor and so can't progress in parallel
+// (e.g. training all four combat stats — only one can be trained at a time; order doesn't
+// matter). Satisfied once every part is satisfied; unlike the default AND aggregation (max of
+// deps' times, which assumes parts progress concurrently), estimated time is the sum across
+// parts.
+export const mutexGoal = (parts: Goal[]) => {
+  const base = goal(
+    'MUTEX',
+    parts.map((p) => p.desc).join(' & '),
+    () => parts.every((p) => p.isDone()),
+    { deps: parts, ownTime: () => 0 },
+  );
+  let _ttc: number | null | undefined;
+  return {
+    ...base,
+    timeToComplete: (): number | null => {
+      if (_ttc !== undefined) return _ttc;
+      const times = parts.map((p) => p.timeToComplete());
+      return (_ttc = times.some((t) => t == null)
+        ? null
+        : (times as number[]).reduce((a, b) => a + b, 0));
     },
   };
 };
