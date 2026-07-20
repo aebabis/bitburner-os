@@ -1,6 +1,6 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR } from '../lib/colors';
-import { getHostnames, putMoneyData } from '../lib/data-store';
+import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
 import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
@@ -127,10 +127,23 @@ const getSetupTime = (ns: NS, hostname: string, minFrameRam: number) => {
   return rtt * ns.formulas.hacking.weakenTime(server, ns.getPlayer());
 };
 
-const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string, minFrameRam: number) => {
+const evaluateTarget = (
+  ns: NS,
+  horizon = HORIZON_MS,
+  targetMoney: number,
+  hostname: string,
+  minFrameRam: number,
+) => {
   const server = getHackableServer(ns, hostname);
   if (server.moneyMax === 0) {
-    return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
+    return {
+      hostname,
+      money: 0,
+      time: Infinity,
+      incomeRate: 0,
+      timeframeIncome: 0,
+      timeToTarget: Infinity,
+    };
   }
   const whenReady = {
     ...server,
@@ -145,14 +158,17 @@ const evaluateTarget = (ns: NS, horizon = HORIZON_MS, hostname: string, minFrame
   const hackPercent = ns.formulas.hacking.hackPercent(whenReady, ns.getPlayer());
   const money = server.moneyMax * hackPercent * hackThreads * numFrames;
   const time = ns.formulas.hacking.weakenTime(server, ns.getPlayer());
-  const earningTime = horizon - getSetupTime(ns, hostname, minFrameRam);
-  const utility = Math.floor(earningTime / time) * money;
+  const setupTime = getSetupTime(ns, hostname, minFrameRam);
+  const earningTime = horizon - setupTime;
+  const timeframeIncome = Math.floor(earningTime / time) * money;
+  const timeToTarget = setupTime + Math.ceil(targetMoney / money) * time;
   return {
     hostname,
     money,
     time,
     incomeRate: time === 0 ? 0 : money / (time / 1000),
-    utility,
+    timeframeIncome,
+    timeToTarget,
   };
 };
 
@@ -170,17 +186,33 @@ const getPossibleTargets = (ns: NS) =>
     return ns.getHackingLevel() >= requiredHackingSkill && moneyMax > 0;
   });
 
-const getHorizon = (ns: NS) =>
-  Math.min(HORIZON_MS, (getGoals(ns).timeToComplete() || Infinity) * 1000);
+const getFinancialTarget = (ns: NS) => {
+  const goals = getGoals(ns);
+  const { requirement = 0 } = goals.prerequisites('AUG_MONEY')[0] || {};
+  const { money } = ns.getPlayer();
+  const { estimatedStockValue } = getMoneyData(ns);
+  const liquidAssets = money + estimatedStockValue;
+  const moneyNeeded = requirement - liquidAssets;
+  const ttc = (goals.timeToComplete() || Infinity) * 1000;
+  const timeframe = Math.min(HORIZON_MS, ttc);
+  return { moneyNeeded, timeframe };
+};
 
 const selectTarget = (ns: NS, minFrameRam: number) => {
-  const evaluations = getPossibleTargets(ns).map((hostname) =>
-    evaluateTarget(ns, getHorizon(ns), hostname, minFrameRam),
-  );
-  if (evaluations.length === 0) {
+  const { moneyNeeded, timeframe } = getFinancialTarget(ns);
+  const possibleTargets = getPossibleTargets(ns);
+  if (possibleTargets.length === 0) {
     return { hostname: null, money: 0, time: 0, incomeRate: 0 };
   }
-  return evaluations.reduce((a, b) => (a.utility > b.utility ? a : b));
+  const evaluations = possibleTargets.map((hostname) =>
+    evaluateTarget(ns, timeframe, moneyNeeded, hostname, minFrameRam),
+  );
+  const idealTargets = evaluations.filter((target) => target.timeframeIncome >= moneyNeeded);
+  if (idealTargets.length > 0) {
+    return idealTargets.reduce((a, b) => (a.timeframeIncome > b.timeframeIncome ? a : b));
+  } else {
+    return evaluations.reduce((a, b) => (a.timeToTarget < b.timeToTarget ? a : b));
+  }
 };
 
 const printTable = (ns: NS) => {
@@ -188,17 +220,17 @@ const printTable = (ns: NS) => {
   const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b, 0);
   // Minimum ram size of HGW frame to prevent too many processes
   const minFrameRam = totalRamAvailable / FRAME_LIMIT;
-  const horizon = getHorizon(ns);
+  const { timeframe, moneyNeeded } = getFinancialTarget(ns);
   const columns = ['HOSTNAME', '$/RUN', 's/RUN', '$/s', 'UTILITY'];
   const rows = getPossibleTargets(ns)
-    .map((hostname) => evaluateTarget(ns, horizon, hostname, minFrameRam))
-    .sort(by((evaluation) => -evaluation.utility))
+    .map((hostname) => evaluateTarget(ns, timeframe, moneyNeeded, hostname, minFrameRam))
+    .sort(by((evaluation) => -evaluation.timeframeIncome))
     .map((evaluation) => [
       evaluation.hostname,
       `$${ns.format.number(evaluation.money, 1)}`,
       Math.ceil(evaluation.time / 1000),
       `$${ns.format.number(evaluation.incomeRate, 1)}`,
-      Math.round(evaluation.utility),
+      Math.round(evaluation.timeframeIncome),
     ]);
   ns.tprint('\n\n' + table(ns, columns, rows, { colors: true }) + '\n\n');
 };
@@ -298,7 +330,7 @@ export async function main(ns: NS) {
   await ns.sleep(1); // Wait for worker tick to finish before sleeping
   await ns.sleep(weakTime);
 
-  const { onlineMoneyMade } = ns.getRunningScript()!;
-  const theftIncome = onlineMoneyMade / (weakTime / 1000);
+  const { onlineMoneyMade, onlineRunningTime } = ns.getRunningScript()!;
+  const theftIncome = onlineMoneyMade / onlineRunningTime;
   putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalRam });
 }
