@@ -46,6 +46,7 @@ const HACK_6_6 = (): FragmentPosition[] => [
   [0, 4, 2, 5],
   [0, 1, 3, 6],
   [1, 0, 1, 25],
+  [3, 0, 2, 7],
 ];
 const HACK_7_6 = (): FragmentPosition[] => [
   [1, 1, 2, 100],
