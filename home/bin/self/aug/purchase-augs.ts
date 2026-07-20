@@ -144,13 +144,20 @@ export async function main(ns: NS) {
   }
 
   // Buy free augmentations last
-  await $.singularity['purchaseAugmentation'](
-    'Church of the Machine God',
-    "Stanek's Gift - Awakening",
+  print('Attempting to buy awakening and serenity');
+  print(
+    'Awakening: ',
+    await $.singularity['purchaseAugmentation'](
+      'Church of the Machine God',
+      "Stanek's Gift - Awakening",
+    ),
   );
-  await $.singularity['purchaseAugmentation'](
-    'Church of the Machine God',
-    "Stanek's Gift - Serenity",
+  print(
+    'Serenity: ',
+    await $.singularity['purchaseAugmentation'](
+      'Church of the Machine God',
+      "Stanek's Gift - Serenity",
+    ),
   );
 
   if (ns.gang.inGang()) {
