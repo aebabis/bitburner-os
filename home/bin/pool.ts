@@ -47,7 +47,17 @@ const getNextNodeCost = (ns: NS, mults: Multipliers) => {
   );
 };
 
+const netburnerPrereqsAreMet = (ns: NS) => {
+  const nodes = getNodes(ns);
+  const levels = nodes.reduce((sum, node) => sum + node.level, 0);
+  const ram = nodes.reduce((sum, node) => sum + node.ram, 0);
+  const cores = nodes.reduce((sum, node) => sum + node.cores, 0);
+  return levels >= 100 && ram >= 8 && cores >= 4;
+};
+
 const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
+  const factionGoal = getGoals(ns).prerequisites('FACTION_JOIN');
+  const needsNetburnerPrereqs = factionGoal[0]?.faction === 'Netburners';
   const numNodes = ns.hacknet.numNodes();
   if (numNodes === 0 && ns.hacknet.purchaseNode() === -1) {
     return;
@@ -60,7 +70,9 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
     ns.print(upgrade);
     if (upgrade == null) return;
     if (upgrade.cost > money) return;
-    if (ttc != null && upgrade.breakEvenTime > ttc) return;
+    if (ttc != null && upgrade.breakEvenTime > ttc) {
+      if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return;
+    }
     if (nodeCost < upgrade.cost) {
       ns.hacknet.purchaseNode();
     } else {
