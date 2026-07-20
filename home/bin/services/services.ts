@@ -26,7 +26,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const money = () => player(ns).money ?? 0;
   const factions = () => player(ns).factions ?? [];
 
-  const hacknetAvailable = ![8].includes(currentNode);
   const playerLikesHacknet = false;
 
   const gangKarma = currentNode === 2 ? 0 : -54000;
@@ -42,13 +41,13 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
   const corpAllowed = () => !disableCorporation && currentNode !== 8;
   const hasSingularity = () => hasNode(4);
-  const enablePool = () => currentNode === 9 || ownedSF.has(9);
-  const enableHacknet = () => hacknetAvailable && playerLikesHacknet && !enablePool();
+  const enablePool = () => hasNode(9) && currentNode !== 8;
+  const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
   const enableCorp = () => corpAllowed() && currentNode === 3; // TODO: Enable for BN12 plateu
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
-  const canStanek = () => hasNode(13);
+  const canStanek = () => hasNode(13) && currentNode !== 8;
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
