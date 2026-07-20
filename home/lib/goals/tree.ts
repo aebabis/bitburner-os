@@ -19,6 +19,7 @@ import {
   type Action,
   type Goal,
   type Plan,
+  type CombatStat,
   bladesJoinGoal,
 } from './nodes.ts';
 import {
@@ -62,6 +63,26 @@ const LEVEL_MULT_KEY = {
   agility: 'AgilityLevelMultiplier',
 } as const;
 
+// FragmentType id of each combat stat's Stanek fragment (boosts level *and* exp together).
+const COMBAT_FRAGMENT_TYPE: Record<CombatStat, FragmentType> = {
+  strength: 7,
+  defense: 8,
+  dexterity: 9,
+  agility: 10,
+};
+
+// While Stanek is actively charging a stat's fragment, that stat's displayed skill is inflated
+// by the fragment's level multiplier on top of real exp — training only until the *boosted*
+// skill hits the real requirement leaves the stat below requirement once the boost fades (e.g.
+// once love moves on to training another stat, which resets the previous stat's fragment
+// charge — see home/bin/stanek.ts). Scale the requirement up by the current multiplier so the
+// stat is still at or above the real requirement after the boost fades.
+const combatRequirement = (
+  baseReq: number,
+  stat: CombatStat,
+  fragmentMultipliers: Record<FragmentType, number> | undefined,
+) => baseReq * (fragmentMultipliers?.[COMBAT_FRAGMENT_TYPE[stat]] ?? 1);
+
 const skillTrainingTime = (
   player: Player,
   stat: 'hacking' | 'strength' | 'defense' | 'dexterity' | 'agility',
@@ -97,6 +118,7 @@ export const buildJoinSubtree = (
     totalIncome,
     karma,
     formulas,
+    fragmentMultipliers,
   }: {
     player: Player;
     staticData: StaticData;
@@ -104,6 +126,7 @@ export const buildJoinSubtree = (
     totalIncome: number;
     karma: number;
     formulas: MockFormulas | Formulas;
+    fragmentMultipliers?: Record<FragmentType, number>;
   },
 ) => {
   const { factions, skills, city } = player;
@@ -158,10 +181,11 @@ export const buildJoinSubtree = (
     joinPrereqs.push(
       mutexGoal(
         COMBAT_STATS.map((stat) => {
+          const req = combatRequirement(combatReq, stat, fragmentMultipliers);
           const t = formulas
-            ? skillTrainingTime(player, stat, combatReq, formulas, staticData.bitNodeMultipliers)
+            ? skillTrainingTime(player, stat, req, formulas, staticData.bitNodeMultipliers)
             : null;
-          return combatLevelsGoal(combatReq, stat, skills, t);
+          return combatLevelsGoal(req, stat, skills, t, combatReq);
         }),
       ),
     );
@@ -180,10 +204,11 @@ export const buildJoinSubtree = (
     if (cReq > 0) {
       return mutexGoal(
         COMBAT_STATS.map((stat) => {
+          const statReq = combatRequirement(cReq, stat, fragmentMultipliers);
           const t = formulas
-            ? skillTrainingTime(player, stat, cReq, formulas, staticData.bitNodeMultipliers)
+            ? skillTrainingTime(player, stat, statReq, formulas, staticData.bitNodeMultipliers)
             : null;
-          return combatLevelsGoal(cReq, stat, skills, t);
+          return combatLevelsGoal(statReq, stat, skills, t, cReq);
         }),
       );
     }
@@ -258,6 +283,7 @@ interface FactionGoalTreeProps {
   formulas: ReturnType<typeof getMockFormulas>;
   karma: number;
   overhead: number;
+  fragmentMultipliers?: Record<FragmentType, number>;
 }
 export const buildFactionGoalTree = (
   ns: NS,
@@ -274,6 +300,7 @@ export const buildFactionGoalTree = (
     formulas,
     karma,
     overhead,
+    fragmentMultipliers,
   }: FactionGoalTreeProps,
 ): Plan | null => {
   const { augmentationPrices, augmentationPrereqs, augmentationStats, factionWorkTypes } =
@@ -291,6 +318,7 @@ export const buildFactionGoalTree = (
     totalIncome,
     karma,
     formulas,
+    fragmentMultipliers,
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 
@@ -400,13 +428,21 @@ export const getBladeburnerTree = (
   totalIncome: number,
   inBladeburner: boolean,
 ) => {
-  const { player, factionRep } = playerData;
+  const { player, factionRep, fragmentMultipliers } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
   const THE_BLADE = "The Blade's Simulacrum";
   const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
   const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
-  const cbGoals = COMBAT_STATS.map((stat) => combatLevelsGoal(100, stat, player.skills));
+  const cbGoals = COMBAT_STATS.map((stat) =>
+    combatLevelsGoal(
+      combatRequirement(100, stat, fragmentMultipliers),
+      stat,
+      player.skills,
+      null,
+      100,
+    ),
+  );
   const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals)]);
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [joinBlades]);
   const repGoal = factionRepGoal('Bladeburners', bladeRepCost, currentRep, joinBladeFaction);

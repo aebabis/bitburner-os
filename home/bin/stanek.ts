@@ -116,6 +116,17 @@ const areLayoutsSame = (layout1: FragmentPosition[], layout2: FragmentPosition[]
   return [...set1].every((position) => set2.has(position));
 };
 
+const getFragmentMultipliers = (ns: NS) => {
+  const multipliers = Object.values(ns.enums.FragmentType).reduce((arr, type) => {
+    arr[type] = 1;
+    return arr;
+  }, [] as number[]);
+  for (const { type, chargedEffect } of ns.stanek.activeFragments()) {
+    multipliers[type] *= chargedEffect;
+  }
+  return multipliers as unknown as Record<FragmentType, number>;
+};
+
 export async function main(ns: NS) {
   const { resetInfo } = getStaticData(ns);
 
@@ -187,6 +198,7 @@ export async function main(ns: NS) {
         }
       }
     }
-    await ns.sleep(1000);
+    putPlayerData(ns, { fragmentMultipliers: getFragmentMultipliers(ns) });
+    await ns.sleep(50);
   }
 }

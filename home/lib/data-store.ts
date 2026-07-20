@@ -91,6 +91,7 @@ export type PlayerData = {
   studyMult?: number;
   trainingMult?: number;
   hasGift?: boolean;
+  fragmentMultipliers?: Record<FragmentType, number>;
 
   homeRam: number;
   wseAccount: boolean;

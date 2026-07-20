@@ -49,6 +49,7 @@ export const getGoals = (ns: NS): Goal => {
     homeRamUpgradeCost = 0,
     access4SDataApi,
     queuedAugmentations = [],
+    fragmentMultipliers,
   } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -75,6 +76,7 @@ export const getGoals = (ns: NS): Goal => {
     formulas,
     karma,
     overhead,
+    fragmentMultipliers,
   };
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)
@@ -107,6 +109,7 @@ export const getGoals = (ns: NS): Goal => {
       totalIncome,
       karma,
       formulas,
+      fragmentMultipliers,
     });
     return reevaluateGoal(joinGoal);
   }
@@ -119,6 +122,7 @@ export const getGoals = (ns: NS): Goal => {
       totalIncome,
       karma,
       formulas,
+      fragmentMultipliers,
     });
     return reevaluateGoal(karmaGoal(-54000, karma, [joinGoal]));
   }

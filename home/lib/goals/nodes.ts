@@ -185,16 +185,20 @@ export const combatLevelsGoal = (
   stat: CombatStat,
   currentSkills: Skills,
   trainingTime: number | null = null,
-) => ({
-  ...goal(
-    'COMBAT_LEVELS',
-    `${stat[0].toUpperCase()}${stat.slice(1)} ≥ ${combatReq}`,
-    () => currentSkills[stat] >= combatReq,
-    { ownTime: () => trainingTime },
-  ),
-  requirement: combatReq,
-  stat,
-});
+  /** Goal without Stanek multiplier. Matches `combatReq` when modifier is 1 **/
+  baseReq: number = combatReq,
+) => {
+  const req = Math.ceil(combatReq);
+  const name = `${stat[0].toUpperCase()}${stat.slice(1)}`;
+  const desc = req === baseReq ? `${name} ≥ ${req}` : `${name} ≥ ${req} (${baseReq} base)`;
+  return {
+    ...goal('COMBAT_LEVELS', desc, () => currentSkills[stat] >= req, {
+      ownTime: () => trainingTime,
+    }),
+    requirement: req,
+    stat,
+  };
+};
 
 export const killsGoal = (killsRequired: number, numPeopleKilled: number) => ({
   ...goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
