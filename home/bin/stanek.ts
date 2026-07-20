@@ -48,6 +48,16 @@ const HACK_6_6 = (): FragmentPosition[] => [
   [1, 0, 1, 25],
   [3, 0, 2, 7],
 ];
+const GYM_6_6 = (): FragmentPosition[] => [
+  [4, 1, 3, 0],
+  [1, 1, 0, 104],
+  [3, 2, 1, 105],
+  [2, 4, 2, 1],
+  [0, 4, 2, 5],
+  [0, 1, 3, 6],
+  [1, 0, 1, 25],
+  [3, 0, 2, 7],
+];
 const HACK_7_6 = (): FragmentPosition[] => [
   [1, 1, 2, 100],
   [3, 2, 2, 105],
@@ -63,8 +73,8 @@ const HACK_7_6 = (): FragmentPosition[] => [
 
 const getLayout = (focus: FragmentFocus, width: number, height: number) => {
   if (width === 6 && height === 5) {
-    if (focus === 'bb') return S_6_5(30);
     if (focus === 'hack') return HACK_6_5();
+    if (focus === 'bb') return S_6_5(30);
     if (focus === 'str') return T_6_5(10);
     if (focus === 'def') return L_6_5(12);
     if (focus === 'dex') return L_6_5(14);
@@ -72,7 +82,8 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'cha') return S_6_5(18);
   } else if (width === 6 && height === 6) {
     if (focus === 'hack') return HACK_6_6();
-    else return getLayout(focus, 6, 5);
+    if (focus === 'bb') return getLayout(focus, 6, 5);
+    else return GYM_6_6();
   } else if (width >= 6 && height >= 5) {
     if (focus === 'hack') return HACK_7_6();
     else return getLayout(focus, 6, 5);
