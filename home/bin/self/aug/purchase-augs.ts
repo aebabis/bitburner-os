@@ -54,14 +54,16 @@ export async function main(ns: NS) {
   // Sell all stocks
   print('Dumping stocks');
   if (ns.stock.hasTixApiAccess()) {
-    const symbols = await $.stock['getSymbols']();
-    for (const sym of symbols) {
-      await $.stock['sellStock'](sym, Infinity);
-    }
     const { currentNode, ownedSF } = ns.getResetInfo();
-    if (currentNode === 8 || (ownedSF.get(8) ?? 0) >= 2) {
-      for (const sym of symbols) {
-        await $.stock['sellShort'](sym, Infinity);
+    const canSellShort = currentNode === 8 || (ownedSF.get(8) ?? 0) >= 2;
+    const saleGain = $.stock['getSaleGain'];
+    for (const sym of await $.stock['getSymbols']()) {
+      const [long, , short] = await $.stock['getPosition'](sym);
+      if (long > 0 && (await saleGain(sym, long, 'L')) > 0) {
+        await $.stock['sellStock'](sym, long);
+      }
+      if (short > 0 && canSellShort && (await saleGain(sym, short, 'S')) > 0) {
+        await $.stock['sellShort'](sym, short);
       }
     }
   }
