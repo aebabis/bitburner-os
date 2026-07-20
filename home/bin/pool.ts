@@ -68,6 +68,7 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
     const upgrade = getNextUpgrade(ns);
     const nodeCost = getNextNodeCost(ns, player.mults);
     ns.print(upgrade);
+    ns.print('GOAL FACTION: ' + factionGoal[0]?.faction);
     if (upgrade == null) return;
     if (upgrade.cost > money) return;
     if (ttc != null && upgrade.breakEvenTime > ttc) {
