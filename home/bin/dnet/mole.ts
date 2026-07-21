@@ -138,15 +138,23 @@ const WALL = '█' as const;
 const HALL = ' ' as const;
 const GOAL = 'X' as const;
 type MAZE_CELL = typeof WALL | typeof HALL | typeof GOAL;
-
-// The password is the largest prime factor of
 type Coord = `${number},${number}`;
+type Maze = Record<Coord, MAZE_CELL | undefined>;
+
+const LABY_PORT = 1200037211493120;
+
 const mazeSolver = (ns: NS, hostname: string) => async () => {
   if (ns.dnet.getStasisLinkedServers().includes(ns.getHostname())) {
     ns.disableLog('ALL');
     ns.ui.openTail();
   }
-  const maze = {} as Record<Coord, MAZE_CELL | undefined>;
+  const maze = {} as Maze;
+  const port = ns.getPortHandle(LABY_PORT);
+  const getStoredMaze = () => (port.empty() ? {} : port.peek());
+  const shareMaze = (maze: Maze) => {
+    port.clear();
+    port.write(maze);
+  };
   const stepToNewSpot = (coords: readonly [number, number]) => {
     const directions = [
       { name: 'north', dx: 0, dy: -1 },
@@ -207,6 +215,8 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
   };
   while (true) {
     try {
+      Object.assign(maze, getStoredMaze());
+
       const labreport = await ns.dnet.labreport();
       const radar = await ns.dnet.labradar();
       if (!labreport.coords || !radar.success) {
@@ -230,6 +240,8 @@ const mazeSolver = (ns: NS, hostname: string) => async () => {
           if (c === '█' || c === ' ' || c === 'X') maze[coord] = c;
         }
       }
+
+      shareMaze(Object.assign(getStoredMaze(), maze));
 
       ns.clearLog();
       const nextStep = stepToNewSpot(coords);
