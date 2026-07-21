@@ -309,7 +309,7 @@ export async function main(ns: NS) {
         if (grindFaction) {
           await factionWork(ns.getPlayer(), grindFaction);
         } else {
-          makeMoney(); // For stats
+          await makeMoney(); // For stats
         }
       }
     }
