@@ -163,7 +163,7 @@ export const hackingLevelGoal = (
   currentHacking: number,
   trainingTime: number | null = null,
 ) => ({
-  ...goal('HACKING_LEVEL', `Hacking ≥ ${hackReq}`, () => currentHacking >= hackReq, {
+  ...goal('HACKING_LEVEL', `Hacking ≥ ${Math.ceil(hackReq)}`, () => currentHacking >= hackReq, {
     ownTime: () => trainingTime,
   }),
   requirement: hackReq,

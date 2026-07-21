@@ -63,8 +63,8 @@ const LEVEL_MULT_KEY = {
   agility: 'AgilityLevelMultiplier',
 } as const;
 
-// FragmentType id of each combat stat's Stanek fragment (boosts level *and* exp together).
-const COMBAT_FRAGMENT_TYPE: Record<CombatStat, FragmentType> = {
+const SKILL_FRAGMENT_TYPE: Record<CombatStat | 'hacking', FragmentType> = {
+  hacking: 6,
   strength: 7,
   defense: 8,
   dexterity: 9,
@@ -81,7 +81,13 @@ const combatRequirement = (
   baseReq: number,
   stat: CombatStat,
   fragmentMultipliers: Record<FragmentType, number> | undefined,
-) => baseReq * (fragmentMultipliers?.[COMBAT_FRAGMENT_TYPE[stat]] ?? 1);
+) => baseReq * (fragmentMultipliers?.[SKILL_FRAGMENT_TYPE[stat]] ?? 1);
+
+// Same compensation as combatRequirement, for hacking's own Stanek fragment.
+const hackingRequirement = (
+  baseReq: number,
+  fragmentMultipliers: Record<FragmentType, number> | undefined,
+) => baseReq * (fragmentMultipliers?.[SKILL_FRAGMENT_TYPE.hacking] ?? 1);
 
 const skillTrainingTime = (
   player: Player,
@@ -172,10 +178,11 @@ export const buildJoinSubtree = (
   const combatReq = skillReqs.strength ?? null;
 
   if (hackReq != null) {
+    const req = hackingRequirement(hackReq, fragmentMultipliers);
     const t = formulas
-      ? skillTrainingTime(player, 'hacking', hackReq, formulas, staticData.bitNodeMultipliers)
+      ? skillTrainingTime(player, 'hacking', req, formulas, staticData.bitNodeMultipliers)
       : null;
-    joinPrereqs.push(hackingLevelGoal(hackReq, skills.hacking ?? 0, t));
+    joinPrereqs.push(hackingLevelGoal(req, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
     joinPrereqs.push(
@@ -195,7 +202,7 @@ export const buildJoinSubtree = (
   // (hacking >= X) OR (all combat stats >= Y), expressed via someCondition.
   const buildSkillGoal = (req: Partial<Skills>) => {
     if (req.hacking) {
-      const hReq = req.hacking;
+      const hReq = hackingRequirement(req.hacking, fragmentMultipliers);
       const t = formulas
         ? skillTrainingTime(player, 'hacking', hReq, formulas, staticData.bitNodeMultipliers)
         : null;
