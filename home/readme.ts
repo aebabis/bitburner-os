@@ -33,6 +33,10 @@ const UTILITIES = {
     command: 'usr/data.ts',
     desc: 'View stored by various services',
   },
+  dhud: {
+    command: 'home; usr/tail.ts dhud',
+    desc: 'Open the darknet server table',
+  },
   dispatch: {
     command: 'bin/dispatch.ts',
     desc: 'Tell planner to run a program',
@@ -72,6 +76,10 @@ const UTILITIES = {
   services: {
     command: 'usr/services.ts',
     desc: 'View and manage installed services',
+  },
+  tail: {
+    command: 'home; usr/tail.ts',
+    desc: 'Open tail window by PID or partial filename match',
   },
   test: {
     command: 'home; lib/test/run-all.ts',

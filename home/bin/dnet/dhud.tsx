@@ -102,8 +102,6 @@ export async function main(ns: NS) {
     throw new Error(`${name} must be run on darkweb`);
   }
 
-  ns.ui.openTail();
-
   while (true) {
     ns.clearLog();
     showNetwork(ns);
