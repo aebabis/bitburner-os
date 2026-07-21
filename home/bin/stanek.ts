@@ -109,13 +109,6 @@ const setupGift = (ns: NS, positions: FragmentPosition[]) => {
   }
 };
 
-const codifyLayout = (ns: NS) => `
-  '${ns.stanek.giftWidth()},${ns.stanek.giftHeight()}': [
-    ${ns.stanek
-      .activeFragments()
-      .map(({ x, y, rotation, id }) => `[${x},${y},${rotation},${id}]`)
-      .join('\n')}`;
-
 const getFocus = (ns: NS, resetInfo: ResetInfo): FragmentFocus => {
   const { currentWork } = getPlayerData(ns);
   if ([6, 7].includes(resetInfo.currentNode) && ns.bladeburner.inBladeburner()) {
@@ -151,26 +144,22 @@ const getFragmentMultipliers = (ns: NS) => {
 };
 
 export async function main(ns: NS) {
-  const { resetInfo } = getStaticData(ns);
-
-  ns.disableLog('ALL');
-
   try {
     ns.stanek.activeFragments();
   } catch {
     // Dodge RAM cost of acceptGift, as it only happens once.
     // Calling it here instead of bootloader allows service manager override.
-    ns.stanek['acceptGift']();
+    if (ns.stanek['acceptGift']()) {
+      putPlayerData(ns, { hasGift: true });
+    }
     return;
   }
 
-  putPlayerData(ns, { hasGift: true });
-
-  const RAM_PER_SHARE = getStaticData(ns).scriptRam[CHARGE.replace(/^\//, '')];
+  ns.disableLog('ALL');
+  const { resetInfo, scriptRam } = getStaticData(ns);
+  const RAM_PER_SHARE = scriptRam[CHARGE.replace(/^\//, '')];
 
   const chargeThreads = new Map<number, number>();
-
-  ns.tprint(codifyLayout(ns));
 
   let lastUpdate = 0;
   while (true) {
