@@ -174,6 +174,9 @@ export async function main(ns: NS) {
       estimatedStockValue += ns.stock.getSaleGain(symbol, short, 'S');
     }
     const stockIncome = totalProfit / ((Date.now() - startTime) / 1000);
+    if (estimatedStockValue + ns.getServerMoneyAvailable('home') < 200e6) {
+      ns.singularity.softReset('start.ts');
+    }
     putMoneyData(ns, { estimatedStockValue, stockIncome });
     await ns.stock.nextUpdate();
   }

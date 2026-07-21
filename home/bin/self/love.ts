@@ -129,6 +129,10 @@ export async function main(ns: NS) {
   const runPort = randPort();
   const $ = inPlace(ns, runPort);
 
+  if (resetInfo.currentNode === 8) {
+    while (ns.getServerMaxRam('home') < 256 && (await $.singularity['upgradeHomeRam']()));
+  }
+
   await ns.sleep(200); // Hack to prevent RAM contention during initial scheduler cycle
   await $.singularity['applyToCompany']("Joe's Guns", 'Employee');
 

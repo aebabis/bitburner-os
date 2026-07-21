@@ -16,9 +16,6 @@ const go = async (ns: NS) => {
   if (resetInfo == null) {
     if (await ns.prompt('Boot?', { type: 'boolean' })) ns.exec('stop.ts', 'home', 1, 'start.ts');
   }
-  if (resetInfo.currentNode === 8) {
-    ns.exec('/bin/self/buy-ram.ts', 'home');
-  }
   const services = getAllServices(ns, player).filter((t) => t.isViable());
 
   const lastRuns: Record<string, number> = {};
