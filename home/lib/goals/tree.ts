@@ -187,6 +187,7 @@ export const buildJoinSubtree = (
             : null;
           return combatLevelsGoal(req, stat, skills, t, combatReq);
         }),
+        `${combatReq} in combat stats`,
       ),
     );
   }
@@ -210,6 +211,7 @@ export const buildJoinSubtree = (
             : null;
           return combatLevelsGoal(statReq, stat, skills, t, cReq);
         }),
+        `${combatReq} in combat stats`,
       );
     }
     return null;
@@ -443,7 +445,7 @@ export const getBladeburnerTree = (
       100,
     ),
   );
-  const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals)]);
+  const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals, '100 in combat stats')]);
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, [joinBlades]);
   const repGoal = factionRepGoal('Bladeburners', bladeRepCost, currentRep, joinBladeFaction);
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);

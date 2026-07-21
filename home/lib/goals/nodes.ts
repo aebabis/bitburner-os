@@ -337,13 +337,11 @@ export const eitherGoal = (branches: Goal[]) => {
 // matter). Satisfied once every part is satisfied; unlike the default AND aggregation (max of
 // deps' times, which assumes parts progress concurrently), estimated time is the sum across
 // parts.
-export const mutexGoal = (parts: Goal[]) => {
-  const base = goal(
-    'MUTEX',
-    parts.map((p) => p.desc).join(' & '),
-    () => parts.every((p) => p.isDone()),
-    { deps: parts, ownTime: () => 0 },
-  );
+export const mutexGoal = (parts: Goal[], desc = parts.map((p) => p.desc).join(' & ')) => {
+  const base = goal('MUTEX', desc, () => parts.every((p) => p.isDone()), {
+    deps: parts,
+    ownTime: () => 0,
+  });
   let _ttc: number | null | undefined;
   return {
     ...base,
