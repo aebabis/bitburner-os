@@ -161,6 +161,7 @@ export async function main(ns: NS) {
 
   ns.tprint(codifyLayout(ns));
 
+  let lastUpdate = 0;
   while (true) {
     ns.clearLog();
     const currentThreads = [...chargeThreads.entries()]
@@ -178,7 +179,11 @@ export async function main(ns: NS) {
     const layout = getLayout(focus, width, height);
 
     if (!areLayoutsSame(currentLayout, layout)) {
-      setupGift(ns, layout);
+      // 10s cooldown on swaps to prevent thrashing
+      if (Date.now() - lastUpdate >= 10000) {
+        setupGift(ns, layout);
+        lastUpdate = Date.now();
+      }
     }
     ns.print('FOCUS: ' + focus);
 
