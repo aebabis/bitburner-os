@@ -23,6 +23,7 @@ const BN_SEQUENCE: [number, number][] = [
 
   [7, 1],
   [12, 8],
+  [9, 2],
 
   [15, 2],
 
@@ -39,11 +40,14 @@ const BN_SEQUENCE: [number, number][] = [
   [11, 1],
 
   [13, 1],
+  [13, 2],
+  [13, 3],
 
   [11, 2],
   [11, 3],
 
   [9, 3],
+  [8, 1],
 ];
 
 export const getNextBitnode = (resetInfo: ResetInfo): [number, number] => {
