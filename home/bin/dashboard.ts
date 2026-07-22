@@ -328,10 +328,10 @@ const getSourceFilesTable = (ns: NS) => {
   const { ownedSF } = resetInfo;
   const f = (bn: number, l?: number) => {
     const str = `${bn}.${l ?? 0}`.padStart(4);
-    if (l == null) {
-      return DIM(str);
-    } else if (bn === resetInfo.currentNode) {
+    if (bn === resetInfo.currentNode) {
       return C(183)(str);
+    } else if (l == null) {
+      return DIM(str);
     } else {
       return str;
     }
