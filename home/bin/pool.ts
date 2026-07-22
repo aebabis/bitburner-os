@@ -121,7 +121,7 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
     const goals = getGoals(ns);
-    const ttc = goals.timeToComplete() || Infinity;
+    const ttc = goals.timeToComplete() ?? Infinity;
     const { upgrade, cost } = getTargetUpgrade(ns);
     if (cost > ns.hacknet.hashCapacity()) {
       const upgradedNeeded = getHashCapacityUpgrade(ns, ttc);

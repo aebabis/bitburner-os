@@ -193,7 +193,7 @@ const getFinancialTarget = (ns: NS) => {
   const { estimatedStockValue } = getMoneyData(ns);
   const liquidAssets = money + estimatedStockValue;
   const moneyNeeded = requirement - liquidAssets;
-  const ttc = (goals.timeToComplete() || Infinity) * 1000;
+  const ttc = (goals.timeToComplete() ?? Infinity) * 1000;
   const timeframe = Math.min(HORIZON_MS, ttc);
   return { moneyNeeded, timeframe };
 };
