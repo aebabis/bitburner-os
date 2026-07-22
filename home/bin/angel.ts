@@ -278,13 +278,17 @@ export async function main(ns: NS) {
   const hackTime = ns.getHackTime(target);
   const growTime = ns.getGrowTime(target);
   const weakTime = ns.getWeakenTime(target);
-  const endTime = Date.now() + weakTime;
 
-  putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
+  const saveBatchInfo = () => {
+    const endTime = Date.now() + weakTime;
+    putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
+  };
+
+  saveBatchInfo();
 
   const alloc = buildWorkerThreadAllocator(getRootServerRam(ns));
 
-  let totalRam = 0;
+  let totalBatchRam = 0;
   const assign = (script: string, threads: number, additionalMsec: number) => {
     if (threads === 0) return () => {};
     if (additionalMsec < 0) return null;
@@ -293,7 +297,7 @@ export async function main(ns: NS) {
     while (threadsRemaining > 0) {
       const allocation = alloc(threadsRemaining, script === HACK ? 1.7 : 1.75);
       if (allocation == null) return null;
-      totalRam += allocation[1] * (script === HACK ? 1.7 : 1.75);
+      totalBatchRam += allocation[1] * (script === HACK ? 1.7 : 1.75);
       allocations.push(allocation);
       threadsRemaining -= allocation[1];
     }
@@ -324,6 +328,7 @@ export async function main(ns: NS) {
     if (Date.now() - lastSleep > 200) {
       await ns.sleep(0);
       lastSleep = Date.now();
+      saveBatchInfo();
     }
   }
 
@@ -332,5 +337,5 @@ export async function main(ns: NS) {
 
   const { onlineMoneyMade, onlineRunningTime } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / onlineRunningTime;
-  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalRam });
+  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalBatchRam });
 }
