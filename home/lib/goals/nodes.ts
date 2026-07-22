@@ -174,7 +174,7 @@ export const hackingXpGoal = (
   currentXp: number,
   trainingTime: number | null = null,
 ) => ({
-  ...goal('HACKING_XP', `Hacking XP ≥ ${xpReq}`, () => currentXp >= xpReq, {
+  ...goal('HACKING_XP', `Hacking XP ≥ ${Math.ceil(xpReq)}`, () => currentXp >= xpReq, {
     ownTime: () => trainingTime,
   }),
   requirement: xpReq,
@@ -258,10 +258,15 @@ export const factionRepGoal = (
   dep: Goal,
   repRate = 0,
 ) => ({
-  ...goal('FACTION_REP', `Gain ${requirement} rep (${faction})`, () => currentRep >= requirement, {
-    deps: [dep],
-    ownTime: () => (repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null),
-  }),
+  ...goal(
+    'FACTION_REP',
+    `Gain ${Math.round(requirement)} rep (${faction})`,
+    () => currentRep >= requirement,
+    {
+      deps: [dep],
+      ownTime: () => (repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null),
+    },
+  ),
   requirement,
   faction,
 });
@@ -300,7 +305,7 @@ export const factionFavorGoal = (
   return {
     ...goal(
       'FACTION_FAVOR',
-      `${neededRep} rep for favor (${faction})`,
+      `${Math.round(neededRep)} rep for favor (${faction})`,
       () => currentRep >= neededRep,
       {
         deps: [dep],
