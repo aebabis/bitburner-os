@@ -1,12 +1,6 @@
 import { getPlayerData, putMoneyData, putPlayerData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 
-type HashrateUpgrade = {
-  type: 'level' | 'ram' | 'cores';
-  cost: number;
-  utility: number;
-};
-
 const hashGainRate = (ns: NS) => (stats: NodeStats) =>
   ns.formulas.hacknetServers.hashGainRate(stats.level, stats.ramUsed ?? 0, stats.ram, stats.cores);
 
@@ -17,7 +11,8 @@ const getNodes = (ns: NS) =>
     .map(ns.hacknet.getNodeStats);
 
 const upgrade =
-  (ns: NS) => (i: number, type: HashrateUpgrade['type'], cost: number, currentStats: NodeStats) => {
+  (ns: NS) =>
+  (i: number, type: 'level' | 'ram' | 'cores', cost: number, currentStats: NodeStats) => {
     const newStats = { ...currentStats };
     if (type === 'ram') newStats.ram *= 2;
     else newStats[type] += 1;
@@ -27,24 +22,33 @@ const upgrade =
     return { i, type, cost, hashrateGain, utility, breakEvenTime };
   };
 
-const getNextUpgrade = (ns: NS) => {
-  const nodes = getNodes(ns);
-  if (nodes.length === 0) return null;
-  return nodes
-    .flatMap((server, i) => [
-      upgrade(ns)(i, 'level', ns.hacknet.getLevelUpgradeCost(i), server),
-      upgrade(ns)(i, 'ram', ns.hacknet.getRamUpgradeCost(i), server),
-      upgrade(ns)(i, 'cores', ns.hacknet.getCoreUpgradeCost(i), server),
-    ])
-    .reduce((a, b) => (a.utility > b.utility ? a : b));
-};
-
 const getNextNodeCost = (ns: NS, mults: Multipliers) => {
   const numNodes = ns.hacknet.numNodes();
   return ns.formulas.hacknetServers.hacknetServerCost(
     numNodes + 1,
     mults.hacknet_node_purchase_cost,
   );
+};
+
+const newNodeUpgrade = (ns: NS, mults: Multipliers) => {
+  const cost = getNextNodeCost(ns, mults);
+  const hashrateGain = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1);
+  const utility = hashrateGain / cost;
+  const breakEvenTime = cost / ((hashrateGain / 4) * 1e6);
+  return { i: -1, type: 'node' as const, cost, hashrateGain, utility, breakEvenTime };
+};
+
+const getNextUpgrade = (ns: NS, mults: Multipliers) => {
+  const nodes = getNodes(ns);
+  const candidates = [
+    ...nodes.flatMap((server, i) => [
+      upgrade(ns)(i, 'level', ns.hacknet.getLevelUpgradeCost(i), server),
+      upgrade(ns)(i, 'ram', ns.hacknet.getRamUpgradeCost(i), server),
+      upgrade(ns)(i, 'cores', ns.hacknet.getCoreUpgradeCost(i), server),
+    ]),
+    newNodeUpgrade(ns, mults),
+  ];
+  return candidates.reduce((a, b) => (a.utility > b.utility ? a : b));
 };
 
 const netburnerPrereqsAreMet = (ns: NS) => {
@@ -65,22 +69,17 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
   while (true) {
     const { player } = getPlayerData(ns);
     const money = ns.getServerMoneyAvailable('home');
-    const upgrade = getNextUpgrade(ns);
-    const nodeCost = getNextNodeCost(ns, player.mults);
+    const upgrade = getNextUpgrade(ns, player.mults);
     ns.print(upgrade);
     ns.print('GOAL FACTION: ' + factionGoal[0]?.faction);
-    if (upgrade == null) return;
     if (upgrade.cost > money) return;
     if (ttc != null && upgrade.breakEvenTime > ttc) {
       if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return;
     }
-    if (nodeCost < upgrade.cost) {
-      ns.hacknet.purchaseNode();
-    } else {
-      if (upgrade.type === 'level') ns.hacknet.upgradeLevel(upgrade.i);
-      if (upgrade.type === 'ram') ns.hacknet.upgradeRam(upgrade.i);
-      if (upgrade.type === 'cores') ns.hacknet.upgradeCore(upgrade.i);
-    }
+    if (upgrade.type === 'node') ns.hacknet.purchaseNode();
+    if (upgrade.type === 'level') ns.hacknet.upgradeLevel(upgrade.i);
+    if (upgrade.type === 'ram') ns.hacknet.upgradeRam(upgrade.i);
+    if (upgrade.type === 'cores') ns.hacknet.upgradeCore(upgrade.i);
   }
 };
 
