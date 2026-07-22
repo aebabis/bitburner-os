@@ -474,7 +474,7 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
       .replaceAll(/[➖]/g, '-')
       .replaceAll(/[÷]/g, '/')
       .replaceAll(/[ҳ]/g, '*')
-      .replaceAll(/^[0-9+\-*/()]/g, '');
+      .replaceAll(/[^0-9+\-*/()]/g, '');
     return recitePassword(eval(expr));
   }
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
