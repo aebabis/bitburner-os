@@ -5,6 +5,14 @@ import { getRamAllowances, getWorkerRam } from '../lib/ram-router';
 type FragmentPosition = [number, number, number, number];
 type FragmentFocus = GymType | 'hack' | 'cha' | 'bb';
 
+const HACK_5_5 = (): FragmentPosition[] => [
+  [3, 0, 1, 101],
+  [0, 0, 3, 6],
+  [1, 0, 0, 1],
+  [1, 1, 0, 7],
+  [2, 3, 2, 5],
+  [0, 3, 2, 0],
+];
 const HACK_6_5 = (): FragmentPosition[] => [
   [1, 3, 0, 0],
   [5, 0, 1, 6],
@@ -134,6 +142,8 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'dex') return L_6_5(14);
     if (focus === 'agi') return S_6_5(16);
     if (focus === 'cha') return S_6_5(18);
+  } else if (width === 5 && height === 5) {
+    return HACK_5_5();
   }
   throw new Error(`Layout not found: ${focus} (${width}x${height})`);
 };
