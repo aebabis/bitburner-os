@@ -116,6 +116,17 @@ const HACK_8_7 = () => [
   [5, 1, 1, 7],
   [1, 1, 0, 101],
 ];
+const CHA_8_7 = () => [
+  [3, 2, 0, 18],
+  [5, 3, 3, 101],
+  [2, 4, 0, 105],
+  [1, 4, 2, 105],
+  [0, 3, 2, 105],
+  [6, 2, 3, 101],
+  [0, 2, 0, 101],
+  [3, 0, 0, 102],
+  [5, 0, 2, 106],
+];
 
 const getLayout = (focus: FragmentFocus, width: number, height: number) => {
   if (height > 7) {
@@ -123,6 +134,7 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
   } else if (width === 8 && height === 7) {
     if (focus === 'hack') return HACK_8_7();
     if (focus === 'bb') return C_8_7(30);
+    if (focus === 'cha') return CHA_8_7();
     return C_8_7(18);
   } else if (width > 7 || height > 6) {
     return getLayout(focus, 7, 6);
