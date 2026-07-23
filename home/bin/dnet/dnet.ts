@@ -110,7 +110,7 @@ const cleanNetworkMap = (ns: NS) => {
 
 const NUMBER_SUFFIXES = ' kmbtqQsSon';
 const getMultiplier = (suffix: string) => {
-  if (suffix === '') return 1;
+  if (suffix == null || suffix === '') return 1;
   const power =
     suffix[0] === 'e' ? parseInt(suffix.slice(1)) : NUMBER_SUFFIXES.indexOf(suffix[0]) * 3;
   return 10 ** power;
