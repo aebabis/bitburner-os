@@ -88,7 +88,7 @@ const S_7_6 = (activeId: number): FragmentPosition[] => [
   [0, 4, 2, 102],
   [3, 4, 2, 5],
 ];
-const C_8_7 = (activeId: number) => [
+const C_8_7 = (activeId: number): FragmentPosition[] => [
   [0, 3, 3, 101],
   [0, 0, 0, 101],
   [4, 5, 2, 101],
@@ -102,7 +102,7 @@ const C_8_7 = (activeId: number) => [
   [6, 0, 1, 101],
   [5, 0, 1, activeId],
 ];
-const HACK_8_7 = () => [
+const HACK_8_7 = (): FragmentPosition[] => [
   [0, 3, 3, 101],
   [1, 5, 0, 1],
   [1, 4, 0, 103],
@@ -116,7 +116,7 @@ const HACK_8_7 = () => [
   [5, 1, 1, 7],
   [1, 1, 0, 101],
 ];
-const CHA_8_7 = () => [
+const CHA_8_7 = (): FragmentPosition[] => [
   [3, 2, 0, 18],
   [5, 3, 3, 101],
   [2, 4, 0, 105],
