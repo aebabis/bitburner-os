@@ -9,7 +9,7 @@ const getBootSequence = (ns: NS) => {
     '/boot/reset.ts',
     '/boot/ui.ts',
     '/boot/network.ts',
-    '/boot/data.ts',
+    '/boot/data1.ts',
     '/boot/data2.ts',
     '/boot/data3.ts',
   ];
