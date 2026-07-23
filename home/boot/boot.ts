@@ -19,6 +19,9 @@ const getBootSequence = (ns: NS) => {
     }
     sequence.push('/boot/data5.ts');
   }
+  if (ownedSF.has(10) || currentNode === 10) {
+    sequence.push('/boot/data6.ts');
+  }
   if (homeRam <= 8) {
     sequence.push('/bin/eight-gig.ts');
   } else {

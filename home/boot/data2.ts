@@ -7,10 +7,8 @@ export async function main(ns: NS) {
   const { currentNode, ownedSF } = getStaticData(ns).resetInfo;
   tprint(ns)(STR.BOLD + 'ADDING MULTIPLIERS TO CACHE');
 
-  const canUseHackNodes = currentNode === 5 || ownedSF.has(5);
   let bitNodeMultipliers = null;
-
-  if (canUseHackNodes) {
+  if (currentNode === 5 || ownedSF.has(5)) {
     tprint(ns)(STR + '  Adding bit node multipliers to static data cache');
     bitNodeMultipliers = ns.getBitNodeMultipliers();
   }

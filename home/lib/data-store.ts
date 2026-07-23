@@ -76,6 +76,10 @@ export type StaticData = {
 
   companyFavor: Record<CompanyName, number>;
   companyPositions: Record<CompanyName, CompanyPositionInfo[]>;
+
+  graftableAugmentations: string[];
+  augmentationGraftPrices: Record<string, number>;
+  augmentationGraftTimes: Record<string, number>;
 };
 export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
