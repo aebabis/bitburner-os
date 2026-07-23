@@ -469,14 +469,15 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
     };
   }
   if (details.passwordHint === 'The password is the evaluation of this expression') {
+    const nonExprChar = /[^ 0-9+\-*/()]/g;
     const expr = details.data
-      .split(',')
-      .shift()!
       .replaceAll(/[➕]/g, '+')
       .replaceAll(/[➖]/g, '-')
       .replaceAll(/[÷]/g, '/')
       .replaceAll(/[ҳ]/g, '*')
-      .replaceAll(/[^0-9+\-*/()]/g, '');
+      .split(nonExprChar)
+      .shift()!
+      .replaceAll(nonExprChar, '');
     return recitePassword(eval(expr));
   }
   if (DEFAULT_PASSWORD.includes(details.passwordHint) || details.passwordHint.includes('default')) {
