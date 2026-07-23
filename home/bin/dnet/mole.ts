@@ -470,6 +470,8 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   }
   if (details.passwordHint === 'The password is the evaluation of this expression') {
     const expr = details.data
+      .split(',')
+      .shift()!
       .replaceAll(/[➕]/g, '+')
       .replaceAll(/[➖]/g, '-')
       .replaceAll(/[÷]/g, '/')
