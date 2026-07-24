@@ -46,6 +46,7 @@ export async function main(ns: NS) {
   const dateStr = new Date().toLocaleDateString();
   const timeStr = new Date().toLocaleTimeString();
   print(`${dateStr} ${timeStr}`);
+  print(`MONEY: $${ns.format.number(money)}`);
 
   for (const goal of [root, ...root.prerequisites()]) {
     print(goal.desc.padEnd(40) + ' ' + goal.type.padEnd(15) + ' ' + goal.isDone());
@@ -113,7 +114,8 @@ export async function main(ns: NS) {
 
   let donationFaction = null;
   let highestFavor = 0;
-  for (const faction of ns.getPlayer().factions) {
+  for (const faction of await $.singularity['getAugmentationFactions'](NEUROFLUX)) {
+    if (!ns.getPlayer().factions.includes(faction)) continue;
     const favor = await $.singularity['getFactionFavor'](faction);
     if (favor > highestFavor && favor >= favorToDonate) {
       donationFaction = faction;
