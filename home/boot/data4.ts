@@ -1,4 +1,4 @@
-import { putStaticData } from '../lib/data-store';
+import { Augmentation, putStaticData } from '../lib/data-store';
 import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
@@ -43,6 +43,18 @@ export async function main(ns: NS) {
   for (const aug of augmentationNames!)
     augmentationStats[aug] = await inPlace(ns).singularity['getAugmentationStats'](aug);
 
+  tprint(ns)(STR + '  Constructing Augmentation Aggregates');
+  const augmentations: Augmentation[] = [];
+  for (const aug of augmentationNames!)
+    augmentations.push({
+      name: aug,
+      price: augmentationPrices[aug],
+      repReq: augmentationRepReqs[aug],
+      prereqs: augmentationPrereqs[aug],
+      stats: augmentationStats[aug],
+      factions: await inPlace(ns).singularity['getAugmentationFactions'](aug),
+    });
+
   tprint(ns)(STR + '  Loading Faction Favor');
   const factionFavor = {} as Record<FactionName, number>;
   for (const faction of factions)
@@ -78,6 +90,7 @@ export async function main(ns: NS) {
 
   putStaticData(ns, {
     factionAugmentations,
+    augmentations,
     augmentationNames,
     augmentationPrices,
     augmentationRepReqs,

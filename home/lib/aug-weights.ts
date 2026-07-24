@@ -43,3 +43,26 @@ export const getAugWeights = (resetInfo: ResetInfo) => {
 };
 
 export type AugWeights = ReturnType<typeof getAugWeights>;
+
+export const getAugEvaluator = (
+  resetInfo: ResetInfo,
+  augmentationStats: Record<string, Multipliers>,
+) => {
+  if (augmentationStats == null) return null;
+  const augWeights = getAugWeights(resetInfo);
+
+  const scoreAug = (stats: Multipliers) =>
+    Object.entries(stats)
+      .map(([key, stat = 1]) => {
+        const mult = stat >= 1 ? stat : 1 / stat;
+        return (mult - 1) * augWeights[key as keyof Multipliers];
+      })
+      .reduce((a, b) => a + b, 0);
+
+  return (aug: string) => {
+    if (aug === 'CashRoot Starter Kit') return 0.01;
+    if (aug === 'Neuroreceptor Management Implant') return 1;
+    if (aug === 'The Red Pill') return 10;
+    return scoreAug(augmentationStats[aug]);
+  };
+};

@@ -48,6 +48,15 @@ type BackdoorRequirement = {
   numPortsRequired: number;
 };
 
+export type Augmentation = {
+  name: string;
+  price: number;
+  repReq: number;
+  prereqs: string[];
+  stats: Multipliers;
+  factions: FactionName[];
+};
+
 export type StaticData = {
   resetInfo: ResetInfo;
   installedAugmentations: string[];
@@ -65,6 +74,7 @@ export type StaticData = {
   industryData?: Record<CorpIndustryName, CorpIndustryData>;
 
   factionFavor: Record<FactionName, number>;
+  augmentations: Augmentation[];
   augmentationNames: string[];
   augmentationPrices: Record<string, number>;
   augmentationRepReqs: Record<string, number>;

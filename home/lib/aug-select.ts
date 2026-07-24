@@ -1,4 +1,4 @@
-import { AugWeights, getAugWeights } from './aug-weights.ts';
+import { AugWeights, getAugEvaluator } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
@@ -133,8 +133,6 @@ export const findOptimalBatch = (
     factionWorkTypes,
   } = staticData;
 
-  const augWeights = getAugWeights(resetInfo);
-
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
     ? (formulas.reputation.donationForRep(1, player) ?? Infinity)
@@ -147,7 +145,7 @@ export const findOptimalBatch = (
   const getNeededAugs = (fac: FactionName) =>
     (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
 
-  const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
+  const augValue = getAugEvaluator(resetInfo, augmentationStats) || (() => 0);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = computeRepRate(
