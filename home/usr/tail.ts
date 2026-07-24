@@ -31,7 +31,6 @@ export async function main(ns: NS) {
     const runningScripts = hostnames.flatMap((hostname) =>
       filenames.map((filename) => ns.getRunningScript(filename, hostname)).filter((s) => s != null),
     );
-    ns.tprint(runningScripts);
     if (runningScripts.length > 1 && all !== true) {
       const runningFilenames = new Set(runningScripts.map((script) => script.filename));
       ns.tprint(ERROR + 'Multiple processes matched: ' + [...runningFilenames].join(', '));
