@@ -1,5 +1,5 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
-import { ERROR } from '../lib/colors';
+import { ERROR, WARN } from '../lib/colors';
 import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
 import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
@@ -7,6 +7,7 @@ import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
 import { HACK, GROW, WEAK } from '../etc/filenames';
+import { tprint } from '../boot/util';
 
 const PROC_LIMIT = 60000;
 const FRAME_LIMIT = Math.floor(PROC_LIMIT / 3);
@@ -250,9 +251,19 @@ export async function main(ns: NS) {
     printTable(ns);
   }
 
+  const pids: number[] = [];
   const exec = (script: string, hostname: string, threads: number, additionalMsec: number) => {
     const jobId = `${workerId++}`;
-    ns.exec(script, hostname, { threads, temporary: true }, target!, additionalMsec, jobId, DEBUG);
+    const pid = ns.exec(
+      script,
+      hostname,
+      { threads, temporary: true },
+      target!,
+      additionalMsec,
+      jobId,
+      DEBUG,
+    );
+    if (pid) pids.push(pid);
   };
 
   const totalRamAvailable = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
@@ -278,6 +289,7 @@ export async function main(ns: NS) {
   const hackTime = ns.getHackTime(target);
   const growTime = ns.getGrowTime(target);
   const weakTime = ns.getWeakenTime(target);
+  const firstBatchEnd = Date.now() + weakTime;
 
   const saveBatchInfo = () => {
     const endTime = Date.now() + weakTime;
@@ -333,7 +345,18 @@ export async function main(ns: NS) {
   }
 
   await ns.sleep(1); // Wait for worker tick to finish before sleeping
-  await ns.sleep(weakTime);
+  const sleepEnd = Date.now() + weakTime;
+  while (Date.now() < sleepEnd) {
+    const timeLeft = firstBatchEnd - Date.now();
+    if (ns.getWeakenTime(target) < timeLeft - 200) {
+      tprint(ns)(WARN + 'Weaken time less than time remaining. Killing batches');
+      for (const pid of pids) {
+        ns.kill(pid);
+      }
+      return;
+    }
+    await ns.sleep(50);
+  }
 
   const { onlineMoneyMade, onlineRunningTime } = ns.getRunningScript()!;
   const theftIncome = onlineMoneyMade / onlineRunningTime;
