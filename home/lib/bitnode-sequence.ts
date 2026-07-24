@@ -47,6 +47,7 @@ const BN_SEQUENCE: [number, number][] = [
   [11, 3],
 
   [9, 3],
+  [10, 3],
   [8, 1],
 ];
 
