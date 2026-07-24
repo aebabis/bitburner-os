@@ -75,11 +75,16 @@ function* permutationGenerator(arr: string[]): Generator<string> {
     yield arr.join('');
     return;
   }
+  const attempts = new Set<string>();
   for (let i = 0; i < arr.length; i++) {
     const current = arr[i];
     const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
     for (const permutation of permutationGenerator(remaining)) {
-      yield [current, ...permutation].join('');
+      const value = [current, ...permutation].join('');
+      if (!attempts.has(value)) {
+        attempts.add(value);
+        yield value;
+      }
     }
   }
 }
