@@ -693,20 +693,20 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
 };
 
 const gainAccess = async (ns: NS, hostname: string, details: DarknetServerDetails) => {
-  const storedPassword = getPassword(ns)(hostname);
-  if (storedPassword != null && (await authenticate(ns)(hostname, storedPassword)).success)
-    return true;
-  const cracker = getCracker(ns, hostname, details);
-  if (cracker == null) {
-    ns.print('No password strategy for: ' + hostname);
-  } else {
-    try {
+  try {
+    const storedPassword = getPassword(ns)(hostname);
+    if (storedPassword != null && (await authenticate(ns)(hostname, storedPassword)).success)
+      return true;
+    const cracker = getCracker(ns, hostname, details);
+    if (cracker == null) {
+      ns.print('No password strategy for: ' + hostname);
+    } else {
       return await cracker();
-    } catch (error) {
-      ns.ui.openTail();
-      console.error(error);
-      ns.print('\u001b[38;5;124m' + error);
     }
+  } catch (error) {
+    ns.ui.openTail();
+    console.error(error);
+    ns.print('\u001b[38;5;124m' + error);
   }
 };
 
@@ -980,18 +980,23 @@ const getTargets = (ns: NS) => {
 export async function main(ns: NS) {
   ns.ui.setTailTitle(`${ns.getScriptName()} (${ns.getHostname()})`);
   while (true) {
-    checkStorm(ns);
-    clearBlockages(ns);
-    checkCaches(ns);
-    stealFiles(ns);
-    updateLocks(ns);
-    for (const hostname of getTargets(ns)) {
-      const details = ns.dnet.getServerDetails(hostname);
-      if (details.hasSession || (await gainAccess(ns, hostname, details))) {
-        checkNeighborVersion(ns, hostname);
+    try {
+      checkStorm(ns);
+      clearBlockages(ns);
+      checkCaches(ns);
+      stealFiles(ns);
+      updateLocks(ns);
+      for (const hostname of getTargets(ns)) {
+        const details = ns.dnet.getServerDetails(hostname);
+        if (details.hasSession || (await gainAccess(ns, hostname, details))) {
+          checkNeighborVersion(ns, hostname);
+        }
       }
+      goPhishing(ns);
+      await ns.dnet.nextMutation();
+    } catch (error) {
+      console.error(error);
+      await ns.sleep(50);
     }
-    goPhishing(ns);
-    await ns.dnet.nextMutation();
   }
 }
