@@ -273,7 +273,14 @@ export async function main(ns: NS) {
         }
       }
     }
-    putPlayerData(ns, { fragmentMultipliers: getFragmentMultipliers(ns) });
+    putPlayerData(ns, {
+      stanekLayout: {
+        width: ns.stanek.giftWidth(),
+        height: ns.stanek.giftHeight(),
+        fragments: ns.stanek.activeFragments(),
+      },
+      fragmentMultipliers: getFragmentMultipliers(ns),
+    });
     await ns.sleep(50);
   }
 }

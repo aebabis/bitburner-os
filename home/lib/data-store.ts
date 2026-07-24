@@ -95,6 +95,11 @@ export type PlayerData = {
   studyMult?: number;
   trainingMult?: number;
   hasGift?: boolean;
+  stanekLayout?: {
+    width: number;
+    height: number;
+    fragments: ActiveFragment[];
+  };
   fragmentMultipliers?: Record<FragmentType, number>;
 
   homeRam: number;
