@@ -363,7 +363,7 @@ const getStanekDisplay = (ns: NS) => {
   const { stanekLayout } = getPlayerData(ns);
   const heading = H(' STANEK');
   if (stanekLayout == null) {
-    return heading + '\n' + DIM('(not loaded) ');
+    return heading + '\n' + DIM(' (not loaded) ');
   }
   const { width, height, fragments } = stanekLayout;
   const grid = Array(height)
