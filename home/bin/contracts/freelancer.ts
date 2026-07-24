@@ -1,3 +1,5 @@
+import { tprint } from '../../boot/util';
+import { ERROR, INFO } from '../../lib/colors';
 import { getHostnames } from '../../lib/data-store';
 import { inPlace } from '../../lib/in-place';
 import { table } from '../../lib/table';
@@ -33,13 +35,11 @@ const attemptContract = async (ns: NS, { filename, hostname, type, data }: Contr
   try {
     const outcome = await inPlace(ns).codingcontract['attempt'](answer, filename, hostname);
     if (outcome === '')
-      ns.tprint(
-        'ERROR ' + algorithm.name + `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`,
-      );
-    else ns.tprint(outcome);
+      tprint(ns)(ERROR + algorithm.name + `(${JSON.stringify(data)}) => ${JSON.stringify(answer)}`);
+    else tprint(ns)(INFO + outcome);
     return !!outcome;
   } catch (error) {
-    ns.tprint('ERROR ' + error);
+    tprint(ns)(ERROR + error);
     return false;
   }
 };
@@ -61,7 +61,7 @@ export async function main(ns: NS) {
             failures.add(contract.filename);
           }
         } catch (error) {
-          ns.tprint(error);
+          tprint(ERROR + error);
         }
       }
     }
