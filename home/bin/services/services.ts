@@ -35,7 +35,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   // Predicates for service viability (relevance).
   // services that are not useful with current BN/SFs do not appear in the dashboard
-  const useWolf = () => hasNode(8);
+  const hasNerd = () => currentNode === 8 && !ns.stock.has4SDataTixApi();
   const hasAngel = () => ownedSF.has(1);
   const hasThief = () => !hasNode(5);
   const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
@@ -53,7 +53,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const useAngel = () => preferAngel() || !hasThief;
   const useThief = () => !preferAngel() || !hasAngel;
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
-  const couldTrade = () => ns.stock.hasTixApiAccess() || money() >= stockStarterCost;
+  const couldTrade = () =>
+    !hasNerd() && (ns.stock.hasTixApiAccess() || money() >= stockStarterCost);
   const gangReady = () => factions().some(isCriminal) && ns.heart.break() <= gangKarma;
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
@@ -75,8 +76,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, enablePool)('/bin/pool.ts'),
-    AnyHostService(ns, useWolf)('/bin/nerd.ts'),
-    AnyHostService(ns, not(useWolf), couldTrade)('/bin/broker/trader.ts'),
+    AnyHostService(ns, hasNerd)('/bin/nerd.ts'),
+    AnyHostService(ns, always, couldTrade)('/bin/broker/trader.ts'),
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/don.ts'),

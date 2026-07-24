@@ -166,6 +166,7 @@ export async function main(ns: NS) {
           }
         }
       }
+      ns.stock.purchase4SMarketDataTixApi();
     }
     let estimatedStockValue = 0;
     for (const symbol of ns.stock.getSymbols()) {
