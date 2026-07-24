@@ -11,7 +11,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
@@ -346,6 +346,46 @@ const getSourceFilesTable = (ns: NS) => {
   );
 };
 
+const arr = (len: number) => Array(len).fill(null);
+const colors = [20, 54, 93, 33, 51, 39, 95, 210, 13, 5, 231, 26, 99];
+const rot180 = (shape: boolean[][]) =>
+  shape.map((row, y) => row.map((_, x) => shape[shape.length - 1 - y][shape[0].length - 1 - x]));
+const rotate = (shape: boolean[][], rotation: number) => {
+  if (rotation === 1)
+    return arr(shape[0].length).map((_, y) =>
+      arr(shape.length).map((_, x) => shape[shape.length - 1 - x][y]),
+    );
+  if (rotation === 2) return rot180(shape);
+  if (rotation === 3) return rotate(rot180(shape), 1);
+  return shape;
+};
+const getStanekDisplay = (ns: NS) => {
+  const { stanekLayout } = getPlayerData(ns);
+  const heading = H(' STANEK');
+  if (stanekLayout == null) {
+    return heading + '\n' + DIM('(not loaded) ');
+  }
+  const { width, height, fragments } = stanekLayout;
+  const grid = Array(height)
+    .fill(null)
+    .map(() => Array(width).fill(BG(0)(' ')));
+  for (let i = 0; i < fragments.length; i++) {
+    const { x, y, rotation, shape } = fragments[i];
+    const transShape = rotate(shape, rotation);
+    const color = colors[i];
+    for (let dy = 0; dy < transShape.length; dy++) {
+      for (let dx = 0; dx < transShape[0].length; dx++) {
+        if (transShape[dy][dx]) {
+          grid[y + dy][x + dx] = BG(color)(' ');
+        }
+      }
+    }
+  }
+  return (
+    heading + '\n' + grid.map((row) => BG(0)(' ') + row.join('') + BG(0)(' ')).join('\n') + '\n'
+  );
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -360,6 +400,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getExecutionTable(ns)),
     new GrowingWindow(() => getHackingTable(ns)),
     new GrowingWindow(() => getSourceFilesTable(ns)),
+    hasBitNode(ns, 13) && new GrowingWindow(() => getStanekDisplay(ns)),
   ].filter(Boolean);
   await ns.sleep(1);
   const WIDTH = 1450;
