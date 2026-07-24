@@ -93,7 +93,7 @@ export const getGoals = (ns: NS): Goal => {
   // If player has singularity access but not all of SF4,
   // the static augmentation data may have not loaded during boot.
   // If this is the case, make a goal for more RAM on home.
-  if (staticData.resetInfo.ownedSF.has(4) && staticData.augmentations == null) {
+  if (staticData.resetInfo.ownedSF.has(4) && staticData.augmentationNames == null) {
     const bootRam = staticData.scriptRam['/boot/data4.ts'];
     const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
     const targetRam = 2 ** Math.ceil(Math.log2(bootRam));

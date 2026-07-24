@@ -21,26 +21,26 @@ export async function main(ns: NS) {
     factionAugmentations[faction] = list;
     for (const name of list) augSet.add(name);
   }
-  const augmentations = [...augSet];
+  const augmentationNames = [...augSet];
 
   tprint(ns)(STR + '  Loading Augmentation Prices');
   const augmentationPrices: Record<string, number> = {};
-  for (const aug of augmentations)
+  for (const aug of augmentationNames)
     augmentationPrices[aug] = await inPlace(ns).singularity['getAugmentationBasePrice'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation Rep Costs');
   const augmentationRepReqs: Record<string, number> = {};
-  for (const aug of augmentations!)
+  for (const aug of augmentationNames!)
     augmentationRepReqs[aug] = await inPlace(ns).singularity['getAugmentationRepReq'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation PreReqs');
   const augmentationPrereqs: Record<string, string[]> = {};
-  for (const aug of augmentations)
+  for (const aug of augmentationNames)
     augmentationPrereqs[aug] = await inPlace(ns).singularity['getAugmentationPrereq'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation Stats');
   const augmentationStats: Record<string, Multipliers> = {};
-  for (const aug of augmentations!)
+  for (const aug of augmentationNames!)
     augmentationStats[aug] = await inPlace(ns).singularity['getAugmentationStats'](aug);
 
   tprint(ns)(STR + '  Loading Faction Favor');
@@ -78,7 +78,7 @@ export async function main(ns: NS) {
 
   putStaticData(ns, {
     factionAugmentations,
-    augmentations,
+    augmentationNames,
     augmentationPrices,
     augmentationRepReqs,
     augmentationPrereqs,

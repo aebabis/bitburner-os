@@ -65,7 +65,7 @@ export type StaticData = {
   industryData?: Record<CorpIndustryName, CorpIndustryData>;
 
   factionFavor: Record<FactionName, number>;
-  augmentations: string[];
+  augmentationNames: string[];
   augmentationPrices: Record<string, number>;
   augmentationRepReqs: Record<string, number>;
   augmentationPrereqs: Record<string, string[]>;

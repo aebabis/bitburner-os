@@ -10,7 +10,7 @@ const NEUROFLUX = 'NeuroFlux Governor';
 
 const getAugTableData = (ns: NS) => {
   const {
-    augmentations,
+    augmentationNames,
     augmentationStats,
     augmentationPrices,
     augmentationRepReqs,
@@ -21,7 +21,7 @@ const getAugTableData = (ns: NS) => {
   const alreadyHave = new Set([...installedAugmentations, ...queuedAugmentations]);
   const installedNFCount = resetInfo.ownedAugs?.get(NEUROFLUX) ?? 0;
   return {
-    augmentations,
+    augmentationNames,
     augmentationStats,
     augmentationPrices,
     augmentationRepReqs,
@@ -45,7 +45,7 @@ export async function main(ns: NS) {
   switch (command) {
     case 'aug-table': {
       const {
-        augmentations,
+        augmentationNames,
         augmentationStats,
         augmentationPrices,
         augmentationRepReqs,
@@ -62,7 +62,7 @@ export async function main(ns: NS) {
         break;
       }
 
-      const rows = augmentations
+      const rows = augmentationNames
         .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
         .map((aug) => {
           const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;
@@ -93,7 +93,7 @@ export async function main(ns: NS) {
       ns.ui.openTail();
       while (true) {
         const {
-          augmentations,
+          augmentationNames,
           augmentationStats,
           augmentationPrices,
           augmentationRepReqs,
@@ -113,7 +113,7 @@ export async function main(ns: NS) {
         for (const [faction, augs] of Object.entries(factionAugmentations))
           for (const aug of augs) (augFactions[aug] ??= []).push(faction as FactionName);
 
-        const rows = augmentations
+        const rows = augmentationNames
           .filter((aug) => aug === NEUROFLUX || !alreadyHave.has(aug))
           .map((aug) => {
             const nfMult = aug === NEUROFLUX ? 1.14 ** installedNFCount : 1;

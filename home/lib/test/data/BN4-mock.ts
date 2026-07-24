@@ -914,7 +914,7 @@ export const staticData = {
       'DermaForce Particle Barrier',
     ],
   },
-  augmentations: [
+  augmentationNames: [
     'NeuroFlux Governor',
     'BitWire',
     'Synaptic Enhancement Implant',
