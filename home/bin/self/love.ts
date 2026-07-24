@@ -227,9 +227,7 @@ export async function main(ns: NS) {
 
   const { algorithms } = ns.enums.UniversityClassType;
 
-  while (true) {
-    const rootGoal = getGoals(ns);
-
+  const selectPlayerAction = async (rootGoal: Goal) => {
     const reduce = (root: Goal): Goal[] => {
       const relevant = new Set<Goal>([root]);
       for (const goal of root.deps) {
@@ -255,30 +253,6 @@ export async function main(ns: NS) {
     const school = getSchool(ns, city);
     const canGoToSchool = school != null || money >= TRAVEL_COST;
     const neededHackingLevel = findGoal('HACKING_LEVEL')?.requirement ?? 0;
-
-    const hostnames = await $nmap(ns, runPort)();
-    const backdoorPath = await $getBackdoorPath(ns, runPort)(hostnames);
-
-    if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
-      await $win(ns, runPort);
-    }
-    if (rootGoal.type === 'INSTALL' && rootGoal.deps.every((g) => g.isDone())) {
-      // Make sure stocks have been sold before proceeding
-      if (
-        rootGoal
-          .prerequisites('AUG_MONEY')
-          .every(({ requirement }) => requirement < ns.getPlayer().money)
-      ) {
-        await $install(ns, runPort);
-      }
-    }
-
-    if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
-    await $sing(ns, runPort)(rootGoal);
-
-    if (ns.getServerMaxRam('home') <= 64) {
-      await $.singularity['upgradeHomeRam']();
-    }
 
     if (findGoal('HACKING_XP') && canGoToSchool) {
       if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
@@ -322,6 +296,37 @@ export async function main(ns: NS) {
         }
       }
     }
+  };
+
+  while (true) {
+    const rootGoal = getGoals(ns);
+
+    const hostnames = await $nmap(ns, runPort)();
+    const backdoorPath = await $getBackdoorPath(ns, runPort)(hostnames);
+
+    if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
+      await $win(ns, runPort);
+    }
+    if (rootGoal.type === 'INSTALL' && rootGoal.deps.every((g) => g.isDone())) {
+      // Make sure stocks have been sold before proceeding
+      if (
+        rootGoal
+          .prerequisites('AUG_MONEY')
+          .every(({ requirement }) => requirement < ns.getPlayer().money)
+      ) {
+        await $install(ns, runPort);
+      }
+    }
+
+    if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
+    await $sing(ns, runPort)(rootGoal);
+
+    if (ns.getServerMaxRam('home') <= 64) {
+      await $.singularity['upgradeHomeRam']();
+    }
+
+    await selectPlayerAction(rootGoal);
+
     const currentWork = JSON.parse(JSON.stringify(ns.singularity.getCurrentWork()));
     putPlayerData(ns, { currentWork });
     await ns.sleep(200);
