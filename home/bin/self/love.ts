@@ -303,17 +303,22 @@ export async function main(ns: NS) {
       } else if (canMakeMoney) {
         await makeMoney();
       } else {
-        // In BN8, grind favor
-        const factionsByFavor = Object.entries(factionFavor)
-          .sort(by(([, favor]) => -favor))
-          .map(([faction]) => faction) as FactionName[];
-        const grindFaction = factionsByFavor.find((faction) =>
-          ns.getPlayer().factions.includes(faction),
-        );
-        if (grindFaction) {
-          await factionWork(ns.getPlayer(), grindFaction);
+        const achievements = await $.singularity['getUnlockedAchievements']();
+        if (!achievements.includes('KARMA')) {
+          await $commitCrime('Homicide');
         } else {
-          await makeMoney(); // For stats
+          // In BN8, grind favor
+          const factionsByFavor = Object.entries(factionFavor)
+            .sort(by(([, favor]) => -favor))
+            .map(([faction]) => faction) as FactionName[];
+          const grindFaction = factionsByFavor.find((faction) =>
+            ns.getPlayer().factions.includes(faction),
+          );
+          if (grindFaction) {
+            await factionWork(ns.getPlayer(), grindFaction);
+          } else {
+            await makeMoney(); // For stats
+          }
         }
       }
     }
