@@ -401,7 +401,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getHackingTable(ns)),
     new GrowingWindow(() => getSourceFilesTable(ns)),
     hasBitNode(ns, 13) && new GrowingWindow(() => getStanekDisplay(ns)),
-  ].filter(Boolean);
+  ].filter((win) => win != false);
   await ns.sleep(1);
   const WIDTH = 1450;
   const HEIGHT = 400;
