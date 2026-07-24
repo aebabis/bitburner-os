@@ -134,20 +134,21 @@ export async function main(ns: NS) {
         ns.hacknet.upgradeCache(upgradedNeeded.i);
       }
     }
-    while (ns.hacknet.spendHashes(upgrade)) {
-      if (upgrade === 'Sell for Money') totalEarnings += 1e6;
+    while (ns.hacknet.spendHashes(upgrade));
+
+    if (ns.fileExists('Formulas.exe', 'home')) {
+      upgradeHacknetServers(ns, ttc);
     }
-    const { onlineRunningTime, offlineRunningTime } = ns.getRunningScript()!;
-    const hacknetIncome = totalEarnings / (onlineRunningTime + offlineRunningTime);
+
+    const hashRate = getNodes(ns)
+      .map((node) => node.production)
+      .reduce((a, b) => a + b, 0);
+    const hacknetIncome = upgrade === 'Sell for Money' ? (1e6 * hashRate) / 4 : 0;
     putMoneyData(ns, { hacknetIncome });
     putPlayerData(ns, {
       studyMult: ns.hacknet.getStudyMult(),
       trainingMult: ns.hacknet.getTrainingMult(),
     });
-
-    if (ns.fileExists('Formulas.exe', 'home')) {
-      upgradeHacknetServers(ns, ttc);
-    }
 
     await ns.sleep(1000);
   }
