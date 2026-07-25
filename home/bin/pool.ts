@@ -114,23 +114,16 @@ const getHashCapacityUpgrade = (ns: NS, ttc: number) => {
 };
 
 export async function main(ns: NS) {
-  ns.ui.openTail();
-
-  let totalEarnings = 0;
-
   while (true) {
     ns.clearLog();
     const goals = getGoals(ns);
     const ttc = goals.timeToComplete() ?? Infinity;
     const { upgrade, cost } = getTargetUpgrade(ns);
+    const getMoney = () => ns.getServerMoneyAvailable('home');
     if (cost > ns.hacknet.hashCapacity()) {
       const upgradedNeeded = getHashCapacityUpgrade(ns, ttc);
       if (upgradedNeeded) {
-        while (
-          upgradedNeeded.cost > ns.getServerMoneyAvailable('home') &&
-          ns.hacknet.spendHashes('Sell for Money')
-        )
-          totalEarnings += 1e6;
+        while (upgradedNeeded.cost > getMoney() && ns.hacknet.spendHashes('Sell for Money'));
         ns.hacknet.upgradeCache(upgradedNeeded.i);
       }
     }
