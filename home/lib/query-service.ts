@@ -28,3 +28,9 @@ export const getIncome = (ns: NS) => {
     theftRatePerGB,
   };
 };
+
+export const usingCorp = (ns: NS) => {
+  const { resetInfo } = getStaticData(ns);
+  if (resetInfo.currentNode === 8 || resetInfo.bitNodeOptions.disableCorporation) return false;
+  return [3, 10, 12].includes(resetInfo.currentNode);
+};

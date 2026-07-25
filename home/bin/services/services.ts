@@ -2,6 +2,7 @@ import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 import { getGoals } from '../../lib/goals/goals';
+import { usingCorp } from '../../lib/query-service';
 
 const isRemoteApiConnected = () => {
   const elem = eval('doc' + 'ument').querySelector('svg[aria-label^="Remote API"]');
@@ -14,7 +15,7 @@ const isRemoteApiConnected = () => {
 export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
   const { purchasedServerCosts, resetInfo } = getStaticData(ns);
-  const { disableGang, disableCorporation } = resetInfo.bitNodeOptions;
+  const { disableGang } = resetInfo.bitNodeOptions;
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
   const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
@@ -39,16 +40,16 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasAngel = () => ownedSF.has(1);
   const hasThief = () => !hasNode(5);
   const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
-  const corpAllowed = () => !disableCorporation && currentNode !== 8;
   const hasSingularity = () => hasNode(4);
   const enablePool = () => hasNode(9) && currentNode !== 8;
   const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
-  const enableCorp = () => corpAllowed() && currentNode === 3; // TODO: Enable for BN12 plateu
+  const enableCorp = () => usingCorp(ns);
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
   const canStanek = () => hasNode(13) && currentNode !== 8;
   const canGraft = () => hasNode(10) && currentNode !== 8;
+  const hasSleeves = () => hasNode(10) && currentNode !== 8;
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
@@ -90,6 +91,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns, canStanek, always)('/bin/stanek.ts'),
     AnyHostService(ns, canGraft, always)('/bin/grafting.ts'),
+    AnyHostService(ns, hasSleeves, always)('/bin/sleeves.ts'),
   ];
   const findServiceIndex = (script: string) =>
     services.findIndex((service) => service.script === script);

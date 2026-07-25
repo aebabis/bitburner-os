@@ -3,12 +3,18 @@ import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
 import { putMoneyData } from '../../lib/data-store.ts';
+import { usingCorp } from '../../lib/query-service.ts';
+
+const getRequiredReserves = (ns: NS) => {
+  if (!ns.corporation.hasCorporation() && usingCorp(ns)) return 150e9;
+  const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
+  return typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
+};
 
 const getSpendableFunds = (ns: NS) => {
-  const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
-  const reserveParam = typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
+  const reserveFunds = getRequiredReserves(ns);
   const money = ns.getServerMoneyAvailable('home');
-  return Math.max(0, money - reserveParam);
+  return Math.max(0, money - reserveFunds);
 };
 
 const $getMaxPurchase = async (ns: NS, symbol: string, maxPurchase: number, money: number) =>
