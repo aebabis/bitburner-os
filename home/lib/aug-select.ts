@@ -128,6 +128,7 @@ export const findOptimalBatch = (
     augmentationPrices,
     augmentationRepReqs,
     augmentationStats,
+    augmentationPrereqs,
     factionAugmentations,
     factionFavor,
     factionWorkTypes,
@@ -141,9 +142,20 @@ export const findOptimalBatch = (
   // installedAugs determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
 
+  // Augs that can be used to meet prereqs
+  const availableAugs = new Set([
+    ...ownedAugmentations,
+    ...(factionAugmentations?.[faction] ?? []),
+  ]);
+  const hasPrereqs = (aug: string) =>
+    (augmentationPrereqs?.[aug] ?? []).every((req) => availableAugs.has(req));
+
   const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
   const getNeededAugs = (fac: FactionName) =>
-    (factionAugmentations?.[fac] ?? []).filter(stillNeeds).filter((aug) => aug !== NEUROFLUX);
+    (factionAugmentations?.[fac] ?? [])
+      .filter(stillNeeds)
+      .filter((aug) => aug !== NEUROFLUX)
+      .filter(hasPrereqs);
 
   const augValue = getAugEvaluator(resetInfo, augmentationStats) || (() => 0);
 
