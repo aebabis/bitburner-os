@@ -5,11 +5,7 @@ import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
 import { makeAfkTracker } from '../lib/afk';
 
-const shouldGraft = (ns: NS) => {
-  if (ns.sleeve.getNumSleeves() < 1) return false;
-  const sleeve = ns.sleeve.getSleeve(0);
-  return sleeve.sync > 90;
-};
+const shouldGraft = (ns: NS) => ns.sleeve.getSleeve(0).sync >= 100;
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
