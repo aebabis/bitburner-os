@@ -12,10 +12,12 @@ export async function main(ns: NS) {
 
   const { augmentationGraftPrices } = getStaticData(ns);
 
+  const sleeveReady = () => ns.sleeve.getSleeve(0).sync >= 100;
+
   const VIOLET = 'violet Congruity Implant';
   const shouldGraft = (ns: NS) => {
     return (
-      ns.sleeve.getSleeve(0).sync >= 100 ||
+      sleeveReady() ||
       ns.getResetInfo().ownedAugs.has(VIOLET) ||
       ns.getPlayer().money >= augmentationGraftPrices[VIOLET]
     );
@@ -32,7 +34,12 @@ export async function main(ns: NS) {
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     if (currentWork?.type !== 'GRAFTING' && shouldGraft(ns) && graftables.length > 0) {
       const target = graftables[0];
-      if (target.augmentation.name === VIOLET || ownedAugs.has(VIOLET) || target.utility > 1) {
+      if (
+        target.augmentation.name === VIOLET ||
+        ownedAugs.has(VIOLET) ||
+        target.utility > 2 ||
+        sleeveReady()
+      ) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
           ns.grafting.graftAugmentation(
             graftables[0].augmentation.name,
