@@ -101,8 +101,28 @@ export async function main(ns: NS) {
     return tasks;
   };
 
+  const tc = (str: string) => str[0].toLocaleUpperCase() + str.slice(1);
+  const formatTask = (task: SleeveTaskInfo | null) => {
+    if (task == null) return 'Idle';
+    if (task.type === 'BLADEBURNER') return `${task.actionName}`;
+    if (task.type === 'CLASS') {
+      if (Object.keys(ns.enums.GymType).includes(task.classType))
+        return `Training ${task.classType}`;
+      return `Studying ${task.classType}`;
+    }
+    if (task.type === 'COMPANY') return `Working for ${task.companyName}`;
+    if (task.type === 'CRIME') return `${task.crimeType}`;
+    if (task.type === 'FACTION') return `${tc(task.factionWorkType)} for ${task.factionName}`;
+    if (task.type === 'INFILTRATE') return `Infiltrating`;
+    if (task.type === 'RECOVERY') return `Shock Recovery`;
+    if (task.type === 'SUPPORT') return 'Support';
+    if (task.type === 'SYNCHRO') return 'Synchoronizing';
+  };
+
   ns.disableLog('ALL');
   ns.ui.openTail();
+  ns.ui.resizeTail(350, 200);
+  ns.ui.moveTail(240, 2);
   while (true) {
     ns.clearLog();
     const tasks = getSoloTasks(ns);
@@ -115,12 +135,12 @@ export async function main(ns: NS) {
     const rows = sleeves.map(({ num, sleeve, currentTask }) => [
       num,
       sleeve.shock ? ns.format.number(sleeve.shock) : 0,
-      currentTask.type,
+      formatTask(currentTask),
     ]);
-    ns.print(table(ns, columns, rows, { colors: true }));
+    ns.print(table(ns, columns, rows, { colors: true }) + '\n\n');
     const sleeveCost = await $.sleeve['getSleeveCost']();
     if (sleeveCost < Infinity) {
-      ns.print('\n Sleeve cost: $' + ns.format.number(sleeveCost) + '\n\n');
+      ns.print(' Sleeve cost: $' + ns.format.number(sleeveCost) + '\n\n');
     }
     await ns.sleep(50);
   }
