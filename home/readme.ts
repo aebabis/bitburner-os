@@ -49,6 +49,10 @@ const UTILITIES = {
     command: 'dispatch usr/liquidate.ts',
     desc: 'Sell all stocks and stop spending',
   },
+  lr: {
+    command: 'home; cat log/last-reset.txt',
+    desc: 'Sell all stocks and stop spending',
+  },
   makecct: {
     command: 'usr/make-cct.ts',
     desc: 'Create a test coding contract',
