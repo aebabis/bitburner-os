@@ -30,6 +30,44 @@ import { DarknetData } from './ports';
  dnet.getDarknetInstability           0.00GB  
  dnet.getServerRequiredCharismaLevel  0.10GB  
  */
+const QUAD_CHARS = [...' ▗▖▄▝▐▞▟▘▚▌▙▀▜▛█'];
+const getChar = (ul: boolean, ur: boolean, ll: boolean, lr: boolean) => {
+  const i = (+ul << 3) | (+ur << 2) | (+ll << 1) | +lr;
+  return QUAD_CHARS[i];
+};
+const LABY_PORT = 1200037211493120;
+const getMaze = (ns: NS) => {
+  const port = ns.getPortHandle(LABY_PORT);
+  if (port.empty()) return null;
+  const maze = port.peek();
+
+  const allCoords = [...Object.keys(maze).map((coord) => coord.split(',').map(Number))];
+  const maxX = Math.max(...allCoords.map(([x]) => x));
+  const maxY = Math.max(...allCoords.map(([, y]) => y));
+  const rows = [] as boolean[][];
+  for (let y = 0; y <= maxY; y++) {
+    const row = [] as boolean[];
+    rows.push(row);
+    for (let x = 0; x <= maxX; x++) {
+      row.push(maze[`${x},${y}`] === '█');
+    }
+  }
+  return rows;
+};
+
+const getMazeString = (ns: NS) => {
+  const maze = getMaze(ns);
+  if (maze == null) return null;
+  const text: string[][] = [];
+  for (let y = 0; y <= maze.length + 1; y += 2) {
+    const line: string[] = [];
+    text.push(line);
+    for (let x = 0; x < maze[0].length + 1; x += 2) {
+      line.push(getChar(maze[y]?.[x], maze[y]?.[x + 1], maze[y + 1]?.[x], maze[y + 1]?.[x + 1]));
+    }
+  }
+  return text.map((l) => l.join('')).join('\n');
+};
 
 const DARKWEB = 'darkweb';
 
@@ -138,7 +176,10 @@ export async function main(ns: NS) {
   ns.scp(ns.ls('home', '/bin/dnet/'), 'darkweb', 'home');
   ns.exec('/bin/dnet/dhud.tsx', 'darkweb');
 
+  let hasOpenedMaze = false;
+
   while (true) {
+    const messages: string[] = [];
     const { baseName, current } = getVersions();
     ensureLatest(ns, baseName, current, DARKWEB);
     for (const stasisServer of ns.dnet.getStasisLinkedServers()) {
@@ -148,7 +189,7 @@ export async function main(ns: NS) {
       ) {
         ensureLatest(ns, baseName, current, stasisServer);
       } else {
-        ns.print('Unable to connect to: ' + stasisServer);
+        messages.push('Unable to connect to: ' + stasisServer);
       }
     }
     await ns.dnet.nextMutation();
@@ -162,6 +203,17 @@ export async function main(ns: NS) {
     }
     const darknetIncome = totalDarknetIncome / ns.getRunningScript()!.onlineRunningTime;
     putMoneyData(ns, { darknetIncome });
+
+    ns.clearLog();
+    for (const message of messages) {
+      ns.print(message);
+    }
+    const maze = getMazeString(ns);
+    if (maze != null) {
+      if (!hasOpenedMaze) ns.ui.openTail();
+      hasOpenedMaze = true;
+      ns.print(maze);
+    }
 
     await ns.sleep(1);
 

@@ -149,10 +149,7 @@ type Maze = Record<Coord, MAZE_CELL | undefined>;
 const LABY_PORT = 1200037211493120;
 
 const mazeSolver = (ns: NS, hostname: string) => async () => {
-  if (ns.dnet.getStasisLinkedServers().includes(ns.getHostname())) {
-    ns.disableLog('ALL');
-    ns.ui.openTail();
-  }
+  ns.disableLog('ALL');
   const maze = {} as Maze;
   const port = ns.getPortHandle(LABY_PORT);
   const getStoredMaze = () => (port.empty() ? {} : port.peek());

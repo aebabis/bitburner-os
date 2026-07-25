@@ -208,13 +208,7 @@ const getPossibleTargets = (ns: NS) =>
     return ns.getHackingLevel() >= requiredHackingSkill && moneyMax > 0;
   });
 
-// A dominates B if A can never earn less than B: at least as much money to
-// steal, at least as low security to fight through, and at least as low a
-// skill requirement (which also feeds hackPercent/time formulas). Since money,
-// hackPercent, and weaken/grow/hack times are each monotonic in these fields,
-// a dominated server cannot out-earn its dominator under any thread
-// allocation, so it's safe to drop before spending any time evaluating it.
-const dominates = (a: HackableServer, b: HackableServer) =>
+const isStrictlyBetter = (a: HackableServer, b: HackableServer) =>
   a.moneyMax >= b.moneyMax &&
   a.minDifficulty <= b.minDifficulty &&
   a.requiredHackingSkill <= b.requiredHackingSkill &&
@@ -225,7 +219,7 @@ const dominates = (a: HackableServer, b: HackableServer) =>
 const filterDominated = (ns: NS, hostnames: string[]) => {
   const servers = hostnames.map((hostname) => getHackableServer(ns, hostname));
   return servers
-    .filter((server) => !servers.some((other) => dominates(other, server)))
+    .filter((server) => !servers.some((other) => isStrictlyBetter(other, server)))
     .map((server) => server.hostname);
 };
 
@@ -241,9 +235,8 @@ const getFinancialTarget = (ns: NS) => {
   return { moneyNeeded, timeframe };
 };
 
-// Cheap, loop-free proxy for a target's earning potential: money stolen per
-// hack thread times moneyMax, divided by cycle time. No thread-fitting search,
-// so it's safe to run over every possible target regardless of RAM size.
+// Fast screening of targets to avoid large evaluations on low-value
+// targets when RAM and hacking level are very high
 const getQuickScore = (ns: NS, hostname: string) => {
   const server = getHackableServer(ns, hostname);
   if (server.moneyMax === 0) return 0;
@@ -270,7 +263,6 @@ const shortlistTargets = (ns: NS, hostnames: string[], size = TARGET_SHORTLIST_S
 const selectTarget = async (ns: NS, minFrameRam: number) => {
   const { moneyNeeded, timeframe } = getFinancialTarget(ns);
   const efficientServers = filterDominated(ns, getPossibleTargets(ns));
-  ns.tprint(efficientServers);
   const possibleTargets = shortlistTargets(ns, efficientServers);
   if (possibleTargets.length === 0) {
     return { hostname: null, money: 0, time: 0, incomeRate: 0 };
