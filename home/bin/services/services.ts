@@ -48,6 +48,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
   const canStanek = () => hasNode(13) && currentNode !== 8;
+  const canGraft = () => hasNode(10) && currentNode !== 8;
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
@@ -88,6 +89,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     Service(ns, always, isRemoteApiConnected)('/bin/nvim.ts', 'home'),
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns, canStanek, always)('/bin/stanek.ts'),
+    AnyHostService(ns, canGraft, always)('/bin/grafting.ts'),
   ];
   const findServiceIndex = (script: string) =>
     services.findIndex((service) => service.script === script);

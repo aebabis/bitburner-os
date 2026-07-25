@@ -253,6 +253,11 @@ export async function main(ns: NS) {
     const school = getSchool(ns, city);
     const canGoToSchool = school != null || money >= TRAVEL_COST;
     const neededHackingLevel = findGoal('HACKING_LEVEL')?.requirement ?? 0;
+    const currentWork = ns.singularity.getCurrentWork();
+
+    if (currentWork?.type === 'GRAFTING') {
+      return;
+    }
 
     if (findGoal('HACKING_XP') && canGoToSchool) {
       if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
@@ -307,7 +312,11 @@ export async function main(ns: NS) {
     if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
       await $win(ns, runPort);
     }
-    if (rootGoal.type === 'INSTALL' && rootGoal.deps.every((g) => g.isDone())) {
+    if (
+      ns.singularity.getCurrentWork()?.type !== 'GRAFTING' &&
+      'INSTALL' &&
+      rootGoal.deps.every((g) => g.isDone())
+    ) {
       // Make sure stocks have been sold before proceeding
       if (
         rootGoal
