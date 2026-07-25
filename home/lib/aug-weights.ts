@@ -62,6 +62,7 @@ export const getAugEvaluator = (
   return (aug: string) => {
     if (aug === 'CashRoot Starter Kit') return 0.01;
     if (aug === 'Neuroreceptor Management Implant') return 1;
+    if (aug === 'violet Congruity Implant') return 5;
     if (aug === 'The Red Pill') return 10;
     return scoreAug(augmentationStats[aug]);
   };

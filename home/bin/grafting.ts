@@ -3,25 +3,42 @@ import { getGoals } from '../lib/goals/goals';
 import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
-
-const shouldGraft = (ns: NS) => ns.sleeve.getSleeve(0).sync >= 100;
+import { getStaticData } from '../lib/data-store';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   const columns = ['AUGMENTATION', 'FACTIONS', 'UTILITY', 'PRICE', 'TIME'];
 
+  const { augmentationGraftPrices } = getStaticData(ns);
+
+  const VIOLET = 'violet Congruity Implant';
+  const shouldGraft = (ns: NS) => {
+    return (
+      ns.sleeve.getSleeve(0).sync >= 100 ||
+      ns.getResetInfo().ownedAugs.has(VIOLET) ||
+      ns.getPlayer().money >= augmentationGraftPrices[VIOLET]
+    );
+  };
+
   while (true) {
     ns.clearLog();
     const { money, city } = ns.getPlayer();
+    const { ownedAugs } = ns.getResetInfo();
     const ttc = getGoals(ns).timeToComplete();
     const currentWork = ns.singularity.getCurrentWork();
-    const graftables = getGraftTargets(ns, ns.getResetInfo().ownedAugs)
+    const graftables = getGraftTargets(ns, ownedAugs)
       .filter((target) => target.graftPrice <= money)
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     if (currentWork?.type !== 'GRAFTING' && shouldGraft(ns) && graftables.length > 0) {
-      if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
-        ns.grafting.graftAugmentation(graftables[0].augmentation.name, ns.singularity.isFocused());
+      const target = graftables[0];
+      if (target.augmentation.name === VIOLET || ownedAugs.has(VIOLET) || target.utility > 1) {
+        if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
+          ns.grafting.graftAugmentation(
+            graftables[0].augmentation.name,
+            ns.singularity.isFocused(),
+          );
+        }
       }
     }
     const rows = getGraftTargets(ns, ns.getResetInfo().ownedAugs).map(
@@ -43,7 +60,7 @@ export async function main(ns: NS) {
         ];
       },
     );
-    ns.print('\n' + table(ns, columns, rows, { colors: true }));
+    ns.print('\n' + table(ns, columns, rows, { colors: true }) + '\n ');
     await ns.sleep(50);
   }
 }

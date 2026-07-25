@@ -1,4 +1,4 @@
-import { putStaticData } from '../lib/data-store';
+import { getStaticData, putStaticData } from '../lib/data-store';
 import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
@@ -17,7 +17,21 @@ export async function main(ns: NS) {
     augmentationGraftTimes[aug] = ns.grafting.getAugmentationGraftTime(aug);
   }
 
+  tprint(ns)(STR + '  Patching in violet');
+  const { augmentations } = getStaticData(ns);
+  const NR = 'Neuroreceptor Management Implant';
+  const { stats } = augmentations.find((aug) => aug.name === NR)!;
+  augmentations.push({
+    name: 'violet Congruity Implant',
+    price: Infinity,
+    repReq: Infinity,
+    prereqs: [],
+    stats,
+    factions: [],
+  });
+
   putStaticData(ns, {
+    augmentations,
     graftableAugmentations,
     augmentationGraftPrices,
     augmentationGraftTimes,
