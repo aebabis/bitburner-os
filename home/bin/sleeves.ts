@@ -1,6 +1,6 @@
 import { getGoals } from '../lib/goals/goals';
 
-const assignSleeve = (ns: NS, i: number) => {
+const assignSleeve = (ns: NS, i: number, tasks: SoloTask[]) => {
   const sleeve = ns.sleeve.getSleeve(i);
   const task = ns.sleeve.getTask(i);
   const train = (stat: 'str' | 'def' | 'dex' | 'agi') => {
@@ -22,25 +22,43 @@ const assignSleeve = (ns: NS, i: number) => {
   } else if (sleeve.sync < 100) {
     ns.sleeve.setToSynchronize(i);
   } else {
-    const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
-    const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
-    if (isPlayerGrafting && factionRepGoal != null) {
-      ns.sleeve.setToFactionWork(i, factionRepGoal.faction, 'hacking');
-    } else doCrimes('Homicide');
+    if (tasks.length > 0) {
+      const task = tasks.shift()!;
+      task(i);
+    } else {
+      doCrimes('Homicide');
+    }
   }
-  ns.print('SLEEVE ' + i);
-  ns.print('  mem cost: $' + ns.format.number(ns.sleeve.getMemoryUpgradeCost(i, 1)));
+  ns.print(' SLEEVE ' + i + ': ' + JSON.stringify(ns.sleeve.getTask(i)));
+  const memCost = ns.sleeve.getMemoryUpgradeCost(i, 1);
+  if (memCost < Infinity) ns.print('   mem cost: $' + ns.format.number(memCost));
+};
+
+type SoloTask = (i: number) => boolean;
+const getSoloTasks = (ns: NS): SoloTask[] => {
+  const tasks: SoloTask[] = [];
+  const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
+  const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
+  if (isPlayerGrafting && factionRepGoal != null)
+    tasks.push(
+      (i: number) => ns.sleeve.setToFactionWork(i, factionRepGoal.faction, 'hacking') ?? false,
+    );
+  return tasks;
 };
 
 export async function main(ns: NS) {
+  ns.disableLog('ALL');
   ns.ui.openTail();
   while (true) {
     ns.clearLog();
+    const tasks = getSoloTasks(ns);
     for (let i = 0; i < ns.sleeve.getNumSleeves(); i++) {
-      assignSleeve(ns, i);
+      assignSleeve(ns, i, tasks);
     }
-    ns.print('');
-    ns.print('Sleeve cost: $' + ns.format.number(ns.sleeve.getSleeveCost()));
+    const sleeveCost = ns.sleeve.getSleeveCost();
+    if (sleeveCost < Infinity) {
+      ns.print('\n Sleeve cost: $' + ns.format.number(sleeveCost) + '\n\n');
+    }
     await ns.sleep(50);
   }
 }
