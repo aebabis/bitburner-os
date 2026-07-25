@@ -387,7 +387,7 @@ const getStanekDisplay = (ns: NS) => {
     }
   }
   return (
-    heading + '\n' + grid.map((row) => BG(0)(' ') + row.join('') + BG(0)(' ')).join('\n') + '\n'
+    heading + '\n\n' + grid.map((row) => BG(0)(' ') + row.join('') + BG(0)(' ')).join('\n') + '\n'
   );
 };
 
