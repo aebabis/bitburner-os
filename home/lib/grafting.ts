@@ -15,11 +15,17 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>) => {
   return augmentations
     .filter((aug) => graftableAugmentations.includes(aug.name))
     .filter((augmentation) => augmentation.prereqs.every((aug) => ownedAugs.has(aug)))
-    .map((augmentation) => ({
-      augmentation,
-      utility: scoreAug(augmentation.name),
-      graftPrice: augmentationGraftPrices[augmentation.name],
-      graftTime: augmentationGraftTimes[augmentation.name],
-    }))
+    .map((augmentation) => {
+      const value = scoreAug(augmentation.name);
+      const graftPrice = augmentationGraftPrices[augmentation.name];
+      const graftTime = augmentationGraftTimes[augmentation.name];
+      return {
+        augmentation,
+        value,
+        utility: (1e6 * value) / graftTime,
+        graftPrice,
+        graftTime,
+      };
+    })
     .sort((a, b) => b.utility - a.utility);
 };
