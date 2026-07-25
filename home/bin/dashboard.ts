@@ -194,20 +194,25 @@ const moneyTable = (ns: NS) => {
 
 const getWork = (ns: NS) => {
   const { factionRep, currentWork } = getPlayerData(ns);
-  const { location } = getPlayerData(ns).player;
   const WORK = H('WORK');
   if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
   if (currentWork.type === 'FACTION') {
     const { factionName } = currentWork;
     const rep = Math.floor(factionRep?.[factionName] ?? 0);
-    return ` ${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
+    return ` ${WORK} Working for ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
   } else if (currentWork.type === 'COMPANY') {
-    return ` ${WORK} ${currentWork.companyName} `;
+    return ` ${WORK} Working for ${currentWork.companyName} `;
   } else if (currentWork.type === 'CRIME') {
     return ` ${WORK} ${currentWork.crimeType} `;
+  } else if (currentWork.type === 'CLASS') {
+    return ` ${WORK} Studying ${currentWork.classType} `;
+  } else if (currentWork.type === 'GRAFTING') {
+    return ` ${WORK} Grafting ${currentWork.augmentation} `;
+  } else if (currentWork.type === 'CREATE_PROGRAM') {
+    return ` ${WORK} Developing ${currentWork.programName} `;
   }
-  return ` ${WORK} ${currentWork.type} ${location} `;
+  return ` ${WORK} UNKNOWN ${currentWork} `;
 };
 
 const getSpecialAugs = (ns: NS) => {
