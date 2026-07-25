@@ -13,6 +13,7 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>) => {
   const scoreAug = getAugEvaluator(resetInfo, augmentationStats);
   if (scoreAug == null) return [];
   return augmentations
+    .filter((aug) => !ownedAugs.has(aug.name))
     .filter((aug) => graftableAugmentations.includes(aug.name))
     .filter((augmentation) => augmentation.prereqs.every((aug) => ownedAugs.has(aug)))
     .map((augmentation) => {

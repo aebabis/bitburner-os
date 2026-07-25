@@ -10,7 +10,7 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
 
-  const { augmentationGraftPrices, augmentationStats } = getStaticData(ns);
+  const { augmentationStats } = getStaticData(ns);
 
   const sleeveReady = () => ns.sleeve.getSleeve(0).sync >= 100;
 
@@ -35,13 +35,6 @@ export async function main(ns: NS) {
   };
 
   const VIOLET = 'violet Congruity Implant';
-  const shouldGraft = (ns: NS) => {
-    return (
-      sleeveReady() ||
-      ns.getResetInfo().ownedAugs.has(VIOLET) ||
-      ns.getPlayer().money >= augmentationGraftPrices[VIOLET]
-    );
-  };
 
   while (true) {
     ns.clearLog();
@@ -53,7 +46,7 @@ export async function main(ns: NS) {
       .filter((target) => target.graftPrice <= money)
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
-    if (currentWork?.type !== 'GRAFTING' && shouldGraft(ns) && graftables.length > 0) {
+    if (currentWork?.type !== 'GRAFTING' && graftables.length > 0) {
       const target = graftables[0];
       const isGraftEfficient = install != null && target.utility > install.utility;
       if (
