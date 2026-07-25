@@ -3,7 +3,6 @@ import { getGoals } from '../lib/goals/goals';
 import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
-import { makeAfkTracker } from '../lib/afk';
 
 const shouldGraft = (ns: NS) => ns.sleeve.getSleeve(0).sync >= 100;
 
@@ -11,9 +10,6 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   const columns = ['AUGMENTATION', 'FACTIONS', 'UTILITY', 'PRICE', 'TIME'];
-
-  const afkTracker = makeAfkTracker(ns);
-  const focus = () => afkTracker.timeSinceAction() > 20000;
 
   while (true) {
     ns.clearLog();
@@ -25,7 +21,7 @@ export async function main(ns: NS) {
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     if (currentWork?.type !== 'GRAFTING' && shouldGraft(ns) && graftables.length > 0) {
       if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
-        ns.grafting.graftAugmentation(graftables[0].augmentation.name, focus());
+        ns.grafting.graftAugmentation(graftables[0].augmentation.name, ns.singularity.isFocused());
       }
     }
     const rows = getGraftTargets(ns, ns.getResetInfo().ownedAugs).map(
