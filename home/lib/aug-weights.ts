@@ -64,6 +64,7 @@ export const getAugEvaluator = (
     if (aug === 'Neuroreceptor Management Implant') return 1;
     if (aug === 'violet Congruity Implant') return 5;
     if (aug === 'The Red Pill') return 10;
+    if (aug.match(/^The [^ ]+ of [^ ]+$/)) return 1;
     return scoreAug(augmentationStats[aug]);
   };
 };

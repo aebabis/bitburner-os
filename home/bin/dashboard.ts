@@ -225,6 +225,7 @@ const getSpecialAugs = (ns: NS) => {
     // getDisplay('', 'CR', 22, 46),
     getDisplay('Neuroreceptor Management Implant', 'NR', 220),
     getDisplay('DataJack', 'DJ', 166),
+    getDisplay('violet Congruity Implant', 'vCI', 57),
     getDisplay('QLink', 'QL', 27),
     getDisplay('The Red Pill', 'RP', 124),
   ];
@@ -234,7 +235,7 @@ const getSpecialAugs = (ns: NS) => {
       getDisplay('BitRunners Neurolink', 'NL', 70),
     );
   }
-  return specialAugDisplays.join('  ');
+  return specialAugDisplays.join(' ');
 };
 
 const getExecutionTable = (ns: NS) => {
