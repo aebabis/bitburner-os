@@ -391,6 +391,29 @@ const getStanekDisplay = (ns: NS) => {
   );
 };
 
+const getHacknetServersDisplay = (ns: NS) => {
+  const { hacknet } = getPlayerData(ns);
+  const heading = H(' HACKNET');
+  if (hacknet == null) {
+    return heading + '\n' + DIM(' (not loaded) ');
+  }
+  const { studyMult, trainingMult, nextUpgrade, nextPurchase, hashes, capacity } = hacknet;
+  const purchaseText = nextPurchase
+    ? nextPurchase.type === 'node'
+      ? `node $${ns.format.number(nextPurchase?.cost ?? 0)}`
+      : `$${ns.format.number(nextPurchase?.cost ?? 0)} ${nextPurchase?.type} (BE=${formatTime(nextPurchase.breakEvenTime)})`
+    : DIM('(need formulas)');
+  return (
+    heading +
+    '\n\n' +
+    ` ${ns.format.number(hashes)}/${capacity} \n` +
+    ` ${nextUpgrade.upgrade} \n` +
+    ` ${purchaseText} \n` +
+    ` Study x${studyMult} \n` +
+    ` Train x${trainingMult} \n`
+  );
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -405,6 +428,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getExecutionTable(ns)),
     new GrowingWindow(() => getHackingTable(ns)),
     new GrowingWindow(() => getSourceFilesTable(ns)),
+    hasBitNode(ns, 9) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
     hasBitNode(ns, 13) && new GrowingWindow(() => getStanekDisplay(ns)),
   ].filter((win) => win != false);
   await ns.sleep(1);

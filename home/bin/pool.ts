@@ -1,5 +1,6 @@
-import { getPlayerData, putMoneyData, putPlayerData } from '../lib/data-store';
+import { getPlayerData, HacknetPurchase, putMoneyData, putPlayerData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
+import { Goal } from '../lib/goals/nodes';
 
 const hashGainRate = (ns: NS) => (stats: NodeStats) =>
   ns.formulas.hacknetServers.hashGainRate(stats.level, stats.ramUsed ?? 0, stats.ram, stats.cores);
@@ -12,7 +13,12 @@ const getNodes = (ns: NS) =>
 
 const upgrade =
   (ns: NS) =>
-  (i: number, type: 'level' | 'ram' | 'cores', cost: number, currentStats: NodeStats) => {
+  (
+    i: number,
+    type: 'level' | 'ram' | 'cores',
+    cost: number,
+    currentStats: NodeStats,
+  ): HacknetPurchase => {
     const newStats = { ...currentStats };
     if (type === 'ram') newStats.ram *= 2;
     else newStats[type] += 1;
@@ -30,7 +36,7 @@ const getNextNodeCost = (ns: NS, mults: Multipliers) => {
   );
 };
 
-const newNodeUpgrade = (ns: NS, mults: Multipliers) => {
+const newNodeUpgrade = (ns: NS, mults: Multipliers): HacknetPurchase => {
   const cost = getNextNodeCost(ns, mults);
   const hashrateGain = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1);
   const utility = hashrateGain / cost;
@@ -64,17 +70,15 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
   const needsNetburnerPrereqs = factionGoal[0]?.faction === 'Netburners';
   const numNodes = ns.hacknet.numNodes();
   if (numNodes === 0 && ns.hacknet.purchaseNode() === -1) {
-    return;
+    return null;
   }
   while (true) {
     const { player } = getPlayerData(ns);
     const money = ns.getServerMoneyAvailable('home');
     const upgrade = getNextUpgrade(ns, player.mults);
-    ns.print(upgrade);
-    ns.print('GOAL FACTION: ' + factionGoal[0]?.faction);
-    if (upgrade.cost > money) return;
+    if (upgrade.cost > money) upgrade;
     if (ttc != null && upgrade.breakEvenTime > ttc) {
-      if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return;
+      if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return upgrade;
     }
     if (upgrade.type === 'node') ns.hacknet.purchaseNode();
     if (upgrade.type === 'level') ns.hacknet.upgradeLevel(upgrade.i);
@@ -89,14 +93,21 @@ const getUpgradeDetails = (ns: NS, upgrade: HacknetServerHashUpgrade) => {
   return { upgrade, currentLevel, cost };
 };
 
-const getTargetUpgrade = (ns: NS) => {
+const getTargetUpgrade = (ns: NS, goals: Goal) => {
   const currentWork = ns.singularity.getCurrentWork();
   const gymTypes = Object.values(ns.enums.GymType) as string[];
   const uniTypes = Object.values(ns.enums.UniversityClassType) as string[];
+  const moneyGoal = goals.prerequisites('AUG_MONEY')[0];
   if (currentWork?.type === 'CLASS' && gymTypes.includes(currentWork.classType)) {
     return getUpgradeDetails(ns, 'Improve Gym Training');
   } else if (currentWork?.type === 'CLASS' && uniTypes.includes(currentWork.classType)) {
     return getUpgradeDetails(ns, 'Improve Studying');
+  } else if (ns.corporation.hasCorporation() && (moneyGoal?.isDone() ?? true)) {
+    const corpFundsUpgrade = getUpgradeDetails(ns, 'Sell for Corporation Funds');
+    const corpResearchUpgrade = getUpgradeDetails(ns, 'Exchange for Corporation Research');
+    return corpFundsUpgrade.cost < corpResearchUpgrade.cost
+      ? corpFundsUpgrade
+      : corpResearchUpgrade;
   } else {
     return getUpgradeDetails(ns, 'Sell for Money');
   }
@@ -118,7 +129,7 @@ export async function main(ns: NS) {
     ns.clearLog();
     const goals = getGoals(ns);
     const ttc = goals.timeToComplete() ?? Infinity;
-    const { upgrade, cost } = getTargetUpgrade(ns);
+    const { upgrade, cost } = getTargetUpgrade(ns, goals);
     const getMoney = () => ns.getServerMoneyAvailable('home');
     if (cost > ns.hacknet.hashCapacity()) {
       const upgradedNeeded = getHashCapacityUpgrade(ns, ttc);
@@ -129,8 +140,9 @@ export async function main(ns: NS) {
     }
     while (ns.hacknet.spendHashes(upgrade));
 
+    let nextPurchase = null;
     if (ns.fileExists('Formulas.exe', 'home')) {
-      upgradeHacknetServers(ns, ttc);
+      nextPurchase = upgradeHacknetServers(ns, ttc);
     }
 
     const hashRate = getNodes(ns)
@@ -139,8 +151,14 @@ export async function main(ns: NS) {
     const hacknetIncome = upgrade === 'Sell for Money' ? (1e6 * hashRate) / 4 : 0;
     putMoneyData(ns, { hacknetIncome });
     putPlayerData(ns, {
-      studyMult: ns.hacknet.getStudyMult(),
-      trainingMult: ns.hacknet.getTrainingMult(),
+      hacknet: {
+        studyMult: ns.hacknet.getStudyMult(),
+        trainingMult: ns.hacknet.getTrainingMult(),
+        nextUpgrade: getTargetUpgrade(ns, goals),
+        nextPurchase,
+        hashes: ns.hacknet.numHashes(),
+        capacity: ns.hacknet.hashCapacity(),
+      },
     });
 
     await ns.sleep(1000);

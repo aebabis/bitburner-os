@@ -95,6 +95,15 @@ export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DA
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);
 
+export type HacknetPurchase = {
+  i: number;
+  type: 'level' | 'ram' | 'cores' | 'node';
+  cost: number;
+  hashrateGain: number;
+  utility: number;
+  breakEvenTime: number;
+};
+
 export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
@@ -102,8 +111,18 @@ export type PlayerData = {
   homeRamUpgradeCost?: number;
   isPlayerUsingTerminal?: boolean;
   queuedAugmentations?: string[];
-  studyMult?: number;
-  trainingMult?: number;
+  hacknet?: {
+    studyMult: number;
+    trainingMult: number;
+    nextUpgrade: {
+      upgrade: HacknetServerHashUpgrade;
+      currentLevel: number;
+      cost: number;
+    };
+    nextPurchase: HacknetPurchase | null;
+    hashes: number;
+    capacity: number;
+  };
   hasGift?: boolean;
   stanekLayout?: {
     width: number;

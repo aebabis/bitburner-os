@@ -310,6 +310,6 @@ export const hasFormulas = (ns: NS): boolean => {
 
 export const formulas = (ns: NS, staticData?: StaticData) => {
   if (hasFormulas(ns)) return ns.formulas;
-  const { studyMult, trainingMult } = getPlayerData(ns);
-  return getMockFormulas(staticData ?? getStaticData(ns), { studyMult, trainingMult });
+  const { hacknet } = getPlayerData(ns);
+  return getMockFormulas(staticData ?? getStaticData(ns), hacknet);
 };
