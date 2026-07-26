@@ -76,7 +76,7 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
     const { player } = getPlayerData(ns);
     const money = ns.getServerMoneyAvailable('home');
     const upgrade = getNextUpgrade(ns, player.mults);
-    if (upgrade.cost > money) upgrade;
+    if (upgrade.cost > money) return upgrade;
     if (ttc != null && upgrade.breakEvenTime > ttc) {
       if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return upgrade;
     }
