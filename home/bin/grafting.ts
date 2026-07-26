@@ -12,8 +12,6 @@ export async function main(ns: NS) {
 
   const { augmentationStats } = getStaticData(ns);
 
-  const sleeveReady = () => ns.sleeve.getSleeve(0).sync >= 100;
-
   const getInstallUtility = () => {
     const resetInfo = ns.getResetInfo();
     const scoreAug = getAugEvaluator(resetInfo, augmentationStats);
@@ -30,7 +28,7 @@ export async function main(ns: NS) {
     const value = augs.map(scoreAug).reduce((a, b) => a + b, 0);
     return {
       value,
-      utility: (1e6 * value) / ttc,
+      utility: (1e3 * value) / ttc,
     };
   };
 
@@ -47,18 +45,11 @@ export async function main(ns: NS) {
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
     if (currentWork?.type !== 'GRAFTING' && graftables.length > 0) {
-      const target = graftables[0];
-      const isGraftEfficient = install != null && target.utility > install.utility;
-      if (
-        isGraftEfficient ||
-        target.augmentation.name === VIOLET ||
-        (ownedAugs.has(VIOLET) && sleeveReady())
-      ) {
+      const { augmentation, utility } = graftables[0];
+      const isGraftEfficient = install != null && utility > install.utility;
+      if (isGraftEfficient || augmentation.name === VIOLET) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
-          ns.grafting.graftAugmentation(
-            graftables[0].augmentation.name,
-            ns.singularity.isFocused(),
-          );
+          ns.grafting.graftAugmentation(augmentation.name, ns.singularity.isFocused());
         }
       }
     }

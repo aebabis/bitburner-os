@@ -46,6 +46,12 @@ export async function main(ns: NS) {
     }
   };
 
+  const $study = async ({ currentTask, num }: SleeveInfo, classType: UniversityClassType) => {
+    if (currentTask?.type !== 'CLASS' || currentTask.classType !== classType) {
+      await $.sleeve['setToUniversityCourse'](num, 'Rothman University', classType);
+    }
+  };
+
   const $workForFaction = async (
     { currentTask, num }: SleeveInfo,
     faction: FactionName,
@@ -60,45 +66,19 @@ export async function main(ns: NS) {
     }
   };
 
-  const assignSleeve = async (ns: NS, sleeveInfo: SleeveInfo, tasks: SoloTask[]) => {
+  const assignSleeve = async (ns: NS, sleeveInfo: SleeveInfo) => {
     const { sleeve, num } = sleeveInfo;
     if (sleeve.shock > 0) {
       await $.sleeve['setToShockRecovery'](sleeveInfo.num);
     } else if (ns.heart.break() > -54000) {
-      const skillToTrain = GYM_STATS.find((skill) => sleeve.skills[skill] < 40);
+      const skillToTrain = GYM_STATS.find((skill) => sleeve.skills[skill] < 60);
       if (skillToTrain != null) await $gymWorkout(sleeveInfo, ns.enums.GymType[skillToTrain]);
       else await $doCrimes(sleeveInfo, 'Homicide');
     } else if (sleeveInfo.sleeve.sync < 100) {
       await $.sleeve['setToSynchronize'](num);
     } else {
-      if (tasks.length > 0) {
-        const doTask = tasks.shift()!;
-        await doTask(sleeveInfo);
-      } else {
-        await $doCrimes(sleeveInfo, 'Homicide');
-      }
+      await $doCrimes(sleeveInfo, 'Homicide');
     }
-  };
-
-  type SoloTask = (sleeveInfo: SleeveInfo) => Promise<boolean>;
-  const getSoloTasks = (ns: NS): SoloTask[] => {
-    const tasks: SoloTask[] = [];
-    const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
-    const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
-    if (isPlayerGrafting && factionRepGoal != null) {
-      const { faction } = factionRepGoal;
-      const workTypes = factionWorkTypes[faction];
-      tasks.push(async (sleeveInfo: SleeveInfo) => {
-        const { workType } = workTypes
-          .map((workType) => ({
-            workType,
-            reputation: ns.formulas.work.factionGains(sleeveInfo.sleeve, workType, 0).reputation,
-          }))
-          .reduce((a, b) => (a.reputation > b.reputation ? a : b));
-        return (await $workForFaction(sleeveInfo, faction, workType)) ?? false;
-      });
-    }
-    return tasks;
   };
 
   const tc = (str: string) => str[0].toLocaleUpperCase() + str.slice(1);
@@ -125,11 +105,24 @@ export async function main(ns: NS) {
   ns.ui.moveTail(240, 2);
   while (true) {
     ns.clearLog();
-    const tasks = getSoloTasks(ns);
     const numSleeves = await $.sleeve['getNumSleeves']();
     const sleeves = await $getSleeves(numSleeves);
-    for (const sleeveInfo of sleeves) {
-      await assignSleeve(ns, sleeveInfo, tasks);
+    const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
+    const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
+    if (isPlayerGrafting && factionRepGoal != null) {
+      const { faction } = factionRepGoal;
+      const [lead, ...helpers] = sleeves;
+      const workType = factionWorkTypes[faction][0];
+      await $workForFaction(lead, faction, workType);
+      if (workType === 'hacking') {
+        for (const sleeveInfo of helpers) await $study(sleeveInfo, 'Algorithms');
+      } else {
+        for (const sleeveInfo of helpers) await assignSleeve(ns, sleeveInfo);
+      }
+    } else {
+      for (const sleeveInfo of sleeves) {
+        await assignSleeve(ns, sleeveInfo);
+      }
     }
     const columns = ['#', 'SHOCK', 'TASK'];
     const rows = sleeves.map(({ num, sleeve, currentTask }) => [

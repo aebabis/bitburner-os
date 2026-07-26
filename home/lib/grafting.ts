@@ -23,7 +23,7 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>) => {
       return {
         augmentation,
         value,
-        utility: (1e6 * value) / graftTime,
+        utility: (1e3 * value) / (graftTime / 1000),
         graftPrice,
         graftTime,
       };
