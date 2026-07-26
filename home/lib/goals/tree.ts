@@ -111,6 +111,25 @@ const skillTrainingTime = (
   }
 };
 
+export const combatMutexGoal = (
+  combatReq: number,
+  skills: Skills,
+  player: Player,
+  formulas: MockFormulas | Formulas | null,
+  bitNodeMultipliers: BitNodeMultipliers | null,
+  fragmentMultipliers: Record<FragmentType, number> | undefined,
+) =>
+  mutexGoal(
+    COMBAT_STATS.map((stat) => {
+      const req = combatRequirement(combatReq, stat, fragmentMultipliers);
+      const t = formulas
+        ? skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers)
+        : null;
+      return combatLevelsGoal(req, stat, skills, t, combatReq);
+    }),
+    `${combatReq} in combat stats`,
+  );
+
 /**
  * Build the join prereq subtree for a faction.
  * Returns early (already-joined short-circuit) when player is already a member.
@@ -186,15 +205,13 @@ export const buildJoinSubtree = (
   }
   if (combatReq != null) {
     joinPrereqs.push(
-      mutexGoal(
-        COMBAT_STATS.map((stat) => {
-          const req = combatRequirement(combatReq, stat, fragmentMultipliers);
-          const t = formulas
-            ? skillTrainingTime(player, stat, req, formulas, staticData.bitNodeMultipliers)
-            : null;
-          return combatLevelsGoal(req, stat, skills, t, combatReq);
-        }),
-        `${combatReq} in combat stats`,
+      combatMutexGoal(
+        combatReq,
+        skills,
+        player,
+        formulas,
+        staticData.bitNodeMultipliers,
+        fragmentMultipliers,
       ),
     );
   }
@@ -210,15 +227,13 @@ export const buildJoinSubtree = (
     }
     const cReq = Math.max(0, ...COMBAT_STATS.map((stat) => req[stat] ?? 0));
     if (cReq > 0) {
-      return mutexGoal(
-        COMBAT_STATS.map((stat) => {
-          const statReq = combatRequirement(cReq, stat, fragmentMultipliers);
-          const t = formulas
-            ? skillTrainingTime(player, stat, statReq, formulas, staticData.bitNodeMultipliers)
-            : null;
-          return combatLevelsGoal(statReq, stat, skills, t, cReq);
-        }),
-        `${combatReq} in combat stats`,
+      return combatMutexGoal(
+        cReq,
+        skills,
+        player,
+        formulas,
+        staticData.bitNodeMultipliers,
+        fragmentMultipliers,
       );
     }
     return null;

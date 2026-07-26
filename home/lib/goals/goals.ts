@@ -10,10 +10,12 @@ import {
   homeRamGoal,
   karmaGoal,
   labyrinthGoal,
+  combatLevelsGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
+  combatMutexGoal,
   getBladeburnerTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
@@ -144,6 +146,21 @@ export const getGoals = (ns: NS): Goal => {
   if (currentNode === 8 && !access4SDataApi) {
     const target = ns.stock.getConstants().MarketDataTixApi4SCost;
     return reevaluateGoal(moneyPrereqGoal(target, estimatedStockValue + money, totalIncome));
+  }
+
+  if (currentNode === 10) {
+    const covenantLevelsGoal = combatMutexGoal(
+      850,
+      player.skills,
+      player,
+      formulas,
+      staticData.bitNodeMultipliers,
+      fragmentMultipliers,
+    );
+    const ttc = covenantLevelsGoal.timeToComplete();
+    if (ttc != null && ttc < 60) {
+      return covenantLevelsGoal;
+    }
   }
 
   const THE_RED_PILL = 'The Red Pill';

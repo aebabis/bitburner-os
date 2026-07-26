@@ -20,6 +20,7 @@ export async function main(ns: NS) {
   }
 
   const { money, factions } = ns.getPlayer();
+  const { currentNode, ownedSF } = ns.getResetInfo();
   const root = getGoals(ns);
   const actions = root.type === 'INSTALL' ? root.actions : [];
 
@@ -55,7 +56,6 @@ export async function main(ns: NS) {
   // Sell all stocks
   print('Dumping stocks');
   if (ns.stock.hasTixApiAccess()) {
-    const { currentNode, ownedSF } = ns.getResetInfo();
     const canSellShort = currentNode === 8 || (ownedSF.get(8) ?? 0) >= 2;
     const saleGain = $.stock['getSaleGain'];
     for (const sym of await $.stock['getSymbols']()) {
@@ -94,6 +94,26 @@ export async function main(ns: NS) {
   for (const augmentation of targetAugmentations) {
     const bought = await buyAug(augmentation);
     print(`  Purchase ${augmentation}?: ${bought}`);
+  }
+
+  if (currentNode === 10 || ownedSF.has(10)) {
+    print('Purchasing augmentations for sleeves');
+    const numSleeves = await $.sleeve['getNumSleeves']();
+    for (let i = 0; i < numSleeves; i++) {
+      const purchaseableAugs = await $.sleeve['getSleevePurchasableAugs'](i);
+      if (purchaseableAugs.length === 0) continue;
+      let numAugs = 0;
+      for (const { name } of purchaseableAugs) {
+        if (await $.sleeve['purchaseSleeveAug'](i, name)) numAugs++;
+      }
+      print(`  Sleeve ${i}: bought ${numAugs} augs`);
+    }
+
+    if (factions.includes('The Covenant')) {
+      for (let i = 0; i < numSleeves; i++) {
+        while ((await $.sleeve['upgradeMemory'](i, 1)).success);
+      }
+    }
   }
 
   // Spend what's left on Neuroflux
