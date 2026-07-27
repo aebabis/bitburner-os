@@ -65,56 +65,6 @@ const getWorkFaction = async (
   return mostUrgentGoal.faction!;
 };
 
-// const DEFAULT_WEIGHTS = {
-//   money: 0,
-//   hack_exp: 0,
-//   str_exp: 0,
-//   def_exp: 0,
-//   dex_exp: 0,
-//   agi_exp: 0,
-//   cha_exp: 0,
-//   kills: 0,
-//   karma: 0,
-// }
-
-// type UtilityWeights = typeof DEFAULT_WEIGHTS;
-//
-// const UTILITY_WEIGHTS: Record<GoalType, (goal: Goal) => Partial<UtilityWeights>> = {
-//   JOB_RAM: (goal: Goal) => {},
-//   INSTALL: (goal: Goal) => {},
-//   REEVALUATE: (goal: Goal) => {},
-//   FACTION_JOIN: (goal: Goal) => {},
-//   FACTION_REP: (goal: Goal) => {},
-//   FACTION_FAVOR: (goal: Goal) => {},
-//   BLADES_JOIN: (goal: Goal) => {},
-//   COMBAT_LEVELS: (goal: Goal) => {},
-//   HACKING_LEVEL: (goal: Goal) => {},
-//   HACKING_XP: (goal: Goal) => {},
-//   KILLS: (goal: Goal) => {},
-//   KARMA: (goal: Goal) => {},
-//   LOCATION: (goal: Goal) => {},
-//   MONEY: (goal: Goal) => {},
-//   AUG_MONEY: (goal: Goal) => {},
-// }
-//
-// const getUtilityWeights = (goalTree: Goal) => {
-//   // Each goal type that needs work outputs
-//   // weighs the utility of actions proportional to the amount needed
-//   const goals = goalTree.prerequisites()
-//     .map((goal) => UTILITY_WEIGHTS[goal.type](goal))
-//     .reduce((a, b) => ({
-//       money: a.money + b.money,
-//       hack_exp: 0,
-//       str_exp: 0,
-//       def_exp: 0,
-//       dex_exp: 0,
-//       agi_exp: 0,
-//       cha_exp: 0,
-//       kills: 0,
-//       karma: 0,
-//     }), DEFAULT_WEIGHTS);
-// };
-
 export async function main(ns: NS) {
   ns.disableLog('ALL');
 
@@ -246,7 +196,7 @@ export async function main(ns: NS) {
     const relevantGoals = reduce(rootGoal);
     const findGoal = <T extends GoalType>(type: T) =>
       relevantGoals.find((g): g is GoalOfType<T> => g.type === type);
-    const combatGoal = findGoal('COMBAT_LEVELS');
+    const combatGoal = findGoal('COMBAT_LEVEL');
     const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
     const { city, money, skills } = ns.getPlayer();

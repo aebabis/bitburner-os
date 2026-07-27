@@ -14,7 +14,7 @@ export type GoalType =
   | 'FACTION_FAVOR'
   | 'BLADES_JOIN'
   | 'LABYRINTH'
-  | 'COMBAT_LEVELS'
+  | 'COMBAT_LEVEL'
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
   | 'KILLS'
@@ -60,7 +60,7 @@ type PlainGoalType = Exclude<
   | 'FACTION_REP'
   | 'FACTION_FAVOR'
   | 'FACTION_JOIN'
-  | 'COMBAT_LEVELS'
+  | 'COMBAT_LEVEL'
 >;
 
 // Distributes over T so each literal in a multi-member group (e.g. NumericRequirementType)
@@ -74,7 +74,7 @@ export type Goal =
   | Distribute<'LOCATION', { city: CityName }>
   | Distribute<'FACTION_REP' | 'FACTION_FAVOR', { requirement: number; faction: FactionName }>
   | Distribute<'FACTION_JOIN', { faction: FactionName }>
-  | Distribute<'COMBAT_LEVELS', { requirement: number; stat: CombatStat }>;
+  | Distribute<'COMBAT_LEVEL', { requirement: number; stat: CombatStat }>;
 
 export type GoalOfType<T extends GoalType> = Extract<Goal, { type: T }>;
 
@@ -192,7 +192,7 @@ export const combatLevelsGoal = (
   const name = `${stat[0].toUpperCase()}${stat.slice(1)}`;
   const desc = req === baseReq ? `${name} ≥ ${req}` : `${name} ≥ ${req} (${baseReq} base)`;
   return {
-    ...goal('COMBAT_LEVELS', desc, () => currentSkills[stat] >= req, {
+    ...goal('COMBAT_LEVEL', desc, () => currentSkills[stat] >= req, {
       ownTime: () => trainingTime,
     }),
     requirement: req,
