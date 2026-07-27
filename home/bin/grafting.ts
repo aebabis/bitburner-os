@@ -4,7 +4,7 @@ import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
 import { getStaticData } from '../lib/data-store';
-import { getAugEvaluator } from '../lib/aug-weights';
+import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
 
 export async function main(ns: NS) {
   ns.disableLog('ALL');
@@ -32,56 +32,67 @@ export async function main(ns: NS) {
     };
   };
 
-  const VIOLET = 'violet Congruity Implant';
-
   while (true) {
     ns.clearLog();
     const { money, city, entropy } = ns.getPlayer();
-    const { ownedAugs } = ns.getResetInfo();
+    const resetInfo = ns.getResetInfo();
     const ttc = getGoals(ns).timeToComplete();
     const currentWork = ns.singularity.getCurrentWork();
-    const graftables = getGraftTargets(ns, ownedAugs, entropy)
+    const isGrafting = currentWork?.type === 'GRAFTING';
+    const numberFormat = (n: number) => (isNaN(n) ? 'NaN' : ns.format.number(n));
+
+    const targets = getGraftTargets(ns, resetInfo.ownedAugs, entropy);
+    const graftables = targets
       .filter((target) => target.graftPrice <= money)
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
-    if (currentWork?.type !== 'GRAFTING' && graftables.length > 0) {
+    const needsBladeburnerFocus =
+      [6, 7].includes(resetInfo.currentNode) && !resetInfo.ownedAugs.has("The Blade's Simulacrum");
+
+    if (!isGrafting && graftables.length > 0 && !needsBladeburnerFocus) {
       const { augmentation, utility } = graftables[0];
-      const isGraftEfficient = install != null && utility > install.utility;
-      if (isGraftEfficient || augmentation.name === VIOLET) {
+      if (install != null && utility > install.utility) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
           ns.grafting.graftAugmentation(augmentation.name, ns.singularity.isFocused());
         }
       }
     }
-    const columns = ['AUGMENTATION', 'FACTIONS', 'VALUE', 'UTILITY', 'PRICE', 'TIME'];
-    const rows = getGraftTargets(ns, ns.getResetInfo().ownedAugs, entropy).map(
-      ({ augmentation, value, utility, graftPrice, graftTime }) => {
+
+    const entropyCost = getEntropyCost(resetInfo);
+    const columns = ['AUGMENTATION', 'FACTIONS', 'VALUE', 'NET', 'UTILITY', 'PRICE', 'TIME'];
+    const rows = targets.map(
+      ({ augmentation, value, netValue, utility, graftPrice, graftTime }) => {
         const canAfford = graftPrice <= money;
-        const isGrafting =
+        const isCurrent =
           currentWork?.type === 'GRAFTING' && currentWork.augmentation === augmentation.name;
         const graftS = Math.ceil(graftTime / 1000);
         const hasTime = ttc == null || graftS <= ttc;
         const isEfficient = install == null || install.utility < utility;
-        const nFormat = isGrafting ? C(34) : (s: string) => s;
+        const nFormat = isCurrent ? C(34) : (s: string) => s;
         const mFormat = canAfford ? nFormat : C(52);
         const tFormat = hasTime ? nFormat : C(52);
         const uFormat = isEfficient ? nFormat : C(52);
+        const vFormat = netValue > 0 ? nFormat : C(52);
         return [
           nFormat(augmentation.name),
           nFormat(augmentation.factions.length + ''),
-          nFormat(ns.format.number(value)),
-          uFormat(ns.format.number(utility)),
-          mFormat('$' + ns.format.number(graftPrice)),
+          nFormat(numberFormat(value)),
+          vFormat(numberFormat(netValue)),
+          uFormat(numberFormat(utility)),
+          mFormat('$' + numberFormat(graftPrice)),
           tFormat(formatTime(graftS)),
         ];
       },
     );
     ns.print('\n');
-    ns.print(BRIGHT.BOLD(' INSTALL') + '');
-    ns.print(BRIGHT(' Reference Value:   ') + (install && ns.format.number(install.value)));
-    ns.print(BRIGHT(' Reference Utility: ') + (install && ns.format.number(install.utility)));
+    ns.print(BRIGHT.BOLD(' PLAYER') + '');
+    ns.print(' Utility     ' + numberFormat(getPlayerUtility(resetInfo, ns.getPlayer().mults)));
+    ns.print(' Entropy     ' + `${entropy} (${numberFormat(0.98 ** entropy)})`);
+    ns.print(' Cost/graft  ' + numberFormat(entropyCost));
     ns.print('\n');
-    ns.print(BRIGHT.BOLD(' ENTROPY') + ` ${entropy} (${ns.format.number(0.98 ** entropy)})`);
+    ns.print(BRIGHT.BOLD(' INSTALL') + '');
+    ns.print(' Reference Value    ' + (install && numberFormat(install.value)));
+    ns.print(' Reference Utility  ' + (install && numberFormat(install.utility)));
     ns.print('\n' + table(ns, columns, rows, { colors: true }) + '\n ');
     await ns.sleep(200);
   }

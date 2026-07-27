@@ -260,11 +260,12 @@ export async function main(ns: NS) {
     const backdoorPath = await $getBackdoorPath(ns, runPort)(hostnames);
 
     if (backdoorPath?.at(-1) === 'w0r1d_d43m0n') {
+      // TODO: consider adding sleeve memory purchase path here for robustness
       await $win(ns, runPort);
     }
     if (
       ns.singularity.getCurrentWork()?.type !== 'GRAFTING' &&
-      'INSTALL' &&
+      rootGoal.type === 'INSTALL' &&
       rootGoal.deps.every((g) => g.isDone())
     ) {
       // Make sure stocks have been sold before proceeding

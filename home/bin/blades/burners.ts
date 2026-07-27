@@ -96,14 +96,17 @@ export async function main(ns: NS) {
     if (currentBlackOp == null) {
       await $win(ns, ns.pid);
     }
-    if (hasStaminaPenalty) {
+    const $wouldLoseProgress = async () => {
+      const currentAction = await $getCurrentAction(ns);
+      return currentAction != null && currentAction.time > 2000;
+    };
+    if (hasStaminaPenalty && !(await $wouldLoseProgress())) {
       if (hasBlade) {
         await $startAction(ns)('General', 'Training');
       } else {
         await $train(ns)(focus(), 'agility');
       }
-    }
-    if (cities[city].chaos > 10) {
+    } else if (cities[city].chaos > 10) {
       await $startAction(ns)('General', 'Diplomacy');
     } else {
       const mission = await getNextMission(ns)(actions, currentBlackOp, rank);
@@ -120,7 +123,7 @@ export async function main(ns: NS) {
     }
     const currentAction = await $getCurrentAction(ns);
     showInfo(ns)(cities, skills, hasBlade, currentAction, city, currentBlackOp);
-    ns.singularity.setFocus(focus());
+    if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await ns.bladeburner.nextUpdate();
   }
 }

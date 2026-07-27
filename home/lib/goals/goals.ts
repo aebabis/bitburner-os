@@ -14,7 +14,6 @@ import {
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
-  combatMutexGoal,
   getBladeburnerTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
@@ -115,7 +114,12 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  if ([3, 7].includes(currentNode) && (ownedSF.get(currentNode) ?? 0) >= 1 && !ns.gang.inGang()) {
+  if (
+    [3, 7].includes(currentNode) &&
+    (ownedSF.get(currentNode) ?? 0) >= 1 &&
+    !ns.gang.inGang() &&
+    karma > -54000
+  ) {
     const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,
@@ -147,18 +151,19 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(moneyPrereqGoal(target, estimatedStockValue + money, totalIncome));
   }
 
-  if (currentNode === 10) {
-    const covenantLevelsGoal = combatMutexGoal(
-      850,
-      player.skills,
+  if (currentNode === 10 && !player.factions.includes('The Covenant')) {
+    const covTree = buildJoinSubtree('The Covenant', {
       player,
+      staticData,
+      money,
+      totalIncome,
+      karma,
       formulas,
-      staticData.bitNodeMultipliers,
       fragmentMultipliers,
-    );
-    const ttc = covenantLevelsGoal.timeToComplete();
-    if (ttc != null && ttc < 60) {
-      return covenantLevelsGoal;
+    });
+    const ttc = covTree.timeToComplete();
+    if (ttc != null && ttc < 4 * 60) {
+      return covTree;
     }
   }
 

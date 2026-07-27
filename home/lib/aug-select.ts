@@ -1,15 +1,7 @@
-import { AugWeights, getAugEvaluator, scoreAug } from './aug-weights.ts';
+import { AugWeights, getAugEvaluator, scoreAug, statlessAugValue } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
-
-// Augs with no stats have hard-coded evaluations
-const UNITY_AUGS = {
-  'CashRoot Starter Kit': 0.5,
-  'Neuroreceptor Management Implant': 1,
-  'The Red Pill': 10,
-};
-type UnityAug = keyof typeof UNITY_AUGS;
 
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
@@ -48,7 +40,8 @@ export const augValueFromStats = (
   aug: string,
   augmentationStats?: Record<string, Multipliers>,
 ) => {
-  if (Object.hasOwn(UNITY_AUGS, aug)) return UNITY_AUGS[aug as UnityAug];
+  const statless = statlessAugValue(aug, augWeights);
+  if (statless != null) return statless;
   const stats = augmentationStats?.[aug];
   return stats != null ? scoreAug(stats, augWeights) : 0;
 };
