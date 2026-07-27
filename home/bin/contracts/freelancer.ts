@@ -61,7 +61,7 @@ export async function main(ns: NS) {
             failures.add(contract.filename);
           }
         } catch (error) {
-          tprint(ERROR + error);
+          tprint(ns)(ERROR + error);
         }
       }
     }

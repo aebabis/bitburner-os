@@ -10,7 +10,6 @@ import {
   homeRamGoal,
   karmaGoal,
   labyrinthGoal,
-  combatLevelsGoal,
 } from './nodes.ts';
 import {
   buildFactionGoalTree,
