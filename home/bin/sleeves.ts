@@ -66,19 +66,24 @@ export async function main(ns: NS) {
     }
   };
 
-  const assignSleeve = async (ns: NS, sleeveInfo: SleeveInfo) => {
-    const { sleeve, num } = sleeveInfo;
-    if (sleeve.shock > 0) {
-      await $.sleeve['setToShockRecovery'](sleeveInfo.num);
-    } else if (ns.heart.break() > -54000) {
-      const skillToTrain = GYM_STATS.find((skill) => sleeve.skills[skill] < 60);
-      if (skillToTrain != null) await $gymWorkout(sleeveInfo, ns.enums.GymType[skillToTrain]);
-      else await $doCrimes(sleeveInfo, 'Homicide');
-    } else if (sleeveInfo.sleeve.sync < 100) {
-      await $.sleeve['setToSynchronize'](num);
-    } else {
-      await $doCrimes(sleeveInfo, 'Homicide');
-    }
+  const $homicide = async (sleeveInfo: SleeveInfo) => {
+    const skillToTrain = GYM_STATS.find((skill) => sleeveInfo.sleeve.skills[skill] < 60);
+    if (skillToTrain != null) await $gymWorkout(sleeveInfo, ns.enums.GymType[skillToTrain]);
+    else await $doCrimes(sleeveInfo, 'Homicide');
+  };
+
+  const $recover = async (sleeves: SleeveInfo[]) => {
+    const shockedSleeves = sleeves.filter(({ sleeve }) => sleeve.shock > 0);
+    const healedSleeves = sleeves.filter(({ sleeve }) => sleeve.shock === 0);
+    for (const { num } of shockedSleeves) await $.sleeve['setToShockRecovery'](num);
+    return healedSleeves;
+  };
+
+  const $sync = async (sleeves: SleeveInfo[]) => {
+    const desyncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync < 100);
+    const syncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync === 100);
+    for (const { num } of desyncedSleeves) await $.sleeve['setToSynchronize'](num);
+    return syncedSleeves;
   };
 
   const tc = (str: string) => str[0].toLocaleUpperCase() + str.slice(1);
@@ -107,12 +112,20 @@ export async function main(ns: NS) {
     ns.clearLog();
     const numSleeves = await $.sleeve['getNumSleeves']();
     const sleeves = await $getSleeves(numSleeves);
+    const healedSleeves = await $recover(sleeves);
+    const readySleeves = await $sync(healedSleeves);
     const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
     const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
     const combatGoal = getGoals(ns)
       .prerequisites('COMBAT_LEVEL')
       .find((goal) => !goal.isDone());
-    if (isPlayerGrafting && factionRepGoal != null) {
+    if (!ns.gang.inGang() && ns.heart.break() > -54000) {
+      for (const sleeveInfo of readySleeves) await $homicide(sleeveInfo);
+    } else if (combatGoal) {
+      for (const sleeveInfo of sleeves) {
+        await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
+      }
+    } else if (isPlayerGrafting && factionRepGoal != null) {
       const { faction } = factionRepGoal;
       const [lead, ...helpers] = sleeves;
       const workType = factionWorkTypes[faction][0];
@@ -120,17 +133,16 @@ export async function main(ns: NS) {
       if (workType === 'hacking') {
         for (const sleeveInfo of helpers) await $study(sleeveInfo, 'Algorithms');
       } else {
-        for (const sleeveInfo of helpers) await assignSleeve(ns, sleeveInfo);
-      }
-    } else if (combatGoal) {
-      // TODO: Refactor to handle trauma/sync gracefully
-      for (const sleeveInfo of sleeves) {
-        await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
+        const playerGymSkills = GYM_STATS.map((name) => ({
+          name,
+          value: ns.getPlayer().skills[name],
+        }));
+        const lowestPlayerGymSkill = playerGymSkills.reduce((a, b) => (a.value < b.value ? a : b));
+        const stat = ns.enums.GymType[lowestPlayerGymSkill.name];
+        for (const sleeveInfo of helpers) await $gymWorkout(sleeveInfo, stat);
       }
     } else {
-      for (const sleeveInfo of sleeves) {
-        await assignSleeve(ns, sleeveInfo);
-      }
+      for (const sleeveInfo of readySleeves) await $homicide(sleeveInfo);
     }
     const columns = ['#', 'SHOCK', 'TASK'];
     const rows = sleeves.map(({ num, sleeve, currentTask }) => [
