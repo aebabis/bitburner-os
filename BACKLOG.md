@@ -2,34 +2,15 @@
 - Goals: structural null handling — when `getTimeToComplete` returns null in sysadmin/hacknet after data is ready, inspect which goal type is blocking (HACKING_LEVEL/COMBAT_LEVELS = early game, buy freely; other = unknown, hold)
 - Goals: track training rates for HACKING_LEVEL/COMBAT_LEVELS so `ownTime()` returns an estimate instead of null
 - Goals: implement `buildGoals(data)` entry point for goal searching (test hypothetical parameters, e.g. which faction work assignment minimizes timeToComplete)
-- Remind player to manually make Brute.SSH
-- Figure out if reset.js needs to store contracts anymore. Seems like dead code
+- More BN1.1 todo items/toasts. (remind player to buy/make programs)
 - Implement service restarts
-- Accurate money reporting after liquidate
 - Port inspector
-- Find all places where leading / being removed from file names in game is causing bugs
-- See if you can use an editable iterator type to make the scheduler queue less bug prone. Refactor scheduler
-- Make accountant sell stocks to meet goals.
-- Make augData required in singularity goals. Have a separate non-singularity goal process be called before augData loads
-- Finish tests in test-goal-tree.js
-- Make gang runs try to buy Neuroflux
-- Use `ns.getResetInfo` instead of singularity API where possible
-- Explore removing `staticData.ownedAugmentations` in favour of deriving it from `staticData.resetInfo.ownedAugs` at call sites
-- Rewrite purchase-augs.js
-- Make accountant sell when close to install time
-- Share indicator
-- XP targets at start of run? (5s worth of school/gym XP)
-- Make sysadmin pay attention to goals
+- Find all places where leading `/` being removed from file names in game is causing bugs
+- Allow sleeves to buy augs mid-install-cycle
 - Avoid lengthy crimes that won't finish before next milestone (faction join or install)
-- Consider pros and cons of making thief accounting use high-water mark for money rate
-- Alternatively, consider always having an HWGW batch working alongside the WGW batch. Weakening a server just to have the levelup cause a switch feels suboptimal.
-- Alternatively, consider introducing an experience mode to the thief (triggerable by goals?). Would it behave differently?
-- Make purchase-augs use a findOptimalBatch variation that takes available money as a target spend.
-- Account for augs with prereqs in utility calculation (ensure all prereqs are in batch or owned, and make purchase order factor into price)
+- Experience mode for thief?
 - Multiple target factions
-- Migrate from `@eslint/js` + `@typescript-eslint/parser` to `typescript-eslint` unified plugin (once JS→TS migration is further along)
 - make isTixViable and is4SViable use surplus money instead of taking money as soon as aug money goal barely met
-- Replace accountant with query-service calls?
 - Aug utility: model entropy as a subtracted whole-player tax (`-ln(0.98) * Σw`) in `home/lib/grafting.ts` instead of the `utility *= 0.98^(entropy+1)` discount — the discount form can never make a graft net-negative, which is the question that matters late-run (needs SF10 save to test)
 - Aug utility: delete the `ownedAugs.has(VIOLET)` guard in `home/lib/grafting.ts` — violet clears accumulated entropy once, it does not stop future accrual
 - Aug utility: price violet endogenously as `-ln(0.98) * Σw * entropy` in `getAugEvaluator` instead of the hard-coded `5`
