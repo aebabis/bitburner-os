@@ -1,7 +1,10 @@
 import { getAugEvaluator } from './aug-weights';
 import { getStaticData } from './data-store';
 
-export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>) => {
+export const VIOLET = 'violet Congruity Implant';
+
+export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy: number) => {
+  const entropyMult = ownedAugs.has(VIOLET) ? 1 : 0.98 ** (entropy + 1);
   const {
     resetInfo,
     augmentationStats,
@@ -20,13 +23,9 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>) => {
       const value = scoreAug(augmentation.name);
       const graftPrice = augmentationGraftPrices[augmentation.name];
       const graftTime = augmentationGraftTimes[augmentation.name];
-      return {
-        augmentation,
-        value,
-        utility: (1e3 * value) / (graftTime / 1000),
-        graftPrice,
-        graftTime,
-      };
+      const baseUtility = (1e3 * value) / (graftTime / 1000);
+      const utility = augmentation.name === VIOLET ? baseUtility : baseUtility * entropyMult;
+      return { augmentation, value, utility, graftPrice, graftTime };
     })
     .sort((a, b) => b.utility - a.utility);
 };

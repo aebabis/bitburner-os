@@ -36,11 +36,11 @@ export async function main(ns: NS) {
 
   while (true) {
     ns.clearLog();
-    const { money, city } = ns.getPlayer();
+    const { money, city, entropy } = ns.getPlayer();
     const { ownedAugs } = ns.getResetInfo();
     const ttc = getGoals(ns).timeToComplete();
     const currentWork = ns.singularity.getCurrentWork();
-    const graftables = getGraftTargets(ns, ownedAugs)
+    const graftables = getGraftTargets(ns, ownedAugs, entropy)
       .filter((target) => target.graftPrice <= money)
       .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
@@ -54,7 +54,7 @@ export async function main(ns: NS) {
       }
     }
     const columns = ['AUGMENTATION', 'FACTIONS', 'VALUE', 'UTILITY', 'PRICE', 'TIME'];
-    const rows = getGraftTargets(ns, ns.getResetInfo().ownedAugs).map(
+    const rows = getGraftTargets(ns, ns.getResetInfo().ownedAugs, entropy).map(
       ({ augmentation, value, utility, graftPrice, graftTime }) => {
         const canAfford = graftPrice <= money;
         const isGrafting =
@@ -76,9 +76,12 @@ export async function main(ns: NS) {
         ];
       },
     );
+    ns.print('\n');
     ns.print(BRIGHT.BOLD(' INSTALL') + '');
     ns.print(BRIGHT(' Reference Value:   ') + (install && ns.format.number(install.value)));
     ns.print(BRIGHT(' Reference Utility: ') + (install && ns.format.number(install.utility)));
+    ns.print('\n');
+    ns.print(BRIGHT.BOLD(' ENTROPY') + ` ${entropy} (${ns.format.number(0.98 ** entropy)})`);
     ns.print('\n' + table(ns, columns, rows, { colors: true }) + '\n ');
     await ns.sleep(200);
   }
