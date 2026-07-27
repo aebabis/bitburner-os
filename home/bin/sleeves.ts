@@ -109,6 +109,9 @@ export async function main(ns: NS) {
     const sleeves = await $getSleeves(numSleeves);
     const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
     const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
+    const combatGoal = getGoals(ns)
+      .prerequisites('COMBAT_LEVEL')
+      .find((goal) => !goal.isDone());
     if (isPlayerGrafting && factionRepGoal != null) {
       const { faction } = factionRepGoal;
       const [lead, ...helpers] = sleeves;
@@ -118,6 +121,11 @@ export async function main(ns: NS) {
         for (const sleeveInfo of helpers) await $study(sleeveInfo, 'Algorithms');
       } else {
         for (const sleeveInfo of helpers) await assignSleeve(ns, sleeveInfo);
+      }
+    } else if (combatGoal) {
+      // TODO: Refactor to handle trauma/sync gracefully
+      for (const sleeveInfo of sleeves) {
+        await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
       }
     } else {
       for (const sleeveInfo of sleeves) {
