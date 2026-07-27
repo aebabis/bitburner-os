@@ -49,7 +49,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const inBladeNode = () => [6, 7].includes(currentNode);
   const canStanek = () => hasNode(13) && currentNode !== 8;
   const canGraft = () => hasNode(10) && currentNode !== 8;
-  const hasSleeves = () => hasNode(10) && currentNode !== 8;
+  const hasSleeves = () => hasNode(10);
 
   // Predicates for starting services
   const useAngel = () => preferAngel() || !hasThief;
