@@ -44,6 +44,15 @@ export const getAugWeights = (resetInfo: ResetInfo) => {
 
 export type AugWeights = ReturnType<typeof getAugWeights>;
 
+// Aug stats are multiplicative, so value is logarithmic: two +20% augs give 1.44x, not 1.4x.
+// The abs() preserves the previous `stat >= 1 ? stat : 1 / stat` convention, under which a
+// sub-1.0 multiplier counts as a bonus — true for the cost multipliers, which are the only
+// sub-1.0 stats in play. Making direction explicit per stat is deferred with the entropy work.
+export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, number>) =>
+  Object.entries(stats)
+    .map(([key, stat = 1]) => Math.abs(Math.log(stat)) * weights[key as keyof Multipliers])
+    .reduce((a, b) => a + b, 0);
+
 export const getAugEvaluator = (
   resetInfo: ResetInfo,
   augmentationStats: Record<string, Multipliers>,
@@ -51,20 +60,12 @@ export const getAugEvaluator = (
   if (augmentationStats == null) return null;
   const augWeights = getAugWeights(resetInfo);
 
-  const scoreAug = (stats: Multipliers) =>
-    Object.entries(stats)
-      .map(([key, stat = 1]) => {
-        const mult = stat >= 1 ? stat : 1 / stat;
-        return (mult - 1) * augWeights[key as keyof Multipliers];
-      })
-      .reduce((a, b) => a + b, 0);
-
   return (aug: string) => {
     if (aug === 'CashRoot Starter Kit') return 0.01;
     if (aug === 'Neuroreceptor Management Implant') return 1;
     if (aug === 'violet Congruity Implant') return 5;
     if (aug === 'The Red Pill') return 10;
     if (aug.match(/^The [^ ]+ of [^ ]+$/)) return 1;
-    return scoreAug(augmentationStats[aug]);
+    return scoreAug(augmentationStats[aug], augWeights);
   };
 };

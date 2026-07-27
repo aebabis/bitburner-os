@@ -1,5 +1,5 @@
 import { setupRunner, assert } from '../test-runner';
-import { scoreAug } from '../aug-select';
+import { scoreAug } from '../aug-weights';
 import { getAugWeights } from '../aug-weights';
 
 export async function main(ns: NS) {
@@ -41,10 +41,10 @@ export async function main(ns: NS) {
     });
 
     it('returns exact expected value for known multiplier', () => {
-      // hacking_money weight = 10; (1.25 - 1) * 10 = 2.5
+      // Scoring is logarithmic: ln(1.25) * weight(hacking_money = 2) ≈ 0.446
       const stats = { hacking_money: 1.25 } as unknown as Multipliers;
       const mult = augWeights.hacking_money;
-      assert.equal(scoreAug(stats, augWeights), 0.25 * mult);
+      assert.equal(scoreAug(stats, augWeights), Math.log(1.25) * mult);
     });
 
     it('produces correct score for full Multipliers object with one non-trivial stat', () => {
@@ -83,10 +83,11 @@ export async function main(ns: NS) {
         bladeburner_analysis: 1,
         bladeburner_success_chance: 1,
       } as unknown as Multipliers;
-      // (1.05 - 1) * weight(hacking=10) ≈ 0.5; floating point: 1.05-1 is not exactly 0.05
+      // ln(1.05) * weight(hacking = 5) ≈ 0.2440
+      const expected = Math.log(1.05) * augWeights.hacking;
       const score = scoreAug(stats, augWeights);
       assert(score > 0, `expected positive score, got ${score}`);
-      assert(Math.abs(score - 0.5) < 1e-9, `expected ~0.5, got ${score}`);
+      assert(Math.abs(score - expected) < 1e-9, `expected ~${expected}, got ${score}`);
     });
 
     it('hacknet cost multiplier below 1.0 produces positive score', () => {

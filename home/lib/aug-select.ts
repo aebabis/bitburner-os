@@ -1,4 +1,4 @@
-import { AugWeights, getAugEvaluator } from './aug-weights.ts';
+import { AugWeights, getAugEvaluator, scoreAug } from './aug-weights.ts';
 import { StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
@@ -10,14 +10,6 @@ const UNITY_AUGS = {
   'The Red Pill': 10,
 };
 type UnityAug = keyof typeof UNITY_AUGS;
-
-export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, number>) =>
-  Object.entries(stats)
-    .map(([key, stat = 1]) => {
-      const mult = stat >= 1 ? stat : 1 / stat;
-      return (mult - 1) * weights[key as keyof Multipliers];
-    })
-    .reduce((a, b) => a + b, 0);
 
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
 const OVERHEAD_BASE = 120 * 60;
