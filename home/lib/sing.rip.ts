@@ -87,16 +87,20 @@ const $tor = async (ns: NS, port = ns.pid) => {
   })(hostnames);
   const portData = ns.readPort(TOR_PORT);
   const purchases = (portData === 'NULL PORT DATA' ? {} : portData) as TorPurchases;
-  const $purchase = async (program: ProgramName) => {
-    purchases[program] = await $.singularity['purchaseProgram'](program);
-  };
-  purchases['Tor'] = purchases['Tor'] || (await $.singularity['purchaseTor']());
-  await $purchase('Formulas.exe');
-  if (neededPortLevel >= 1 && !purchases['BruteSSH.exe']) await $purchase('BruteSSH.exe');
-  if (neededPortLevel >= 2 && !purchases['FTPCrack.exe']) await $purchase('FTPCrack.exe');
-  if (neededPortLevel >= 3 && !purchases['relaySMTP.exe']) await $purchase('relaySMTP.exe');
-  if (neededPortLevel >= 4 && !purchases['HTTPWorm.exe']) await $purchase('HTTPWorm.exe');
-  if (neededPortLevel >= 5 && !purchases['SQLInject.exe']) await $purchase('SQLInject.exe');
+  const $purchase = async (program: ProgramName | 'Tor') =>
+    (purchases[program] ||=
+      program === 'Tor'
+        ? await $.singularity['purchaseTor']()
+        : await $.singularity['purchaseProgram'](program));
+  if (await $purchase('Tor')) {
+    await $purchase('Formulas.exe');
+    await $purchase('DarkscapeNavigator.exe');
+    if (neededPortLevel >= 1) await $purchase('BruteSSH.exe');
+    if (neededPortLevel >= 2) await $purchase('FTPCrack.exe');
+    if (neededPortLevel >= 3) await $purchase('relaySMTP.exe');
+    if (neededPortLevel >= 4) await $purchase('HTTPWorm.exe');
+    if (neededPortLevel >= 5) await $purchase('SQLInject.exe');
+  }
   ns.writePort(TOR_PORT, purchases);
 };
 
