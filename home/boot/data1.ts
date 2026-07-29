@@ -3,7 +3,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { nmap, saveHostnames } from '../lib/nmap';
 import { STR } from '../lib/colors';
-import { AUG_LOG_FILE, FORECAST_FILE } from '../etc/config';
+import { AUG_LOG_FILE } from '../etc/config';
 
 const getStartingServerCost = (ns: NS) => {
   if (!ns.fileExists('Formulas.exe', 'home')) {
@@ -46,10 +46,7 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Caching network map');
   saveHostnames(ns);
 
-  if (isFirstInstallCycle) {
-    ns.rm(AUG_LOG_FILE, 'home');
-    ns.rm(FORECAST_FILE, 'home');
-  }
+  if (isFirstInstallCycle) ns.rm(AUG_LOG_FILE, 'home');
 
   const serverBackdoorRequirements = nmap(ns).map((hostname) => ({
     hostname,
