@@ -31,40 +31,6 @@ const getGym = (ns: NS, city: CityName) =>
     [ns.enums.CityName.Volhaven]: ns.enums.LocationName.VolhavenMilleniumFitnessGym,
   })[city] || null;
 
-/**
- * Returns the faction with the largest remaining rep gap that the player
- * is already a member of, or null if no rep work is needed.
- */
-const getWorkFaction = async (
-  $: ReturnType<typeof inPlace>,
-  root: Goal,
-  factions: FactionName[],
-): Promise<FactionName | null> => {
-  const possibleGoals = root
-    .prerequisites()
-    .filter((g) => !g.isDone())
-    .filter((g) => g.type === 'FACTION_REP' || g.type === 'FACTION_FAVOR')
-    .filter((g) => g.faction && factions.includes(g.faction));
-  let mostUrgentGoal = possibleGoals.shift();
-  if (mostUrgentGoal == null) {
-    return null;
-  }
-  let repNeeded =
-    (mostUrgentGoal.requirement ?? 0) -
-    (await $.singularity['getFactionRep'](mostUrgentGoal.faction!));
-  let contender;
-  while ((contender = possibleGoals.shift())) {
-    const contenderRepNeeded =
-      (mostUrgentGoal.requirement ?? 0) -
-      (await $.singularity['getFactionRep'](mostUrgentGoal.faction!));
-    if (contenderRepNeeded > repNeeded) {
-      mostUrgentGoal = contender;
-      repNeeded = contenderRepNeeded;
-    }
-  }
-  return mostUrgentGoal.faction!;
-};
-
 export async function main(ns: NS) {
   ns.disableLog('ALL');
 
@@ -90,6 +56,41 @@ export async function main(ns: NS) {
   for (const crimeName of Object.values(ns.enums.CrimeType)) {
     CRIMES[crimeName] = await $.singularity['getCrimeStats'](crimeName);
   }
+
+  /**
+   * Returns the faction with the largest remaining rep gap that the player
+   * is already a member of, or null if no rep work is needed.
+   */
+  const getWorkFaction = async (
+    $: ReturnType<typeof inPlace>,
+    root: Goal,
+    factions: FactionName[],
+  ): Promise<FactionName | null> => {
+    const possibleGoals = root
+      .prerequisites()
+      .filter((g) => !g.isDone())
+      .filter((g) => g.type === 'FACTION_REP' || g.type === 'FACTION_FAVOR')
+      .filter((g) => g.faction && factions.includes(g.faction))
+      .filter((g) => factionWorkTypes[g.faction].length > 0);
+    let mostUrgentGoal = possibleGoals.shift();
+    if (mostUrgentGoal == null) {
+      return null;
+    }
+    let repNeeded =
+      (mostUrgentGoal.requirement ?? 0) -
+      (await $.singularity['getFactionRep'](mostUrgentGoal.faction!));
+    let contender;
+    while ((contender = possibleGoals.shift())) {
+      const contenderRepNeeded =
+        (mostUrgentGoal.requirement ?? 0) -
+        (await $.singularity['getFactionRep'](mostUrgentGoal.faction!));
+      if (contenderRepNeeded > repNeeded) {
+        mostUrgentGoal = contender;
+        repNeeded = contenderRepNeeded;
+      }
+    }
+    return mostUrgentGoal.faction!;
+  };
 
   const goToGym = async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
     if (!getGym(ns, ns.getPlayer().city)) {
@@ -163,6 +164,9 @@ export async function main(ns: NS) {
   const factionWork = async (player: Player, faction: FactionName) => {
     const form = hasFormulas(ns) ? ns.formulas : formulas(ns);
     const workTypes = factionWorkTypes[faction];
+    if (workTypes.length === 0) {
+      return false;
+    }
     const { workType } = workTypes
       .map((workType) => ({
         workType,
@@ -172,7 +176,7 @@ export async function main(ns: NS) {
     const { factionName, factionWorkType } = (ns.singularity.getCurrentWork() ||
       {}) as FactionWorkTask;
     if (faction === factionName && workType === factionWorkType) return;
-    await $.singularity['workForFaction'](faction, workType, focus());
+    return await $.singularity['workForFaction'](faction, workType, focus());
   };
 
   const { algorithms } = ns.enums.UniversityClassType;
