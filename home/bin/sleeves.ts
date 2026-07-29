@@ -2,12 +2,199 @@ import { getStaticData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 import { inPlace, runInPlace } from '../lib/in-place';
 import { table } from '../lib/table';
+import { formatTime } from '../lib/util';
 
 type SleeveTaskInfo = Exclude<SleeveTask, 'nextCompletion'>;
 type SleeveInfo = {
   num: number;
   sleeve: SleevePerson;
   currentTask: SleeveTaskInfo;
+};
+
+const GANG_KARMA = -54000;
+
+type MurderState = {
+  t: number;
+  sleeve: SleevePerson;
+  numSleeves: number;
+  karma: number;
+};
+
+type SleeveKarmaAction = 'recover' | 'murder' | 'str' | 'def' | 'dex' | 'agi';
+
+type Verdict = {
+  action: SleeveKarmaAction;
+  timeToGang: number; // Upper bound
+  nextState: MurderState | null;
+};
+
+const STATS = {
+  str: { expField: 'strExp', exp: 'strength_exp', weight: 'strength_success_weight' },
+  def: { expField: 'defExp', exp: 'defense_exp', weight: 'defense_success_weight' },
+  dex: { expField: 'dexExp', exp: 'dexterity_exp', weight: 'dexterity_success_weight' },
+  agi: { expField: 'agiExp', exp: 'agility_exp', weight: 'agility_success_weight' },
+} as const;
+
+// Assumptions:
+// - Will run before sleeves have augs (exp mults and level mults are 1)
+// - Sleeves move in lockstep; all sleeves have the same skills, exp, and shock
+const murderSolver = (ns: NS) => {
+  const GYM_STATS = Object.keys(ns.enums.GymType) as (keyof GymEnumType)[];
+  const PASSIVE_RECOVERY = 0.0005;
+  const ACTIVE_RECOVERY = 3 * PASSIVE_RECOVERY;
+  const staticData = getStaticData(ns);
+  const { CrimeSuccessRate = 1, CrimeExpGain = 1 } = staticData.bitNodeMultipliers || {};
+  const murder = ns.singularity.getCrimeStats('Homicide'); // TODO: Maybe move this to staticData in boot loader
+  const MURDER_TIME = murder.time / 1000;
+  const MURDER_KARMA_RATE = -murder.karma / MURDER_TIME;
+
+  const getMurderChance = (sleeve: Person) =>
+    Math.min(
+      1,
+      (sleeve.mults.crime_success *
+        CrimeSuccessRate *
+        (sleeve.skills.strength * murder[STATS.str.weight] +
+          sleeve.skills.defense * murder[STATS.def.weight] +
+          sleeve.skills.dexterity * murder[STATS.dex.weight] +
+          sleeve.skills.agility * murder[STATS.agi.weight])) /
+        975,
+    );
+
+  const fractionalLevel = (exp: number, mult: number) => {
+    const level = ns.formulas.skills.calculateSkill(exp, mult);
+    const levelExp = ns.formulas.skills.calculateExp(level, mult);
+    const nextLevelExp = ns.formulas.skills.calculateExp(level + 1, mult);
+    return level + (exp - levelExp) / (nextLevelExp - levelExp);
+  };
+
+  const murderResult = (
+    { sleeve, karma, t, numSleeves }: MurderState,
+    playerKarmaRate: number,
+    numSeconds: number,
+  ) => {
+    const p = getMurderChance(sleeve);
+    const S = (100 - sleeve.shock) / 100;
+    const sleeveExpMult = CrimeExpGain * (0.25 + 0.75 * p) * S;
+    const totalExpMult = sleeveExpMult + sleeveExpMult * S * (numSleeves - 1);
+    const numAttempts = numSeconds / MURDER_TIME;
+    const exp = {
+      ...sleeve.exp,
+      strength: sleeve.exp.strength + totalExpMult * numAttempts * murder.strength_exp,
+      defense: sleeve.exp.defense + totalExpMult * numAttempts * murder.defense_exp,
+      dexterity: sleeve.exp.dexterity + totalExpMult * numAttempts * murder.dexterity_exp,
+      agility: sleeve.exp.agility + totalExpMult * numAttempts * murder.agility_exp,
+    };
+    const skills = {
+      ...sleeve.skills,
+      // Use fractional level so that small time slices
+      // still capture the value of levelling
+      strength: fractionalLevel(exp.strength, sleeve.mults.strength),
+      defense: fractionalLevel(exp.defense, sleeve.mults.defense),
+      dexterity: fractionalLevel(exp.dexterity, sleeve.mults.dexterity),
+      agility: fractionalLevel(exp.agility, sleeve.mults.agility),
+    };
+    return {
+      sleeve: {
+        ...sleeve,
+        exp,
+        skills,
+        shock: Math.max(0, sleeve.shock - PASSIVE_RECOVERY * numSeconds),
+      },
+      karma: karma + (p * MURDER_KARMA_RATE * numSleeves + playerKarmaRate) * numSeconds,
+      t: t + numSeconds,
+      numSleeves,
+    };
+  };
+
+  const MAX_ITERS = 1000;
+  // Estimates time to get target karma with given stats for sleeves
+  // if all of them were to murder now.
+  const getMurderTimeToGang = (murderState: MurderState, playerKarmaRate: number) => {
+    let currentState = murderState;
+    for (let i = 0; i < MAX_ITERS && currentState.karma > GANG_KARMA; i++) {
+      const murderRate =
+        MURDER_KARMA_RATE * getMurderChance(currentState.sleeve) * murderState.numSleeves +
+        playerKarmaRate;
+      const estTimeRemaining = (GANG_KARMA - currentState.karma) / murderRate;
+      const dt = estTimeRemaining / (MAX_ITERS - i);
+      currentState = murderResult(currentState, playerKarmaRate, dt);
+    }
+    return currentState.t;
+  };
+
+  const gymResult = ({ sleeve, karma, t, numSleeves }: MurderState, playerKarmaRate: number) => {
+    // Determine skill to train based on exp formula and skill chance contributions
+    // Return result of training a single level for all sleeves.
+    // Effects of PASSIVE_RECOVERY are ignored here, as they are insignificant
+    // for the involved S (shock multiplier) and t (time) values.
+    const { dt, stat, statName, nextLevel, nextLevelExp } = GYM_STATS.map((statName) => {
+      const stat = ns.enums.GymType[statName];
+      const baseGain =
+        5 * ns.formulas.work.gymGains(sleeve, stat, 'Powerhouse Gym')[STATS[stat].expField];
+      const nextLevel = sleeve.skills[statName] + 1;
+      const currentExp = sleeve.exp[statName];
+      const nextLevelExp = ns.formulas.skills.calculateExp(nextLevel, sleeve.mults[statName]);
+      const S = 1 - sleeve.shock / 100;
+      const sleeveExpGain = S * baseGain;
+      const totalExpGain = sleeveExpGain + (numSleeves - 1) * S * sleeveExpGain;
+      const dt = (nextLevelExp - currentExp) / totalExpGain;
+      const weightedT = dt / murder[STATS[stat].weight];
+      return { stat, statName, dt, weightedT, nextLevel, nextLevelExp };
+    }).reduce((a, b) => (a.weightedT < b.weightedT ? a : b));
+
+    return {
+      stat,
+      state: {
+        t: t + dt,
+        sleeve: {
+          ...sleeve,
+          skills: { ...sleeve.skills, [statName]: nextLevel },
+          exp: { ...sleeve.exp, [statName]: nextLevelExp },
+          shock: Math.max(0, sleeve.shock - PASSIVE_RECOVERY * dt),
+        },
+        karma: karma + playerKarmaRate * dt,
+        numSleeves,
+      } as MurderState,
+    };
+  };
+
+  const RECOVER_TIME = 1; // Reference time spent for recovering. Increase if deltas too small
+  const recoveryResult = (
+    { sleeve, numSleeves, karma, t }: MurderState,
+    playerKarmaRate: number,
+  ): MurderState => ({
+    t: t + RECOVER_TIME,
+    sleeve: {
+      ...sleeve,
+      shock: Math.max(0, sleeve.shock - ACTIVE_RECOVERY * RECOVER_TIME),
+    },
+    karma: karma + playerKarmaRate * RECOVER_TIME,
+    numSleeves,
+  });
+
+  return (startState: MurderState, playerKarmaRate: number): Verdict => {
+    const immediateMurderTime = getMurderTimeToGang(startState, playerKarmaRate);
+    if (getMurderChance(startState.sleeve) > 0.99)
+      return {
+        action: 'murder',
+        timeToGang: immediateMurderTime,
+        nextState: null,
+      };
+
+    const recoveredState = recoveryResult(startState, playerKarmaRate);
+    const recoveredMurderTime = getMurderTimeToGang(recoveredState, playerKarmaRate);
+
+    // if one more tick of recovery is a marginal improvement on time to gang,
+    // stop searching and keep recovering
+    if (recoveredMurderTime < immediateMurderTime)
+      return { action: 'recover', timeToGang: recoveredMurderTime, nextState: recoveredState };
+
+    const { stat, state: trainedState } = gymResult(startState, playerKarmaRate);
+    const trainedMurderTime = getMurderTimeToGang(trainedState, playerKarmaRate);
+    if (trainedMurderTime < immediateMurderTime)
+      return { action: stat, timeToGang: trainedMurderTime, nextState: trainedState };
+    else return { action: 'murder', timeToGang: immediateMurderTime, nextState: null };
+  };
 };
 
 export async function main(ns: NS) {
@@ -72,6 +259,13 @@ export async function main(ns: NS) {
     else await $doCrimes(sleeveInfo, 'Homicide');
   };
 
+  const $sync = async (sleeves: SleeveInfo[]) => {
+    const desyncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync < 100);
+    const syncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync === 100);
+    for (const { num } of desyncedSleeves) await $.sleeve['setToSynchronize'](num);
+    return syncedSleeves;
+  };
+
   const $recover = async (sleeves: SleeveInfo[]) => {
     const shockedSleeves = sleeves.filter(({ sleeve }) => sleeve.shock > 0);
     const healedSleeves = sleeves.filter(({ sleeve }) => sleeve.shock === 0);
@@ -79,11 +273,38 @@ export async function main(ns: NS) {
     return healedSleeves;
   };
 
-  const $sync = async (sleeves: SleeveInfo[]) => {
-    const desyncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync < 100);
-    const syncedSleeves = sleeves.filter(({ sleeve }) => sleeve.sync === 100);
-    for (const { num } of desyncedSleeves) await $.sleeve['setToSynchronize'](num);
-    return syncedSleeves;
+  const $train = async (sleeves: SleeveInfo[], stat: GymType) => {
+    for (const { num } of sleeves) await $.sleeve['setToGymWorkout'](num, 'Powerhouse Gym', stat);
+  };
+
+  const $kill = async (sleeves: SleeveInfo[]) => {
+    for (const { num, currentTask } of sleeves) {
+      if (currentTask.type !== 'CRIME' || currentTask.crimeType !== 'Homicide') {
+        await $.sleeve['setToCommitCrime'](num, 'Homicide');
+      }
+    }
+  };
+
+  const $playerKarmaRate = async () => {
+    const playerAction = ns.singularity.getCurrentWork();
+    if (playerAction?.type !== 'CRIME') return 0;
+    const chance = await $.singularity.getCrimeChance(playerAction.crimeType);
+    const stats = await $.singularity.getCrimeStats(playerAction.crimeType);
+    return (-chance * stats.karma) / (stats.time / 1000);
+  };
+
+  let lastSolve = 0;
+  let lastVerdict: Verdict | null = null;
+  const $grindKarma = async (sleeves: SleeveInfo[], karma: number) => {
+    if (Date.now() - lastSolve < 5000) return;
+    lastSolve = Date.now();
+    const solveMurder = murderSolver(ns);
+    const startState = { sleeve: sleeves[0].sleeve, numSleeves: sleeves.length, karma, t: 0 };
+    lastVerdict = solveMurder(startState, await $playerKarmaRate());
+    const { action } = lastVerdict;
+    if (action === 'recover') await $recover(sleeves);
+    else if (action === 'murder') await $kill(sleeves);
+    else await $train(sleeves, action);
   };
 
   const tc = (str: string) => str[0].toLocaleUpperCase() + str.slice(1);
@@ -106,21 +327,21 @@ export async function main(ns: NS) {
 
   ns.disableLog('ALL');
   ns.ui.openTail();
-  ns.ui.resizeTail(350, 200);
+  ns.ui.resizeTail(350, 250);
   ns.ui.moveTail(240, 2);
   while (true) {
-    ns.clearLog();
     const numSleeves = await $.sleeve['getNumSleeves']();
     const sleeves = await $getSleeves(numSleeves);
-    const healedSleeves = await $recover(sleeves);
-    const readySleeves = await $sync(healedSleeves);
+    const readySleeves = await $sync(sleeves);
     const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
     const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
     const combatGoal = getGoals(ns)
       .prerequisites('COMBAT_LEVEL')
       .find((goal) => !goal.isDone());
-    if (!ns.gang.inGang() && ns.heart.break() > -54000) {
-      for (const sleeveInfo of readySleeves) await $homicide(sleeveInfo);
+    const karma = ns.heart.break();
+    const isGrindingKarma = !ns.gang.inGang() && karma > GANG_KARMA;
+    if (isGrindingKarma) {
+      await $grindKarma(readySleeves, karma);
     } else if (combatGoal) {
       for (const sleeveInfo of sleeves) {
         await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
@@ -144,6 +365,7 @@ export async function main(ns: NS) {
     } else {
       for (const sleeveInfo of readySleeves) await $homicide(sleeveInfo);
     }
+    ns.clearLog();
     const columns = ['#', 'SHOCK', 'TASK'];
     const rows = sleeves.map(({ num, sleeve, currentTask }) => [
       num,
@@ -151,6 +373,10 @@ export async function main(ns: NS) {
       formatTask(currentTask),
     ]);
     ns.print(table(ns, columns, rows, { colors: true }) + '\n\n');
+    if (isGrindingKarma && lastVerdict != null) {
+      const { timeToGang } = lastVerdict;
+      ns.print(` Time to Gang  ${formatTime(Math.round(timeToGang))} (upper bound)` + '\n\n');
+    }
     const sleeveCost = await $.sleeve['getSleeveCost']();
     if (sleeveCost < Infinity) {
       ns.print(' Sleeve cost: $' + ns.format.number(sleeveCost) + '\n\n');
