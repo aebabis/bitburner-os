@@ -13,6 +13,7 @@ export async function main(ns: NS) {
 
   ns.ui.openTail();
   ns.ui.resizeTail(300, 160);
+  ns.ui.moveTail(350 + 249 + 4, 2);
 
   const $ns = inPlace(ns, randPort());
 

@@ -30,6 +30,7 @@ export async function main(ns: NS) {
   }
   ns.ui.openTail();
   ns.ui.resizeTail(700, 300);
+  ns.ui.moveTail(249, 270);
 
   await $createDivision(ns)('Agriculture');
   const materialData = await $getMaterialData(ns);

@@ -347,7 +347,7 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
   ns.ui.resizeTail(350, 250);
-  ns.ui.moveTail(240, 2);
+  ns.ui.moveTail(249, 2);
   while (true) {
     const numSleeves = await $.sleeve['getNumSleeves']();
     const sleeves = await $getSleeves(numSleeves);

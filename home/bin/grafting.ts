@@ -9,6 +9,11 @@ import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-we
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
+  const WIDTH = 955;
+  const HEIGHT = 500;
+  const winHeight = globalThis.innerHeight;
+  ns.ui.resizeTail(WIDTH, HEIGHT);
+  ns.ui.moveTail(249, winHeight - HEIGHT - 50);
 
   const { augmentationStats } = getStaticData(ns);
 
