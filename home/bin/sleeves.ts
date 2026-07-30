@@ -42,10 +42,24 @@ const murderSolver = (ns: NS) => {
   const PASSIVE_RECOVERY = 0.0005;
   const ACTIVE_RECOVERY = 3 * PASSIVE_RECOVERY;
   const staticData = getStaticData(ns);
-  const { CrimeSuccessRate = 1, CrimeExpGain = 1 } = staticData.bitNodeMultipliers || {};
+  const {
+    CrimeSuccessRate = 1,
+    CrimeExpGain = 1,
+    StrengthLevelMultiplier = 1,
+    DefenseLevelMultiplier = 1,
+    DexterityLevelMultiplier = 1,
+    AgilityLevelMultiplier = 1,
+  } = staticData.bitNodeMultipliers || {};
   const { Homicide: murder } = staticData.crimeStats;
   const MURDER_TIME = murder.time / 1000;
   const MURDER_KARMA_RATE = -murder.karma / MURDER_TIME;
+
+  const MULTS = {
+    strength: StrengthLevelMultiplier,
+    defense: DefenseLevelMultiplier,
+    dexterity: DexterityLevelMultiplier,
+    agility: AgilityLevelMultiplier,
+  } as const;
 
   const getMurderChance = (sleeve: Person) =>
     Math.min(
@@ -87,10 +101,10 @@ const murderSolver = (ns: NS) => {
       ...sleeve.skills,
       // Use fractional level so that small time slices
       // still capture the value of levelling
-      strength: fractionalLevel(exp.strength, sleeve.mults.strength),
-      defense: fractionalLevel(exp.defense, sleeve.mults.defense),
-      dexterity: fractionalLevel(exp.dexterity, sleeve.mults.dexterity),
-      agility: fractionalLevel(exp.agility, sleeve.mults.agility),
+      strength: fractionalLevel(exp.strength, sleeve.mults.strength * MULTS.strength),
+      defense: fractionalLevel(exp.defense, sleeve.mults.defense * MULTS.defense),
+      dexterity: fractionalLevel(exp.dexterity, sleeve.mults.dexterity * MULTS.dexterity),
+      agility: fractionalLevel(exp.agility, sleeve.mults.agility * MULTS.agility),
     };
     return {
       sleeve: {
@@ -132,7 +146,8 @@ const murderSolver = (ns: NS) => {
         5 * ns.formulas.work.gymGains(sleeve, stat, 'Powerhouse Gym')[STATS[stat].expField];
       const nextLevel = sleeve.skills[statName] + 1;
       const currentExp = sleeve.exp[statName];
-      const nextLevelExp = ns.formulas.skills.calculateExp(nextLevel, sleeve.mults[statName]);
+      const mult = sleeve.mults[statName] * MULTS[statName];
+      const nextLevelExp = ns.formulas.skills.calculateExp(nextLevel, mult);
       const S = 1 - sleeve.shock / 100;
       const sleeveExpGain = S * baseGain;
       const totalExpGain = sleeveExpGain + (numSleeves - 1) * S * sleeveExpGain;
