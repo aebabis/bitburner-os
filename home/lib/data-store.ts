@@ -87,6 +87,8 @@ export type StaticData = {
   companyFavor: Record<CompanyName, number>;
   companyPositions: Record<CompanyName, CompanyPositionInfo[]>;
 
+  crimeStats: Record<CrimeType, CrimeStats>;
+
   graftableAugmentations: string[];
   augmentationGraftPrices: Record<string, number>;
   augmentationGraftTimes: Record<string, number>;

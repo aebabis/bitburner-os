@@ -8,6 +8,7 @@ export async function main(ns: NS) {
   // Reserve RAM
   ns.singularity.getAugmentationsFromFaction;
 
+  const $ = inPlace(ns);
   const factions = Object.values(ns.enums.FactionName) as FactionName[];
   const companies = Object.values(ns.enums.CompanyName) as CompanyName[];
 
@@ -17,7 +18,7 @@ export async function main(ns: NS) {
   const factionAugmentations = {} as Record<FactionName, string[]>;
   const augSet = new Set<string>();
   for (const faction of factions) {
-    const list = await inPlace(ns).singularity['getAugmentationsFromFaction'](faction);
+    const list = await $.singularity['getAugmentationsFromFaction'](faction);
     factionAugmentations[faction] = list;
     for (const name of list) augSet.add(name);
   }
@@ -26,22 +27,22 @@ export async function main(ns: NS) {
   tprint(ns)(STR + '  Loading Augmentation Prices');
   const augmentationPrices: Record<string, number> = {};
   for (const aug of augmentationNames)
-    augmentationPrices[aug] = await inPlace(ns).singularity['getAugmentationBasePrice'](aug);
+    augmentationPrices[aug] = await $.singularity['getAugmentationBasePrice'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation Rep Costs');
   const augmentationRepReqs: Record<string, number> = {};
   for (const aug of augmentationNames!)
-    augmentationRepReqs[aug] = await inPlace(ns).singularity['getAugmentationRepReq'](aug);
+    augmentationRepReqs[aug] = await $.singularity['getAugmentationRepReq'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation PreReqs');
   const augmentationPrereqs: Record<string, string[]> = {};
   for (const aug of augmentationNames)
-    augmentationPrereqs[aug] = await inPlace(ns).singularity['getAugmentationPrereq'](aug);
+    augmentationPrereqs[aug] = await $.singularity['getAugmentationPrereq'](aug);
 
   tprint(ns)(STR + '  Loading Augmentation Stats');
   const augmentationStats: Record<string, Multipliers> = {};
   for (const aug of augmentationNames!)
-    augmentationStats[aug] = await inPlace(ns).singularity['getAugmentationStats'](aug);
+    augmentationStats[aug] = await $.singularity['getAugmentationStats'](aug);
 
   tprint(ns)(STR + '  Constructing Augmentation Aggregates');
   const augmentations: Augmentation[] = [];
@@ -52,40 +53,42 @@ export async function main(ns: NS) {
       repReq: augmentationRepReqs[aug],
       prereqs: augmentationPrereqs[aug],
       stats: augmentationStats[aug],
-      factions: await inPlace(ns).singularity['getAugmentationFactions'](aug),
+      factions: await $.singularity['getAugmentationFactions'](aug),
     });
 
   tprint(ns)(STR + '  Loading Faction Favor');
   const factionFavor = {} as Record<FactionName, number>;
   for (const faction of factions)
-    factionFavor[faction] = await inPlace(ns).singularity['getFactionFavor'](faction);
+    factionFavor[faction] = await $.singularity['getFactionFavor'](faction);
 
   tprint(ns)(STR + '  Loading Faction Requirements');
   const factionRequirements = {} as Record<FactionName, PlayerRequirement[]>;
   for (const faction of factions)
-    factionRequirements[faction] =
-      await inPlace(ns).singularity['getFactionInviteRequirements'](faction);
+    factionRequirements[faction] = await $.singularity['getFactionInviteRequirements'](faction);
 
   tprint(ns)(STR + '  Loading Faction Work Types');
   const factionWorkTypes = {} as Record<FactionName, FactionWorkType[]>;
   for (const faction of factions)
-    factionWorkTypes[faction] = await inPlace(ns).singularity['getFactionWorkTypes'](faction);
+    factionWorkTypes[faction] = await $.singularity['getFactionWorkTypes'](faction);
 
   tprint(ns)(STR + '  Loading Company Favor');
   const companyFavor = {} as Record<CompanyName, number>;
   for (const company of companies)
-    companyFavor[company] = await inPlace(ns).singularity['getCompanyFavor'](company);
+    companyFavor[company] = await $.singularity['getCompanyFavor'](company);
 
   tprint(ns)(STR + '  Loading Company Positions');
   const companyPositions = {} as Record<CompanyName, CompanyPositionInfo[]>;
   for (const company of companies) {
-    const jobNames = await inPlace(ns).singularity['getCompanyPositions'](company);
+    const jobNames = await $.singularity['getCompanyPositions'](company);
     const positions = (companyPositions[company] = [] as CompanyPositionInfo[]);
-    for (const positionName of jobNames) {
-      positions.push(
-        await inPlace(ns).singularity['getCompanyPositionInfo'](company, positionName),
-      );
-    }
+    for (const positionName of jobNames)
+      positions.push(await $.singularity['getCompanyPositionInfo'](company, positionName));
+  }
+
+  tprint(ns)(STR + '  Loading Crime Data');
+  const crimeStats = {} as Record<CrimeType, CrimeStats>;
+  for (const crimeType of Object.values(ns.enums.CrimeType)) {
+    crimeStats[crimeType] = await $.singularity['getCrimeStats'](crimeType);
   }
 
   putStaticData(ns, {
@@ -101,6 +104,7 @@ export async function main(ns: NS) {
     factionWorkTypes,
     companyFavor,
     companyPositions,
+    crimeStats,
   });
 
   // Go to next step in the boot sequence

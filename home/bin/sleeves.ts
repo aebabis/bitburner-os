@@ -44,7 +44,7 @@ const murderSolver = (ns: NS) => {
   const ACTIVE_RECOVERY = 3 * PASSIVE_RECOVERY;
   const staticData = getStaticData(ns);
   const { CrimeSuccessRate = 1, CrimeExpGain = 1 } = staticData.bitNodeMultipliers || {};
-  const murder = ns.singularity.getCrimeStats('Homicide'); // TODO: Maybe move this to staticData in boot loader
+  const { Homicide: murder } = staticData.crimeStats;
   const MURDER_TIME = murder.time / 1000;
   const MURDER_KARMA_RATE = -murder.karma / MURDER_TIME;
 
@@ -199,7 +199,7 @@ const murderSolver = (ns: NS) => {
 
 export async function main(ns: NS) {
   const GYM_STATS = Object.keys(ns.enums.GymType) as (keyof GymEnumType)[];
-  const { factionWorkTypes } = getStaticData(ns);
+  const { factionWorkTypes, crimeStats } = getStaticData(ns);
   const $ = inPlace(ns, ns.pid);
   const $rip = runInPlace(ns, ns.pid);
 
@@ -288,8 +288,8 @@ export async function main(ns: NS) {
   const $playerKarmaRate = async () => {
     const playerAction = ns.singularity.getCurrentWork();
     if (playerAction?.type !== 'CRIME') return 0;
-    const chance = await $.singularity.getCrimeChance(playerAction.crimeType);
-    const stats = await $.singularity.getCrimeStats(playerAction.crimeType);
+    const chance = await $.singularity['getCrimeChance'](playerAction.crimeType);
+    const stats = crimeStats[playerAction.crimeType];
     return (-chance * stats.karma) / (stats.time / 1000);
   };
 
