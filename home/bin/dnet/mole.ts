@@ -472,12 +472,15 @@ const getCracker = (ns: NS, hostname: string, details: DarknetServerDetails) => 
   }
   if (details.passwordHint === 'The password is the evaluation of this expression') {
     const nonExprChar = /[^ 0-9+\-*/()]/g;
-    const expr = details.data
+    const chars = [...details.data];
+    const badDataIndex = chars.findIndex((c) => c.match(nonExprChar));
+    const expr = chars
+      .slice(0, badDataIndex)
+      .join('')
       .replaceAll(/[➕]/g, '+')
       .replaceAll(/[➖]/g, '-')
       .replaceAll(/[÷]/g, '/')
       .replaceAll(/[ҳ]/g, '*')
-      .replaceAll(nonExprChar, '')
       .replaceAll('()', '');
     return recitePassword(eval(expr));
   }
