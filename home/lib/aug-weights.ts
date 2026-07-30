@@ -131,6 +131,13 @@ export const getAugEvaluator = (
   if (augmentationStats == null) return null;
   const augWeights = getAugWeights(resetInfo);
 
-  return (aug: string) =>
-    statlessAugValue(aug, augWeights, entropy) ?? scoreAug(augmentationStats[aug], augWeights);
+  return (aug: string) => {
+    const statlessValue = statlessAugValue(aug, augWeights, entropy);
+    if (statlessValue != null) return statlessValue;
+    const augStats = augmentationStats[aug];
+    if (augStats == null) {
+      throw new Error(`No augmentation stats found for ${aug}`);
+    }
+    return scoreAug(augStats, augWeights);
+  };
 };
