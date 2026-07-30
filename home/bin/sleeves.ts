@@ -25,7 +25,6 @@ type SleeveKarmaAction = 'recover' | 'murder' | 'str' | 'def' | 'dex' | 'agi';
 type Verdict = {
   action: SleeveKarmaAction;
   timeToGang: number; // Upper bound
-  nextState: MurderState | null;
 };
 
 const STATS = {
@@ -123,7 +122,7 @@ const murderSolver = (ns: NS) => {
   };
 
   const gymResult = ({ sleeve, karma, t, numSleeves }: MurderState, playerKarmaRate: number) => {
-    // Determine skill to train based on exp formula and skill chance contributions
+    // Determine skill to train based on exp formula and skill chance contributions.
     // Return result of training a single level for all sleeves.
     // Effects of PASSIVE_RECOVERY are ignored here, as they are insignificant
     // for the involved S (shock multiplier) and t (time) values.
@@ -175,11 +174,7 @@ const murderSolver = (ns: NS) => {
   return (startState: MurderState, playerKarmaRate: number): Verdict => {
     const immediateMurderTime = getMurderTimeToGang(startState, playerKarmaRate);
     if (getMurderChance(startState.sleeve) > 0.99)
-      return {
-        action: 'murder',
-        timeToGang: immediateMurderTime,
-        nextState: null,
-      };
+      return { action: 'murder', timeToGang: immediateMurderTime };
 
     const recoveredState = recoveryResult(startState, playerKarmaRate);
     const recoveredMurderTime = getMurderTimeToGang(recoveredState, playerKarmaRate);
@@ -187,13 +182,13 @@ const murderSolver = (ns: NS) => {
     // if one more tick of recovery is a marginal improvement on time to gang,
     // stop searching and keep recovering
     if (recoveredMurderTime < immediateMurderTime)
-      return { action: 'recover', timeToGang: recoveredMurderTime, nextState: recoveredState };
+      return { action: 'recover', timeToGang: recoveredMurderTime };
 
     const { stat, state: trainedState } = gymResult(startState, playerKarmaRate);
     const trainedMurderTime = getMurderTimeToGang(trainedState, playerKarmaRate);
     if (trainedMurderTime < immediateMurderTime)
-      return { action: stat, timeToGang: trainedMurderTime, nextState: trainedState };
-    else return { action: 'murder', timeToGang: immediateMurderTime, nextState: null };
+      return { action: stat, timeToGang: trainedMurderTime };
+    else return { action: 'murder', timeToGang: immediateMurderTime };
   };
 };
 
