@@ -1,3 +1,5 @@
+import { vIOLET } from '../etc/augmentations';
+
 export const getAugWeights = (resetInfo: ResetInfo) => {
   const onBN = (num: number) => resetInfo.currentNode === num;
   const hasSF = (sf: number, level = 1) => (resetInfo.ownedSF.get(sf) ?? 0) >= level;
@@ -63,8 +65,6 @@ export const scoreAug = (stats: Multipliers, weights: Record<keyof Multipliers, 
     })
     .reduce((a, b) => a + b, 0);
 
-export const VIOLET = 'violet Congruity Implant';
-
 /** Per-entropy-point multiplier the game applies to every entry of `player.mults`. */
 export const ENTROPY_EFFECT = 0.98;
 
@@ -103,7 +103,7 @@ const STATLESS_FRACTIONS: Record<string, number> = {
  * denominated in it: grafting it recovers whatever entropy has accumulated.
  */
 export const statlessAugValue = (aug: string, weights: AugWeights, entropy = 0) => {
-  if (aug === VIOLET) return entropyCostOf(weights) * entropy;
+  if (aug === vIOLET) return entropyCostOf(weights) * entropy;
   const fraction = STATLESS_FRACTIONS[aug];
   return fraction == null ? null : fraction * sumWeights(weights);
 };

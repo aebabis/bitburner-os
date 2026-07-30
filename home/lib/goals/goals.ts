@@ -22,6 +22,7 @@ import { formulas as getFormulas } from '../formulas.ts';
 import { getIncome } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
+import { RED_PILL, THE_BLADE } from '../../etc/augmentations.ts';
 
 // Computes additional overhead if the player was given a free BN9
 // server at the start of the run to account for the time it would
@@ -132,7 +133,6 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(karmaGoal(-54000, karma, [joinGoal]));
   }
 
-  const THE_BLADE = "The Blade's Simulacrum";
   const hasBlade = installedAugs.has(THE_BLADE);
   if ([6, 7].includes(currentNode) && !hasBlade) {
     if (hasBladeburnerReadyMults(player)) {
@@ -167,8 +167,7 @@ export const getGoals = (ns: NS): Goal => {
     }
   }
 
-  const THE_RED_PILL = 'The Red Pill';
-  if (currentNode === 15 && !ownedAugs.includes(THE_RED_PILL)) {
+  if (currentNode === 15 && !ownedAugs.includes(RED_PILL)) {
     const CHARISMA_TARGETS = [300, 600, 1500, 2500, 3000, 3500, 4000, 4000];
     const isLabyAug = (aug: string) => aug.match(/^The [a-zA-Z0-9]+ of [a-zA-Z]+/);
     const installedLabyAugs = [...installedAugs.keys()].filter(isLabyAug);

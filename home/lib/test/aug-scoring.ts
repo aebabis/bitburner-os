@@ -1,7 +1,8 @@
 import { setupRunner, assert } from '../test-runner';
 import { scoreAug } from '../aug-weights';
-import { getAugWeights, entropyCostOf, statlessAugValue, VIOLET } from '../aug-weights';
+import { getAugWeights, entropyCostOf, statlessAugValue } from '../aug-weights';
 import { augValueFromStats } from '../aug-select';
+import { RED_PILL, vIOLET } from '../../etc/augmentations';
 
 export async function main(ns: NS) {
   const { describe, it, runSuite } = setupRunner(ns);
@@ -126,7 +127,6 @@ export async function main(ns: NS) {
   });
 
   describe('statlessAugValue', () => {
-    const RED_PILL = 'The Red Pill';
     const weightsFor = (currentNode: number) =>
       getAugWeights({ currentNode, ownedSF: new Map<number, number>() } as ResetInfo);
 
@@ -155,8 +155,8 @@ export async function main(ns: NS) {
     });
 
     it('prices violet from accumulated entropy', () => {
-      assert.equal(statlessAugValue(VIOLET, augWeights, 0), 0);
-      assert.close(statlessAugValue(VIOLET, augWeights, 3)!, entropyCostOf(augWeights) * 3);
+      assert.equal(statlessAugValue(vIOLET, augWeights, 0), 0);
+      assert.close(statlessAugValue(vIOLET, augWeights, 3)!, entropyCostOf(augWeights) * 3);
     });
 
     it('agrees with the batch-selection path', () => {

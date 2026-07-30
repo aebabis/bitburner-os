@@ -35,6 +35,7 @@ import {
 import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
 import { getAugWeights } from '../aug-weights.ts';
 import { getMockFormulas, MockFormulas } from '../formulas.ts';
+import { THE_BLADE } from '../../etc/augmentations.ts';
 
 const plan = (deps: Goal[], actions: Action[], utility: (overhead: number) => number): Plan =>
   Object.assign(installGoal(deps, actions), { utility });
@@ -454,7 +455,6 @@ export const getBladeburnerTree = (
 ) => {
   const { player, factionRep, fragmentMultipliers } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
-  const THE_BLADE = "The Blade's Simulacrum";
   const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
   const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;

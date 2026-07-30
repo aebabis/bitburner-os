@@ -3,6 +3,7 @@ import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
 import { inPlace } from '../lib/in-place';
+import { SPECIAL_AUGS } from '../etc/augmentations';
 
 export async function main(ns: NS) {
   // Reserve RAM
@@ -14,9 +15,13 @@ export async function main(ns: NS) {
 
   tprint(ns)(STR.BOLD + 'LOADING FACTION, AUGMENTATION, AND COMPANY DATA');
 
+  const ownedAugs = await $.singularity['getOwnedAugmentations'](true);
+
   tprint(ns)(STR + '  Loading Augmentation Names');
   const factionAugmentations = {} as Record<FactionName, string[]>;
-  const augSet = new Set<string>(ns.getResetInfo().ownedAugs.keys());
+  // Enumerate special augs avoid having to load them dynamically.
+  // Loaded ownedAugs (including queued) as a partial fallback if names change.
+  const augSet = new Set<string>([...ownedAugs, ...SPECIAL_AUGS]);
   for (const faction of factions) {
     const list = await $.singularity['getAugmentationsFromFaction'](faction);
     factionAugmentations[faction] = list;

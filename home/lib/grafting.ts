@@ -1,7 +1,6 @@
-import { getAugEvaluator, getEntropyCost, VIOLET } from './aug-weights';
+import { vIOLET } from '../etc/augmentations';
+import { getAugEvaluator, getEntropyCost } from './aug-weights';
 import { getStaticData } from './data-store';
-
-export { VIOLET };
 
 export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy: number) => {
   const {
@@ -17,7 +16,7 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy:
 
   // Grafting costs one entropy point, taxing every existing multiplier. Violet is exempt:
   // it clears accumulated entropy, and its gain is already priced by the evaluator.
-  const entropyCost = ownedAugs.has(VIOLET) ? 0 : getEntropyCost(resetInfo);
+  const entropyCost = ownedAugs.has(vIOLET) ? 0 : getEntropyCost(resetInfo);
 
   return augmentations
     .filter((aug) => !ownedAugs.has(aug.name))
@@ -25,7 +24,7 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy:
     .filter((augmentation) => augmentation.prereqs.every((aug) => ownedAugs.has(aug)))
     .map((augmentation) => {
       const value = scoreAug(augmentation.name);
-      const netValue = augmentation.name === VIOLET ? value : value - entropyCost;
+      const netValue = augmentation.name === vIOLET ? value : value - entropyCost;
       const graftPrice = augmentationGraftPrices[augmentation.name];
       const graftTime = augmentationGraftTimes[augmentation.name];
       const utility = (1e3 * netValue) / (graftTime / 1000);
