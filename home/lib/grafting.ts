@@ -17,7 +17,7 @@ export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy:
 
   // Grafting costs one entropy point, taxing every existing multiplier. Violet is exempt:
   // it clears accumulated entropy, and its gain is already priced by the evaluator.
-  const entropyCost = getEntropyCost(resetInfo);
+  const entropyCost = ownedAugs.has(VIOLET) ? 0 : getEntropyCost(resetInfo);
 
   return augmentations
     .filter((aug) => !ownedAugs.has(aug.name))
