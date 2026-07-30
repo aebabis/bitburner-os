@@ -393,8 +393,9 @@ export async function main(ns: NS) {
     ]);
     ns.print(table(ns, columns, rows, { colors: true }) + '\n\n');
     if (isGrindingKarma && lastVerdict != null) {
-      const { timeToGang } = lastVerdict;
-      ns.print(` Time to Gang  ${formatTime(Math.round(timeToGang))} (upper bound)` + '\n\n');
+      const { action, timeToGang } = lastVerdict;
+      const timeDesc = action === 'murder' ? 'expected' : 'upper bound';
+      ns.print(` Gang  ${formatTime(Math.round(timeToGang))} (${timeDesc})` + '\n\n');
     }
     const sleeveCost = await $.sleeve['getSleeveCost']();
     if (sleeveCost < Infinity) {
