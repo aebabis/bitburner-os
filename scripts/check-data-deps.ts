@@ -17,8 +17,6 @@ const STORES = {
   staticData: { get: 'getStaticData', put: 'putStaticData' },
   playerData: { get: 'getPlayerData', put: 'putPlayerData' },
   moneyData: { get: 'getMoneyData', put: 'putMoneyData' },
-  ramData: { get: 'getRamData', put: 'putRamData' },
-  contractData: { get: 'getContractData', put: 'putContractData' },
 };
 
 // ── AST helpers ───────────────────────────────────────────────────────────────

@@ -16,7 +16,6 @@ let count = 1;
 
 interface ServiceOptions {
   interval?: number;
-  isChain?: boolean;
   temporary?: boolean;
 }
 

@@ -1,5 +1,5 @@
 const DELEGATE_PATTERN =
-  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service|ChainedService)\b[^`'"]*[`'"](\/[^`'"]+)[`'"]/g;
+  /\b(?:rmi|delegateAny|delegate|AnyHostService|Service)\b[^`'"]*[`'"](\/[^`'"]+)[`'"]/g;
 const IMPORT_PATTERN = /\bimport\b[^'"]*from\s*["']([^"']+)["']/g;
 
 const resolve = (fromPath: string, rel: string) => {
