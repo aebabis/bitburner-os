@@ -1,5 +1,6 @@
 import { getStaticData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
+import { COMBAT_STATS, CombatStat } from '../lib/goals/nodes';
 import { inPlace, runInPlace } from '../lib/in-place';
 import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
@@ -35,7 +36,6 @@ const STATS = {
 } as const;
 
 // Assumptions:
-// - Will run before sleeves have augs (exp mults and level mults are 1)
 // - Sleeves move in lockstep; all sleeves have the same skills, exp, and shock
 const murderSolver = (ns: NS) => {
   const GYM_STATS = Object.keys(ns.enums.GymType) as (keyof GymEnumType)[];
@@ -54,7 +54,7 @@ const murderSolver = (ns: NS) => {
   const MURDER_TIME = murder.time / 1000;
   const MURDER_KARMA_RATE = -murder.karma / MURDER_TIME;
 
-  const MULTS = {
+  const BN_LEVEL_MULTS = {
     strength: StrengthLevelMultiplier,
     defense: DefenseLevelMultiplier,
     dexterity: DexterityLevelMultiplier,
@@ -92,19 +92,28 @@ const murderSolver = (ns: NS) => {
     const numAttempts = numSeconds / MURDER_TIME;
     const exp = {
       ...sleeve.exp,
-      strength: sleeve.exp.strength + totalExpMult * numAttempts * murder.strength_exp,
-      defense: sleeve.exp.defense + totalExpMult * numAttempts * murder.defense_exp,
-      dexterity: sleeve.exp.dexterity + totalExpMult * numAttempts * murder.dexterity_exp,
-      agility: sleeve.exp.agility + totalExpMult * numAttempts * murder.agility_exp,
+      ...COMBAT_STATS.reduce(
+        (stats, statName) => {
+          const expName = STATS[ns.enums.GymType[statName]].exp;
+          const newExp = totalExpMult * sleeve.mults[expName] * numAttempts * murder[expName];
+          stats[statName] = sleeve.exp[statName] + newExp;
+          return stats;
+        },
+        {} as Record<CombatStat, number>,
+      ),
     };
     const skills = {
       ...sleeve.skills,
-      // Use fractional level so that small time slices
-      // still capture the value of levelling
-      strength: fractionalLevel(exp.strength, sleeve.mults.strength * MULTS.strength),
-      defense: fractionalLevel(exp.defense, sleeve.mults.defense * MULTS.defense),
-      dexterity: fractionalLevel(exp.dexterity, sleeve.mults.dexterity * MULTS.dexterity),
-      agility: fractionalLevel(exp.agility, sleeve.mults.agility * MULTS.agility),
+      ...COMBAT_STATS.reduce(
+        (stats, statName) => {
+          // Use fractional level so that small time slices
+          // still capture the value of levelling
+          const mult = sleeve.mults[statName] * BN_LEVEL_MULTS[statName];
+          stats[statName] = fractionalLevel(exp[statName], mult);
+          return stats;
+        },
+        {} as Record<CombatStat, number>,
+      ),
     };
     return {
       sleeve: {
@@ -146,7 +155,7 @@ const murderSolver = (ns: NS) => {
         5 * ns.formulas.work.gymGains(sleeve, stat, 'Powerhouse Gym')[STATS[stat].expField];
       const nextLevel = sleeve.skills[statName] + 1;
       const currentExp = sleeve.exp[statName];
-      const mult = sleeve.mults[statName] * MULTS[statName];
+      const mult = sleeve.mults[statName] * BN_LEVEL_MULTS[statName];
       const nextLevelExp = ns.formulas.skills.calculateExp(nextLevel, mult);
       const S = 1 - sleeve.shock / 100;
       const sleeveExpGain = S * baseGain;
