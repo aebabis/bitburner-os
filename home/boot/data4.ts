@@ -16,7 +16,7 @@ export async function main(ns: NS) {
 
   tprint(ns)(STR + '  Loading Augmentation Names');
   const factionAugmentations = {} as Record<FactionName, string[]>;
-  const augSet = new Set<string>();
+  const augSet = new Set<string>(ns.getResetInfo().ownedAugs.keys());
   for (const faction of factions) {
     const list = await $.singularity['getAugmentationsFromFaction'](faction);
     factionAugmentations[faction] = list;
