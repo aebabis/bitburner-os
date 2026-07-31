@@ -11,9 +11,11 @@ export const rmi =
           while (ns.isRunning(pid)) await ns.sleep(50);
           return true;
         }
+        if (!retry) return false;
       } catch (error) {
         if (error instanceof Error && error?.name === 'ScriptDeath') throw error;
         if (!retry) return false;
       }
+      await ns.sleep(1000);
     }
   };
