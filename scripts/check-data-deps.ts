@@ -8,6 +8,7 @@
 import { readFileSync, readdirSync } from 'fs';
 import { join, relative } from 'path';
 import { parse } from 'acorn';
+import { transformSync } from 'esbuild';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const HOME = join(ROOT, 'home');
@@ -21,14 +22,24 @@ const STORES = {
 
 // ── AST helpers ───────────────────────────────────────────────────────────────
 
-function getAllJsFiles(dir: string): string[] {
+// Runtime artifacts, not source.
+const SKIP_DIRS = new Set(['log', 'tmp']);
+
+function getAllSourceFiles(dir: string): string[] {
   const result: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) result.push(...getAllJsFiles(full));
-    else if (entry.name.endsWith('.js')) result.push(full);
+    if (entry.isDirectory()) {
+      if (!SKIP_DIRS.has(entry.name)) result.push(...getAllSourceFiles(full));
+    } else if (entry.name.endsWith('.ts')) result.push(full);
   }
   return result;
+}
+
+/** Strip TypeScript annotations so acorn can parse the result. */
+function toAst(src: string) {
+  const js = transformSync(src, { loader: 'ts', format: 'esm', target: 'esnext' }).code;
+  return parse(js, { ecmaVersion: 2022, sourceType: 'module' });
 }
 
 /** Visit every AST node depth-first. */
@@ -45,14 +56,21 @@ function walk(node: any, fn: (node: any) => void): void {
   }
 }
 
-/** True if `node` is a direct call `funcName(ns, ...)`. */
+/**
+ * True if `node` is a direct call `funcName(<identifier>, ...)`.
+ *
+ * The first argument is not required to be named `ns`: esbuild renames shadowed
+ * bindings, so a nested `(ns) => …` becomes `ns2` in the parsed output. Matching
+ * the literal name silently hid every store access in such a file — both reads
+ * and writes. Store accessors take a single NS argument, so any identifier here
+ * is unambiguous.
+ */
 function isCallTo(node: any, funcName: string): boolean {
   return (
     node?.type === 'CallExpression' &&
     node.callee?.type === 'Identifier' &&
     node.callee.name === funcName &&
-    node.arguments?.[0]?.type === 'Identifier' &&
-    node.arguments[0].name === 'ns'
+    node.arguments?.[0]?.type === 'Identifier'
   );
 }
 
@@ -81,18 +99,7 @@ function keysOf(node: any): Set<string> {
 
 // ── Per-file analysis ─────────────────────────────────────────────────────────
 
-function analyzeFile(src: string, getFn: string, putFn: string) {
-  let ast;
-  try {
-    ast = parse(src, { ecmaVersion: 2022, sourceType: 'module' });
-  } catch {
-    return {
-      written: new Set<string>(),
-      read: new Set<string>(),
-      warnings: new Set<string>(),
-    };
-  }
-
+function analyzeFile(ast: any, getFn: string, putFn: string) {
   const written = new Set<string>();
   const read = new Set<string>();
   const warnings = new Set<string>();
@@ -166,7 +173,11 @@ function analyzeFile(src: string, getFn: string, putFn: string) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-const files = getAllJsFiles(HOME);
+const files = getAllSourceFiles(HOME);
+if (files.length === 0) {
+  console.error(`No .ts files found under ${HOME}. Nothing was analyzed.`);
+  process.exit(1);
+}
 const stats: Record<
   string,
   {
@@ -185,13 +196,24 @@ const stats: Record<
   ]),
 );
 
+const parseFailures: string[] = [];
+
 for (const file of files) {
   const rel = relative(HOME, file);
-  const src = readFileSync(file, 'utf-8');
+
+  let ast;
+  try {
+    ast = toAst(readFileSync(file, 'utf-8'));
+  } catch (error) {
+    // A file we cannot parse is a file we cannot vouch for. Report it rather
+    // than silently treating it as having no reads or writes.
+    parseFailures.push(`    ${rel}: ${error instanceof Error ? error.message : error}`);
+    continue;
+  }
 
   for (const [store, { get, put }] of Object.entries(STORES)) {
     const s = stats[store];
-    const { written, read, warnings } = analyzeFile(src, get, put);
+    const { written, read, warnings } = analyzeFile(ast, get, put);
 
     for (const k of written) {
       if (!s.written.has(k)) s.written.set(k, []);
@@ -231,5 +253,15 @@ for (const [store, { written, read, warnings }] of Object.entries(stats)) {
   }
 }
 
-if (!anyOutput) console.log('No orphaned store properties found.');
+if (parseFailures.length > 0) {
+  anyOutput = true;
+  console.log(`\n${'─'.repeat(60)}`);
+  console.log('  Files that could not be parsed (not analyzed)');
+  console.log('─'.repeat(60) + '\n');
+  for (const f of parseFailures) console.log(f);
+}
+
+if (!anyOutput) console.log(`No orphaned store properties found (${files.length} files analyzed).`);
 console.log('');
+
+if (parseFailures.length > 0) process.exit(1);
