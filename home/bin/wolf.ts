@@ -1,10 +1,8 @@
 import { BRIGHT as B, C, MONEY, NORMAL as N } from '../lib/colors';
-import { rmi } from '../lib/rmi';
 import { table } from '../lib/table';
 import { by } from '../lib/util';
 
-const DRAWER_WIDTH =
-  globalThis['document'].querySelector('.MuiDrawer-root')?.clientWidth ?? 248;
+const DRAWER_WIDTH = globalThis['document'].querySelector('.MuiDrawer-root')?.clientWidth ?? 248;
 
 type TickerSnapshot = {
   symbol: string;
@@ -17,12 +15,10 @@ type TickerSnapshot = {
 const getTicker = (ns: NS) => {
   const SIZE_LIMIT = 1000;
   let ticks = 0;
-  const history = ns.stock
-    .getSymbols()
-    .reduce<Record<string, TickerSnapshot[]>>((map, symbol) => {
-      map[symbol] = [];
-      return map;
-    }, {});
+  const history = ns.stock.getSymbols().reduce<Record<string, TickerSnapshot[]>>((map, symbol) => {
+    map[symbol] = [];
+    return map;
+  }, {});
   const addSnapshot = (symbol: string, snapshot: TickerSnapshot) => {
     history[symbol].push(snapshot);
     while (history[symbol].length > SIZE_LIMIT) {
@@ -33,10 +29,8 @@ const getTicker = (ns: NS) => {
     if (ticks < 20) return 1;
     const old10 = history[symbol].slice(-20, -10);
     const new10 = history[symbol].slice(-10);
-    const oldAvg =
-      old10.map((snapshot) => snapshot.price).reduce((a, b) => a + b, 0) / 10;
-    const newAvg =
-      new10.map((snapshot) => snapshot.price).reduce((a, b) => a + b, 0) / 10;
+    const oldAvg = old10.map((snapshot) => snapshot.price).reduce((a, b) => a + b, 0) / 10;
+    const newAvg = new10.map((snapshot) => snapshot.price).reduce((a, b) => a + b, 0) / 10;
     return newAvg / oldAvg;
   };
   return {
@@ -50,9 +44,7 @@ const getTicker = (ns: NS) => {
           price: (askPrice + bidPrice) / 2,
           askPrice,
           bidPrice,
-          forecast: ns.stock.has4SDataTixApi()
-            ? ns.stock.getForecast(symbol)
-            : 0.5,
+          forecast: ns.stock.has4SDataTixApi() ? ns.stock.getForecast(symbol) : 0.5,
         });
       }
     },
@@ -67,9 +59,7 @@ const getTicker = (ns: NS) => {
       return Object.fromEntries(
         ns.stock
           .getSymbols()
-          .map(
-            (symbol) => [symbol, getRecentChange(symbol)] as [string, number],
-          ),
+          .map((symbol) => [symbol, getRecentChange(symbol)] as [string, number]),
       );
     },
     getNumTicks: () => ticks,
@@ -124,15 +114,7 @@ const printHeader = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
 
 const printSpreadTable = (ns: NS, ticker: ReturnType<typeof getTicker>) => {
   const money = (n: number) => `${ns.format.number(n, 3)}`;
-  const columns = [
-    'SYMBOL',
-    'BID',
-    'PRICE',
-    'ASK',
-    'SPREAD',
-    'SPREAD%',
-    'CHANGE',
-  ];
+  const columns = ['SYMBOL', 'BID', 'PRICE', 'ASK', 'SPREAD', 'SPREAD%', 'CHANGE'];
   const rows = ns.stock
     .getSymbols()
     .sort(by((symbol) => -ticker.getRecentChange(symbol)))
@@ -173,13 +155,7 @@ const printPositionTable = (ns: NS) => {
     .getSymbols()
     .map(
       (symbol) =>
-        [symbol, ...ns.stock.getPosition(symbol)] as [
-          string,
-          number,
-          number,
-          number,
-          number,
-        ],
+        [symbol, ...ns.stock.getPosition(symbol)] as [string, number, number, number, number],
     )
     .filter((position) => position[1] || position[3])
     .flatMap(([symbol, longS, long$, shortS, short$]) => {
@@ -253,7 +229,7 @@ export async function main(ns: NS) {
     const porfolioValue = getPorfolioValue(ns);
     const netWorth = porfolioValue + ns.getServerMoneyAvailable('home');
     if (netWorth < RESET_THRESHOLD) {
-      await rmi(ns)('bin/self/aug/reset.ts');
+      ns.singularity.softReset();
     }
     ns.clearLog();
 
