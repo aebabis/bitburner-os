@@ -52,8 +52,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasSleeves = () => hasNode(10);
 
   // Predicates for starting services
-  const useAngel = () => preferAngel() || !hasThief;
-  const useThief = () => !preferAngel() || !hasAngel;
+  const useAngel = () => preferAngel() || !hasThief();
+  const useThief = () => !preferAngel() || !hasAngel();
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
   const couldTrade = () =>
     !hasNerd() && (ns.stock.hasTixApiAccess() || money() >= stockStarterCost);
