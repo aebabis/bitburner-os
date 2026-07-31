@@ -8,9 +8,12 @@ import {
   moneyPrereqGoal,
   rebootGoal,
   homeRamGoal,
+  horizonGoal,
+  augMoneyGoal,
   karmaGoal,
   labyrinthGoal,
 } from './nodes.ts';
+import { HORIZON_MS } from '../../etc/config.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
@@ -55,11 +58,19 @@ export const getGoals = (ns: NS): Goal => {
   const { money } = player;
   const staticData = getStaticData(ns);
   const { currentNode, ownedSF, ownedAugs: installedAugs } = staticData.resetInfo;
+  const hasNode = (n: number) => ownedSF.has(n) || currentNode === n;
   const { estimatedStockValue = 0 } = getMoneyData(ns);
   const { totalIncome = 0, hacknetIncome = 0 } = getIncome(ns);
   const formulas = getFormulas(ns) as unknown as Formulas;
   const karma = ns.heart.break();
   const ownedAugs = [...staticData.installedAugmentations, ...queuedAugmentations];
+
+  if (!hasNode(4)) {
+    // Determining target augmentations impossible without SF4 data.
+    // Return reasonable, fixed horizon so consumers have a reference point for ROI.
+    // Already-complete augMoneyGoal provided as future-proofing.
+    return horizonGoal(HORIZON_MS / 1000, [augMoneyGoal(money, money, totalIncome)]);
+  }
 
   const overhead =
     computeResetOverhead(staticData) +
@@ -94,8 +105,11 @@ export const getGoals = (ns: NS): Goal => {
   // If player has singularity access but not all of SF4,
   // the static augmentation data may have not loaded during boot.
   // If this is the case, make a goal for more RAM on home.
-  if (staticData.resetInfo.ownedSF.has(4) && staticData.augmentationNames == null) {
-    const bootRam = staticData.scriptRam['/boot/data4.ts'];
+  if (staticData.augmentationNames == null) {
+    const bootScriptRam = Object.entries(staticData.scriptRam)
+      .filter(([script]) => script.match(/^boot/))
+      .map(([_, ram]) => ram);
+    const bootRam = Math.max(...bootScriptRam);
     const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
     const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
     return rebootGoal(homeRamGoal(homeRam, targetRam, money));
@@ -196,12 +210,9 @@ export const getGoals = (ns: NS): Goal => {
 
   if (bestPlan) {
     return installGoal([...bestPlan.deps], bestPlan.actions);
-  } else {
-    const bootRam = staticData.scriptRam['/boot/data4.ts'];
-    const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
-    const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
-    return rebootGoal(homeRamGoal(homeRam, targetRam, money));
   }
+
+  throw new Error('Unable to make goal tree. This should never happen (NFG can always be pursued)');
 };
 
 export const getTimeToMilestone = (ns: NS): number | null => {

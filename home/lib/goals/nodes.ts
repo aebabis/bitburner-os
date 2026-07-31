@@ -22,6 +22,7 @@ export type GoalType =
   | 'LOCATION'
   | 'MONEY'
   | 'AUG_MONEY'
+  | 'HORIZON'
   | 'EITHER'
   | 'MUTEX';
 
@@ -150,6 +151,16 @@ export const rebootGoal = (dep: Goal) =>
   goal('REBOOT', 'Reboot', () => false, {
     deps: [dep],
     ownTime: () => 0,
+  });
+
+/**
+ * Root goal for non-SF4 runs (eg BN1.1). Represents a fixed horizon,
+ * allowing services concerned with time-to-install to behave reasonably.
+ */
+export const horizonGoal = (horizonSeconds: number, deps: Goal[] = []) =>
+  goal('HORIZON', `No plan (${Math.round(horizonSeconds / 60)}m horizon)`, () => false, {
+    deps,
+    ownTime: () => horizonSeconds,
   });
 
 export const reevaluateGoal = (dep: Goal) =>
