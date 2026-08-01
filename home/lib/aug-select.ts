@@ -129,16 +129,16 @@ const getPossiblePurchases = (
 
   const augValue = getAugEvaluator(resetInfo, augmentationStats) || (() => 0);
 
-  const possiblePurchase = (aug: string, installCount = 0) => ({
+  const possiblePurchase = (aug: string, numInstalled = 0, numQueued = 0) => ({
     name: aug,
     value: augValue(aug),
-    effectiveBasePrice: augmentationPrices[aug] * 1.14 ** installCount,
-    repReq: augmentationRepReqs[aug] * 1.14 ** installCount,
+    effectiveBasePrice: augmentationPrices[aug] * 1.14 ** (numInstalled + numQueued),
+    repReq: augmentationRepReqs[aug] * 1.14 ** numQueued,
   });
 
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
   const possibleNfgPurchases = (factionAugmentations[faction] ?? []).includes(NEUROFLUX)
-    ? Array.from({ length: MAX_AUGS }, (_, i) => possiblePurchase(NEUROFLUX, installedNFCount + i))
+    ? Array.from({ length: MAX_AUGS }, (_, i) => possiblePurchase(NEUROFLUX, installedNFCount, i))
     : [];
 
   return [...neededAugs.map((aug) => possiblePurchase(aug)), ...possibleNfgPurchases].sort(
