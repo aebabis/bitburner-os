@@ -22,7 +22,7 @@ import {
 } from './tree.ts';
 import { getAccessibleFactions, computeResetOverhead } from '../aug-select.ts';
 import { formulas as getFormulas } from '../formulas.ts';
-import { getIncome } from '../query-service.ts';
+import { gangsAllowed, getIncome } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 import { RED_PILL, THE_BLADE } from '../../etc/augmentations.ts';
@@ -129,12 +129,10 @@ export const getGoals = (ns: NS): Goal => {
     return reevaluateGoal(joinGoal);
   }
 
-  if (
-    [3, 7].includes(currentNode) &&
-    (ownedSF.get(currentNode) ?? 0) >= 1 &&
-    !ns.gang.inGang() &&
-    karma > -54000
-  ) {
+  const sfLevel = ownedSF.get(currentNode) ?? 0;
+  // Subsequent playthroughs of BN3 and BN7 are difficult enough that gangs help
+  const isGangHelpful = [3, 7].includes(currentNode) && sfLevel >= 1;
+  if (gangsAllowed(staticData) && isGangHelpful && !ns.gang.inGang() && karma > -54000) {
     const joinGoal = buildJoinSubtree('Slum Snakes', {
       player,
       staticData,

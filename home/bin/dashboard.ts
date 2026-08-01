@@ -195,7 +195,7 @@ const moneyTable = (ns: NS) => {
 const getWork = (ns: NS) => {
   const { factionRep, currentWork } = getPlayerData(ns);
   const WORK = H('WORK');
-  if (!hasBitNode(ns, 4)) return ` ${WORK} ${MEDIUM('(unknown)')} `;
+  if (!hasBitNode(4, getStaticData(ns))) return ` ${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
   if (currentWork.type === 'FACTION') {
     const { factionName } = currentWork;
@@ -418,6 +418,7 @@ const getHacknetServersDisplay = (ns: NS) => {
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
+  const staticData = getStaticData(ns);
   const windows = [
     new GrowingWindow(() => getRunStats(ns), true),
     new GrowingWindow(() => getServiceTable(ns)),
@@ -429,8 +430,8 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getExecutionTable(ns)),
     new GrowingWindow(() => getHackingTable(ns)),
     new GrowingWindow(() => getSourceFilesTable(ns)),
-    hasBitNode(ns, 9) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
-    hasBitNode(ns, 13) && new GrowingWindow(() => getStanekDisplay(ns)),
+    hasBitNode(9, staticData) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
+    hasBitNode(13, staticData) && new GrowingWindow(() => getStanekDisplay(ns)),
   ].filter((win) => win != false);
   await ns.sleep(1);
   const WIDTH = 1450;

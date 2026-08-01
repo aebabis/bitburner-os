@@ -232,7 +232,10 @@ export const shouldPursueFavor = (
   if (favorToDonate == null || currentFavor >= favorToDonate) return false;
   if (!formulas?.reputation || !repRate || !moneyRate) return false;
 
-  const repForFavor = formulas.reputation.calculateFavorToRep(favorToDonate - currentFavor);
+  const pastRep = formulas.reputation.calculateFavorToRep(currentFavor);
+  const totalNeededRep = formulas.reputation.calculateFavorToRep(favorToDonate);
+  const repForFavor = totalNeededRep - pastRep;
+
   const donationRate = formulas.reputation.donationForRep(1, player);
 
   const tFavor = Math.max(0, repForFavor - currentRep) / repRate;

@@ -2,7 +2,7 @@ import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 import { getGoals } from '../../lib/goals/goals';
-import { usingCorp } from '../../lib/query-service';
+import { gangsAllowed, hasBitNode, usingCorp } from '../../lib/query-service';
 
 const isRemoteApiConnected = () => {
   const elem = eval('doc' + 'ument').querySelector('svg[aria-label^="Remote API"]');
@@ -14,15 +14,15 @@ const isRemoteApiConnected = () => {
 
 export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   ns.disableLog('ALL');
-  const { purchasedServerCosts, resetInfo } = getStaticData(ns);
-  const { disableGang } = resetInfo.bitNodeOptions;
+  const staticData = getStaticData(ns);
+  const { purchasedServerCosts, resetInfo } = staticData;
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
   const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
-  const hasNode = (num: number) => currentNode === num || ownedSF.has(num);
+  const hasNode = (num: number) => hasBitNode(num, staticData);
 
   const money = () => player(ns).money ?? 0;
   const factions = () => player(ns).factions ?? [];
@@ -39,11 +39,11 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasNerd = () => currentNode === 8 && !ns.stock.has4SDataTixApi();
   const hasAngel = () => ownedSF.has(1);
   const hasThief = () => !hasNode(5);
-  const gangsAvailable = () => hasNode(2) && !disableGang && currentNode !== 8;
+  const gangsAvailable = () => gangsAllowed(staticData);
   const hasSingularity = () => hasNode(4);
   const enablePool = () => hasNode(9) && currentNode !== 8;
   const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
-  const enableCorp = () => usingCorp(ns);
+  const enableCorp = () => usingCorp(staticData);
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
   const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
   const inBladeNode = () => [6, 7].includes(currentNode);
