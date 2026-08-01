@@ -470,7 +470,15 @@ export const getBladeburnerTree = (
   const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals, '100 in combat stats')]);
   const deps = joinBlades.isDone() ? [] : [joinBlades];
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, deps);
-  const repGoal = factionRepGoal('Bladeburners', bladeRepCost, currentRep, joinBladeFaction);
+  const timeSinceReset = (Date.now() - staticData.resetInfo.lastAugReset) / 1000;
+  const repRate = currentRep / timeSinceReset;
+  const repGoal = factionRepGoal(
+    'Bladeburners',
+    bladeRepCost,
+    currentRep,
+    joinBladeFaction,
+    repRate,
+  );
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
 };
