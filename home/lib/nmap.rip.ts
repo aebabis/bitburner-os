@@ -8,5 +8,5 @@ export const $nmap = (ns: NS, runPort: number) =>
     const hostnames = new Set(['home']);
     for (const hostname of hostnames)
       for (const neighbor of ns['scan'](hostname)) hostnames.add(neighbor);
-    return [...hostnames].filter((hostname) => !hostname.startsWith('hacknet-server'));
+    return [...hostnames].filter((hostname) => !hostname.startsWith('hacknet-'));
   });

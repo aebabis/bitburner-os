@@ -198,7 +198,7 @@ const getPossibleTargets = (ns: NS) =>
   getHostnames(ns).filter((hostname) => {
     if (
       hostname === 'home' ||
-      hostname.startsWith('hacknet-node-') ||
+      hostname.startsWith('hacknet-') ||
       hostname.startsWith(THREADPOOL) ||
       !ns.hasRootAccess(hostname)
     ) {
