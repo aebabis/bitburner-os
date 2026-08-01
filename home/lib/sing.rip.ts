@@ -112,6 +112,25 @@ const $backup = (ns: NS, port = ns.pid) =>
     if (ns.singularity.exportGameBonus()) ns.singularity.exportGame();
   })();
 
+export const $checkInstall =
+  (ns: NS, port = ns.pid) =>
+  async (goalTree: Goal) => {
+    if (
+      ns.singularity.getCurrentWork()?.type !== 'GRAFTING' &&
+      goalTree.type === 'INSTALL' &&
+      goalTree.deps.every((g) => g.isDone())
+    ) {
+      // Make sure stocks have been sold before proceeding
+      if (
+        goalTree
+          .prerequisites('AUG_MONEY')
+          .every(({ requirement }) => requirement < ns.getPlayer().money)
+      ) {
+        await $install(ns, port);
+      }
+    }
+  };
+
 export const $sing =
   (ns: NS, port = ns.pid) =>
   async (goalTree: Goal) => {

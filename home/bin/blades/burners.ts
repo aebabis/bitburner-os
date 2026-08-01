@@ -1,7 +1,7 @@
 import { makeAfkTracker } from '../../lib/afk';
 import { getGoals } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
-import { $sing, $win } from '../../lib/sing.rip';
+import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
 import {
   $getActions,
   $getCities,
@@ -81,7 +81,9 @@ export async function main(ns: NS) {
 
   while (true) {
     if (!hasBlade) {
-      await $sing(ns, ns.pid)(getGoals(ns));
+      const goals = getGoals(ns);
+      await $checkInstall(ns, ns.pid)(goals);
+      await $sing(ns, ns.pid)(goals);
     }
 
     const actions = await $getActions(ns);

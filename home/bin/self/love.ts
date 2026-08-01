@@ -5,7 +5,7 @@ import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace } from '../../lib/in-place';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
-import { $install, $sing, $win } from '../../lib/sing.rip';
+import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
 import { makeAfkTracker } from '../../lib/afk';
 import { formulas, hasFormulas } from '../../lib/formulas';
 
@@ -267,20 +267,7 @@ export async function main(ns: NS) {
       // TODO: consider adding sleeve memory purchase path here for robustness
       await $win(ns, runPort);
     }
-    if (
-      ns.singularity.getCurrentWork()?.type !== 'GRAFTING' &&
-      rootGoal.type === 'INSTALL' &&
-      rootGoal.deps.every((g) => g.isDone())
-    ) {
-      // Make sure stocks have been sold before proceeding
-      if (
-        rootGoal
-          .prerequisites('AUG_MONEY')
-          .every(({ requirement }) => requirement < ns.getPlayer().money)
-      ) {
-        await $install(ns, runPort);
-      }
-    }
+    await $checkInstall(ns, runPort)(rootGoal);
 
     if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await $sing(ns, runPort)(rootGoal);
