@@ -257,7 +257,7 @@ export const factionJoinGoal = (
 });
 
 export const bladesJoinGoal = (inBlades: boolean, deps: Goal[] = []) =>
-  goal('BLADES_JOIN', 'Join the blades', () => inBlades, {
+  goal('BLADES_JOIN', 'Join the Bladeburner Division', () => inBlades, {
     deps,
     ownTime: () => 0,
   });

@@ -1,3 +1,4 @@
+import { THE_BLADE } from '../../etc/augmentations';
 import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData } from '../../lib/data-store';
 import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
@@ -61,7 +62,9 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
     (ns.corporation.canCreateCorporation(mustSelfFund) === 'Success' && money() >= corpCost);
-  const preferBlade = () => inBladeNode() && getGoals(ns).prerequisites('BLADES_JOIN').length > 0;
+  const buyingBlade = () =>
+    getGoals(ns).actions.some((action) => action.type === 'BUY_AUG' && action.name === THE_BLADE);
+  const preferBlade = () => inBladeNode() && buyingBlade();
   const useBlade = () => preferBlade() || hasSimulacrum();
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
