@@ -62,13 +62,10 @@ export const computeRepReq = (augs: string[], staticData: StaticData) => {
 export const computeAugCost = (augs: string[], staticData: StaticData, numQueued: number) => {
   const { augmentationPrices } = staticData;
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
-  const sorted = [...augs].sort(
-    (a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0),
-  );
   let multiplier = 1.9 ** numQueued;
   let nfLevelOffset = installedNFCount;
   let cost = 0;
-  for (const aug of sorted) {
+  for (const aug of augs) {
     const nfLevelMult = aug === NEUROFLUX ? 1.14 ** nfLevelOffset++ : 1;
     cost += multiplier * (augmentationPrices?.[aug] ?? 0) * nfLevelMult;
     multiplier *= 1.9;
@@ -98,6 +95,57 @@ export const computeRepRate = (
   );
 };
 
+type AugmentationPurchase = {
+  name: string;
+  effectiveBasePrice: number;
+  repReq: number;
+  value: number;
+};
+
+const getPossiblePurchases = (
+  faction: FactionName,
+  staticData: StaticData,
+  ownedAugmentations: string[],
+): AugmentationPurchase[] => {
+  const {
+    resetInfo,
+    augmentationPrices,
+    augmentationRepReqs,
+    augmentationStats,
+    augmentationPrereqs,
+    factionAugmentations,
+  } = staticData;
+
+  // Augs that can be used to meet prereqs
+  const availableAugs = new Set([...ownedAugmentations, ...(factionAugmentations[faction] ?? [])]);
+  const hasPrereqs = (aug: string) =>
+    augmentationPrereqs[aug].every((req) => availableAugs.has(req));
+
+  const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
+  const neededAugs = factionAugmentations[faction]
+    .filter(stillNeeds)
+    .filter((aug) => aug !== NEUROFLUX)
+    .filter(hasPrereqs);
+
+  const augValue = getAugEvaluator(resetInfo, augmentationStats) || (() => 0);
+
+  const possiblePurchase = (aug: string, installCount = 0) => ({
+    name: aug,
+    value: augValue(aug),
+    effectiveBasePrice: augmentationPrices[aug] * 1.14 ** installCount,
+    repReq: augmentationRepReqs[aug] * 1.14 ** installCount,
+  });
+
+  const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
+  const possibleNfgPurchases = (factionAugmentations[faction] ?? []).includes(NEUROFLUX)
+    ? Array.from({ length: MAX_AUGS }, (_, i) => possiblePurchase(NEUROFLUX, installedNFCount + i))
+    : [];
+
+  return [...neededAugs.map((aug) => possiblePurchase(aug)), ...possibleNfgPurchases].sort(
+    (a, b) => a.repReq - b.repReq,
+  );
+};
+
 export const findOptimalBatch = (
   faction: FactionName,
   staticData: StaticData,
@@ -108,16 +156,7 @@ export const findOptimalBatch = (
   overhead: number,
   { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
-  const {
-    resetInfo,
-    augmentationPrices,
-    augmentationRepReqs,
-    augmentationStats,
-    augmentationPrereqs,
-    factionAugmentations,
-    factionFavor,
-    factionWorkTypes,
-  } = staticData;
+  const { resetInfo, augmentationPrereqs, factionFavor, factionWorkTypes } = staticData;
 
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
@@ -126,23 +165,6 @@ export const findOptimalBatch = (
 
   // installedAugs determine the player's current stat multipliers.
   const installedAugs = staticData.installedAugmentations ?? [];
-
-  // Augs that can be used to meet prereqs
-  const availableAugs = new Set([
-    ...ownedAugmentations,
-    ...(factionAugmentations?.[faction] ?? []),
-  ]);
-  const hasPrereqs = (aug: string) =>
-    (augmentationPrereqs?.[aug] ?? []).every((req) => availableAugs.has(req));
-
-  const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
-  const getNeededAugs = (fac: FactionName) =>
-    (factionAugmentations?.[fac] ?? [])
-      .filter(stillNeeds)
-      .filter((aug) => aug !== NEUROFLUX)
-      .filter(hasPrereqs);
-
-  const augValue = getAugEvaluator(resetInfo, augmentationStats) || (() => 0);
 
   const currentRep = factionRep[faction] ?? 0;
   const gainRate = computeRepRate(
@@ -155,47 +177,46 @@ export const findOptimalBatch = (
     formulas,
   );
 
-  // Neuroflux is always available regardless of owned count — you can always buy more.
-  // Add MAX_AUGS copies with compounding prices so the algorithm can fill a batch with it.
-  // Each successive NF purchase raises the queue multiplier by 1.9 (like all augs) AND
-  // raises NF's own base price/rep by 1.14 (NF-level scaling, separate from queue).
-  const numQueued = ownedAugmentations.length - installedAugs.length;
-  const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
-  const nfBase = augmentationPrices?.[NEUROFLUX] ?? 0;
-  const nfBaseRep = augmentationRepReqs?.[NEUROFLUX] ?? 0;
-  const nfEntries = (factionAugmentations?.[faction] ?? []).includes(NEUROFLUX)
-    ? Array.from({ length: MAX_AUGS }, (_, i) => ({
-        name: NEUROFLUX,
-        value: augValue(NEUROFLUX),
-        price: nfBase * 1.9 ** (numQueued + i) * 1.14 ** (installedNFCount + i),
-        remainingRep: Math.max(0, nfBaseRep * 1.14 ** (installedNFCount + i) - currentRep),
-      }))
-    : [];
+  const possiblePurchases = getPossiblePurchases(faction, staticData, ownedAugmentations);
 
-  const augs = [
-    ...getNeededAugs(faction).map((aug) => ({
-      name: aug,
-      value: augValue(aug),
-      price: augmentationPrices?.[aug] ?? 0,
-      remainingRep: Math.max(0, (augmentationRepReqs?.[aug] ?? 0) - currentRep),
-    })),
-    ...nfEntries,
-  ].sort((a, b) => a.remainingRep - b.remainingRep);
+  const getPurchaseOrder = (purchases: AugmentationPurchase[]) => {
+    const purchasesRemaining = purchases.slice();
+    const purchaseOrder = [];
+    let i = 0; // Guard against weird prices excluding prereqs from batch
+    // TODO: Implement a prereq-aware batch permuter below
+    while (purchasesRemaining.length > 0 && ++i < 100) {
+      const candidate = purchasesRemaining.shift()!;
+      if (
+        purchasesRemaining.some((other) => augmentationPrereqs[candidate.name].includes(other.name))
+      ) {
+        purchasesRemaining.push(candidate);
+      } else {
+        purchaseOrder.push(candidate);
+      }
+    }
+    return purchaseOrder;
+  };
 
   let best = { utility: 0, batch: [] as string[] };
 
-  for (let i = 0; i < augs.length; i++) {
-    // augs[0..i] are all augs with remainingRep ≤ augs[i].remainingRep.
-    // Pick top MAX_AUGS by value from this affordable prefix.
-    // .slice() gives a copy, so sorting it doesn't disturb the rep-ascending order of augs[]
-    const affordable = augs
-      .slice(0, i + 1)
-      .sort((a, b) => b.value - a.value || a.price - b.price)
-      .slice(0, MAX_AUGS);
+  const numQueued = ownedAugmentations.length - installedAugs.length;
 
-    const totalValue = affordable.reduce((s, a) => s + a.value, 0);
-    const totalPrice = affordable.reduce((s, a) => s + a.price, 0);
-    const bindingRep = Math.max(...affordable.map((a) => a.remainingRep));
+  for (let i = 0; i < possiblePurchases.length; i++) {
+    const purchase = getPurchaseOrder(
+      possiblePurchases
+        .slice(0, i + 1)
+        .sort((a, b) => b.value - a.value || a.effectiveBasePrice - b.effectiveBasePrice)
+        .slice(0, MAX_AUGS)
+        .sort((a, b) => b.effectiveBasePrice - a.effectiveBasePrice),
+    );
+
+    const totalValue = purchase.reduce((s, a) => s + a.value, 0);
+    const totalPrice = purchase.reduce(
+      (s, a, n) => s + a.effectiveBasePrice * 1.9 ** (numQueued + n),
+      0,
+    );
+    const bindingRepCost = Math.max(...purchase.map((a) => a.repReq));
+    const bindingRep = Math.max(0, bindingRepCost - currentRep);
 
     const effectivePrice = canDonate ? totalPrice + bindingRep * donationRate : totalPrice;
     const timeForMoney = Math.max(0, effectivePrice - (player.money ?? 0)) / moneyRate;
@@ -203,7 +224,7 @@ export const findOptimalBatch = (
     const cost = joinTime + Math.max(timeForMoney, timeForRep) + overhead;
     const utility = totalValue / cost;
 
-    if (utility > best.utility) best = { utility, batch: affordable.map((a) => a.name) };
+    if (utility > best.utility) best = { utility, batch: purchase.map((a) => a.name) };
   }
 
   return best;

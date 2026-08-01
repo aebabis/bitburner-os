@@ -15,7 +15,6 @@ import {
   factionFavorGoal,
   installGoal,
   COMBAT_STATS,
-  NEUROFLUX,
   type Action,
   type Goal,
   type Plan,
@@ -24,7 +23,6 @@ import {
 } from './nodes.ts';
 import {
   findOptimalBatch,
-  MAX_AUGS,
   computeRepReq,
   computeAugCost,
   augValueFromStats,
@@ -272,26 +270,6 @@ export const isRepBound = (root: Goal) => {
   return moneyTime == null || moneyTime <= maxRepTime;
 };
 
-const getPurchaseOrder = (
-  augs: string[],
-  augmentationPrereqs: Record<string, string[]>,
-  augmentationPrices: Record<string, number>,
-  ownedAugs: string[],
-): string[] => {
-  const stillNeeds = (aug: string) => !ownedAugs.includes(aug);
-  const sortedByPriceDesc = (xs: string[]) =>
-    [...xs].sort((a, b) => (augmentationPrices?.[b] ?? 0) - (augmentationPrices?.[a] ?? 0));
-  const nfCount = augs.filter((a) => a === NEUROFLUX).length;
-  const order = new Set<string>();
-  for (const aug of sortedByPriceDesc(augs.filter((a) => a !== NEUROFLUX))) {
-    for (const prereq of (augmentationPrereqs?.[aug] ?? []).filter(stillNeeds).reverse())
-      order.add(prereq);
-    order.add(aug);
-  }
-  // Neuroflux goes last (cheap, always available) and may appear multiple times
-  return [...order, ...Array(nfCount).fill(NEUROFLUX)].slice(0, MAX_AUGS);
-};
-
 /**
  * Build the complete goal chain for one candidate faction plan.
  * Returns null if findOptimalBatch finds nothing worth pursuing.
@@ -328,8 +306,7 @@ export const buildFactionGoalTree = (
     fragmentMultipliers,
   }: FactionGoalTreeProps,
 ): Plan | null => {
-  const { augmentationPrices, augmentationPrereqs, augmentationStats, factionWorkTypes } =
-    staticData;
+  const { augmentationStats, factionWorkTypes } = staticData;
   const augWeights = getAugWeights(staticData.resetInfo);
   const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
 
@@ -347,7 +324,7 @@ export const buildFactionGoalTree = (
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 
-  const { batch } = findOptimalBatch(
+  const { batch: augs } = findOptimalBatch(
     faction,
     staticData,
     player,
@@ -357,9 +334,8 @@ export const buildFactionGoalTree = (
     overhead,
     { moneyRate, joinTime },
   );
-  if (batch.length === 0) return null;
+  if (augs.length === 0) return null;
 
-  const augs = getPurchaseOrder(batch, augmentationPrereqs, augmentationPrices, ownedAugs);
   const repReq = computeRepReq(augs, staticData);
   const repRate = computeRepRate(
     faction,
