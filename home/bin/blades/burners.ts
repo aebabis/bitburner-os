@@ -103,6 +103,7 @@ export async function main(ns: NS) {
       return currentAction != null && currentAction.time > 2000;
     };
     if (hasStaminaPenalty && !(await $wouldLoseProgress())) {
+      await $.bladeburner['stopBladeburnerAction']();
       if (hasBlade) {
         await $startAction(ns)('General', 'Training');
       } else {
