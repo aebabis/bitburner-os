@@ -109,7 +109,7 @@ const $backup = (ns: NS, port = ns.pid) =>
     ns,
     port,
   )(() => {
-    if (ns.singularity.exportGameBonus()) ns.singularity.exportGame();
+    if (ns.singularity['exportGameBonus']()) ns.singularity['exportGame']();
   })();
 
 export const $checkInstall =
