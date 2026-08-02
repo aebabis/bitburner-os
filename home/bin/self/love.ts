@@ -2,7 +2,7 @@ import { getStaticData, putPlayerData } from '../../lib/data-store';
 import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals';
 import { Goal, GoalOfType, GoalType } from '../../lib/goals/nodes';
 import { binomLowerBound, by, randPort } from '../../lib/util';
-import { inPlace } from '../../lib/in-place';
+import { inPlace, runInPlace } from '../../lib/in-place';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
 import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
@@ -36,18 +36,34 @@ export async function main(ns: NS) {
 
   ns.singularity.commitCrime;
 
+  const runPort = randPort();
+  const $ = inPlace(ns, runPort);
+  const $rip = runInPlace(ns, runPort);
+
   const { resetInfo, singularityData } = getStaticData(ns);
   if (singularityData == null) {
-    throw new Error('Augmentation data not loaded');
+    while (true) {
+      const [ramGoal] = getGoals(ns).prerequisites('HOME_RAM');
+      if (ramGoal == null) {
+        throw new Error('Augmentation data not loaded. Expected RAM goal');
+      }
+      if (ramGoal.isDone()) {
+        const pid = await $rip(() => {
+          ns['killall']('home', true);
+          return ns['exec']('stop.ts', 'home', 1, 'start.ts');
+        })();
+        if (pid) return;
+      } else {
+        while (await $.singularity['upgradeHomeRam']());
+        await ns.sleep(1000);
+      }
+    }
   }
   const { factionFavor, factionWorkTypes } = singularityData;
   const canMakeMoney = resetInfo.currentNode !== 8;
 
   const afkTracker = makeAfkTracker(ns);
   const focus = () => afkTracker.timeSinceAction() > 20000;
-
-  const runPort = randPort();
-  const $ = inPlace(ns, runPort);
 
   if (resetInfo.currentNode === 8) {
     while (ns.getServerMaxRam('home') < 256 && (await $.singularity['upgradeHomeRam']()));
