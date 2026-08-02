@@ -1,4 +1,4 @@
-import { THREADPOOL } from '../etc/config';
+import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { getStaticData, getHostnames, putHostnames } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 import { getIncome } from '../lib/query-service';
