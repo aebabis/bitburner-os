@@ -280,7 +280,7 @@ export const getAccessibleFactions = (
   ownedAugmentations: string[],
 ) => {
   const { resetInfo, singularityData } = staticData;
-  const { factionRequirements } = singularityData;
+  const { factionRequirements, factionEnemies } = singularityData;
   return [
     ...STORY_FACTIONS,
     ...CRIMINAL_ORGANIZATIONS,
@@ -294,15 +294,12 @@ export const getAccessibleFactions = (
       return false;
     }
     const reqs = factionRequirements[faction] ?? [];
+    const enemies = factionEnemies[faction] ?? [];
     const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
     const requiredAugCount =
       reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;
     if (ownedAugmentations.length < requiredAugCount) return false;
-    if (
-      CITY_FACTIONS.includes(faction) &&
-      player.factions?.find((other) => CITY_FACTIONS.includes(other) && other !== faction)
-    )
-      return false;
+    if (enemies.some((other) => player.factions.includes(other))) return false;
     if (disqualifiers.some((req) => req.type === 'employedBy' && player.jobs?.[req.company]))
       return false;
     if (

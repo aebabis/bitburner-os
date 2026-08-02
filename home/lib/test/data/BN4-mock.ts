@@ -5270,6 +5270,10 @@ const {
   ...base
 } = flat;
 
+// Not captured in the flat dump; every faction having no enemies is the neutral
+// default for tests that do not exercise faction hostility.
+const factionEnemies = {};
+
 export const staticData = {
   ...base,
   singularityData: {
@@ -5281,5 +5285,6 @@ export const staticData = {
     augmentationPrereqs,
     augmentationStats,
     factionRequirements,
+    factionEnemies,
   },
 };

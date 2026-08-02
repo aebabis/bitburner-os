@@ -156,6 +156,10 @@ const S12_B = hackAug(1.1, 1_000_000, 1_000); // value=1.0
 const makeStaticData = (
   factionAugs: Record<string, ReturnType<typeof hackAug>[]>,
   numAugReqs: Record<string, number> = {},
+  // Mirrors ns.singularity.getFactionEnemies: for each faction, the factions whose
+  // membership blocks joining it. Not symmetric in the game — Sector-12 and Aevum
+  // are allies, while Volhaven is hostile to every other city faction.
+  factionEnemies: Record<string, string[]> = {},
 ) => {
   const augmentationStats: Record<string, Multipliers> = {};
   const augmentationPrices: Record<string, number> = {};
@@ -197,6 +201,7 @@ const makeStaticData = (
     augmentationPrereqs,
     factionAugmentations,
     factionRequirements,
+    factionEnemies,
     installedAugmentations: [],
     bitNodeMultipliers: {},
   });
@@ -242,17 +247,42 @@ export async function main(ns: NS) {
       assert.equal(faction, 'Sector-12');
     });
 
-    it('city exclusivity: player in Sector-12 cannot switch to Aevum', () => {
-      const data = makeStaticData({
-        'Sector-12': [S12_A],
-        Aevum: [hackAug(1.99, 1_000, 1)], // absurdly high utility, should be blocked
-      });
+    it('faction hostility: a Sector-12 member cannot switch to Volhaven', () => {
+      const data = makeStaticData(
+        {
+          'Sector-12': [S12_A],
+          Volhaven: [hackAug(1.99, 1_000, 1)], // absurdly high utility, should be blocked
+        },
+        {},
+        { Volhaven: ['Sector-12'] },
+      );
       const { faction } = selectAugmentations(
         [],
         data,
         mockPlayer({}, { factions: ['Sector-12'] }),
       );
       assert.equal(faction, 'Sector-12');
+    });
+
+    it('faction alliance: a Sector-12 member can still pursue Aevum', () => {
+      // Regression for the old rule, which treated all six city factions as mutually
+      // exclusive and so hid Aevum's entire aug pool for the rest of the BitNode.
+      // Enemies now come from ns.singularity.getFactionEnemies, and Aevum lists none
+      // of Sector-12 -- they share the same enemies rather than being enemies.
+      const data = makeStaticData(
+        {
+          'Sector-12': [S12_A],
+          Aevum: [hackAug(1.99, 1_000, 1)],
+        },
+        {},
+        { Aevum: ['Chongqing', 'New Tokyo', 'Ishima', 'Volhaven'] },
+      );
+      const { faction } = selectAugmentations(
+        [],
+        data,
+        mockPlayer({}, { factions: ['Sector-12'] }),
+      );
+      assert.equal(faction, 'Aevum');
     });
 
     it('endgame faction gated by numAugmentations requirement', () => {

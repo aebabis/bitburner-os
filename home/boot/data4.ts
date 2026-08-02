@@ -71,6 +71,11 @@ export async function main(ns: NS) {
   for (const faction of factions)
     factionRequirements[faction] = await $.singularity['getFactionInviteRequirements'](faction);
 
+  tprint(ns)(STR + '  Loading Faction Enemies');
+  const factionEnemies = {} as Record<FactionName, FactionName[]>;
+  for (const faction of factions)
+    factionEnemies[faction] = (await $.singularity['getFactionEnemies'](faction)) as FactionName[];
+
   tprint(ns)(STR + '  Loading Faction Work Types');
   const factionWorkTypes = {} as Record<FactionName, FactionWorkType[]>;
   for (const faction of factions)
@@ -107,6 +112,7 @@ export async function main(ns: NS) {
       augmentationStats,
       factionFavor,
       factionRequirements,
+      factionEnemies,
       factionWorkTypes,
       companyFavor,
       companyPositions,

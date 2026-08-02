@@ -66,6 +66,7 @@ export type SingularityData = {
   augmentationPrereqs: Record<string, string[]>;
   augmentationStats: Record<string, Multipliers>;
   factionRequirements: Record<FactionName, PlayerRequirement[]>;
+  factionEnemies: Record<FactionName, FactionName[]>;
   factionAugmentations: Record<FactionName, string[]>;
   factionWorkTypes: Record<FactionName, FactionWorkType[]>;
 
