@@ -82,8 +82,7 @@ export async function main(ns: NS) {
   const attemptPurchase = async (ns: NS) => {
     const { resetInfo } = getStaticData(ns);
     const { totalIncome, theftRatePerGB } = getIncome(ns);
-    if (totalIncome == null) return;
-    const timeToGoal = getTimeToMilestone(ns) ?? Infinity;
+    const timeToGoal = getTimeToMilestone(ns) ?? HORIZON_MS / 1000;
     // TODO: Make threshold time based on urgency of joining faction.
     // If goal tree is rep-bound, then the threshold time should be
     // based on join money rather than aug money so that the player
