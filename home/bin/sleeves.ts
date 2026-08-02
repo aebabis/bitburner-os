@@ -1,4 +1,4 @@
-import { getStaticData } from '../lib/data-store';
+import { getStaticData, hasSingularityData, type SF4StaticData } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 import { COMBAT_STATS, CombatStat } from '../lib/goals/nodes';
 import { inPlace, runInPlace } from '../lib/in-place';
@@ -37,11 +37,10 @@ const STATS = {
 
 // Assumptions:
 // - Sleeves move in lockstep; all sleeves have the same skills, exp, and shock
-const murderSolver = (ns: NS) => {
+const murderSolver = (ns: NS, staticData: SF4StaticData) => {
   const GYM_STATS = Object.keys(ns.enums.GymType) as (keyof GymEnumType)[];
   const PASSIVE_RECOVERY = 0.0005;
   const ACTIVE_RECOVERY = 3 * PASSIVE_RECOVERY;
-  const staticData = getStaticData(ns);
   const {
     CrimeSuccessRate = 1,
     CrimeExpGain = 1,
@@ -50,7 +49,7 @@ const murderSolver = (ns: NS) => {
     DexterityLevelMultiplier = 1,
     AgilityLevelMultiplier = 1,
   } = staticData.bitNodeMultipliers || {};
-  const { Homicide: murder } = staticData.crimeStats;
+  const { Homicide: murder } = staticData.singularityData.crimeStats;
   const MURDER_TIME = murder.time / 1000;
   const MURDER_KARMA_RATE = -murder.karma / MURDER_TIME;
 
@@ -218,9 +217,22 @@ const murderSolver = (ns: NS) => {
 
 export async function main(ns: NS) {
   const GYM_STATS = Object.keys(ns.enums.GymType) as (keyof GymEnumType)[];
-  const { factionWorkTypes, crimeStats } = getStaticData(ns);
   const $ = inPlace(ns, ns.pid);
   const $rip = runInPlace(ns, ns.pid);
+
+  const staticData = getStaticData(ns);
+  if (!hasSingularityData(staticData)) {
+    // Without the ability to get player work,
+    // or compute the value of crimes, doing Homicide
+    // is a simple fallback. Should not happen in practice,
+    // as SF4 is pursued early.
+    const numSleeves = await $.sleeve['getNumSleeves']();
+    for (let i = 0; i < numSleeves; i++) {
+      await $.sleeve['setToCommitCrime'](i, 'Homicide');
+    }
+    return;
+  }
+  const { factionWorkTypes, crimeStats } = staticData.singularityData;
 
   // Reserve RAM
   ns.sleeve.getSleeve;
@@ -317,7 +329,7 @@ export async function main(ns: NS) {
   const $grindKarma = async (sleeves: SleeveInfo[], karma: number) => {
     if (Date.now() - lastSolve < 5000) return;
     lastSolve = Date.now();
-    const solveMurder = murderSolver(ns);
+    const solveMurder = murderSolver(ns, staticData);
     const startState = { sleeve: sleeves[0].sleeve, numSleeves: sleeves.length, karma, t: 0 };
     lastVerdict = solveMurder(startState, await $playerKarmaRate());
     const { action } = lastVerdict;

@@ -26,8 +26,11 @@ export async function main(ns: NS) {
   ) => {
     const numNeuroflux = owned.filter((aug) => aug === NEUROFLUX).length;
     const data = structuredClone(staticData);
-    data.augmentationRepReqs[NEUROFLUX] *= 1.14 ** numNeuroflux;
-    data.augmentationPrices[NEUROFLUX] *= 1.14 ** numNeuroflux;
+    // getAugmentationRepReq reports the *current* requirement, so the fixture
+    // scales it to simulate installed levels. getAugmentationBasePrice reports
+    // an unscaled base, so price is deliberately left alone — computeAugCost
+    // applies the level multiplier itself from resetInfo.ownedAugs.
+    data.singularityData.augmentationRepReqs[NEUROFLUX] *= 1.14 ** numNeuroflux;
 
     const base = buildPerson(data as any);
     const player = {
@@ -43,7 +46,7 @@ export async function main(ns: NS) {
     let bestFaction: FactionName | null = null,
       bestUtility = -Infinity;
     for (const faction of getAccessibleFactions(data as any, player, owned)) {
-      const faugs: string[] = (data.factionAugmentations as any)[faction] ?? [];
+      const faugs: string[] = (data.singularityData.factionAugmentations as any)[faction] ?? [];
       if (!faugs.includes(NEUROFLUX) && faugs.filter(stillNeeds).length === 0) continue;
       const { utility } = findOptimalBatch(
         faction,
@@ -72,8 +75,8 @@ export async function main(ns: NS) {
       overhead,
       batchOpts,
     );
-    const augmentationPrices = data.augmentationPrices as Record<string, number>;
-    const { augmentationPrereqs } = data;
+    const augmentationPrices = data.singularityData.augmentationPrices as Record<string, number>;
+    const { augmentationPrereqs } = data.singularityData;
     const nfCount = batch.filter((a) => a === NEUROFLUX).length;
     const unique: string[] = batch
       .filter((a) => a !== NEUROFLUX)

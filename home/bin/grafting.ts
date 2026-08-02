@@ -15,11 +15,14 @@ export async function main(ns: NS) {
   ns.ui.resizeTail(WIDTH, HEIGHT);
   ns.ui.moveTail(249, winHeight - HEIGHT - 50);
 
-  const { augmentationStats } = getStaticData(ns);
+  const { singularityData } = getStaticData(ns);
+  if (singularityData == null) {
+    throw new Error('grafting requires augmentation data to choose grafts');
+  }
 
   const getInstallUtility = () => {
     const resetInfo = ns.getResetInfo();
-    const scoreAug = getAugEvaluator(resetInfo, augmentationStats);
+    const scoreAug = getAugEvaluator(resetInfo, singularityData.augmentationStats);
     const goals = getGoals(ns);
     const ttc = goals.timeToComplete();
     if (scoreAug == null || ttc == null) return null;

@@ -125,7 +125,7 @@ export const getPlayerUtility = (resetInfo: ResetInfo, mults: Multipliers) =>
  */
 export const getAugEvaluator = (
   resetInfo: ResetInfo,
-  augmentationStats: Record<string, Multipliers>,
+  augmentationStats: Record<string, Multipliers> | undefined,
   entropy = 0,
 ) => {
   if (augmentationStats == null) return null;

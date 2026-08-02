@@ -3,14 +3,11 @@ import { getAugEvaluator, getEntropyCost } from './aug-weights';
 import { getStaticData } from './data-store';
 
 export const getGraftTargets = (ns: NS, ownedAugs: Map<string, number>, entropy: number) => {
-  const {
-    resetInfo,
-    augmentationStats,
-    graftableAugmentations = [],
-    augmentationGraftPrices,
-    augmentationGraftTimes,
-    augmentations,
-  } = getStaticData(ns);
+  const { resetInfo, singularityData, graftingData } = getStaticData(ns);
+  // SF4 and SF10 data both needed to choose graft targets
+  if (singularityData == null || graftingData == null) return [];
+  const { augmentationStats, augmentations } = singularityData;
+  const { graftableAugmentations, augmentationGraftPrices, augmentationGraftTimes } = graftingData;
   const scoreAug = getAugEvaluator(resetInfo, augmentationStats, entropy);
   if (scoreAug == null) return [];
 

@@ -1,4 +1,7 @@
-export const staticData = {
+// Captured flat, reshaped at the bottom of this file to match StaticData's
+// singularityData grouping. Keeping the capture flat avoids re-indenting 5k
+// lines every time the store's shape changes.
+const flat = {
   resetInfo: {
     lastAugReset: 0,
     lastNodeReset: 0,
@@ -5253,4 +5256,30 @@ export const staticData = {
     ],
   },
   favorToDonate: 150,
+};
+
+const {
+  factionFavor,
+  factionAugmentations,
+  augmentationNames,
+  augmentationPrices,
+  augmentationRepReqs,
+  augmentationPrereqs,
+  augmentationStats,
+  factionRequirements,
+  ...base
+} = flat;
+
+export const staticData = {
+  ...base,
+  singularityData: {
+    factionFavor,
+    factionAugmentations,
+    augmentationNames,
+    augmentationPrices,
+    augmentationRepReqs,
+    augmentationPrereqs,
+    augmentationStats,
+    factionRequirements,
+  },
 };

@@ -36,7 +36,11 @@ export async function main(ns: NS) {
 
   ns.singularity.commitCrime;
 
-  const { resetInfo, factionFavor, factionWorkTypes } = getStaticData(ns);
+  const { resetInfo, singularityData } = getStaticData(ns);
+  if (singularityData == null) {
+    throw new Error('Augmentation data not loaded');
+  }
+  const { factionFavor, factionWorkTypes } = singularityData;
   const canMakeMoney = resetInfo.currentNode !== 8;
 
   const afkTracker = makeAfkTracker(ns);

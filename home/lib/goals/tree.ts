@@ -30,7 +30,7 @@ import {
   shouldPursueFavor,
   computeRepRate,
 } from '../aug-select.ts';
-import { MoneyData, PlayerData, StaticData } from '../data-store.ts';
+import { MoneyData, PlayerData, SF4StaticData } from '../data-store.ts';
 import { getAugWeights } from '../aug-weights.ts';
 import { getMockFormulas, MockFormulas } from '../formulas.ts';
 import { THE_BLADE } from '../../etc/augmentations.ts';
@@ -145,7 +145,7 @@ export const buildJoinSubtree = (
     fragmentMultipliers,
   }: {
     player: Player;
-    staticData: StaticData;
+    staticData: SF4StaticData;
     money: number;
     totalIncome: number;
     karma: number;
@@ -154,7 +154,8 @@ export const buildJoinSubtree = (
   },
 ) => {
   const { factions, skills, city } = player;
-  const { factionRequirements, serverBackdoorRequirements } = staticData;
+  const { serverBackdoorRequirements } = staticData;
+  const { factionRequirements } = staticData.singularityData;
 
   if (factions.includes(faction)) {
     return factionJoinGoal(faction, factions, []);
@@ -276,7 +277,7 @@ export const isRepBound = (root: Goal) => {
  */
 interface FactionGoalTreeProps {
   player: Player;
-  staticData: StaticData;
+  staticData: SF4StaticData;
   factionRep: Record<string, number>;
   queuedAugmentations: string[];
   ownedAugs: string[];
@@ -306,7 +307,7 @@ export const buildFactionGoalTree = (
     fragmentMultipliers,
   }: FactionGoalTreeProps,
 ): Plan | null => {
-  const { augmentationStats, factionWorkTypes } = staticData;
+  const { augmentationStats, factionWorkTypes, factionFavor } = staticData.singularityData;
   const augWeights = getAugWeights(staticData.resetInfo);
   const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
 
@@ -341,7 +342,7 @@ export const buildFactionGoalTree = (
     faction,
     factionWorkTypes,
     factionRep,
-    staticData.factionFavor,
+    factionFavor,
     player,
     staticData.resetInfo.lastAugReset,
     formulas,
@@ -351,7 +352,7 @@ export const buildFactionGoalTree = (
   const costToAug = computeAugCost(augs, staticData, numQueued);
   const treeValue = augs.reduce((s, aug) => s + augValue(aug), 0);
 
-  const currentFavor = staticData.factionFavor?.[faction] ?? 0;
+  const currentFavor = factionFavor[faction] ?? 0;
   const currentRep = factionRep[faction] ?? 0;
 
   // Path 1: Early install — existing queued augs are cheaper to install now than waiting
@@ -423,7 +424,7 @@ export const buildFactionGoalTree = (
 };
 
 export const getBladeburnerTree = (
-  staticData: StaticData,
+  staticData: SF4StaticData,
   playerData: PlayerData,
   moneyData: MoneyData,
   totalIncome: number,
@@ -431,8 +432,9 @@ export const getBladeburnerTree = (
 ) => {
   const { player, factionRep, fragmentMultipliers } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
-  const bladePrice = staticData.augmentationPrices?.[THE_BLADE] ?? 0;
-  const bladeRepCost = staticData.augmentationRepReqs?.[THE_BLADE] ?? 0;
+  const { augmentationPrices, augmentationRepReqs } = staticData.singularityData;
+  const bladePrice = augmentationPrices[THE_BLADE] ?? 0;
+  const bladeRepCost = augmentationRepReqs[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
   const cbGoals = COMBAT_STATS.map((stat) =>
     combatLevelsGoal(

@@ -1,5 +1,5 @@
 import { AugWeights, getAugEvaluator, scoreAug, statlessAugValue } from './aug-weights.ts';
-import { StaticData } from './data-store.ts';
+import { SF4StaticData, StaticData } from './data-store.ts';
 import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
 
@@ -46,28 +46,27 @@ export const augValueFromStats = (
   return stats != null ? scoreAug(stats, augWeights) : 0;
 };
 
-export const computeRepReq = (augs: string[], staticData: StaticData) => {
-  const nfBaseRep = staticData.augmentationRepReqs?.[NEUROFLUX] ?? 0;
+export const computeRepReq = (augs: string[], staticData: SF4StaticData) => {
+  const { augmentationRepReqs } = staticData.singularityData;
+  const nfBaseRep = augmentationRepReqs[NEUROFLUX] ?? 0;
   let nfLevelOffset = 0;
   return Math.max(
     ...augs.map((aug) =>
-      aug === NEUROFLUX
-        ? nfBaseRep * 1.14 ** nfLevelOffset++
-        : (staticData.augmentationRepReqs?.[aug] ?? 0),
+      aug === NEUROFLUX ? nfBaseRep * 1.14 ** nfLevelOffset++ : (augmentationRepReqs[aug] ?? 0),
     ),
     0,
   );
 };
 
-export const computeAugCost = (augs: string[], staticData: StaticData, numQueued: number) => {
-  const { augmentationPrices } = staticData;
+export const computeAugCost = (augs: string[], staticData: SF4StaticData, numQueued: number) => {
+  const { augmentationPrices } = staticData.singularityData;
   const installedNFCount = staticData.resetInfo?.ownedAugs?.get(NEUROFLUX) ?? 0;
   let multiplier = 1.9 ** numQueued;
   let nfLevelOffset = installedNFCount;
   let cost = 0;
   for (const aug of augs) {
     const nfLevelMult = aug === NEUROFLUX ? 1.14 ** nfLevelOffset++ : 1;
-    cost += multiplier * (augmentationPrices?.[aug] ?? 0) * nfLevelMult;
+    cost += multiplier * (augmentationPrices[aug] ?? 0) * nfLevelMult;
     multiplier *= 1.9;
   }
   return cost;
@@ -104,17 +103,17 @@ type AugmentationPurchase = {
 
 const getPossiblePurchases = (
   faction: FactionName,
-  staticData: StaticData,
+  staticData: SF4StaticData,
   ownedAugmentations: string[],
 ): AugmentationPurchase[] => {
+  const { resetInfo, singularityData } = staticData;
   const {
-    resetInfo,
     augmentationPrices,
     augmentationRepReqs,
     augmentationStats,
     augmentationPrereqs,
     factionAugmentations,
-  } = staticData;
+  } = singularityData;
 
   // Augs that can be used to meet prereqs
   const availableAugs = new Set([...ownedAugmentations, ...(factionAugmentations[faction] ?? [])]);
@@ -148,7 +147,7 @@ const getPossiblePurchases = (
 
 export const findOptimalBatch = (
   faction: FactionName,
-  staticData: StaticData,
+  staticData: SF4StaticData,
   player: Player,
   formulas: ReturnType<typeof getMockFormulas>,
   factionRep: Record<FactionName, number>,
@@ -156,7 +155,8 @@ export const findOptimalBatch = (
   overhead: number,
   { moneyRate = Infinity, joinTime = 0 } = {},
 ) => {
-  const { resetInfo, augmentationPrereqs, factionFavor, factionWorkTypes } = staticData;
+  const { resetInfo, singularityData } = staticData;
+  const { augmentationPrereqs, factionFavor, factionWorkTypes } = singularityData;
 
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
@@ -273,11 +273,12 @@ export const shouldPursueFavor = (
 };
 
 export const getAccessibleFactions = (
-  staticData: StaticData,
+  staticData: SF4StaticData,
   player: Player,
   ownedAugmentations: string[],
 ) => {
-  const { factionRequirements, resetInfo } = staticData;
+  const { resetInfo, singularityData } = staticData;
+  const { factionRequirements } = singularityData;
   return [
     ...STORY_FACTIONS,
     ...CRIMINAL_ORGANIZATIONS,
@@ -290,7 +291,7 @@ export const getAccessibleFactions = (
     if (faction === 'Netburners' && !(resetInfo.currentNode === 9 || resetInfo.ownedSF.has(9))) {
       return false;
     }
-    const reqs = factionRequirements?.[faction] ?? [];
+    const reqs = factionRequirements[faction] ?? [];
     const disqualifiers = reqs.filter((req) => req.type === 'not').map((req) => req.condition);
     const requiredAugCount =
       reqs.find((req) => req.type === 'numAugmentations')?.numAugmentations ?? 0;

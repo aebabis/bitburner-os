@@ -10,6 +10,7 @@ import {
 } from '../goals/nodes';
 import { isRepBound, buildFactionGoalTree } from '../goals/tree';
 import { computeRepReq, computeAugCost, computeResetOverhead } from '../aug-select';
+import { mockStaticData } from './fixtures';
 import { getMockFormulas } from '../formulas';
 import { buildPerson } from './fixtures';
 
@@ -115,7 +116,7 @@ export async function main(ns: NS) {
   describe('buildFactionGoalTree', () => {
     it('returns null when batch is empty', () => {
       // All augs already owned → findOptimalBatch returns [] → buildFactionGoalTree returns null.
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: { TestFaction: [] },
         factionAugmentations: { TestFaction: ['OwnedAug'] },
@@ -124,7 +125,7 @@ export async function main(ns: NS) {
         augmentationPrereqs: {},
         factionFavor: {},
         installedAugmentations: ['OwnedAug'],
-      } as any;
+      }) as any;
       const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
         player: {
           factions: ['TestFaction' as FactionName],
@@ -148,7 +149,7 @@ export async function main(ns: NS) {
       // money = 2×AUG_PRICE covers the correct cost (1.9×) but not the buggy cost (1.9²×),
       // so moneyGoal.isDone() distinguishes the two. It also keeps money >= resetCost so
       // the early-install path doesn't trigger, letting us inspect the moneyGoal directly.
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {},
         factionAugmentations: { TestFaction: ['TargetAug'] },
@@ -157,7 +158,7 @@ export async function main(ns: NS) {
         augmentationPrices: { TargetAug: AUG_PRICE },
         augmentationPrereqs: {},
         installedAugmentations: ['InstalledAug'], // 1 installed
-      } as any;
+      }) as any;
       const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
         player: {
           factions: ['TestFaction' as FactionName],
@@ -182,7 +183,7 @@ export async function main(ns: NS) {
       assert.ok(moneyGoal.isDone(), `expected isDone but requirement was ${moneyGoal.requirement}`);
     });
     it('join prereqs appear as deps of the join goal', () => {
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {
           TestFaction: [{ type: 'skills', skills: { hacking: 100 } }],
@@ -193,7 +194,7 @@ export async function main(ns: NS) {
         augmentationPrices: { TestAug: 0 },
         augmentationPrereqs: {},
         installedAugmentations: [],
-      } as any;
+      }) as any;
       const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
         player: {
           factions: [],
@@ -221,7 +222,7 @@ export async function main(ns: NS) {
       );
     });
     it('someCondition skill branches (e.g. Daedalus) become an EITHER join prereq', () => {
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {
           TestFaction: [
@@ -243,7 +244,7 @@ export async function main(ns: NS) {
         augmentationPrices: { TestAug: 0 },
         augmentationPrereqs: {},
         installedAugmentations: [],
-      } as any;
+      }) as any;
       const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
         player: {
           factions: [],
@@ -281,7 +282,7 @@ export async function main(ns: NS) {
     });
 
     it('rep goal requirement equals max rep requirement across batch', () => {
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {},
         factionAugmentations: { TestFaction: ['AugA', 'AugB', 'AugC'] },
@@ -296,7 +297,7 @@ export async function main(ns: NS) {
         augmentationPrices: { AugA: 0, AugB: 0, AugC: 0 },
         augmentationPrereqs: {},
         installedAugmentations: [],
-      } as any;
+      }) as any;
       // installedAugmentations.length === 0 → computeResetOverhead === OVERHEAD_BASE === 7200,
       // matching the utility math in the comment above.
       const tree = buildFactionGoalTree(ns, 'TestFaction' as FactionName, {
@@ -324,7 +325,7 @@ export async function main(ns: NS) {
     // repRate=N requires hacking = N * 195: factionGains(player,'hacking',0).reputation = hacking/975,
     // effectiveRepRate = reputation * 5 = N when hacking = N * 195.
     const valueTestData = (repRate: number) => {
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {},
         factionAugmentations: { F: ['A'] },
@@ -333,7 +334,7 @@ export async function main(ns: NS) {
         augmentationPrices: { A: 0 },
         augmentationPrereqs: {},
         installedAugmentations: [],
-      } as any;
+      }) as any;
       return {
         player: {
           factions: ['F' as FactionName],
@@ -370,16 +371,19 @@ export async function main(ns: NS) {
 
   describe('computeRepReq', () => {
     it('returns 0 for an empty batch', () => {
-      assert.equal(computeRepReq([], { augmentationRepReqs: {} } as any), 0);
+      assert.equal(computeRepReq([], mockStaticData({ augmentationRepReqs: {} }) as any), 0);
     });
 
     it('returns the max rep requirement across all augs', () => {
-      const staticData = { augmentationRepReqs: { A: 1000, B: 5000, C: 500 } };
+      const staticData = mockStaticData({ augmentationRepReqs: { A: 1000, B: 5000, C: 500 } });
       assert.equal(computeRepReq(['A', 'B', 'C'], staticData as any), 5000);
     });
 
     it('treats missing rep reqs as 0', () => {
-      assert.equal(computeRepReq(['Unknown'], { augmentationRepReqs: {} } as any), 0);
+      assert.equal(
+        computeRepReq(['Unknown'], mockStaticData({ augmentationRepReqs: {} }) as any),
+        0,
+      );
     });
   });
 
@@ -387,17 +391,17 @@ export async function main(ns: NS) {
     const NF = 'NeuroFlux Governor';
 
     it('costs a single aug with no queue multiplier', () => {
-      const staticData = { augmentationPrices: { A: 1_000_000 } };
+      const staticData = mockStaticData({ augmentationPrices: { A: 1_000_000 } });
       assert.equal(computeAugCost(['A'], staticData as any, 0), 1_000_000);
     });
 
     it('applies the 1.9^numQueued multiplier to the first aug', () => {
-      const staticData = { augmentationPrices: { A: 1_000_000 } };
+      const staticData = mockStaticData({ augmentationPrices: { A: 1_000_000 } });
       assert.equal(computeAugCost(['A'], staticData as any, 2), 1_000_000 * 1.9 ** 2);
     });
 
     it('compounds the queue multiplier across multiple augs (most expensive first)', () => {
-      const staticData = { augmentationPrices: { Cheap: 100, Expensive: 1000 } };
+      const staticData = mockStaticData({ augmentationPrices: { Cheap: 100, Expensive: 1000 } });
       // sorted desc: Expensive (×1.9^0), Cheap (×1.9^1)
       const expected = 1000 * 1 + 100 * 1.9;
       assert.equal(computeAugCost(['Cheap', 'Expensive'], staticData as any, 0), expected);
@@ -406,17 +410,17 @@ export async function main(ns: NS) {
     it('applies the 1.14^installedNFCount base offset to NF price', () => {
       const installedNFCount = 3;
       const nfBase = 750_000;
-      const staticData = {
+      const staticData = mockStaticData({
         augmentationPrices: { [NF]: nfBase },
         resetInfo: { ownedAugs: new Map([[NF, installedNFCount]]) },
-      };
+      });
       const expected = nfBase * 1.14 ** installedNFCount; // numQueued=0, first NF level offset=3
       assert.equal(computeAugCost([NF], staticData as any, 0), expected);
     });
 
     it('increments the NF level offset for each successive NF in the batch', () => {
       const nfBase = 750_000;
-      const staticData = { augmentationPrices: { [NF]: nfBase } };
+      const staticData = mockStaticData({ augmentationPrices: { [NF]: nfBase } });
       // two NF, no installed, no queued: first at 1.14^0, second at 1.9 × 1.14^1
       const expected = nfBase * 1.14 ** 0 + nfBase * 1.9 * 1.14 ** 1;
       assert.equal(computeAugCost([NF, NF], staticData as any, 0), expected);
@@ -494,7 +498,7 @@ export async function main(ns: NS) {
   describe('buildFactionGoalTree path 3 (donation)', () => {
     // canDonate = true when factionFavor >= favorToDonate
     const donationData = () => {
-      const staticData = {
+      const staticData = mockStaticData({
         resetInfo: mockResetInfo,
         factionRequirements: {},
         factionAugmentations: { F: ['A'] },
@@ -505,7 +509,7 @@ export async function main(ns: NS) {
         installedAugmentations: [],
         factionFavor: { F: 150 },
         favorToDonate: 150,
-      } as any;
+      }) as any;
       return {
         player: {
           factions: ['F' as FactionName],

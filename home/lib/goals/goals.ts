@@ -1,4 +1,10 @@
-import { getStaticData, getPlayerData, getMoneyData, type StaticData } from '../data-store.ts';
+import {
+  getStaticData,
+  getPlayerData,
+  getMoneyData,
+  hasSingularityData,
+  type StaticData,
+} from '../data-store.ts';
 import {
   installGoal,
   reevaluateGoal,
@@ -72,6 +78,19 @@ export const getGoals = (ns: NS): Goal => {
     return horizonGoal(HORIZON_MS / 1000, [augMoneyGoal(money, money, totalIncome)]);
   }
 
+  // If player has singularity access but not all of SF4,
+  // the static augmentation data may have not loaded during boot.
+  // If this is the case, make a goal for more RAM on home.
+  if (!hasSingularityData(staticData)) {
+    const bootScriptRam = Object.entries(staticData.scriptRam)
+      .filter(([script]) => script.match(/^boot/))
+      .map(([_, ram]) => ram);
+    const bootRam = Math.max(...bootScriptRam);
+    const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
+    const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
+    return rebootGoal(homeRamGoal(homeRam, targetRam, money));
+  }
+
   const overhead =
     computeResetOverhead(staticData) +
     startingServerOverhead(staticData, totalIncome, hacknetIncome);
@@ -101,19 +120,6 @@ export const getGoals = (ns: NS): Goal => {
 
   const selectedFaction = bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
   recordGoalSnapshot(plans, selectedFaction, overhead);
-
-  // If player has singularity access but not all of SF4,
-  // the static augmentation data may have not loaded during boot.
-  // If this is the case, make a goal for more RAM on home.
-  if (staticData.augmentationNames == null) {
-    const bootScriptRam = Object.entries(staticData.scriptRam)
-      .filter(([script]) => script.match(/^boot/))
-      .map(([_, ram]) => ram);
-    const bootRam = Math.max(...bootScriptRam);
-    const money = moneyPrereqGoal(homeRamUpgradeCost, player.money, totalIncome);
-    const targetRam = 2 ** Math.ceil(Math.log2(bootRam));
-    return rebootGoal(homeRamGoal(homeRam, targetRam, money));
-  }
 
   const inSlumSnakes = player.factions?.includes('Slum Snakes');
   if (currentNode === 2 && !inSlumSnakes) {
@@ -149,7 +155,7 @@ export const getGoals = (ns: NS): Goal => {
   if ([6, 7].includes(currentNode) && !hasBlade) {
     if (hasBladeburnerReadyMults(player)) {
       return getBladeburnerTree(
-        getStaticData(ns),
+        staticData,
         getPlayerData(ns),
         getMoneyData(ns),
         totalIncome,

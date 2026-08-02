@@ -1,5 +1,6 @@
 export const THE_BLADE = "The Blade's Simulacrum";
 export const vIOLET = 'violet Congruity Implant';
+export const NRMI = 'Neuroreceptor Management Implant';
 export const RED_PILL = 'The Red Pill';
 export const LABYRINTH_AUGS = [
   'The W1ngs of Icarus',

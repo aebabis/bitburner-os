@@ -7,7 +7,7 @@ import {
   MAX_AUGS,
 } from '../aug-select';
 import { getMockFormulas } from '../formulas';
-import { buildPerson } from './fixtures';
+import { buildPerson, mockStaticData } from './fixtures';
 import { StaticData } from '../data-store';
 
 const NEUROFLUX = 'NeuroFlux Governor';
@@ -183,7 +183,7 @@ const makeStaticData = (
     ]),
   );
 
-  return {
+  return mockStaticData({
     resetInfo: {
       lastAugReset: 0,
       lastNodeReset: 0,
@@ -199,7 +199,7 @@ const makeStaticData = (
     factionRequirements,
     installedAugmentations: [],
     bitNodeMultipliers: {},
-  };
+  });
 };
 
 const PLAYER = mockPlayer({ hacking: 100 }, { factions: [] });
@@ -223,7 +223,7 @@ export async function main(ns: NS) {
         Netburners: [NB_A, NB_B, NB_C],
         CyberSec: [CS_A, CS_B],
       });
-      const netburnerAugs = data.factionAugmentations['Netburners'];
+      const netburnerAugs = data.singularityData!.factionAugmentations['Netburners'];
       const { faction } = selectAugmentations(netburnerAugs, data, PLAYER);
       assert.equal(faction, 'CyberSec');
     });
@@ -235,8 +235,8 @@ export async function main(ns: NS) {
         'Sector-12': [S12_A, S12_B],
       });
       const owned = [
-        ...data.factionAugmentations['Netburners'],
-        ...data.factionAugmentations['CyberSec'],
+        ...data.singularityData!.factionAugmentations['Netburners'],
+        ...data.singularityData!.factionAugmentations['CyberSec'],
       ];
       const { faction } = selectAugmentations(owned, data, PLAYER);
       assert.equal(faction, 'Sector-12');
@@ -394,8 +394,11 @@ export async function main(ns: NS) {
     it('cannot select faction when player is excluded by their employment', () => {
       const data = {
         ...staticData,
-        factionAugmentations: {
-          'Speakers for the Dead': ['DataJack'],
+        singularityData: {
+          ...staticData.singularityData,
+          factionAugmentations: {
+            'Speakers for the Dead': ['DataJack'],
+          },
         },
       };
 

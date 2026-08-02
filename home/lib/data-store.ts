@@ -57,6 +57,30 @@ export type Augmentation = {
   factions: FactionName[];
 };
 
+export type SingularityData = {
+  factionFavor: Record<FactionName, number>;
+  augmentations: Augmentation[];
+  augmentationNames: string[];
+  augmentationPrices: Record<string, number>;
+  augmentationRepReqs: Record<string, number>;
+  augmentationPrereqs: Record<string, string[]>;
+  augmentationStats: Record<string, Multipliers>;
+  factionRequirements: Record<FactionName, PlayerRequirement[]>;
+  factionAugmentations: Record<FactionName, string[]>;
+  factionWorkTypes: Record<FactionName, FactionWorkType[]>;
+
+  companyFavor: Record<CompanyName, number>;
+  companyPositions: Record<CompanyName, CompanyPositionInfo[]>;
+
+  crimeStats: Record<CrimeType, CrimeStats>;
+};
+
+export type GraftData = {
+  graftableAugmentations: string[];
+  augmentationGraftPrices: Record<string, number>;
+  augmentationGraftTimes: Record<string, number>;
+};
+
 export type StaticData = {
   resetInfo: ResetInfo;
   installedAugmentations: string[];
@@ -73,26 +97,18 @@ export type StaticData = {
   materialData?: Record<CorpMaterialName, CorpMaterialConstantData>;
   industryData?: Record<CorpIndustryName, CorpIndustryData>;
 
-  factionFavor: Record<FactionName, number>;
-  augmentations: Augmentation[];
-  augmentationNames: string[];
-  augmentationPrices: Record<string, number>;
-  augmentationRepReqs: Record<string, number>;
-  augmentationPrereqs: Record<string, string[]>;
-  augmentationStats: Record<string, Multipliers>;
-  factionRequirements: Record<FactionName, PlayerRequirement[]>;
-  factionAugmentations: Record<FactionName, string[]>;
-  factionWorkTypes: Record<FactionName, FactionWorkType[]>;
-
-  companyFavor: Record<CompanyName, number>;
-  companyPositions: Record<CompanyName, CompanyPositionInfo[]>;
-
-  crimeStats: Record<CrimeType, CrimeStats>;
-
-  graftableAugmentations: string[];
-  augmentationGraftPrices: Record<string, number>;
-  augmentationGraftTimes: Record<string, number>;
+  singularityData?: SingularityData;
+  graftingData?: GraftData;
 };
+
+export type SF4StaticData = StaticData & { singularityData: SingularityData };
+export type SF10StaticData = StaticData & { graftingData: GraftData };
+
+export const hasSingularityData = (staticData: StaticData): staticData is SF4StaticData =>
+  staticData.singularityData != null;
+
+export const hasGraftingData = (staticData: StaticData): staticData is SF10StaticData =>
+  staticData.graftingData != null;
 export const getStaticData = (ns: NS): StaticData => readData(ns, PORT_STATIC_DATA) || {};
 export const putStaticData = (ns: NS, data: Partial<StaticData>) =>
   putData(ns, PORT_STATIC_DATA, data);

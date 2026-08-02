@@ -43,9 +43,11 @@ export const augMultiplier = (staticData: StaticData, stat: string, augs: string
   augs.reduce(
     (mult, aug) =>
       mult *
-      ((staticData.augmentationStats?.[aug] as unknown as Record<string, number> | undefined)?.[
-        stat
-      ] ?? 1),
+      ((
+        staticData.singularityData?.augmentationStats?.[aug] as unknown as
+          | Record<string, number>
+          | undefined
+      )?.[stat] ?? 1),
     1,
   );
 

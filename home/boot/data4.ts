@@ -97,19 +97,21 @@ export async function main(ns: NS) {
   }
 
   putStaticData(ns, {
-    factionAugmentations,
-    augmentations,
-    augmentationNames,
-    augmentationPrices,
-    augmentationRepReqs,
-    augmentationPrereqs,
-    augmentationStats,
-    factionFavor,
-    factionRequirements,
-    factionWorkTypes,
-    companyFavor,
-    companyPositions,
-    crimeStats,
+    singularityData: {
+      factionAugmentations,
+      augmentations,
+      augmentationNames,
+      augmentationPrices,
+      augmentationRepReqs,
+      augmentationPrereqs,
+      augmentationStats,
+      factionFavor,
+      factionRequirements,
+      factionWorkTypes,
+      companyFavor,
+      companyPositions,
+      crimeStats,
+    },
   });
 
   // Go to next step in the boot sequence

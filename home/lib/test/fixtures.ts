@@ -45,6 +45,33 @@ const DEFAULT_SKILLS: Skills = {
   intelligence: 1,
 };
 
+// Fields that live under staticData.singularityData (written by /boot/data4.ts).
+const SINGULARITY_KEYS = new Set([
+  'factionFavor',
+  'factionAugmentations',
+  'factionRequirements',
+  'factionWorkTypes',
+  'augmentations',
+  'augmentationNames',
+  'augmentationPrices',
+  'augmentationRepReqs',
+  'augmentationPrereqs',
+  'augmentationStats',
+  'companyFavor',
+  'companyPositions',
+  'crimeStats',
+]);
+
+// Test fixtures are written flat for readability. This lifts the SF4-only fields
+// into the singularityData group so they match what consumers actually read.
+export const mockStaticData = (flat: Record<string, unknown>): StaticData => {
+  const singularityData: Record<string, unknown> = {};
+  const base: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(flat))
+    (SINGULARITY_KEYS.has(key) ? singularityData : base)[key] = value;
+  return { ...base, singularityData } as unknown as StaticData;
+};
+
 // Multipliers from the product of a set of augmentations' stats (defaults to installed augs;
 // pass a hypothetical set to simulate a different augmentation state).
 export const buildMults = (

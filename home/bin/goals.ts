@@ -1,4 +1,9 @@
-import { getStaticData, getPlayerData } from '../lib/data-store';
+import {
+  getStaticData,
+  getPlayerData,
+  hasSingularityData,
+  type SF4StaticData,
+} from '../lib/data-store';
 import { table } from '../lib/table';
 import { augValueFromStats, findOptimalBatch, computeResetOverhead } from '../lib/aug-select';
 import { buildFactionGoalTree } from '../lib/goals/tree';
@@ -8,15 +13,17 @@ import { getAugWeights } from '../lib/aug-weights';
 
 const NEUROFLUX = 'NeuroFlux Governor';
 
+const getSF4StaticData = (ns: NS): SF4StaticData => {
+  const staticData = getStaticData(ns);
+  if (!hasSingularityData(staticData)) throw new Error('Augmentation data not loaded');
+  return staticData;
+};
+
 const getAugTableData = (ns: NS) => {
-  const {
-    augmentationNames,
-    augmentationStats,
-    augmentationPrices,
-    augmentationRepReqs,
-    installedAugmentations,
-    resetInfo,
-  } = getStaticData(ns);
+  const staticData = getSF4StaticData(ns);
+  const { installedAugmentations, resetInfo } = staticData;
+  const { augmentationNames, augmentationStats, augmentationPrices, augmentationRepReqs } =
+    staticData.singularityData;
   const { queuedAugmentations = [] } = getPlayerData(ns);
   const alreadyHave = new Set([...installedAugmentations, ...queuedAugmentations]);
   const installedNFCount = resetInfo.ownedAugs?.get(NEUROFLUX) ?? 0;
@@ -107,7 +114,8 @@ export async function main(ns: NS) {
           return;
         }
 
-        const { factionAugmentations, factionFavor: augLiveFactionFavor } = getStaticData(ns);
+        const { factionAugmentations, factionFavor: augLiveFactionFavor } =
+          getSF4StaticData(ns).singularityData;
         const augLiveFormulas = getFormulas(ns);
         const augFactions = {} as Record<string, FactionName[]>;
         for (const [faction, augs] of Object.entries(factionAugmentations))
@@ -175,8 +183,8 @@ export async function main(ns: NS) {
         return [h, m, sec].join(':').replace(/^0:/, '').replace(/^0:/, '');
       };
       while (true) {
-        const staticData = getStaticData(ns);
-        const { augmentationStats = {} } = staticData;
+        const staticData = getSF4StaticData(ns);
+        const { augmentationStats } = staticData.singularityData;
         const { player, factionRep, queuedAugmentations = [] } = getPlayerData(ns);
         const { totalIncome = 0 } = getIncome(ns);
         if (factionRep == null) {
