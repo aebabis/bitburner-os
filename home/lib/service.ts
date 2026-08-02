@@ -98,11 +98,6 @@ export const Service =
       ram,
     });
 
-    const pendingRam = () => {
-      if (isRunning() || !enabled || !condition(ns)) return 0;
-      return ram;
-    };
-
     return {
       isRunning,
       check,
@@ -110,7 +105,6 @@ export const Service =
       script,
       isViable,
       toData,
-      pendingRam,
       toString,
       enable,
       disable,

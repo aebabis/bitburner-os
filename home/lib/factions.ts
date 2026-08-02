@@ -8,19 +8,6 @@ export const STORY_FACTIONS = [
   ...ENDGAME_FACTIONS,
 ] as FactionName[];
 
-export const MEGACORPORATIONS = [
-  'ECorp',
-  'MegaCorp',
-  'KuaiGong International',
-  'Four Sigma',
-  'NWO',
-  'Blade Industries',
-  'OmniTek Incorporated',
-  'Bachman & Associates',
-  'Clarke Incorporated',
-  'Fulcrum Secret Technologies',
-] as FactionName[];
-
 export const CRIMINAL_ORGANIZATIONS = [
   'Slum Snakes',
   'Tetrads',

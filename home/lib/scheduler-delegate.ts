@@ -6,7 +6,7 @@ const desc = (script: string, host = null, numThreads = 1, ...args: ScriptArg[])
   `${script} ${host || '*'} ${numThreads} ${args.join(' ')}`;
 
 const Job =
-  (response: boolean, startTime: number, highPriority = false) =>
+  (response: boolean, highPriority = false) =>
   (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
     if (script.startsWith('.') || !script.endsWith('.ts'))
       throw new Error(`Illegal script name in ${desc(script, host, numThreads, ...args)}`);
@@ -20,22 +20,19 @@ const Job =
       numThreads,
       args,
       ticket,
-      startTime,
-      requestTime: Date.now(),
       highPriority,
     };
   };
 
 type DelegateOptions = {
-  startTime?: number;
   highPriority?: boolean;
 };
 
 const delegate =
   (ns: NS, response: boolean, options: DelegateOptions = {}) =>
   async (script: string, host = null, numThreads = 1, ...args: ScriptArg[]) => {
-    const { startTime = Date.now(), highPriority = false } = options;
-    const job = Job(response, startTime, highPriority)(script, host, numThreads, ...args);
+    const { highPriority = false } = options;
+    const job = Job(response, highPriority)(script, host, numThreads, ...args);
     const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
     const written = await port.blockingWrite(job);
     if (!written) {
@@ -66,12 +63,7 @@ export const getDelegatedTasks = async (ns: NS) => {
   const port = Ports(ns).getPortHandle(PORT_SCH_DELEGATE_TASK);
   const tasks = [];
   while (!port.empty()) {
-    const messages = [port.read()].flat(Infinity);
-    try {
-      tasks.push(...messages);
-    } catch (error) {
-      console.error(error);
-    }
+    tasks.push(...[port.read()].flat(Infinity));
   }
   return tasks;
 };
