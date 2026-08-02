@@ -15,6 +15,7 @@ const go = async (ns: NS) => {
   const { resetInfo } = getStaticData(ns);
   if (resetInfo == null) {
     if (await ns.prompt('Boot?', { type: 'boolean' })) ns.exec('stop.ts', 'home', 1, 'start.ts');
+    return;
   }
   const services = getAllServices(ns, player).filter((t) => t.isViable());
 
