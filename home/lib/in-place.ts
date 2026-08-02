@@ -137,15 +137,6 @@ const getProxy =
       },
     }) as Asyncify<T>;
 
-const portMap: Record<string, number> = {};
-
-const getPort = (id: string) => {
-  if (!portMap[id]) {
-    portMap[id] = 1 + Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-  }
-  return portMap[id];
-};
-
 /**
  * Creates an adapter for the NS namespace whose functions share RAM in a program.
  * Adapter's functions are asyncronous because they run in a separate
@@ -164,7 +155,7 @@ const getPort = (id: string) => {
  * }
  * ```
  */
-export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS> => {
+export const inPlace = (ns: NS, port = ns.pid): Asyncify<NS> => {
   // Reserves 1.6 GB of RAM so that ramOverride can give it to
   // run processes. Assumes your program will not call these (without the use of inPlace)
   typeof ns.dnet.heartbleed;
@@ -174,7 +165,7 @@ export const inPlace = (ns: NS, port = getPort(ns.getScriptName())): Asyncify<NS
 };
 
 export const runInPlace =
-  (ns: NS, port = getPort(ns.getScriptName())) =>
+  (ns: NS, port = ns.pid) =>
   <F extends (...args: any[]) => any>(action: F) =>
   (...args: Parameters<F>): Promise<ReturnType<F>> => {
     const script = getBodyScript(ns)(action);
