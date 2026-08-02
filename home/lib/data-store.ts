@@ -131,6 +131,7 @@ export type PlayerData = {
   isPlayerUsingTerminal?: boolean;
   queuedAugmentations?: string[];
   hacknet?: {
+    servers: NodeStats[];
     studyMult: number;
     trainingMult: number;
     nextUpgrade: {

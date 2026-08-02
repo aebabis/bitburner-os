@@ -15,6 +15,7 @@ import {
   factionFavorGoal,
   installGoal,
   COMBAT_STATS,
+  hacknetGoal,
   type Action,
   type Goal,
   type Plan,
@@ -129,6 +130,77 @@ export const combatMutexGoal = (
     `${combatReq} in combat stats`,
   );
 
+const getHacknetGoal = (
+  factionRequirements: PlayerRequirement[],
+  servers: NodeStats[],
+  formulas: MockFormulas | Formulas,
+  income: number | null,
+  mults: HacknetMultipliers | undefined,
+) => {
+  const ramReq = factionRequirements.find((req) => req.type === 'hacknetRAM');
+  const coreReq = factionRequirements.find((req) => req.type === 'hacknetCores');
+  const levelReq = factionRequirements.find((req) => req.type === 'hacknetLevels');
+  if (ramReq == null && coreReq == null && levelReq == null) return null;
+
+  const targetCores = coreReq?.hacknetCores ?? 1;
+  const targetRam = ramReq?.hacknetRAM ?? 0;
+  const targetLevels = levelReq?.hacknetLevels ?? 0;
+
+  const currentCores = servers.map((server) => server.cores).reduce((a, b) => a + b, 0);
+  const currentRam = servers.map((server) => server.ram).reduce((a, b) => a + b, 0);
+  const currentLevels = servers.map((server) => server.level).reduce((a, b) => a + b, 0);
+
+  const plannedServers = Array(targetCores)
+    .fill(0)
+    .map((_, i) => servers[i] ?? { level: 1, ram: 1, cores: 1 });
+  const ramPerServer = Math.ceil(targetRam / targetCores);
+  const levelsPerServer = Math.ceil(targetLevels / targetCores);
+
+  if (!('hacknetServers' in formulas) || mults == null) {
+    return mutexGoal([
+      hacknetGoal('hacknetCores', targetCores, currentCores, null, income),
+      hacknetGoal('hacknetRAM', targetRam, currentRam, null, income),
+      hacknetGoal('hacknetLevels', targetLevels, currentLevels, null, income),
+    ]);
+  }
+
+  const serverCost =
+    servers.length > targetCores
+      ? 0
+      : Array(targetCores - servers.length)
+          .fill(0)
+          .map((_, i) =>
+            formulas.hacknetServers.hacknetServerCost(servers.length + i + 1, mults.purchaseCost),
+          )
+          .reduce((a, b) => a + b, 0);
+  const ramCost = plannedServers
+    .map((server) => {
+      let ram = server.ram;
+      let cost = 0;
+      while (ram < ramPerServer) {
+        cost += formulas.hacknetServers.ramUpgradeCost(ram, 1, mults.ramCost);
+        ram *= 2;
+      }
+      return cost;
+    })
+    .reduce((a, b) => a + b, 0);
+  const levelCost = plannedServers
+    .map((server) => {
+      let cost = 0;
+      for (let level = server.level; level < levelsPerServer; level++) {
+        cost += formulas.hacknetServers.levelUpgradeCost(level, 1, mults.levelCost);
+      }
+      return cost;
+    })
+    .reduce((a, b) => a + b, 0);
+
+  return mutexGoal([
+    hacknetGoal('hacknetCores', targetCores, currentCores, serverCost, income),
+    hacknetGoal('hacknetRAM', targetRam, currentRam, ramCost, income),
+    hacknetGoal('hacknetLevels', targetLevels, currentLevels, levelCost, income),
+  ]);
+};
+
 /**
  * Build the join prereq subtree for a faction.
  * Returns early (already-joined short-circuit) when player is already a member.
@@ -143,6 +215,7 @@ export const buildJoinSubtree = (
     karma,
     formulas,
     fragmentMultipliers,
+    hacknetServers = [],
   }: {
     player: Player;
     staticData: SF4StaticData;
@@ -151,6 +224,7 @@ export const buildJoinSubtree = (
     karma: number;
     formulas: MockFormulas | Formulas;
     fragmentMultipliers?: Record<FragmentType, number>;
+    hacknetServers?: NodeStats[];
   },
 ) => {
   const { factions, skills, city } = player;
@@ -190,6 +264,17 @@ export const buildJoinSubtree = (
         0,
       );
     }
+  }
+
+  const hacknetGoals = getHacknetGoal(
+    requirements,
+    hacknetServers,
+    formulas,
+    totalIncome,
+    staticData.hacknetMultipliers,
+  );
+  if (hacknetGoals != null) {
+    joinPrereqs.push(hacknetGoals);
   }
 
   // Combine explicit skill req with backdoor hacking req; only one goal needed.
@@ -288,6 +373,7 @@ interface FactionGoalTreeProps {
   karma: number;
   overhead: number;
   fragmentMultipliers?: Record<FragmentType, number>;
+  hacknetServers?: NodeStats[];
 }
 export const buildFactionGoalTree = (
   ns: NS,
@@ -305,6 +391,7 @@ export const buildFactionGoalTree = (
     karma,
     overhead,
     fragmentMultipliers,
+    hacknetServers,
   }: FactionGoalTreeProps,
 ): Plan | null => {
   const { augmentationStats, factionWorkTypes, factionFavor } = staticData.singularityData;
@@ -322,6 +409,7 @@ export const buildFactionGoalTree = (
     karma,
     formulas,
     fragmentMultipliers,
+    hacknetServers,
   });
   const joinTime = joinGoal.timeToComplete() ?? 0;
 

@@ -57,17 +57,9 @@ const getNextUpgrade = (ns: NS, mults: Multipliers) => {
   return candidates.reduce((a, b) => (a.utility > b.utility ? a : b));
 };
 
-const netburnerPrereqsAreMet = (ns: NS) => {
-  const nodes = getNodes(ns);
-  const levels = nodes.reduce((sum, node) => sum + node.level, 0);
-  const ram = nodes.reduce((sum, node) => sum + node.ram, 0);
-  const cores = nodes.reduce((sum, node) => sum + node.cores, 0);
-  return levels >= 100 && ram >= 8 && cores >= 4;
-};
-
 const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
-  const factionGoal = getGoals(ns).prerequisites('FACTION_JOIN');
-  const needsNetburnerPrereqs = factionGoal[0]?.faction === 'Netburners';
+  const goals = getGoals(ns);
+  const openHacknetGoals = goals.prerequisites('HACKNET').filter((goal) => !goal.isDone());
   const numNodes = ns.hacknet.numNodes();
   if (numNodes === 0 && ns.hacknet.purchaseNode() === -1) {
     return null;
@@ -77,8 +69,8 @@ const upgradeHacknetServers = (ns: NS, ttc: number | null) => {
     const money = ns.getServerMoneyAvailable('home');
     const upgrade = getNextUpgrade(ns, player.mults);
     if (upgrade.cost > money) return upgrade;
-    if (ttc != null && upgrade.breakEvenTime > ttc) {
-      if (!needsNetburnerPrereqs || netburnerPrereqsAreMet(ns)) return upgrade;
+    if (ttc != null && upgrade.breakEvenTime > ttc && openHacknetGoals.length === 0) {
+      return upgrade;
     }
     if (upgrade.type === 'node') ns.hacknet.purchaseNode();
     if (upgrade.type === 'level') ns.hacknet.upgradeLevel(upgrade.i);
@@ -142,13 +134,13 @@ export async function main(ns: NS) {
 
     const nextPurchase = upgradeHacknetServers(ns, ttc);
 
-    const hashRate = getNodes(ns)
-      .map((node) => node.production)
-      .reduce((a, b) => a + b, 0);
+    const nodes = getNodes(ns);
+    const hashRate = nodes.map((node) => node.production).reduce((a, b) => a + b, 0);
     const hacknetIncome = upgrade === 'Sell for Money' ? (1e6 * hashRate) / 4 : 0;
     putMoneyData(ns, { hacknetIncome });
     putPlayerData(ns, {
       hacknet: {
+        servers: nodes,
         studyMult: ns.hacknet.getStudyMult(),
         trainingMult: ns.hacknet.getTrainingMult(),
         nextUpgrade: getTargetUpgrade(ns, goals),

@@ -60,6 +60,7 @@ export const getGoals = (ns: NS): Goal => {
     access4SDataApi,
     queuedAugmentations = [],
     fragmentMultipliers,
+    hacknet,
   } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -108,6 +109,7 @@ export const getGoals = (ns: NS): Goal => {
     karma,
     overhead,
     fragmentMultipliers,
+    hacknetServers: hacknet?.servers,
   };
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)

@@ -17,6 +17,7 @@ export default [
       semi: ['error', 'always', { omitLastInOneLineBlock: true }],
       'no-cond-assign': 'off',
       'no-constant-condition': 'off',
+      'no-unnecessary-condition': 'on',
     },
   },
   {

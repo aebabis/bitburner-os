@@ -15,6 +15,7 @@ export type GoalType =
   | 'BLADES_JOIN'
   | 'LABYRINTH'
   | 'COMBAT_LEVEL'
+  | 'HACKNET'
   | 'HACKING_LEVEL'
   | 'HACKING_XP'
   | 'KILLS'
@@ -69,13 +70,16 @@ type PlainGoalType = Exclude<
 // — required for `Extract<Goal, { type: T }>` (see GoalOfType) to resolve per literal.
 type Distribute<T extends GoalType, Extra> = T extends GoalType ? GoalCommon<T> & Extra : never;
 
+type HacknetStat = 'hacknetLevels' | 'hacknetRAM' | 'hacknetCores';
+
 export type Goal =
   | Distribute<PlainGoalType, unknown>
   | Distribute<NumericRequirementType, { requirement: number }>
   | Distribute<'LOCATION', { city: CityName }>
   | Distribute<'FACTION_REP' | 'FACTION_FAVOR', { requirement: number; faction: FactionName }>
   | Distribute<'FACTION_JOIN', { faction: FactionName }>
-  | Distribute<'COMBAT_LEVEL', { requirement: number; stat: CombatStat }>;
+  | Distribute<'COMBAT_LEVEL', { requirement: number; stat: CombatStat }>
+  | Distribute<'HACKNET', { requirement: number; stat: HacknetStat }>;
 
 export type GoalOfType<T extends GoalType> = Extract<Goal, { type: T }>;
 
@@ -370,6 +374,24 @@ export const mutexGoal = (parts: Goal[], desc = parts.map((p) => p.desc).join(' 
     },
   };
 };
+
+export const hacknetGoal = (
+  stat: HacknetStat,
+  requirement: number,
+  current: number,
+  cost: number | null = null,
+  income: number | null = null,
+) => ({
+  ...goal('HACKNET', `${requirement} hacknet ${stat}`, () => current >= requirement, {
+    ownTime: () => {
+      if (current >= requirement) return 0;
+      if (cost == null || income == null || income <= 0) return null;
+      return cost / income;
+    },
+  }),
+  requirement,
+  stat,
+});
 
 export const labyrinthGoal = (labyAugsHeld: number) => {
   return goal('LABYRINTH', 'Acquire labyrinth aug #' + (labyAugsHeld + 1), () => false);
