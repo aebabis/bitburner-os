@@ -54,7 +54,7 @@ const selectAugmentations = (
     augmentationStats,
     factionAugmentations,
     factionRequirements,
-  } = staticData;
+  } = staticData.singularityData ?? {};
   if (
     [
       augmentationPrices,

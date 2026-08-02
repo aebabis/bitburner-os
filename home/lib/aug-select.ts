@@ -118,7 +118,7 @@ const getPossiblePurchases = (
   // Augs that can be used to meet prereqs
   const availableAugs = new Set([...ownedAugmentations, ...(factionAugmentations[faction] ?? [])]);
   const hasPrereqs = (aug: string) =>
-    augmentationPrereqs[aug].every((req) => availableAugs.has(req));
+    (augmentationPrereqs[aug] ?? []).every((req) => availableAugs.has(req));
 
   const stillNeeds = (aug: string) => !ownedAugmentations.includes(aug);
   const neededAugs = factionAugmentations[faction]
@@ -187,7 +187,9 @@ export const findOptimalBatch = (
     while (purchasesRemaining.length > 0 && ++i < 100) {
       const candidate = purchasesRemaining.shift()!;
       if (
-        purchasesRemaining.some((other) => augmentationPrereqs[candidate.name].includes(other.name))
+        purchasesRemaining.some((other) =>
+          (augmentationPrereqs[candidate.name] ?? []).includes(other.name),
+        )
       ) {
         purchasesRemaining.push(candidate);
       } else {

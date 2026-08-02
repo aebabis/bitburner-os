@@ -62,10 +62,29 @@ const SINGULARITY_KEYS = new Set([
   'crimeStats',
 ]);
 
+// SingularityData is non-optional once present, so consumers index it directly
+// (e.g. tree.ts's `factionFavor[faction]`). Fixtures that omit a field would throw
+// on the object, not fall through to a `?? 0` on the value — so default every key.
+const EMPTY_SINGULARITY_DATA = {
+  factionFavor: {},
+  factionAugmentations: {},
+  factionRequirements: {},
+  factionWorkTypes: {},
+  augmentations: [],
+  augmentationNames: [],
+  augmentationPrices: {},
+  augmentationRepReqs: {},
+  augmentationPrereqs: {},
+  augmentationStats: {},
+  companyFavor: {},
+  companyPositions: {},
+  crimeStats: {},
+};
+
 // Test fixtures are written flat for readability. This lifts the SF4-only fields
 // into the singularityData group so they match what consumers actually read.
 export const mockStaticData = (flat: Record<string, unknown>): StaticData => {
-  const singularityData: Record<string, unknown> = {};
+  const singularityData: Record<string, unknown> = { ...EMPTY_SINGULARITY_DATA };
   const base: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(flat))
     (SINGULARITY_KEYS.has(key) ? singularityData : base)[key] = value;

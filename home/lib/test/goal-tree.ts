@@ -400,11 +400,13 @@ export async function main(ns: NS) {
       assert.equal(computeAugCost(['A'], staticData as any, 2), 1_000_000 * 1.9 ** 2);
     });
 
-    it('compounds the queue multiplier across multiple augs (most expensive first)', () => {
+    it('compounds the queue multiplier in the order it is given', () => {
       const staticData = mockStaticData({ augmentationPrices: { Cheap: 100, Expensive: 1000 } });
-      // sorted desc: Expensive (×1.9^0), Cheap (×1.9^1)
+      // computeAugCost no longer sorts — the caller supplies purchase order, so that
+      // selection, the emitted money goal, and the actual purchase all price the same
+      // sequence. Cost-minimizing order is still most-expensive-first.
       const expected = 1000 * 1 + 100 * 1.9;
-      assert.equal(computeAugCost(['Cheap', 'Expensive'], staticData as any, 0), expected);
+      assert.equal(computeAugCost(['Expensive', 'Cheap'], staticData as any, 0), expected);
     });
 
     it('applies the 1.14^installedNFCount base offset to NF price', () => {
@@ -482,10 +484,10 @@ export async function main(ns: NS) {
       // real ns.formulas contract), not from the staticData it was constructed with -- so the
       // "boost" here comes from the player, built via buildPerson from a hypothetical aug set,
       // not from a second getMockFormulas instance.
-      const boostedStaticData = {
+      const boostedStaticData = mockStaticData({
         installedAugmentations: ['FactionAug'],
         augmentationStats: { FactionAug: { faction_rep: 1.25 } },
-      } as any;
+      }) as any;
       const basePlayer = buildPerson({} as any, { augs: [] });
       const boostedPlayer = buildPerson(boostedStaticData, { augs: ['FactionAug'] });
       const baseCost = mockFormulas.reputation.donationForRep(1000, basePlayer);

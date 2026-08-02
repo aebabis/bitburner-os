@@ -27,10 +27,13 @@ export async function main(ns: NS) {
     const numNeuroflux = owned.filter((aug) => aug === NEUROFLUX).length;
     const data = structuredClone(staticData);
     // getAugmentationRepReq reports the *current* requirement, so the fixture
-    // scales it to simulate installed levels. getAugmentationBasePrice reports
-    // an unscaled base, so price is deliberately left alone — computeAugCost
-    // applies the level multiplier itself from resetInfo.ownedAugs.
+    // scales it to simulate installed levels.
     data.singularityData.augmentationRepReqs[NEUROFLUX] *= 1.14 ** numNeuroflux;
+    // getAugmentationBasePrice reports an unscaled base, so price is NOT scaled here.
+    // The level multiplier is applied by the code under test, which reads the count
+    // from resetInfo.ownedAugs — so that has to reflect the simulated state or NF
+    // stays permanently cheap and the run never progresses past it.
+    data.resetInfo.ownedAugs = new Map([[NEUROFLUX, numNeuroflux]]);
 
     const base = buildPerson(data as any);
     const player = {
