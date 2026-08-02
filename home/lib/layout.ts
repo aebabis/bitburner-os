@@ -9,6 +9,7 @@ type RenderResult = {
 type PlacedItem = RenderResult & { x: number; y: number };
 
 const COLOR_CODES = /\x1b\[[0-9;]+m/g;
+const CELL = /((?:\x1b\[[0-9;]+m)*.(?:\x1b\[[0-9;]+m)?)/g;
 
 export class GrowingWindow {
   minWidth: number;
@@ -132,9 +133,7 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
     item.height--;
   }
 
-  const grid = new Array(HEIGHT)
-    .fill(null)
-    .map(() => new Array(WIDTH).fill(' '));
+  const grid = new Array(HEIGHT).fill(null).map(() => new Array(WIDTH).fill(' '));
   const lastRow = grid.length - 1;
   const lastCol = grid[0].length - 1;
   for (let x = 0; x < WIDTH; x++) {
@@ -152,13 +151,11 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
     const { x, y, width, height } = box;
     for (let xx = 0; xx < width; xx++) {
       if (y !== 0) grid[y][x + xx + 1] = BORDER('─');
-      if (y + height + 1 !== HEIGHT - 1)
-        grid[y + height + 1][x + xx + 1] = BORDER('─');
+      if (y + height + 1 !== HEIGHT - 1) grid[y + height + 1][x + xx + 1] = BORDER('─');
     }
     for (let yy = 0; yy < height; yy++) {
       if (x !== 0) grid[y + yy + 1][x] = BORDER('│');
-      if (x + width + 1 !== WIDTH - 1)
-        grid[y + yy + 1][x + width + 1] = BORDER('│');
+      if (x + width + 1 !== WIDTH - 1) grid[y + yy + 1][x + width + 1] = BORDER('│');
     }
   }
   for (let i = 0; i < 2; i++)
@@ -178,35 +175,14 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
           grid[y][x] = BORDER('┯');
         } else if (bottom && !left && !right) {
           grid[y][x] = BORDER('┷');
-        } else if (
-          Number(top) + Number(bottom) + Number(left) + Number(right) <
-          2
-        ) {
+        } else if (Number(top) + Number(bottom) + Number(left) + Number(right) < 2) {
           const topNeighbor = !top && grid[y - 1][x] !== ' ' ? 1 : 0;
           const rightNeighbor = !right && grid[y][x + 1] !== ' ' ? 2 : 0;
           const bottomNeighbor = !bottom && grid[y + 1][x] !== ' ' ? 4 : 0;
           const leftNeighbor = !left && grid[y][x - 1] !== ' ' ? 8 : 0;
-          const bitMask =
-            leftNeighbor | bottomNeighbor | rightNeighbor | topNeighbor;
+          const bitMask = leftNeighbor | bottomNeighbor | rightNeighbor | topNeighbor;
           const N = '.';
-          const lookup = [
-            N,
-            N,
-            N,
-            '└',
-            N,
-            N,
-            '┌',
-            '├',
-            N,
-            '┘',
-            N,
-            '┴',
-            '┐',
-            '┤',
-            '┬',
-            '┼',
-          ];
+          const lookup = [N, N, N, '└', N, N, '┌', '├', N, '┘', N, '┴', '┐', '┤', '┬', '┼'];
           grid[y][x] = BORDER(lookup[bitMask]);
         }
       };
@@ -219,9 +195,7 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
     const { x, y, width, height, text, getText } = box;
     const drawn = getText ? getText(width, height) : text;
     for (let yy = 0; yy < height; yy++) {
-      const row =
-        drawn[yy]?.match(/((?:\[[0-9;]+m)*.(?:\[[0-9;]+m)?)/g) ||
-        ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
+      const row = drawn[yy]?.match(CELL) || ' '.repeat(drawn[0].replace(COLOR_CODES, '').length);
       for (let xx = 0; xx < width; xx++) {
         grid[y + yy + 1][x + xx + 1] = row[xx] || ' ';
       }
