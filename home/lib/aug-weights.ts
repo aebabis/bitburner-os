@@ -1,4 +1,4 @@
-import { vIOLET } from '../etc/augmentations';
+import { NRMI, RED_PILL, vIOLET } from '../etc/augmentations';
 
 export const getAugWeights = (resetInfo: ResetInfo) => {
   const onBN = (num: number) => resetInfo.currentNode === num;
@@ -92,8 +92,8 @@ export const getEntropyCost = (resetInfo: ResetInfo) => entropyCostOf(getAugWeig
  */
 const STATLESS_FRACTIONS: Record<string, number> = {
   'CashRoot Starter Kit': 0.001,
-  'Neuroreceptor Management Implant': 0.024,
-  'The Red Pill': 0.24,
+  [NRMI]: 0.024,
+  [RED_PILL]: 0.24,
 };
 
 /**
