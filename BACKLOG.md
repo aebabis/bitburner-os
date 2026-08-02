@@ -2,6 +2,7 @@
 - Goals: structural null handling — when `getTimeToComplete` returns null in sysadmin/hacknet after data is ready, inspect which goal type is blocking (HACKING_LEVEL/COMBAT_LEVELS = early game, buy freely; other = unknown, hold)
 - Goals: track training rates for HACKING_LEVEL/COMBAT_LEVELS so `ownTime()` returns an estimate instead of null
 - Goals: implement `buildGoals(data)` entry point for goal searching (test hypothetical parameters, e.g. which faction work assignment minimizes timeToComplete)
+- Planner: support running services on hacknet servers. Needed only for a direct BN4.1 → BN9.1 entry, where cloud servers cannot be purchased and home is too small for `/boot/data4.ts` (~84GB at SF4.1) — so there is nowhere to place `love.ts` and no way to grow out of it. Every other SF4.1 path resolves via a 128GB cloud server. Low priority
 - More BN1.1 todo items/toasts. (remind player to buy/make programs)
 - Implement service restarts
 - Port inspector
