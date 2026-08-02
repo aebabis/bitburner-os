@@ -13,11 +13,19 @@ import { transformSync } from 'esbuild';
 const ROOT = new URL('..', import.meta.url).pathname;
 const HOME = join(ROOT, 'home');
 
-// hostnames is an array, not a keyed object — skip it
+// hostnames is an array, not a keyed object — skip it.
+// `groups` names sub-objects that hold conditionally-booted fields (see
+// General-Design "Data Stores"). Their keys are tracked as first-class store
+// fields: writes descend one level into them, and a binding pulled out of a
+// group is treated as a store alias so `group.field` reads are detected.
 const STORES = {
-  staticData: { get: 'getStaticData', put: 'putStaticData' },
-  playerData: { get: 'getPlayerData', put: 'putPlayerData' },
-  moneyData: { get: 'getMoneyData', put: 'putMoneyData' },
+  staticData: {
+    get: 'getStaticData',
+    put: 'putStaticData',
+    groups: ['singularityData', 'graftingData'],
+  },
+  playerData: { get: 'getPlayerData', put: 'putPlayerData', groups: [] as string[] },
+  moneyData: { get: 'getMoneyData', put: 'putMoneyData', groups: [] as string[] },
 };
 
 // ── AST helpers ───────────────────────────────────────────────────────────────
@@ -99,7 +107,8 @@ function keysOf(node: any): Set<string> {
 
 // ── Per-file analysis ─────────────────────────────────────────────────────────
 
-function analyzeFile(ast: any, getFn: string, putFn: string) {
+function analyzeFile(ast: any, getFn: string, putFn: string, groupKeys: string[] = []) {
+  const groups = new Set(groupKeys);
   const written = new Set<string>();
   const read = new Set<string>();
   const warnings = new Set<string>();
@@ -108,15 +117,37 @@ function analyzeFile(ast: any, getFn: string, putFn: string) {
   const aliases = new Set<string>(); // names of variables assigned directly from getFn(ns)
 
   walk(ast, (node) => {
-    // putFn(ns, { k: v, k2 }) — record every property key
-    if (isCallTo(node, putFn) && node.arguments[1]?.type === 'ObjectExpression')
+    // putFn(ns, { k: v, k2 }) — record every property key, descending into groups
+    if (isCallTo(node, putFn) && node.arguments[1]?.type === 'ObjectExpression') {
       for (const k of keysOf(node.arguments[1])) written.add(k);
+      for (const prop of node.arguments[1].properties ?? []) {
+        const key = prop.key?.name ?? prop.key?.value;
+        if (groups.has(key) && prop.value?.type === 'ObjectExpression')
+          for (const k of keysOf(prop.value)) written.add(k);
+      }
+    }
 
     if (node.type !== 'VariableDeclarator') return;
 
     // const { k } = getFn(ns) [or getFn(ns) || {}]
-    if (node.id?.type === 'ObjectPattern' && isStoreInit(node.init, getFn))
+    if (node.id?.type === 'ObjectPattern' && isStoreInit(node.init, getFn)) {
       for (const k of keysOf(node.id)) read.add(k);
+      // A group destructured out of the store behaves like a second alias:
+      // `const { singularityData } = getStaticData(ns)` then `singularityData.foo`.
+      for (const prop of node.id.properties ?? []) {
+        const key = prop.key?.name ?? prop.key?.value;
+        if (groups.has(key) && prop.value?.type === 'Identifier') aliases.add(prop.value.name);
+      }
+    }
+
+    // const g = getFn(ns).<group>  — also an alias
+    if (
+      node.id?.type === 'Identifier' &&
+      node.init?.type === 'MemberExpression' &&
+      isStoreInit(node.init.object, getFn) &&
+      groups.has(node.init.property?.name)
+    )
+      aliases.add(node.id.name);
 
     // const alias = getFn(ns) [or getFn(ns) || {}]
     // Excludes: const x = getFn(ns).key  (init is MemberExpression, not a store init)
@@ -132,6 +163,28 @@ function analyzeFile(ast: any, getFn: string, putFn: string) {
       node.property?.type === 'Identifier'
     )
       read.add(node.property.name);
+
+    // <anything>.<group>.key  and  const { k } = <anything>.<group>
+    //
+    // Deliberately not rooted at getFn or a known alias: group names are unique
+    // to this store, and since the SF4StaticData refactor most nested reads happen
+    // through a *parameter* (`staticData: SF4StaticData`), which alias tracking
+    // cannot follow. Matching on the group name recovers those.
+    if (
+      node.type === 'MemberExpression' &&
+      node.object?.type === 'MemberExpression' &&
+      groups.has(node.object.property?.name) &&
+      node.property?.type === 'Identifier'
+    )
+      read.add(node.property.name);
+
+    if (
+      node.type === 'VariableDeclarator' &&
+      node.id?.type === 'ObjectPattern' &&
+      node.init?.type === 'MemberExpression' &&
+      groups.has(node.init.property?.name)
+    )
+      for (const k of keysOf(node.id)) read.add(k);
 
     for (const alias of aliases) {
       // alias.key  or  alias?.key
@@ -211,9 +264,9 @@ for (const file of files) {
     continue;
   }
 
-  for (const [store, { get, put }] of Object.entries(STORES)) {
+  for (const [store, { get, put, groups }] of Object.entries(STORES)) {
     const s = stats[store];
-    const { written, read, warnings } = analyzeFile(ast, get, put);
+    const { written, read, warnings } = analyzeFile(ast, get, put, groups);
 
     for (const k of written) {
       if (!s.written.has(k)) s.written.set(k, []);
