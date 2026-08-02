@@ -69,6 +69,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
   const hasDarkscape = () => ns.fileExists('DarkscapeNavigator.exe', 'home');
+  const hasFormulas = () => ns.fileExists('Formulas.exe', 'home');
 
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
@@ -80,7 +81,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/dashboard.ts'),
     Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
-    AnyHostService(ns, enablePool)('/bin/pool.ts'),
+    AnyHostService(ns, enablePool, hasFormulas)('/bin/pool.ts'),
     AnyHostService(ns, hasNerd)('/bin/nerd.ts'),
     AnyHostService(ns, always, couldTrade)('/bin/broker/trader.ts'),
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),

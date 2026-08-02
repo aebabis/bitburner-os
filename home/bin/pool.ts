@@ -140,10 +140,7 @@ export async function main(ns: NS) {
     }
     while (ns.hacknet.spendHashes(upgrade));
 
-    let nextPurchase = null;
-    if (ns.fileExists('Formulas.exe', 'home')) {
-      nextPurchase = upgradeHacknetServers(ns, ttc);
-    }
+    const nextPurchase = upgradeHacknetServers(ns, ttc);
 
     const hashRate = getNodes(ns)
       .map((node) => node.production)
