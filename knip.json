@@ -35,7 +35,6 @@
     "home/bin/sysadmin.ts",
     "home/bin/thief.ts",
     "home/bin/trailblazer.ts",
-    "home/bin/wolf.ts",
     "home/bin/workers/*.ts",
     "home/books.ts",
     "home/boot/boot.ts",
