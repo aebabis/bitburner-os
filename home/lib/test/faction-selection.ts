@@ -180,6 +180,14 @@ const makeStaticData = (
     }
   }
 
+  // getAccessibleFactions now derives its candidate list from factionWorkTypes, so a
+  // faction with no work types is not considered at all. Give every faction under test
+  // one; the value only gates list membership, and computeRepRate falls back to
+  // ['hacking'] anyway.
+  const factionWorkTypes: Record<string, string[]> = Object.fromEntries(
+    Object.keys(factionAugmentations).map((faction) => [faction, ['hacking']]),
+  );
+
   const factionRequirements: Record<string, any[]> = Object.fromEntries(
     Object.entries(numAugReqs).map(([f, n]) => [
       f,
@@ -200,6 +208,7 @@ const makeStaticData = (
     augmentationRepReqs,
     augmentationPrereqs,
     factionAugmentations,
+    factionWorkTypes,
     factionRequirements,
     factionEnemies,
     installedAugmentations: [],

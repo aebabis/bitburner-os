@@ -1,13 +1,3 @@
-const EARLY_FACTIONS = ['CyberSec', 'Tian Di Hui', 'Netburners'] as FactionName[];
-const HACKING_GROUPS = ['NiteSec', 'The Black Hand', 'BitRunners'] as FactionName[];
-const ENDGAME_FACTIONS = ['The Covenant', 'Daedalus', 'Illuminati'] as FactionName[];
-
-export const STORY_FACTIONS = [
-  ...EARLY_FACTIONS,
-  ...HACKING_GROUPS,
-  ...ENDGAME_FACTIONS,
-] as FactionName[];
-
 export const CRIMINAL_ORGANIZATIONS = [
   'Slum Snakes',
   'Tetrads',
@@ -15,13 +5,4 @@ export const CRIMINAL_ORGANIZATIONS = [
   'Speakers for the Dead',
   'The Dark Army',
   'The Syndicate',
-] as FactionName[];
-
-export const CITY_FACTIONS = [
-  'Sector-12',
-  'Chongqing',
-  'New Tokyo',
-  'Ishima',
-  'Aevum',
-  'Volhaven',
 ] as FactionName[];

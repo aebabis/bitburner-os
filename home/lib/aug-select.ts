@@ -1,6 +1,5 @@
 import { AugWeights, getAugEvaluator, scoreAug, statlessAugValue } from './aug-weights.ts';
 import { SF4StaticData, StaticData } from './data-store.ts';
-import { STORY_FACTIONS, CITY_FACTIONS, CRIMINAL_ORGANIZATIONS } from './factions.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
 
 // Seconds of reset overhead modeled for the first aug run; decreases as more augs are installed.
@@ -280,13 +279,18 @@ export const getAccessibleFactions = (
   ownedAugmentations: string[],
 ) => {
   const { singularityData } = staticData;
-  const { factionRequirements, factionEnemies } = singularityData;
-  return [
-    ...STORY_FACTIONS,
-    ...CRIMINAL_ORGANIZATIONS,
-    ...CITY_FACTIONS,
-    'Bladeburners' as FactionName,
-  ].filter((faction) => {
+  const { factionRequirements, factionEnemies, factionWorkTypes } = singularityData;
+  const FACTION_WORK_FACTIONS = Object.entries(factionWorkTypes)
+    .filter(([, workTypes]) => workTypes.length > 0)
+    .map(([faction]) => faction) as FactionName[];
+  // Currently, only factions with faction work can be pursued by the goal engine.
+  // Bladeburners is added as exception because rep accrues automatically.
+  // Including megacorps would require job automation and hasn't been prioritized
+  // because grafting has been more efficient.
+  const NON_JOB_FACTIONS = FACTION_WORK_FACTIONS.filter(
+    (faction) => !(factionRequirements[faction] ?? []).some((req) => req.type === 'employedBy'),
+  );
+  return [...NON_JOB_FACTIONS, 'Bladeburners' as FactionName].filter((faction) => {
     if (faction === 'Bladeburners' && !player.factions.includes('Bladeburners')) {
       return false;
     }

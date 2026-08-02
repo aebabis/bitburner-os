@@ -5274,6 +5274,15 @@ const {
 // default for tests that do not exercise faction hostility.
 const factionEnemies = {};
 
+// getAccessibleFactions derives its candidate list from this record, so a faction
+// with no work types is never considered. `['hacking']` for every faction preserves
+// the calibration these tests were written against: before that derivation existed,
+// computeRepRate fell back to ['hacking'] for all of them anyway. Megacorps are
+// still excluded — by their positive `employedBy` requirement, not by this list.
+const factionWorkTypes = Object.fromEntries(
+  Object.keys(factionAugmentations).map((faction) => [faction, ['hacking']]),
+);
+
 export const staticData = {
   ...base,
   singularityData: {
@@ -5286,5 +5295,6 @@ export const staticData = {
     augmentationStats,
     factionRequirements,
     factionEnemies,
+    factionWorkTypes,
   },
 };
