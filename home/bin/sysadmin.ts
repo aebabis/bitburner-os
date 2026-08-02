@@ -111,7 +111,7 @@ export async function main(ns: NS) {
     };
 
     if (atMaxServers && servers.every((server) => server.ram === purchasedServerMaxRam)) {
-      disableService(ns, 'sysadmin');
+      await disableService(ns, 'sysadmin');
       return;
     }
 

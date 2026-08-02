@@ -1,4 +1,5 @@
 import { putMoneyData } from '../lib/data-store';
+import { disableService } from '../lib/service-api';
 
 // https://www.reddit.com/r/Bitburner/comments/rsqffz/bitnode_8_stockmarket_algo_trader_script_without/
 const samplingLength = 30;
@@ -166,7 +167,10 @@ export async function main(ns: NS) {
           }
         }
       }
-      ns.stock.purchase4SMarketDataTixApi();
+      if (ns.stock.purchase4SMarketDataTixApi()) {
+        await disableService(ns);
+        return;
+      }
     }
     let estimatedStockValue = 0;
     for (const symbol of ns.stock.getSymbols()) {

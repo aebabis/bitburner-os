@@ -425,6 +425,8 @@ export async function main(ns: NS) {
   }
 
   const { onlineMoneyMade, onlineRunningTime } = ns.getRunningScript()!;
-  const theftIncome = onlineMoneyMade / onlineRunningTime;
-  putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalBatchRam });
+  if (totalBatchRam) {
+    const theftIncome = onlineMoneyMade / onlineRunningTime;
+    putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalBatchRam });
+  }
 }
