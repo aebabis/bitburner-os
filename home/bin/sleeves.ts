@@ -327,6 +327,9 @@ export async function main(ns: NS) {
   let lastSolve = 0;
   let lastVerdict: Verdict | null = null;
   const $grindKarma = async (sleeves: SleeveInfo[], karma: number) => {
+    // Every sleeve is desynced immediately after a node reset, so there is nothing
+    // to solve for until $sync has brought at least one up to 100.
+    if (sleeves.length === 0) return;
     if (Date.now() - lastSolve < 5000) return;
     lastSolve = Date.now();
     const solveMurder = murderSolver(ns, staticData);
@@ -356,27 +359,24 @@ export async function main(ns: NS) {
     if (task.type === 'SYNCHRO') return 'Synchoronizing';
   };
 
-  ns.disableLog('ALL');
-  ns.ui.openTail();
-  ns.ui.resizeTail(350, 250);
-  ns.ui.moveTail(249, 2);
-  while (true) {
-    const numSleeves = await $.sleeve['getNumSleeves']();
-    const sleeves = await $getSleeves(numSleeves);
-    const readySleeves = await $sync(sleeves);
+  type SleeveMode = 'karma' | 'combat' | 'reputation' | 'general';
+  const $assignSleeves = async (sleeves: SleeveInfo[]): Promise<SleeveMode | null> => {
+    if (sleeves.length === 0) return null;
+    const goals = getGoals(ns);
     const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
-    const factionRepGoal = getGoals(ns).prerequisites('FACTION_REP')[0];
-    const combatGoal = getGoals(ns)
-      .prerequisites('COMBAT_LEVEL')
-      .find((goal) => !goal.isDone());
+    const factionRepGoal = goals.prerequisites('FACTION_REP')[0];
+    // TODO: Make sleeves check for Daedalus EITHER branch and pursue shorter one
+    const combatGoal = goals.prerequisites('COMBAT_LEVEL').find((goal) => !goal.isDone());
     const karma = ns.heart.break();
     const isGrindingKarma = !ns.gang.inGang() && karma > GANG_KARMA;
     if (isGrindingKarma) {
-      await $grindKarma(readySleeves, karma);
+      await $grindKarma(sleeves, karma);
+      return 'karma';
     } else if (combatGoal) {
       for (const sleeveInfo of sleeves) {
         await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
       }
+      return 'combat';
     } else if (isPlayerGrafting && factionRepGoal != null) {
       const { faction } = factionRepGoal;
       const [lead, ...helpers] = sleeves;
@@ -393,9 +393,22 @@ export async function main(ns: NS) {
         const stat = ns.enums.GymType[lowestPlayerGymSkill.name];
         for (const sleeveInfo of helpers) await $gymWorkout(sleeveInfo, stat);
       }
+      return 'reputation';
     } else {
-      for (const sleeveInfo of readySleeves) await $homicide(sleeveInfo);
+      for (const sleeveInfo of sleeves) await $homicide(sleeveInfo);
+      return 'general';
     }
+  };
+
+  ns.disableLog('ALL');
+  ns.ui.openTail();
+  ns.ui.resizeTail(350, 250);
+  ns.ui.moveTail(249, 2);
+  while (true) {
+    const numSleeves = await $.sleeve['getNumSleeves']();
+    const sleeves = await $getSleeves(numSleeves);
+    const readySleeves = await $sync(sleeves);
+    const mode = await $assignSleeves(readySleeves);
     ns.clearLog();
     const columns = ['#', 'SHOCK', 'TASK'];
     const rows = sleeves.map(({ num, sleeve, currentTask }) => [
@@ -404,7 +417,7 @@ export async function main(ns: NS) {
       formatTask(currentTask),
     ]);
     ns.print(table(ns, columns, rows, { colors: true }) + '\n\n');
-    if (isGrindingKarma && lastVerdict != null) {
+    if (mode === 'karma' && lastVerdict != null) {
       const { action, timeToGang } = lastVerdict;
       const timeDesc = action === 'murder' ? 'expected' : 'upper bound';
       ns.print(` Gang  ${formatTime(Math.round(timeToGang))} (${timeDesc})` + '\n\n');
