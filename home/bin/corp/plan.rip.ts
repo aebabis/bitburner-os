@@ -480,23 +480,25 @@ export const createPlan = (
       return plan;
     },
 
-    waitForInvestment: (investmentNumber: number, minimum?: number) => {
+    waitForInvestment: (investmentNumber: number, targetFunds?: number) => {
       const isDone = async () =>
         (await $.corporation['getInvestmentOffer']()).round > investmentNumber;
       const canStart = async () => {
-        if (minimum == null) {
-          // If a minimum is not specified, allow consumer script
+        if (targetFunds == null) {
+          // If a targetFunds is not specified, allow consumer script
           // to control accepting the offer
           return false;
         } else {
-          return (await $.corporation['getInvestmentOffer']()).funds >= minimum;
+          const currentFunds = (await $.corporation['getCorporation']()).funds;
+          const offerFunds = (await $.corporation['getInvestmentOffer']()).funds;
+          return currentFunds + offerFunds >= targetFunds;
         }
       };
       const complete = async () => $.corporation['acceptInvestmentOffer']();
       const description =
-        minimum == null
+        targetFunds == null
           ? `Await completion of investment round ${investmentNumber}`
-          : `Await investment offer of $${ns.format.number(minimum)}`;
+          : `Await investment offer of $${ns.format.number(targetFunds)}`;
       steps.push(step(description, { isDone, canStart, complete }));
       return plan;
     },
