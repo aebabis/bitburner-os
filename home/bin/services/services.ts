@@ -20,6 +20,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
   const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
+  const hasPermanentFormulas = (ownedSF.get(5) ?? 0) >= 2;
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
@@ -28,6 +29,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const money = () => player(ns).money ?? 0;
   const factions = () => player(ns).factions ?? [];
 
+  const hasFormulas = () => ns.fileExists('Formulas.exe', 'home');
   const playerLikesHacknet = false;
 
   const gangKarma = currentNode === 2 ? 0 : -54000;
@@ -39,14 +41,14 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   // services that are not useful with current BN/SFs do not appear in the dashboard
   const hasNerd = () => currentNode === 8 && !ns.stock.has4SDataTixApi();
   const hasAngel = () => ownedSF.has(1);
-  const hasThief = () => !hasNode(5);
+  const hasThief = () => !hasPermanentFormulas;
   const gangsAvailable = () => gangsAllowed(staticData);
   const hasSingularity = () => hasNode(4);
   const enablePool = () => hasNode(9) && currentNode !== 8;
   const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
   const enableCorp = () => usingCorp(staticData);
   const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
-  const preferAngel = () => ns.fileExists('Formulas.exe', 'home');
+  const preferAngel = () => hasFormulas();
   const inBladeNode = () => [6, 7].includes(currentNode);
   const canStanek = () => hasNode(13) && currentNode !== 8;
   const canAutoGraft = () => hasNode(4) && hasNode(10) && currentNode !== 8;
@@ -69,7 +71,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canWork = () => !preferBlade() || hasSimulacrum();
   const canShare = () => player(ns).skills.hacking > 100;
   const hasDarkscape = () => ns.fileExists('DarkscapeNavigator.exe', 'home');
-  const hasFormulas = () => ns.fileExists('Formulas.exe', 'home');
 
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
@@ -95,7 +96,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns, always, canShare)('/bin/share.ts'),
     AnyHostService(ns, canStanek, always)('/bin/stanek.ts'),
     AnyHostService(ns, canAutoGraft, always)('/bin/grafting.ts'),
-    AnyHostService(ns, hasSleeves, always)('/bin/sleeves.ts'),
+    AnyHostService(ns, hasSleeves, hasFormulas)('/bin/sleeves.ts'),
   ];
   const findServiceIndex = (script: string) =>
     services.findIndex((service) => service.script === script);
