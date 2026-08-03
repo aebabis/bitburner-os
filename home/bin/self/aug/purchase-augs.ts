@@ -23,8 +23,9 @@ export async function main(ns: NS) {
   const { currentNode, ownedSF } = ns.getResetInfo();
   const root = getGoals(ns);
   const actions = root.type === 'INSTALL' ? root.actions : [];
+  const augMoney = root.prerequisites('AUG_MONEY')[0]?.requirement;
 
-  if (money < root.prerequisites('AUG_MONEY')[0]?.requirement) {
+  if (root.type !== 'INSTALL' || (augMoney != null && money < augMoney)) {
     ns.tprint(ERROR + 'Premature call to purchase-augs');
     ns.exec('start.ts', 'home', 1);
     throw new Error('Premature call to purchase-augs');
