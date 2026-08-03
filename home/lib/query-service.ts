@@ -37,5 +37,7 @@ export const gangsAllowed = (staticData: StaticData) => {
 export const usingCorp = (staticData: StaticData) => {
   const { resetInfo } = staticData;
   if (resetInfo.bitNodeOptions.disableCorporation) return false;
-  return [3, 10, 12].includes(resetInfo.currentNode);
+  if (resetInfo.currentNode === 3) return true;
+  if ([10, 12].includes(resetInfo.currentNode)) return (resetInfo.ownedSF.get(3) ?? 0) === 3;
+  return false;
 };
