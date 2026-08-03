@@ -181,7 +181,7 @@ const evaluateTarget = async (
   const money = server.moneyMax * hackPercent * hackThreads * numFrames;
   const time = ns.formulas.hacking.weakenTime(server, ns.getPlayer());
   const setupTime = await getSetupTime(ns, hostname, minFrameRam);
-  const earningTime = horizon - setupTime;
+  const earningTime = Math.max(0, horizon - setupTime);
   const timeframeIncome = Math.floor(earningTime / time) * money;
   const timeToTarget = setupTime + Math.ceil(targetMoney / money) * time;
   return {
