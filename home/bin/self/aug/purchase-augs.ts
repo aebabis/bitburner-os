@@ -34,7 +34,7 @@ export async function main(ns: NS) {
   ns.disableLog('ALL');
   tprint(ns)(STR.BOLD + 'INSTALLING');
   tprint(ns)(STR + '  Stopping all programs');
-  for (const hostname of nmap(ns)) ns['killall'](hostname, true);
+  for (const hostname of nmap(ns)) ns.killall(hostname, true);
 
   const targetAugmentations = actions.flatMap((a) => (a.type === 'BUY_AUG' ? [a.name] : []));
 
