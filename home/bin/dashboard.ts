@@ -173,6 +173,7 @@ const moneyTable = (ns: NS) => {
   }
   const {
     theftIncome = 0,
+    manualHackIncome = 0,
     hacknetIncome = 0,
     gangIncome = 0,
     stockIncome = 0,
@@ -182,6 +183,7 @@ const moneyTable = (ns: NS) => {
   } = getIncome(ns);
   const rows = [
     [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
+    [' Hack', `$${ns.format.number(manualHackIncome, 1)}/s`],
     [' Hacknet', `$${ns.format.number(hacknetIncome, 1)}/s`],
     [' Gang', `$${ns.format.number(gangIncome, 1)}/s`],
     [' Stocks', `$${ns.format.number(stockIncome, 1)}/s`],

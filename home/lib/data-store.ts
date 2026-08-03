@@ -169,6 +169,7 @@ const DEFAULT_MONEY_DATA = {
   estimatedStockValue: 0,
   dividendEarnings: 0,
   darknetIncome: 0,
+  manualHackIncome: 0,
   totalIncome: 0,
 
   theftRatePerGB: 0,

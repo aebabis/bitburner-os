@@ -1,5 +1,5 @@
 import { ERROR } from '../../lib/colors.ts';
-import { getMoneyData } from '../../lib/data-store.ts';
+import { getMoneyData, putMoneyData } from '../../lib/data-store.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { $nmap } from '../../lib/nmap.rip.ts';
 import { $getBackdoorPath } from '../../lib/backdoor.rip.ts';
@@ -16,6 +16,23 @@ export async function main(ns: NS) {
   const $ = inPlace(ns, ns.pid);
   const $rip = runInPlace(ns, ns.pid);
 
+  const $manHack = async (hostname: string) => {
+    await $.singularity['connect'](hostname);
+    const expectedTime = ns.getHackTime(hostname) / 1000;
+    ns.print(`Hacking:     ${hostname} (${formatTime(expectedTime)})`);
+    const start = Date.now();
+    const money = await $.singularity['manualHack']();
+    const end = Date.now();
+    const s = (end - start) / 1000;
+    const manualHackIncome = money / s;
+    ns.print(`  $${ns.format.number(money)}, ${formatTime(s)}`);
+    ns.print(`  $${ns.format.number(manualHackIncome)}/s`);
+    putMoneyData(ns, { manualHackIncome });
+  };
+
+  // Single run on n00dles provides income data quickly
+  await $manHack('n00dles');
+
   while (true) {
     const hostnames = await $nmap(ns, ns.pid)();
     const path = await $getBackdoorPath(ns, ns.pid)(hostnames);
@@ -29,19 +46,7 @@ export async function main(ns: NS) {
       } else {
         const { theft } = getMoneyData(ns);
         const hostname = theft?.target;
-        if (hostname != null) {
-          await $rip((path: string[]) => {
-            for (const hostname of path) ns.singularity['connect'](hostname);
-          })([hostname]);
-          const expectedTime = ns.getHackTime(hostname) / 1000;
-          ns.print(`Hacking:     ${hostname} (${formatTime(expectedTime)})`);
-          const start = Date.now();
-          const money = await $.singularity['manualHack']();
-          const end = Date.now();
-          const s = (end - start) / 1000;
-          ns.print(`  $${ns.format.number(money)}, ${formatTime(s)}`);
-          ns.print(`  $${ns.format.number(money / s)}/s`);
-        }
+        if (hostname != null) await $manHack(hostname);
       }
     } catch (error) {
       ns.print(ERROR + error);
