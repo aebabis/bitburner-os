@@ -1,7 +1,6 @@
 import { THE_BLADE } from '../../etc/augmentations';
 import { AnyHostService, Service } from '../../lib/service';
 import { getStaticData } from '../../lib/data-store';
-import { CRIMINAL_ORGANIZATIONS } from '../../lib/factions';
 import { getGoals } from '../../lib/goals/goals';
 import { gangsAllowed, hasBitNode, usingCorp } from '../../lib/query-service';
 
@@ -35,7 +34,6 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const gangKarma = currentNode === 2 ? 0 : -54000;
   const mustSelfFund = currentNode !== 3;
   const corpCost = mustSelfFund ? 150e9 : 0;
-  const isCriminal = (faction: FactionName) => CRIMINAL_ORGANIZATIONS.includes(faction);
 
   // Predicates for service viability (relevance).
   // services that are not useful with current BN/SFs do not appear in the dashboard
@@ -60,7 +58,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canPurchaseServers = () => money() >= purchasedServerCosts[4];
   const couldTrade = () =>
     !hasNerd() && (ns.stock.hasTixApiAccess() || money() >= stockStarterCost);
-  const gangReady = () => factions().some(isCriminal) && ns.heart.break() <= gangKarma;
+  const gangReady = () => factions().includes('Slum Snakes') && ns.heart.break() <= gangKarma;
   const corpReady = () =>
     ns.corporation.hasCorporation() ||
     (ns.corporation.canCreateCorporation(mustSelfFund) === 'Success' && money() >= corpCost);
