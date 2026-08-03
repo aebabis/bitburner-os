@@ -1,16 +1,37 @@
+import { ERROR } from './colors';
 import { putPlayerData } from './data-store';
 import { Goal } from './goals/nodes';
 import { inPlace, runInPlace } from './in-place';
 import { $nmap } from './nmap.rip';
 
-export const $win = (ns: NS, port: number) =>
-  runInPlace(
+export const $win = async (ns: NS, port: number) => {
+  const hostnames = await $nmap(ns, port)();
+  return runInPlace(
     ns,
     port,
-  )(() => {
-    ns['killall']('home', true);
-    ns['exec']('/bin/self/actualize.ts', 'home');
-  })();
+  )((hostnames: string[], ERROR: string) => {
+    const selfActualize = '/bin/self/actualize.ts';
+    const actualizeRam = ns['getScriptRam'](selfActualize, 'home');
+    const possibleHosts = hostnames
+      .filter((hostname) => ns['getScriptRam'](selfActualize, hostname))
+      .map((hostname) => ({ hostname, ram: ns['getServerMaxRam'](hostname) }))
+      .filter(({ ram }) => ram >= actualizeRam);
+    if (possibleHosts.length === 0) {
+      ns['tprint'](ERROR + 'Critical error: not enough RAM to win');
+      return;
+    }
+    const { hostname } = possibleHosts.reduce((a, b) => (a.ram >= b.ram ? a : b));
+    ns['killall'](hostname, true);
+    if (hostname === ns['getHostname']()) {
+      ns['spawn'](selfActualize, { spawnDelay: 0 });
+      ns['tprint'](ERROR + 'Critical error: failed to spawn ' + selfActualize);
+    } else {
+      if (!ns['exec'](selfActualize, hostname)) {
+        ns['tprint'](ERROR + 'Critical error: failed to exec ' + selfActualize);
+      }
+    }
+  })(hostnames, ERROR.toString());
+};
 
 export const $install = async (ns: NS, port: number) => {
   const hostnames = await $nmap(ns, port)();
