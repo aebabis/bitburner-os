@@ -145,12 +145,10 @@ export async function main(ns: NS) {
   }
   if (donationFaction != null) {
     print('Buying favor and NFG from highest favor faction: ' + donationFaction);
-    const currentNfgRepBase = await $.singularity['getAugmentationRepReq'](NEUROFLUX);
     do {
       const queuedAugmentations = await $getQueuedAugmentations(ns);
       print('Purchased augs: ' + queuedAugmentations);
-      const purchasedNfg = queuedAugmentations.filter((name) => name === NEUROFLUX);
-      const repOfNextNeuroflux = currentNfgRepBase * 1.14 ** purchasedNfg.length;
+      const repOfNextNeuroflux = await $.singularity['getAugmentationRepReq'](NEUROFLUX);
       print('Next Rep: ' + repOfNextNeuroflux);
       const donationRate = formulas(ns).reputation.donationForRep(1, ns.getPlayer());
       const currentRep = await $.singularity['getFactionRep'](donationFaction);
@@ -160,10 +158,7 @@ export async function main(ns: NS) {
         await $.singularity['donateToFaction'](donationFaction, donationAmount);
       }
     } while (await $.singularity['purchaseAugmentation'](donationFaction, NEUROFLUX));
-
-    print('Done buying NFG. Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
-    await $.singularity['donateToFaction'](donationFaction, ns.getPlayer().money);
-    print('Money now: $' + ns.format.number(ns.getPlayer().money));
+    print('No further NFG purchases possible');
   }
 
   // Buy free augmentations last
@@ -191,6 +186,12 @@ export async function main(ns: NS) {
         await $.gang['purchaseEquipment'](member, equipment);
       }
     }
+  }
+
+  if (donationFaction != null) {
+    print('Donating remaining money: $' + ns.format.number(ns.getPlayer().money));
+    await $.singularity['donateToFaction'](donationFaction, ns.getPlayer().money);
+    print('Money now: $' + ns.format.number(ns.getPlayer().money));
   }
 
   const queuedAugmentations = await $getQueuedAugmentations(ns);
