@@ -241,8 +241,8 @@ const getSpecialAugs = (ns: NS) => {
 const getExecutionTable = (ns: NS) => {
   const { lastRuns = {}, lastCancellations = {} } = getSchedulerReportData(ns);
   const rows = Object.entries(lastCancellations)
-    .filter(([script, cancelTime]) => lastRuns[script] < cancelTime)
-    .map(([script]) => [script, lastRuns[script] ?? Infinity] as [string, number])
+    .filter(([script, cancelTime]) => (lastRuns[script] ?? 0) < cancelTime)
+    .map(([script, cancelTime]) => [script, lastRuns[script] ?? cancelTime] as [string, number])
     .sort(by(([, lastRun]) => lastRun))
     .map(([script, lastRun]) => [script, (Date.now() - lastRun) / 1000] as [string, number])
     .filter(([, lastRun]) => +lastRun >= 10)
