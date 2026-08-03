@@ -102,8 +102,7 @@ export async function main(ns: NS) {
     let contender;
     while ((contender = possibleGoals.shift())) {
       const contenderRepNeeded =
-        (mostUrgentGoal.requirement ?? 0) -
-        (await $.singularity['getFactionRep'](mostUrgentGoal.faction!));
+        (contender.requirement ?? 0) - (await $.singularity['getFactionRep'](contender.faction!));
       if (contenderRepNeeded > repNeeded) {
         mostUrgentGoal = contender;
         repNeeded = contenderRepNeeded;
