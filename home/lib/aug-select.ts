@@ -74,16 +74,14 @@ export const computeAugCost = (augs: string[], staticData: SF4StaticData, numQue
 export const computeRepRate = (
   faction: FactionName,
   factionWorkTypes: Record<FactionName, FactionWorkType[]> | undefined,
-  factionRep: Record<FactionName, number> | undefined,
   factionFavor: Record<FactionName, number> | undefined,
   player: Player,
-  lastAugReset: number,
+  bladeburnerRepRate: number,
   formulas: MockFormulas | Formulas,
 ): number => {
-  if (faction === 'Bladeburners') {
-    const timeSinceInstall = lastAugReset > 0 ? (Date.now() - lastAugReset) / 1000 : 0;
-    return (factionRep?.['Bladeburners'] ?? 0) / timeSinceInstall;
-  }
+  // Bladeburners rep does not come from faction work; it is determined separately
+  // from the completion of missions in burners.ts.
+  if (faction === 'Bladeburners') return bladeburnerRepRate;
   return Math.max(
     0,
     ...(factionWorkTypes?.[faction] ?? ['hacking']).map(
@@ -152,9 +150,9 @@ export const findOptimalBatch = (
   factionRep: Record<FactionName, number>,
   ownedAugmentations: string[],
   overhead: number,
-  { moneyRate = Infinity, joinTime = 0 } = {},
+  { moneyRate = Infinity, joinTime = 0, bladeburnerRepRate = 0 } = {},
 ) => {
-  const { resetInfo, singularityData } = staticData;
+  const { singularityData } = staticData;
   const { augmentationPrereqs, factionFavor, factionWorkTypes } = singularityData;
 
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
@@ -169,10 +167,9 @@ export const findOptimalBatch = (
   const gainRate = computeRepRate(
     faction,
     factionWorkTypes,
-    factionRep,
     factionFavor,
     player,
-    resetInfo.lastAugReset,
+    bladeburnerRepRate,
     formulas,
   );
 

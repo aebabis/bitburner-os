@@ -63,6 +63,7 @@ export const getGoals = (ns: NS): Goal => {
     queuedAugmentations = [],
     fragmentMultipliers,
     hacknet,
+    bladeburnerRepRate,
   } = getPlayerData(ns);
   const { money } = player;
   const staticData = getStaticData(ns);
@@ -116,6 +117,7 @@ export const getGoals = (ns: NS): Goal => {
     overhead,
     fragmentMultipliers,
     hacknetServers: hacknet?.servers,
+    bladeburnerRepRate,
   };
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)

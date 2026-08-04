@@ -369,6 +369,7 @@ interface FactionGoalTreeProps {
   overhead: number;
   fragmentMultipliers?: Record<FragmentType, number>;
   hacknetServers?: NodeStats[];
+  bladeburnerRepRate?: number; // computed separately by burners.ts
 }
 export const buildFactionGoalTree = (
   ns: NS,
@@ -387,6 +388,7 @@ export const buildFactionGoalTree = (
     overhead,
     fragmentMultipliers,
     hacknetServers,
+    bladeburnerRepRate = 0,
   }: FactionGoalTreeProps,
 ): Plan | null => {
   const { augmentationStats, factionWorkTypes, factionFavor } = staticData.singularityData;
@@ -416,7 +418,7 @@ export const buildFactionGoalTree = (
     factionRep,
     ownedAugs,
     overhead,
-    { moneyRate, joinTime },
+    { moneyRate, joinTime, bladeburnerRepRate },
   );
   if (augs.length === 0) return null;
 
@@ -424,10 +426,9 @@ export const buildFactionGoalTree = (
   const repRate = computeRepRate(
     faction,
     factionWorkTypes,
-    factionRep,
     factionFavor,
     player,
-    staticData.resetInfo.lastAugReset,
+    bladeburnerRepRate,
     formulas,
   );
 
@@ -515,7 +516,7 @@ export const getBladeburnerTree = (
   formulas: Formulas | MockFormulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
-  const { player, factionRep, fragmentMultipliers } = playerData;
+  const { player, factionRep, fragmentMultipliers, bladeburnerRepRate = 0 } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
   const { augmentationPrices, augmentationRepReqs } = staticData.singularityData;
   const bladePrice = augmentationPrices[THE_BLADE] ?? 0;
@@ -535,9 +536,7 @@ export const getBladeburnerTree = (
   const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals, '100 in combat stats')]);
   const deps = joinBlades.isDone() ? [] : [joinBlades];
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, deps);
-  const timeSinceReset = (Date.now() - staticData.resetInfo.lastAugReset) / 1000;
-  const repRate = currentRep / timeSinceReset;
-  if (repRate === 0) {
+  if (bladeburnerRepRate === 0) {
     return waitGoal('Wait for rep data', 60, [joinBladeFaction]);
   }
   const repGoal = factionRepGoal(
@@ -545,7 +544,7 @@ export const getBladeburnerTree = (
     bladeRepCost,
     currentRep,
     joinBladeFaction,
-    repRate,
+    bladeburnerRepRate,
   );
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
