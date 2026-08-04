@@ -9,7 +9,7 @@ export const $createCorporation = (ns: NS) => async (selfFund: boolean) =>
   )((corpName: string, selfFund: boolean) => {
     return (
       ns.corporation.hasCorporation() ||
-      (ns.corporation.canCreateCorporation(selfFund) &&
+      (ns.corporation.canCreateCorporation(selfFund) === 'Success' &&
         ns.corporation['createCorporation'](corpName, selfFund))
     );
   })(CORP_NAME, selfFund);
