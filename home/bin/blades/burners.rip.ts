@@ -1,4 +1,21 @@
+import { tprint } from '../../boot/util';
+import { WARN } from '../../lib/colors';
+import { NEUROFLUX } from '../../lib/goals/nodes';
 import { inPlace, runInPlace } from '../../lib/in-place';
+
+export const $join = async (ns: NS) => {
+  const $ = inPlace(ns, ns.pid);
+  const { ownedSF, ownedAugs, currentNode } = await $['getResetInfo']();
+  const wouldGainSimulacrum = ownedSF.get(7) === 3;
+  const canAcceptGift = ownedSF.has(13) || currentNode === 13;
+  const giftStillObtainable = [...ownedAugs.keys()].every((aug) => aug === NEUROFLUX);
+  const needsGift = canAcceptGift && giftStillObtainable;
+  if (wouldGainSimulacrum && needsGift) {
+    tprint(ns)(WARN + "Bladeburners blocked by Stanek's Gift");
+    return false;
+  }
+  return $.bladeburner['joinBladeburnerDivision']();
+};
 
 export const $gymTrain =
   (ns: NS) =>

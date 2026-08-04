@@ -8,6 +8,7 @@ import { $getBackdoorPath } from '../../lib/backdoor.rip';
 import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
 import { makeAfkTracker } from '../../lib/afk';
 import { formulas, hasFormulas } from '../../lib/formulas';
+import { $join as $joinBladeburners } from '../blades/burners.rip';
 
 const TRAVEL_COST = 200_000;
 
@@ -232,7 +233,7 @@ export async function main(ns: NS) {
     }
 
     if (bladesJoinGoal != null && bladesJoinGoal.deps.every((dep) => dep.isDone())) {
-      await $.bladeburner['joinBladeburnerDivision']();
+      await $joinBladeburners(ns);
     }
 
     if (findGoal('HACKING_XP') && canGoToSchool) {

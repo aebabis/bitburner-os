@@ -5,6 +5,7 @@ import { getGoals } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
 import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
 import {
+  $join,
   $getActions,
   $getCities,
   $getCurrentAction,
@@ -126,7 +127,7 @@ export async function main(ns: NS) {
     await $recordAction(null);
   };
 
-  while (!(await $.bladeburner['joinBladeburnerDivision']())) {
+  while (!(await $join(ns))) {
     await $train();
     await ns.sleep(1000);
   }
