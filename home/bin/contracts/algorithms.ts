@@ -303,29 +303,29 @@ export const rle = (text: string) =>
   text.replaceAll(/([A-Za-z0-9])\1{0,8}/g, (x, a) => x.length + a);
 
 export const twoColor = ([numVertices, edges]: [number, number[][]]) => {
-  const arr = new Array(numVertices);
-  arr[0] = true;
-  edges.sort((a, b) => a[0] - b[0]);
-  // TODO: Fix this
-  let looper = 0;
+  const adjacent: number[][] = Array.from({ length: numVertices }, () => []);
   for (const [a, b] of edges) {
-    if (arr[a] == null && arr[b] == null) {
-      edges.push([a, b]);
-      if (looper > numVertices) return [];
-      looper++;
-      continue;
-    }
-    looper = 0;
-    if (arr[a] === arr[b]) return [];
-    if (arr[a] == null) arr[a] = !arr[b];
-    if (arr[b] == null) arr[b] = !arr[a];
+    adjacent[a].push(b);
+    adjacent[b].push(a);
   }
-  for (const val of arr) {
-    if (val === undefined) {
-      return [];
+  const colors = new Array<number>(numVertices).fill(-1);
+  for (let seed = 0; seed < numVertices; seed++) {
+    if (colors[seed] !== -1) continue;
+    colors[seed] = 0;
+    const frontier = [seed];
+    while (frontier.length > 0) {
+      const vertex = frontier.pop()!;
+      for (const neighbor of adjacent[vertex]) {
+        if (colors[neighbor] === -1) {
+          colors[neighbor] = 1 - colors[vertex];
+          frontier.push(neighbor);
+        } else if (colors[neighbor] === colors[vertex]) {
+          return [];
+        }
+      }
     }
   }
-  return arr.map(Number);
+  return colors;
 };
 
 export const squareRoot = (bigInt: bigint) => {
