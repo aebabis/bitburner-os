@@ -181,6 +181,7 @@ export const pathToCorner = (grid: number[][]) => {
 export const lpf = (num: number) => {
   for (let f = 2; f * f <= num; f++) {
     while (num % f === 0) {
+      if (num === f) return num;
       num /= f;
     }
   }
