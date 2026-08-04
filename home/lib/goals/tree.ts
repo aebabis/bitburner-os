@@ -406,7 +406,7 @@ export const buildFactionGoalTree = (
     fragmentMultipliers,
     hacknetServers,
   });
-  const joinTime = joinGoal.timeToComplete() ?? 0;
+  const joinTime = joinGoal.timeToComplete();
 
   const { batch: augs } = findOptimalBatch(
     faction,
@@ -501,8 +501,8 @@ export const buildFactionGoalTree = (
   const [prereqGoals, augActions] = canDonate ? donationPath() : normalPath();
   return plan(prereqGoals, augActions, (overhead) => {
     const times = prereqGoals.map((g) => g.timeToComplete());
-    if (times.some((t) => t == null) || treeValue === 0) return 0;
-    return treeValue / (Math.max(...(times as number[])) + overhead);
+    if (treeValue === 0) return 0;
+    return treeValue / (Math.max(...times) + overhead);
   });
 };
 

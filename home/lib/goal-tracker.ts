@@ -50,9 +50,9 @@ export const recordGoalSnapshot = (
         timeToComplete:
           ttcValues.length === 0
             ? 0
-            : ttcValues.some((t) => t == null || !isFinite(t))
+            : ttcValues.some((t) => !isFinite(t))
               ? null
-              : Math.max(...(ttcValues as number[])),
+              : Math.max(...ttcValues),
       };
     }),
   });

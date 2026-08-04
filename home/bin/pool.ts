@@ -120,7 +120,7 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
     const goals = getGoals(ns);
-    const ttc = goals.timeToComplete() ?? Infinity;
+    const ttc = goals.timeToComplete();
     const { upgrade, cost } = getTargetUpgrade(ns, goals);
     const getMoney = () => ns.getServerMoneyAvailable('home');
     if (cost > ns.hacknet.hashCapacity()) {

@@ -1,8 +1,8 @@
-import { HORIZON_MS, THREADPOOL } from '../etc/config';
+import { THREADPOOL } from '../etc/config';
 import { getStaticData, getHostnames, putHostnames } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 import { getIncome } from '../lib/query-service';
-import { getTimeToMilestone } from '../lib/goals/goals';
+import { getPlanningHorizon } from '../lib/goals/goals';
 import { infect } from './infect';
 
 const serverNames = (maxServers: number) => {
@@ -82,7 +82,7 @@ export async function main(ns: NS) {
   const attemptPurchase = async (ns: NS) => {
     const { resetInfo } = getStaticData(ns);
     const { totalIncome, theftRatePerGB } = getIncome(ns);
-    const timeToGoal = getTimeToMilestone(ns) ?? HORIZON_MS / 1000;
+    const timeToGoal = getPlanningHorizon(ns);
     // TODO: Make threshold time based on urgency of joining faction.
     // If goal tree is rep-bound, then the threshold time should be
     // based on join money rather than aug money so that the player

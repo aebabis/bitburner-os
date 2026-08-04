@@ -15,6 +15,7 @@ import {
   rebootGoal,
   homeRamGoal,
   horizonGoal,
+  NEVER,
   augMoneyGoal,
   karmaGoal,
   labyrinthGoal,
@@ -189,7 +190,7 @@ export const getGoals = (ns: NS): Goal => {
       fragmentMultipliers,
     });
     const ttc = covTree.timeToComplete();
-    if (ttc != null && ttc < 4 * 60) {
+    if (ttc < 4 * 60) {
       return covTree;
     }
   }
@@ -233,6 +234,14 @@ export const getTimeToMilestone = (ns: NS): number => {
   const joinGoal = root.prerequisites('FACTION_JOIN').find((g) => !g.isDone());
   if (joinGoal) return joinGoal.timeToComplete();
   return root.timeToComplete();
+};
+
+/**
+ * Provides time table for consumers to act.
+ */
+export const getPlanningHorizon = (ns: NS): number => {
+  const ttc = getTimeToMilestone(ns);
+  return ttc >= NEVER ? HORIZON_MS / 1000 : ttc;
 };
 
 export const isRepBound = (ns: NS, root = getGoals(ns)) => isRepBoundPure(root);

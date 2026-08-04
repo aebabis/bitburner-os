@@ -228,10 +228,7 @@ export async function main(ns: NS) {
             );
             const tree = buildFactionGoalTree(ns, faction, planData);
             const times = tree?.deps.map((g) => g.timeToComplete());
-            const eta =
-              times == null || times.some((t) => t == null)
-                ? null
-                : Math.max(...(times as number[]));
+            const eta = times == null ? null : Math.max(...times);
             return [faction, value, utility, nfCount, nonNfCount, eta] as [
               FactionName,
               number,

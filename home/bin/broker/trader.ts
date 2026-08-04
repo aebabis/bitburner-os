@@ -106,7 +106,7 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
 
-    const ttc = getGoals(ns).timeToComplete() ?? 0;
+    const ttc = getGoals(ns).timeToComplete();
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
 

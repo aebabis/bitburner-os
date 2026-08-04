@@ -386,7 +386,6 @@ export const hacknetGoal = (
   cost: number,
   income: number,
 ) => {
-  assertFinitePositive(cost, 'cost');
   assertFinitePositive(income, 'income');
   return {
     ...goal('HACKNET', `${requirement} hacknet ${stat}`, () => current >= requirement, {
@@ -410,6 +409,7 @@ export const waitGoal = (desc = 'Wait for data', time = 10, deps: Goal[] = []) =
   return goal('WAIT', desc, () => false, { ownTime: () => time, deps });
 };
 
+export const NEVER = Number.MAX_SAFE_INTEGER;
 export const neverGoal = () => {
-  return goal('NEVER', 'Wait forever', () => false, { ownTime: () => Number.MAX_SAFE_INTEGER });
+  return goal('NEVER', 'Wait forever', () => false, { ownTime: () => NEVER });
 };

@@ -1,5 +1,5 @@
 import { getStaticData, putPlayerData } from '../../lib/data-store';
-import { getGoals, getTimeToMilestone, isRepBound } from '../../lib/goals/goals';
+import { getGoals, getPlanningHorizon, isRepBound } from '../../lib/goals/goals';
 import { Goal, GoalOfType, GoalType } from '../../lib/goals/nodes';
 import { binomLowerBound, by, randPort } from '../../lib/util';
 import { inPlace, runInPlace } from '../../lib/in-place';
@@ -140,7 +140,7 @@ export async function main(ns: NS) {
     const statForCrimeTraining = (['strength', 'defense', 'dexterity', 'agility'] as const).find(
       (stat) => ns.getPlayer().skills[stat] < 5,
     );
-    const timeLimit = getTimeToMilestone(ns) || 60;
+    const timeLimit = getPlanningHorizon(ns) || 60;
     if (statForCrimeTraining != null) {
       if (ns.getPlayer().money > 5000) await goToGym(statForCrimeTraining);
       else await goToWork();
@@ -207,9 +207,7 @@ export async function main(ns: NS) {
         if (goal.isDone()) continue;
         let target = goal;
         if (goal.type === 'EITHER') {
-          target = goal.deps.reduce((a, b) =>
-            (a.timeToComplete() ?? Infinity) < (b.timeToComplete() ?? Infinity) ? a : b,
-          );
+          target = goal.deps.reduce((a, b) => (a.timeToComplete() < b.timeToComplete() ? a : b));
         }
         for (const child of reduce(target)) relevant.add(child);
       }

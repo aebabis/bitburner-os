@@ -25,7 +25,7 @@ export async function main(ns: NS) {
     const scoreAug = getAugEvaluator(resetInfo, singularityData.augmentationStats);
     const goals = getGoals(ns);
     const ttc = goals.timeToComplete();
-    if (scoreAug == null || ttc == null) return null;
+    if (scoreAug == null) return null;
 
     const augs = goals.actions
       .filter((action) => action.type === 'BUY_AUG')
