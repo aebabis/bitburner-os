@@ -294,11 +294,10 @@ export const createPlan = (
       const complete = async () => {
         for (const cityName of cities) {
           const office = await $.corporation['getOffice'](divisionName, cityName);
-          await $.corporation['upgradeOfficeSize'](
-            divisionName,
-            cityName,
-            targetSize - office.size,
-          );
+          const upgradeCount = targetSize - office.size;
+          if (upgradeCount > 0) {
+            await $.corporation['upgradeOfficeSize'](divisionName, cityName, upgradeCount);
+          }
         }
         return true;
       };
