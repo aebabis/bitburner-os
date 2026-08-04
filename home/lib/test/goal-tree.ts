@@ -87,8 +87,11 @@ export async function main(ns: NS) {
         assert.equal(eitherGoal([neverGoal(), finite]).timeToComplete(), 100);
       });
 
-      it('timeToComplete() is Infinity when every branch is unpriceable', () => {
-        assert.equal(eitherGoal([neverGoal(), neverGoal()]).timeToComplete(), Infinity);
+      it('timeToComplete() is unpriceable when every branch is', () => {
+        assert.equal(
+          eitherGoal([neverGoal(), neverGoal()]).timeToComplete(),
+          Number.MAX_SAFE_INTEGER,
+        );
       });
     });
   });
@@ -96,7 +99,7 @@ export async function main(ns: NS) {
   describe('timeToComplete', () => {
     it('an unpriceable dep makes its dependent unpriceable', () => {
       const joinGoal = factionJoinGoal('F' as FactionName, [], [neverGoal()]);
-      assert.equal(joinGoal.timeToComplete(), Infinity);
+      assert.equal(joinGoal.timeToComplete(), Number.MAX_SAFE_INTEGER);
     });
 
     it('sums depsMax + ownTime for a chain', () => {
@@ -396,8 +399,9 @@ export async function main(ns: NS) {
     it('utility returns value / (eta + overhead)', () => {
       const tree = buildFactionGoalTree(ns, 'F' as FactionName, valueTestData(1));
       assert.ok(tree);
-      // repReq=100, repRate=1 → eta=100s; value=5.0; overhead=50
-      assert.equal(tree.utility(50), 5.0 / (100 + 50));
+      // repReq=100, repRate=1 → eta=100s; overhead=50.
+      // Value is log-utility: hacking weight 5 × ln(1.5), not the pre-migration 5.0.
+      assert.equal(tree.utility(50), (5 * Math.log(1.5)) / (100 + 50));
     });
 
     it('utility is higher for a faster plan (same value, shorter eta)', () => {

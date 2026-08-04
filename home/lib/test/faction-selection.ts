@@ -268,7 +268,7 @@ export async function main(ns: NS) {
       const { faction } = selectAugmentations(
         [],
         data,
-        mockPlayer({}, { factions: ['Sector-12'] }),
+        mockPlayer({ hacking: 100 }, { factions: ['Sector-12'] }),
       );
       assert.equal(faction, 'Sector-12');
     });
@@ -289,7 +289,7 @@ export async function main(ns: NS) {
       const { faction } = selectAugmentations(
         [],
         data,
-        mockPlayer({}, { factions: ['Sector-12'] }),
+        mockPlayer({ hacking: 100 }, { factions: ['Sector-12'] }),
       );
       assert.equal(faction, 'Aevum');
     });

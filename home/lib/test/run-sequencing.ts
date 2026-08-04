@@ -131,7 +131,7 @@ export async function main(ns: NS) {
           augsObtained = [...augsObtained, ...aug.augmentations];
           runNum++;
           if (aug.augmentations.includes('DataJack')) {
-            const uniqueLeft = (staticData as any).augmentations.filter(
+            const uniqueLeft = staticData.singularityData.augmentationNames.filter(
               (a: string) => a !== 'NeuroFlux Governor',
             );
             console.log('Got to DataJack with ' + uniqueLeft.length + ' augs to buy');
