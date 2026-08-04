@@ -84,7 +84,7 @@ export async function main(ns: NS) {
       return str + def + dex + agi;
     };
 
-    const respect = async (name: string) => memberInfo[name].earnedRespect;
+    const respect = (name: string) => memberInfo[name].earnedRespect;
 
     const { territory, power } = allGangInfo[gangName];
     const winRates = getFightWinRates(gangName, allGangInfo);
