@@ -7,11 +7,10 @@ export const $createCorporation = (ns: NS) => async (selfFund: boolean) =>
     ns,
     ns.pid,
   )((corpName: string, selfFund: boolean) => {
-    return (
-      ns.corporation.hasCorporation() ||
-      (ns.corporation.canCreateCorporation(selfFund) === 'Success' &&
-        ns.corporation['createCorporation'](corpName, selfFund))
-    );
+    if (ns.corporation.hasCorporation()) return true;
+    const canCreate = ns.corporation.canCreateCorporation(selfFund);
+    if (canCreate === 'Success') return ns.corporation['createCorporation'](corpName, selfFund);
+    throw new Error('Attempted to create corp illegally: ' + canCreate);
   })(CORP_NAME, selfFund);
 
 export const $getMaterialData = (ns: NS) =>
