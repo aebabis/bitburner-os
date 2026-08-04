@@ -1,6 +1,6 @@
 import { inPlace, runInPlace } from '../../lib/in-place';
 
-export const $train =
+export const $gymTrain =
   (ns: NS) =>
   async (focus = true, stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
     await runInPlace(
@@ -160,9 +160,9 @@ export const $startAction =
   (ns: NS) => async (type: BladeburnerActionType, name: BladeburnerActionName) => {
     const currentAction = await inPlace(ns, ns.pid).bladeburner['getCurrentAction']();
     if (currentAction && currentAction.type === type && currentAction.name === name) {
-      return;
+      return false;
     }
-    await inPlace(ns, ns.pid).bladeburner['startAction'](type, name);
+    return await inPlace(ns, ns.pid).bladeburner['startAction'](type, name);
   };
 
 export const $getCurrentAction = async (ns: NS) => {

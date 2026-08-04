@@ -126,6 +126,7 @@ export type HacknetPurchase = {
 export type PlayerData = {
   player: Player;
   factionRep?: Record<FactionName, number>;
+  bladeburnerRepRate?: number;
   currentWork?: Task | null;
   homeRamUpgradeCost?: number;
   isPlayerUsingTerminal?: boolean;

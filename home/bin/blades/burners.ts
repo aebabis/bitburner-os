@@ -1,4 +1,5 @@
 import { makeAfkTracker } from '../../lib/afk';
+import { putPlayerData } from '../../lib/data-store';
 import { getGoals } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
 import { $checkInstall, $sing, $win } from '../../lib/sing.rip';
@@ -8,7 +9,7 @@ import {
   $getCurrentAction,
   $selectCity,
   $startAction,
-  $train,
+  $gymTrain,
   $upgradeSkills,
   BladeAction,
   BladeActions,
@@ -62,6 +63,46 @@ const needsIntel = (actions: BladeActions) => {
   });
 };
 
+const actionRecorder = (ns: NS, lastAugReset: number) => {
+  const $ = inPlace(ns, ns.pid);
+  let doingMissions = true;
+  let repThisMissionCycle = 0;
+  let missionCycleStart = Date.now();
+  const $saveRepRate = async () => {
+    const missionCycleTime = (Date.now() - missionCycleStart) / 1000;
+    const augCycleTime = (Date.now() - lastAugReset) / 1000;
+    const installRep = await $.singularity['getFactionRep']('Bladeburners');
+    const installAvgRep = installRep / augCycleTime;
+    const cycleAvgRep = repThisMissionCycle / missionCycleTime;
+    const bladeburnerRepRate = Math.max(installAvgRep, cycleAvgRep);
+    putPlayerData(ns, { bladeburnerRepRate });
+  };
+  type ActionDesc = { type: BladeburnerActionType; name: BladeburnerActionName };
+  return async (action: ActionDesc | null) => {
+    let expectedRepGain = 0;
+    if (action) {
+      const actionRepGain = await $.bladeburner['getActionRepGain'](action.type, action.name);
+      const [lowChance, highChance] = await $.bladeburner['getActionEstimatedSuccessChance'](
+        action.type,
+        action.name,
+      );
+      const chance = (lowChance + highChance) / 2;
+      expectedRepGain = chance * actionRepGain;
+    }
+    if (expectedRepGain === 0) {
+      doingMissions = false;
+    } else {
+      if (!doingMissions) {
+        await $saveRepRate();
+        doingMissions = true;
+        repThisMissionCycle = 0;
+        missionCycleStart = Date.now();
+      }
+      repThisMissionCycle += expectedRepGain;
+    }
+  };
+};
+
 export async function main(ns: NS) {
   const $ = inPlace(ns, ns.pid);
   openTail(ns);
@@ -71,11 +112,20 @@ export async function main(ns: NS) {
   const afkTracker = makeAfkTracker(ns);
   const focus = () => afkTracker.timeSinceAction() > 20000;
 
-  const { ownedAugs } = await $['getResetInfo']();
+  const { ownedAugs, lastAugReset } = await $['getResetInfo']();
   const hasBlade = ownedAugs.has("The Blade's Simulacrum");
 
+  const $recordAction = actionRecorder(ns, lastAugReset);
+  const $start = async (type: BladeburnerActionType, name: BladeburnerActionName) => {
+    if (await $startAction(ns)(type, name)) await $recordAction({ type, name });
+  };
+  const $train = async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
+    await $gymTrain(ns)(focus(), stat);
+    await $recordAction(null);
+  };
+
   while (!(await $.bladeburner['joinBladeburnerDivision']())) {
-    await $train(ns)(focus());
+    await $train();
     await ns.sleep(1000);
   }
 
@@ -105,23 +155,23 @@ export async function main(ns: NS) {
     if (hasStaminaPenalty && !(await $wouldLoseProgress())) {
       await $.bladeburner['stopBladeburnerAction']();
       if (hasBlade) {
-        await $startAction(ns)('General', 'Training');
+        await $start('General', 'Training');
       } else {
-        await $train(ns)(focus(), 'agility');
+        await $train('agility');
       }
     } else if (cities[city].chaos > 10) {
-      await $startAction(ns)('General', 'Diplomacy');
+      await $start('General', 'Diplomacy');
     } else {
       const mission = await getNextMission(ns)(actions, currentBlackOp, rank);
       if (mission) {
         const [type, name] = mission;
-        await $startAction(ns)(type, name);
+        await $start(type, name);
       } else if (needsIntel(actions)) {
-        await $startAction(ns)('General', 'Field Analysis');
+        await $start('General', 'Field Analysis');
       } else if (hasBlade) {
-        await $startAction(ns)('General', 'Training');
+        await $start('General', 'Training');
       } else {
-        await $train(ns)(focus());
+        await $train();
       }
     }
     const currentAction = await $getCurrentAction(ns);
