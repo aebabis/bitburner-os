@@ -236,7 +236,7 @@ export async function main(ns: NS) {
 
   // Reserve RAM
   ns.sleeve.getSleeve;
-  ns.sleeve.getTask;
+  ns.singularity.getCrimeChance;
 
   const $getSleeves = (numSleeves: number) =>
     $rip((numSleeves) =>
@@ -316,8 +316,16 @@ export async function main(ns: NS) {
     }
   };
 
+  const $currentWork = () =>
+    $rip(() => {
+      const action = ns.singularity['getCurrentWork']();
+      if (action == null) return null;
+      const { nextCompletion, ...copy } = action;
+      return copy;
+    })();
+
   const $playerKarmaRate = async () => {
-    const playerAction = ns.singularity.getCurrentWork();
+    const playerAction = await $currentWork();
     if (playerAction?.type !== 'CRIME') return 0;
     const chance = await $.singularity['getCrimeChance'](playerAction.crimeType);
     const stats = crimeStats[playerAction.crimeType];
@@ -363,7 +371,7 @@ export async function main(ns: NS) {
   const $assignSleeves = async (sleeves: SleeveInfo[]): Promise<SleeveMode | null> => {
     if (sleeves.length === 0) return null;
     const goals = getGoals(ns);
-    const isPlayerGrafting = ns.singularity.getCurrentWork()?.type === 'GRAFTING';
+    const isPlayerGrafting = (await $currentWork())?.type === 'GRAFTING';
     const factionRepGoal = goals.prerequisites('FACTION_REP')[0];
     // TODO: Make sleeves check for Daedalus EITHER branch and pursue shorter one
     const combatGoal = goals.prerequisites('COMBAT_LEVEL').find((goal) => !goal.isDone());
