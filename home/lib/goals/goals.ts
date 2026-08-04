@@ -25,6 +25,7 @@ import { HORIZON_MS } from '../../etc/config.ts';
 import {
   buildFactionGoalTree,
   buildJoinSubtree,
+  getBladeburnerJoinTree,
   getBladeburnerTree,
   isRepBound as isRepBoundPure,
 } from './tree.ts';
@@ -54,6 +55,7 @@ const startingServerOverhead = (
 };
 
 export const getGoals = (ns: NS): Goal => {
+  const playerData = getPlayerData(ns);
   const {
     player,
     factionRep,
@@ -64,7 +66,7 @@ export const getGoals = (ns: NS): Goal => {
     fragmentMultipliers,
     hacknet,
     bladeburnerRepRate,
-  } = getPlayerData(ns);
+  } = playerData;
   const { money } = player;
   const staticData = getStaticData(ns);
   const { currentNode, ownedSF, ownedAugs: installedAugs } = staticData.resetInfo;
@@ -166,7 +168,7 @@ export const getGoals = (ns: NS): Goal => {
     if (hasBladeburnerReadyMults(player)) {
       return getBladeburnerTree(
         staticData,
-        getPlayerData(ns),
+        playerData,
         getMoneyData(ns),
         totalIncome,
         ns.bladeburner.inBladeburner(),
@@ -174,6 +176,14 @@ export const getGoals = (ns: NS): Goal => {
         staticData.bitNodeMultipliers,
       );
     }
+  } else if (ownedSF.get(7) === 3) {
+    const joinTree = getBladeburnerJoinTree(
+      playerData,
+      ns.bladeburner.inBladeburner(),
+      formulas,
+      staticData.bitNodeMultipliers,
+    );
+    if (!joinTree.isDone() && joinTree.timeToComplete() < 60) return reevaluateGoal(joinTree);
   }
 
   if (currentNode === 8 && !access4SDataApi) {

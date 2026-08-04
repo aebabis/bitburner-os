@@ -1,3 +1,4 @@
+import { THE_BLADE } from '../../etc/augmentations';
 import { makeAfkTracker } from '../../lib/afk';
 import { putPlayerData } from '../../lib/data-store';
 import { getGoals } from '../../lib/goals/goals';
@@ -112,15 +113,16 @@ export async function main(ns: NS) {
   const afkTracker = makeAfkTracker(ns);
   const focus = () => afkTracker.timeSinceAction() > 20000;
 
-  const { ownedAugs, lastAugReset } = await $['getResetInfo']();
-  const hasBlade = ownedAugs.has("The Blade's Simulacrum");
-
+  const { lastAugReset } = await $['getResetInfo']();
   const $recordAction = actionRecorder(ns, lastAugReset);
+
   const $start = async (type: BladeburnerActionType, name: BladeburnerActionName) => {
     if (await $startAction(ns)(type, name)) await $recordAction({ type, name });
   };
   const $train = async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
-    await $gymTrain(ns)(focus(), stat);
+    if (ns.singularity.getCurrentWork()?.type !== 'GRAFTING') {
+      await $gymTrain(ns)(focus(), stat);
+    }
     await $recordAction(null);
   };
 
@@ -128,6 +130,10 @@ export async function main(ns: NS) {
     await $train();
     await ns.sleep(1000);
   }
+
+  const { ownedAugs } = await $['getResetInfo']();
+  // Called again to account for SF7.3 giving augmentation on join
+  const hasBlade = ownedAugs.has(THE_BLADE);
 
   while (true) {
     if (!hasBlade) {

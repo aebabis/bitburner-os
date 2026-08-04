@@ -218,6 +218,7 @@ export async function main(ns: NS) {
     const findGoal = <T extends GoalType>(type: T) =>
       relevantGoals.find((g): g is GoalOfType<T> => g.type === type);
     const combatGoal = findGoal('COMBAT_LEVEL');
+    const bladesJoinGoal = findGoal('BLADES_JOIN');
     const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
     const { city, money, skills } = ns.getPlayer();
@@ -228,6 +229,10 @@ export async function main(ns: NS) {
 
     if (currentWork?.type === 'GRAFTING') {
       return;
+    }
+
+    if (bladesJoinGoal != null && bladesJoinGoal.deps.every((dep) => dep.isDone())) {
+      await $.bladeburner['joinBladeburnerDivision']();
     }
 
     if (findGoal('HACKING_XP') && canGoToSchool) {

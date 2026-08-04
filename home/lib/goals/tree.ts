@@ -115,7 +115,6 @@ const skillTrainingTime = (
 
 export const combatMutexGoal = (
   combatReq: number,
-  skills: Skills,
   player: Player,
   formulas: MockFormulas | Formulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
@@ -125,7 +124,7 @@ export const combatMutexGoal = (
     COMBAT_STATS.map((stat) => {
       const req = combatRequirement(combatReq, stat, fragmentMultipliers);
       const t = skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers);
-      return combatLevelsGoal(req, stat, skills, t, combatReq);
+      return combatLevelsGoal(req, stat, player.skills, t, combatReq);
     }),
     `${combatReq} in combat stats`,
   );
@@ -289,7 +288,6 @@ export const buildJoinSubtree = (
     joinPrereqs.push(
       combatMutexGoal(
         combatReq,
-        skills,
         player,
         formulas,
         staticData.bitNodeMultipliers,
@@ -309,7 +307,6 @@ export const buildJoinSubtree = (
     if (cReq > 0) {
       return combatMutexGoal(
         cReq,
-        skills,
         player,
         formulas,
         staticData.bitNodeMultipliers,
@@ -507,6 +504,22 @@ export const buildFactionGoalTree = (
   });
 };
 
+export const getBladeburnerJoinTree = (
+  playerData: PlayerData,
+  inBladeburner: boolean,
+  formulas: Formulas | MockFormulas,
+  bitNodeMultipliers: BitNodeMultipliers | null,
+) => {
+  const cbGoal = combatMutexGoal(
+    100,
+    playerData.player,
+    formulas,
+    bitNodeMultipliers,
+    playerData.fragmentMultipliers,
+  );
+  return bladesJoinGoal(inBladeburner, [cbGoal]);
+};
+
 export const getBladeburnerTree = (
   staticData: SF4StaticData,
   playerData: PlayerData,
@@ -516,24 +529,18 @@ export const getBladeburnerTree = (
   formulas: Formulas | MockFormulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
-  const { player, factionRep, fragmentMultipliers, bladeburnerRepRate = 0 } = playerData;
+  const { player, factionRep, bladeburnerRepRate = 0 } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
   const { augmentationPrices, augmentationRepReqs } = staticData.singularityData;
   const bladePrice = augmentationPrices[THE_BLADE] ?? 0;
   const bladeRepCost = augmentationRepReqs[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
-  const cbGoals = COMBAT_STATS.map((stat) => {
-    const req = combatRequirement(100, stat, fragmentMultipliers);
-    const t = skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers);
-    return combatLevelsGoal(
-      combatRequirement(100, stat, fragmentMultipliers),
-      stat,
-      player.skills,
-      t,
-      100,
-    );
-  });
-  const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals, '100 in combat stats')]);
+  const joinBlades = getBladeburnerJoinTree(
+    playerData,
+    inBladeburner,
+    formulas,
+    bitNodeMultipliers,
+  );
   const deps = joinBlades.isDone() ? [] : [joinBlades];
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, deps);
   if (bladeburnerRepRate === 0) {

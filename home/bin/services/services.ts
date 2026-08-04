@@ -20,6 +20,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const stockConstants = ns.stock.getConstants();
   const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
   const hasPermanentFormulas = (ownedSF.get(5) ?? 0) >= 2;
+  const hasPermanentBlade = (ownedSF.get(7) ?? 0) === 3;
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
@@ -45,9 +46,11 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const enablePool = () => hasNode(9) && currentNode !== 8;
   const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
   const enableCorp = () => usingCorp(staticData);
-  const hasSimulacrum = () => ownedAugs.has("The Blade's Simulacrum");
+  const hasSimulacrum = () =>
+    ownedAugs.has(THE_BLADE) || (hasPermanentBlade && ns.bladeburner.inBladeburner());
   const preferAngel = () => hasFormulas();
-  const inBladeNode = () => [6, 7].includes(currentNode);
+  const inBladeNode = () =>
+    [6, 7].includes(currentNode) || (hasPermanentBlade && currentNode !== 8);
   const canStanek = () => hasNode(13) && currentNode !== 8;
   const canAutoGraft = () => hasNode(4) && hasNode(10) && currentNode !== 8;
   const hasSleeves = () => hasNode(10);
@@ -65,8 +68,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const buyingBlade = () =>
     getGoals(ns).actions.some((action) => action.type === 'BUY_AUG' && action.name === THE_BLADE);
   const preferBlade = () => inBladeNode() && buyingBlade();
-  const useBlade = () => preferBlade() || hasSimulacrum();
-  const canWork = () => !preferBlade() || hasSimulacrum();
+  const useBlade = () => hasSimulacrum() || preferBlade();
+  const canWork = () => hasSimulacrum() || !preferBlade();
   const canShare = () => player(ns).skills.hacking > 100;
   const hasDarkscape = () => ns.fileExists('DarkscapeNavigator.exe', 'home');
 
