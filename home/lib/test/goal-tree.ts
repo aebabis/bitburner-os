@@ -4,8 +4,13 @@ import {
   eitherGoal,
   factionJoinGoal,
   factionRepGoal,
+  horizonGoal,
   installGoal,
   karmaGoal,
+  labyrinthGoal,
+  mutexGoal,
+  neverGoal,
+  waitGoal,
   type Goal,
 } from '../goals/nodes';
 import { isRepBound, buildFactionGoalTree } from '../goals/tree';
@@ -33,16 +38,21 @@ export async function main(ns: NS) {
         assert.equal(augMoneyGoal(1000, 1000, 1).isDone(), true);
       });
 
-      it('ownTime() is null when totalIncome is 0', () => {
-        assert.equal(augMoneyGoal(1000, 0, 0).ownTime(), null);
+      it('throws when totalIncome is 0', () => {
+        // The rate is a precondition, not something to represent as an absent time:
+        // getGoals gates on totalIncome before building any money-driven tree.
+        assert.throws(() => augMoneyGoal(1000, 0, 0), 'expected a throw on zero income');
       });
     });
 
     describe('factionRepGoal', () => {
       const join = factionJoinGoal('F' as FactionName, ['F' as FactionName]);
 
-      it('ownTime() is null when rate is 0', () => {
-        assert.equal(factionRepGoal('F' as FactionName, 1000, 0, join, 0).ownTime(), null);
+      it('throws when repRate is 0', () => {
+        assert.throws(
+          () => factionRepGoal('F' as FactionName, 1000, 0, join, 0),
+          'expected a throw on zero rep rate',
+        );
       });
 
       it('ownTime() is 0 when rep is already met', () => {
@@ -61,7 +71,7 @@ export async function main(ns: NS) {
     describe('eitherGoal', () => {
       it('isDone() is true when any branch is done', () => {
         const done = augMoneyGoal(0, 0, 1);
-        const notDone = augMoneyGoal(1000, 0, 0);
+        const notDone = augMoneyGoal(1000, 0, 1);
         assert.equal(eitherGoal([notDone, done]).isDone(), true);
         assert.equal(eitherGoal([notDone]).isDone(), false);
       });
@@ -72,26 +82,21 @@ export async function main(ns: NS) {
         assert.equal(eitherGoal([slow, fast]).timeToComplete(), 100);
       });
 
-      it('timeToComplete() ignores null branches when another is finite', () => {
-        const blocked = augMoneyGoal(1000, 0, 0); // rate 0 -> null
+      it('timeToComplete() prefers a finite branch over an unpriceable one', () => {
         const finite = augMoneyGoal(100, 0, 1); // 100s
-        assert.equal(eitherGoal([blocked, finite]).timeToComplete(), 100);
+        assert.equal(eitherGoal([neverGoal(), finite]).timeToComplete(), 100);
       });
 
-      it('timeToComplete() is null when every branch is null', () => {
-        const a = augMoneyGoal(1000, 0, 0);
-        const b = augMoneyGoal(2000, 0, 0);
-        assert.equal(eitherGoal([a, b]).timeToComplete(), null);
+      it('timeToComplete() is Infinity when every branch is unpriceable', () => {
+        assert.equal(eitherGoal([neverGoal(), neverGoal()]).timeToComplete(), Infinity);
       });
     });
   });
 
   describe('timeToComplete', () => {
-    it('returns null when dep has null ownTime', () => {
-      // factionRepGoal with rate=0 has null ownTime → its dependent returns null
-      const joinGoal = factionJoinGoal('F' as FactionName, ['F' as FactionName]);
-      const rep = factionRepGoal('F' as FactionName, 1000, 0, joinGoal, 0);
-      assert.equal(rep.timeToComplete(), null);
+    it('an unpriceable dep makes its dependent unpriceable', () => {
+      const joinGoal = factionJoinGoal('F' as FactionName, [], [neverGoal()]);
+      assert.equal(joinGoal.timeToComplete(), Infinity);
     });
 
     it('sums depsMax + ownTime for a chain', () => {
@@ -110,6 +115,41 @@ export async function main(ns: NS) {
       // Verify by checking each independently
       assert.equal(rep.timeToComplete(), 200);
       assert.equal(money.timeToComplete(), 50);
+    });
+  });
+
+  describe('time invariants', () => {
+    // These are the properties the whole null-removal rests on. A regression here
+    // means a consumer silently gets 0 or NaN where it expected a duration.
+    it('a not-done goal never reports 0', () => {
+      const roots = [horizonGoal(1800), labyrinthGoal(0), waitGoal(), neverGoal()];
+      for (const g of roots) {
+        assert.equal(g.isDone(), false, g.desc);
+        assert.ok(g.timeToComplete() > 0, `${g.desc} reported ${g.timeToComplete()}`);
+      }
+    });
+
+    it('every goal reports a non-negative, non-NaN time', () => {
+      const goals = [
+        horizonGoal(1800),
+        labyrinthGoal(0),
+        waitGoal(),
+        neverGoal(),
+        augMoneyGoal(1000, 0, 1),
+        factionRepGoal('F' as FactionName, 100, 0, factionJoinGoal('F' as FactionName, []), 1),
+      ];
+      for (const g of goals) {
+        const t = g.timeToComplete();
+        assert.ok(!Number.isNaN(t), `${g.desc} reported NaN`);
+        assert.ok(t >= 0, `${g.desc} reported ${t}`);
+      }
+    });
+
+    it('mutexGoal sums its parts, eitherGoal takes the min', () => {
+      const a = augMoneyGoal(100, 0, 1); // 100s
+      const b = augMoneyGoal(300, 0, 1); // 300s
+      assert.equal(mutexGoal([a, b]).timeToComplete(), 400);
+      assert.equal(eitherGoal([a, b]).timeToComplete(), 100);
     });
   });
 
@@ -137,7 +177,7 @@ export async function main(ns: NS) {
         queuedAugmentations: ['OwnedAug'],
         ownedAugs: ['OwnedAug'],
         money: 0,
-        totalIncome: 0,
+        totalIncome: 1,
         formulas: mockFormulas as any,
         karma: 0,
         overhead: computeResetOverhead(staticData),
@@ -208,7 +248,7 @@ export async function main(ns: NS) {
         queuedAugmentations: [],
         ownedAugs: [],
         money: 0,
-        totalIncome: 0,
+        totalIncome: 1,
         formulas: mockFormulas as any,
         karma: 0,
         overhead: computeResetOverhead(staticData),
@@ -259,7 +299,7 @@ export async function main(ns: NS) {
         queuedAugmentations: [],
         ownedAugs: [],
         money: 0,
-        totalIncome: 0,
+        totalIncome: 1,
         formulas: mockFormulas as any,
         karma: 0,
         overhead: computeResetOverhead(staticData),
@@ -311,7 +351,7 @@ export async function main(ns: NS) {
         queuedAugmentations: [],
         ownedAugs: [],
         money: 0,
-        totalIncome: 0,
+        totalIncome: 1,
         formulas: mockFormulas as any,
         karma: 0,
         overhead: computeResetOverhead(staticData),
@@ -346,7 +386,7 @@ export async function main(ns: NS) {
         queuedAugmentations: [],
         ownedAugs: [],
         money: 0,
-        totalIncome: 0,
+        totalIncome: 1,
         formulas: mockFormulas as any,
         karma: 0,
         overhead: computeResetOverhead(staticData),
@@ -434,11 +474,11 @@ export async function main(ns: NS) {
     const joinGoal = factionJoinGoal('TestFaction' as FactionName, ['TestFaction' as FactionName]);
     const root = (repGoal: Goal, moneyGoal: Goal) => installGoal([repGoal, moneyGoal], []);
 
-    it('returns true when rep rate is unknown (null ownTime on rep goal)', () => {
-      // rate=0 → ownTime() returns null → timeToComplete returns null
-      const repGoal = factionRepGoal('TestFaction' as FactionName, 1000, 0, joinGoal, 0);
-      const moneyGoal = augMoneyGoal(1000, 0, 1);
-      assert.equal(isRepBound(root(repGoal, moneyGoal)), true);
+    it('returns true when the plan has no money goal', () => {
+      // The favor-grind plan has a rep goal and no AUG_MONEY, so rep is the only
+      // thing left to wait on. A zero rep rate can no longer be constructed.
+      const repGoal = factionRepGoal('TestFaction' as FactionName, 1000, 0, joinGoal, 1);
+      assert.equal(isRepBound(installGoal([repGoal], [])), true);
     });
 
     it('returns true when rep time >= money time', () => {

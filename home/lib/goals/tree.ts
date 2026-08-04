@@ -343,12 +343,12 @@ export const buildJoinSubtree = (
 
 export const isRepBound = (root: Goal) => {
   const unmetRepGoals = root.prerequisites('FACTION_REP').filter((g) => !g.isDone());
-  if (unmetRepGoals.find((g) => g.timeToComplete() == null)) return true;
   const maxRepTime =
-    unmetRepGoals.length > 0 ? Math.max(...unmetRepGoals.map((g) => g.timeToComplete() ?? 0)) : 0;
+    unmetRepGoals.length > 0 ? Math.max(...unmetRepGoals.map((g) => g.timeToComplete())) : 0;
   const [amg] = root.prerequisites('AUG_MONEY');
-  const moneyTime = amg != null ? amg.timeToComplete() : null;
-  return moneyTime == null || moneyTime <= maxRepTime;
+  // No money target at all: rep is the only thing left to wait on.
+  if (amg == null) return true;
+  return amg.timeToComplete() <= maxRepTime;
 };
 
 /**

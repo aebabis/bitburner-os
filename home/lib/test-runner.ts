@@ -22,6 +22,7 @@ type AssertFn = {
   notEqual(actual: unknown, expected: unknown, message?: string): void;
   deepEqual(actual: unknown, expected: unknown, message?: string): void;
   close(actual: number, expected: number, tolerance?: number, message?: string): void;
+  throws(fn: () => unknown, message?: string): void;
 };
 
 type ItFn = {
@@ -149,4 +150,15 @@ export const assert: AssertFn = Object.assign(assertBase, {
       Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected)),
       message ?? `Expected ${actual} to be within ${tolerance * 100}% of ${expected}`,
     ),
+  // Goal constructors assert their preconditions rather than returning an absent
+  // time, so "this input is rejected" is a contract worth testing directly.
+  throws: (fn: () => unknown, message?: string) => {
+    let threw = false;
+    try {
+      fn();
+    } catch {
+      threw = true;
+    }
+    assertBase(threw, message ?? 'Expected the call to throw');
+  },
 });
