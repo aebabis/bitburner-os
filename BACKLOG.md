@@ -3,6 +3,7 @@
 - Goals: track training rates for HACKING_LEVEL/COMBAT_LEVELS so `ownTime()` returns an estimate instead of null
 - Goals: implement `buildGoals(data)` entry point for goal searching (test hypothetical parameters, e.g. which faction work assignment minimizes timeToComplete)
 - Planner: support running services on hacknet servers. Needed only for a direct BN4.1 → BN9.1 entry, where cloud servers cannot be purchased and home is too small for `/boot/data4.ts` (~84GB at SF4.1) — so there is nowhere to place `love.ts` and no way to grow out of it. Every other SF4.1 path resolves via a 128GB cloud server. Low priority
+- Goals (low): refine `labyrinthGoal`'s flat 5m estimate. It fires only once the player already meets the charisma target, so the figure is labyrinth *traversal* time, not training — improving it means analysing the labyrinth map. 5m is a reasonable central value but varies a lot. Its only job is to outrank the default faction path when a free aug is close, so precision has little leverage
 - More BN1.1 todo items/toasts. (remind player to buy/make programs)
 - Implement service restarts
 - Port inspector

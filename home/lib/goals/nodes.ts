@@ -25,7 +25,9 @@ export type GoalType =
   | 'AUG_MONEY'
   | 'HORIZON'
   | 'EITHER'
-  | 'MUTEX';
+  | 'MUTEX'
+  | 'WAIT'
+  | 'NEVER';
 
 export type Action =
   | { type: 'BUY_REP'; faction: FactionName; amount: number }
@@ -38,8 +40,8 @@ type GoalCommon<T extends GoalType> = {
   toString: () => string;
   deps: Goal[];
   actions: Action[];
-  ownTime: () => number | null;
-  timeToComplete: () => number | null;
+  ownTime: () => number;
+  timeToComplete: () => number;
   prerequisites: {
     (): Goal[];
     <U extends GoalType>(typeFilter: U): GoalOfType<U>[];
@@ -89,18 +91,23 @@ export const COMBAT_STATS = ['strength', 'defense', 'dexterity', 'agility'] as c
 export type CombatStat = (typeof COMBAT_STATS)[number];
 export const NEUROFLUX = 'NeuroFlux Governor';
 
+const assertFinitePositive = (n: number, name: string) => {
+  if (n <= 0 || Number.isNaN(n) || !Number.isFinite(n))
+    throw new Error(name + ' must be positive. Got: ' + n);
+};
+
 interface GoalProps {
   deps?: Goal[];
   actions?: Action[];
-  ownTime?: () => number | null;
+  ownTime?: () => number;
 }
 const goal = <T extends GoalType>(
   type: T,
   desc: string,
   isDone: () => boolean,
-  { deps = [], actions = [], ownTime = () => null }: GoalProps = {},
+  { deps = [], actions = [], ownTime = () => 0 }: GoalProps = {},
 ): GoalCommon<T> => {
-  let _ttc: number | null;
+  let _ttc: number;
   const prerequisites = ((typeFilter?: GoalType) => {
     const seen = new Set<Goal>();
     const result: Goal[] = [];
@@ -127,10 +134,9 @@ const goal = <T extends GoalType>(
     timeToComplete() {
       if (_ttc !== undefined) return _ttc;
       if (isDone()) return (_ttc = 0);
-      const depsMax =
-        deps.length === 0 ? 0 : Math.max(...deps.map((d) => d.timeToComplete() ?? Infinity));
+      const depsMax = deps.length === 0 ? 0 : Math.max(...deps.map((d) => d.timeToComplete()));
       const own = ownTime();
-      return (_ttc = depsMax === Infinity || own == null ? null : depsMax + own);
+      return (_ttc = depsMax + own);
     },
   };
 };
@@ -176,7 +182,7 @@ export const reevaluateGoal = (dep: Goal) =>
 export const hackingLevelGoal = (
   hackReq: number,
   currentHacking: number,
-  trainingTime: number | null = null,
+  trainingTime: number,
 ) => ({
   ...goal('HACKING_LEVEL', `Hacking ≥ ${Math.ceil(hackReq)}`, () => currentHacking >= hackReq, {
     ownTime: () => trainingTime,
@@ -184,11 +190,7 @@ export const hackingLevelGoal = (
   requirement: hackReq,
 });
 
-export const hackingXpGoal = (
-  xpReq: number,
-  currentXp: number,
-  trainingTime: number | null = null,
-) => ({
+export const hackingXpGoal = (xpReq: number, currentXp: number, trainingTime: number) => ({
   ...goal('HACKING_XP', `Hacking XP ≥ ${Math.ceil(xpReq)}`, () => currentXp >= xpReq, {
     ownTime: () => trainingTime,
   }),
@@ -199,7 +201,7 @@ export const combatLevelsGoal = (
   combatReq: number,
   stat: CombatStat,
   currentSkills: Skills,
-  trainingTime: number | null = null,
+  trainingTime: number,
   /** Goal without Stanek multiplier. Matches `combatReq` when modifier is 1 **/
   baseReq: number = combatReq,
 ) => {
@@ -230,16 +232,15 @@ export const karmaGoal = (karmaRequired: number, karma: number, deps: Goal[] = [
   requirement: karmaRequired,
 });
 
-export const moneyPrereqGoal = (
-  moneyTarget: number,
-  currentMoney: number,
-  totalIncome: number,
-) => ({
-  ...goal('MONEY', `Have ${fmtMoney(moneyTarget)}`, () => currentMoney >= moneyTarget, {
-    ownTime: () => (totalIncome > 0 ? Math.max(0, moneyTarget - currentMoney) / totalIncome : null),
-  }),
-  requirement: moneyTarget,
-});
+export const moneyPrereqGoal = (moneyTarget: number, currentMoney: number, totalIncome: number) => {
+  assertFinitePositive(totalIncome, 'totalIncome');
+  return {
+    ...goal('MONEY', `Have ${fmtMoney(moneyTarget)}`, () => currentMoney >= moneyTarget, {
+      ownTime: () => Math.max(0, moneyTarget - currentMoney) / totalIncome,
+    }),
+    requirement: moneyTarget,
+  };
+};
 
 export const locationGoal = (location: CityName, currentLocation: CityName) => ({
   ...goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
@@ -271,32 +272,38 @@ export const factionRepGoal = (
   requirement: number,
   currentRep: number,
   dep: Goal,
-  repRate = 0,
-) => ({
-  ...goal(
-    'FACTION_REP',
-    `Gain ${Math.round(requirement)} rep (${faction})`,
-    () => currentRep >= requirement,
-    {
-      deps: [dep],
-      ownTime: () => (repRate > 0 ? Math.max(0, requirement - currentRep) / repRate : null),
-    },
-  ),
-  requirement,
-  faction,
-});
+  repRate: number,
+) => {
+  assertFinitePositive(repRate, 'repRate');
+  return {
+    ...goal(
+      'FACTION_REP',
+      `Gain ${Math.round(requirement)} rep (${faction})`,
+      () => currentRep >= requirement,
+      {
+        deps: [dep],
+        ownTime: () => Math.max(0, requirement - currentRep) / repRate,
+      },
+    ),
+    requirement,
+    faction,
+  };
+};
 
-export const augMoneyGoal = (costToAug: number, liquidAssets: number, totalIncome: number) => ({
-  ...goal(
-    'AUG_MONEY',
-    'Save ' + fmtMoney(costToAug) + ' for augmentations',
-    () => liquidAssets >= costToAug,
-    {
-      ownTime: () => (totalIncome > 0 ? Math.max(0, costToAug - liquidAssets) / totalIncome : null),
-    },
-  ),
-  requirement: costToAug,
-});
+export const augMoneyGoal = (costToAug: number, liquidAssets: number, totalIncome: number) => {
+  assertFinitePositive(totalIncome, 'totalIncome');
+  return {
+    ...goal(
+      'AUG_MONEY',
+      'Save ' + fmtMoney(costToAug) + ' for augmentations',
+      () => liquidAssets >= costToAug,
+      {
+        ownTime: () => Math.max(0, costToAug - liquidAssets) / totalIncome,
+      },
+    ),
+    requirement: costToAug,
+  };
+};
 
 export const buyAugAction = (name: string): Action => ({
   type: 'BUY_AUG',
@@ -316,6 +323,7 @@ export const factionFavorGoal = (
   repRate: number,
   dep: Goal,
 ) => {
+  assertFinitePositive(repRate, 'repRate');
   const remaining = Math.max(0, neededRep - currentRep);
   return {
     ...goal(
@@ -324,7 +332,7 @@ export const factionFavorGoal = (
       () => currentRep >= neededRep,
       {
         deps: [dep],
-        ownTime: () => (repRate > 0 ? remaining / repRate : null),
+        ownTime: () => remaining / repRate,
       },
     ),
     requirement: neededRep,
@@ -341,13 +349,12 @@ export const eitherGoal = (branches: Goal[]) => {
     () => branches.some((b) => b.isDone()),
     { deps: branches, ownTime: () => 0 },
   );
-  let _ttc: number | null | undefined;
+  let _ttc: number;
   return {
     ...base,
-    timeToComplete: (): number | null => {
-      if (_ttc !== undefined) return _ttc;
-      const times = branches.map((b) => b.timeToComplete()).filter((t): t is number => t != null);
-      return (_ttc = times.length > 0 ? Math.min(...times) : null);
+    timeToComplete: (): number => {
+      if (_ttc != null) return _ttc;
+      return (_ttc = Math.min(...branches.map((b) => b.timeToComplete())));
     },
   };
 };
@@ -362,15 +369,12 @@ export const mutexGoal = (parts: Goal[], desc = parts.map((p) => p.desc).join(' 
     deps: parts,
     ownTime: () => 0,
   });
-  let _ttc: number | null | undefined;
+  let _ttc: number;
   return {
     ...base,
-    timeToComplete: (): number | null => {
+    timeToComplete: (): number => {
       if (_ttc !== undefined) return _ttc;
-      const times = parts.map((p) => p.timeToComplete());
-      return (_ttc = times.some((t) => t == null)
-        ? null
-        : (times as number[]).reduce((a, b) => a + b, 0));
+      return (_ttc = parts.map((p) => p.timeToComplete()).reduce((a, b) => a + b, 0));
     },
   };
 };
@@ -379,20 +383,33 @@ export const hacknetGoal = (
   stat: HacknetStat,
   requirement: number,
   current: number,
-  cost: number | null = null,
-  income: number | null = null,
-) => ({
-  ...goal('HACKNET', `${requirement} hacknet ${stat}`, () => current >= requirement, {
-    ownTime: () => {
-      if (current >= requirement) return 0;
-      if (cost == null || income == null || income <= 0) return null;
-      return cost / income;
-    },
-  }),
-  requirement,
-  stat,
-});
+  cost: number,
+  income: number,
+) => {
+  assertFinitePositive(cost, 'cost');
+  assertFinitePositive(income, 'income');
+  return {
+    ...goal('HACKNET', `${requirement} hacknet ${stat}`, () => current >= requirement, {
+      ownTime: () => {
+        if (current >= requirement) return 0;
+        return cost / income;
+      },
+    }),
+    requirement,
+    stat,
+  };
+};
 
 export const labyrinthGoal = (labyAugsHeld: number) => {
-  return goal('LABYRINTH', 'Acquire labyrinth aug #' + (labyAugsHeld + 1), () => false);
+  return goal('LABYRINTH', 'Acquire labyrinth aug #' + (labyAugsHeld + 1), () => false, {
+    ownTime: () => 5 * 60,
+  });
+};
+
+export const waitGoal = (desc = 'Wait for data', time = 10, deps: Goal[] = []) => {
+  return goal('WAIT', desc, () => false, { ownTime: () => time, deps });
+};
+
+export const neverGoal = () => {
+  return goal('NEVER', 'Wait forever', () => false, { ownTime: () => Number.MAX_SAFE_INTEGER });
 };

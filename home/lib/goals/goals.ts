@@ -18,6 +18,7 @@ import {
   augMoneyGoal,
   karmaGoal,
   labyrinthGoal,
+  waitGoal,
 } from './nodes.ts';
 import { HORIZON_MS } from '../../etc/config.ts';
 import {
@@ -71,6 +72,10 @@ export const getGoals = (ns: NS): Goal => {
   const formulas = getFormulas(ns) as unknown as Formulas;
   const karma = ns.heart.break();
   const ownedAugs = [...staticData.installedAugmentations, ...queuedAugmentations];
+
+  if (totalIncome === 0) {
+    return reevaluateGoal(waitGoal('Wait for income data'));
+  }
 
   if (!hasNode(4)) {
     // Determining target augmentations impossible without SF4 data.
@@ -162,6 +167,8 @@ export const getGoals = (ns: NS): Goal => {
         getMoneyData(ns),
         totalIncome,
         ns.bladeburner.inBladeburner(),
+        formulas,
+        staticData.bitNodeMultipliers,
       );
     }
   }
@@ -221,7 +228,7 @@ export const getGoals = (ns: NS): Goal => {
   throw new Error('Unable to make goal tree. This should never happen (NFG can always be pursued)');
 };
 
-export const getTimeToMilestone = (ns: NS): number | null => {
+export const getTimeToMilestone = (ns: NS): number => {
   const root = getGoals(ns);
   const joinGoal = root.prerequisites('FACTION_JOIN').find((g) => !g.isDone());
   if (joinGoal) return joinGoal.timeToComplete();

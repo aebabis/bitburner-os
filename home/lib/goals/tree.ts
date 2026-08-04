@@ -21,6 +21,8 @@ import {
   type Plan,
   type CombatStat,
   bladesJoinGoal,
+  neverGoal,
+  waitGoal,
 } from './nodes.ts';
 import {
   findOptimalBatch,
@@ -115,16 +117,14 @@ export const combatMutexGoal = (
   combatReq: number,
   skills: Skills,
   player: Player,
-  formulas: MockFormulas | Formulas | null,
+  formulas: MockFormulas | Formulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
   fragmentMultipliers: Record<FragmentType, number> | undefined,
 ) =>
   mutexGoal(
     COMBAT_STATS.map((stat) => {
       const req = combatRequirement(combatReq, stat, fragmentMultipliers);
-      const t = formulas
-        ? skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers)
-        : null;
+      const t = skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers);
       return combatLevelsGoal(req, stat, skills, t, combatReq);
     }),
     `${combatReq} in combat stats`,
@@ -134,8 +134,8 @@ const getHacknetGoal = (
   factionRequirements: PlayerRequirement[],
   servers: NodeStats[],
   formulas: MockFormulas | Formulas,
-  income: number | null,
-  mults: HacknetMultipliers | undefined,
+  income: number,
+  mults: HacknetMultipliers,
 ) => {
   const ramReq = factionRequirements.find((req) => req.type === 'hacknetRAM');
   const coreReq = factionRequirements.find((req) => req.type === 'hacknetCores');
@@ -150,19 +150,18 @@ const getHacknetGoal = (
   const currentRam = servers.map((server) => server.ram).reduce((a, b) => a + b, 0);
   const currentLevels = servers.map((server) => server.level).reduce((a, b) => a + b, 0);
 
+  if (currentCores >= targetCores && currentRam >= targetRam && currentLevels >= targetLevels)
+    return null;
+
+  // Disallow Netburners without Formulas.exe
+  // planner already prohibits hacknet without it; duplicated here for type safety
+  if (!('hacknetServers' in formulas)) return neverGoal();
+
   const plannedServers = Array(targetCores)
     .fill(0)
     .map((_, i) => servers[i] ?? { level: 1, ram: 1, cores: 1 });
   const ramPerServer = Math.ceil(targetRam / targetCores);
   const levelsPerServer = Math.ceil(targetLevels / targetCores);
-
-  if (!('hacknetServers' in formulas) || mults == null) {
-    return mutexGoal([
-      hacknetGoal('hacknetCores', targetCores, currentCores, null, income),
-      hacknetGoal('hacknetRAM', targetRam, currentRam, null, income),
-      hacknetGoal('hacknetLevels', targetLevels, currentLevels, null, income),
-    ]);
-  }
 
   const serverCost =
     servers.length > targetCores
@@ -283,9 +282,7 @@ export const buildJoinSubtree = (
 
   if (hackReq != null) {
     const req = hackingRequirement(hackReq, fragmentMultipliers);
-    const t = formulas
-      ? skillTrainingTime(player, 'hacking', req, formulas, staticData.bitNodeMultipliers)
-      : null;
+    const t = skillTrainingTime(player, 'hacking', req, formulas, staticData.bitNodeMultipliers);
     joinPrereqs.push(hackingLevelGoal(req, skills.hacking ?? 0, t));
   }
   if (combatReq != null) {
@@ -305,9 +302,7 @@ export const buildJoinSubtree = (
   const buildSkillGoal = (req: Partial<Skills>) => {
     if (req.hacking) {
       const hReq = hackingRequirement(req.hacking, fragmentMultipliers);
-      const t = formulas
-        ? skillTrainingTime(player, 'hacking', hReq, formulas, staticData.bitNodeMultipliers)
-        : null;
+      const t = skillTrainingTime(player, 'hacking', hReq, formulas, staticData.bitNodeMultipliers);
       return hackingLevelGoal(hReq, skills.hacking ?? 0, t);
     }
     const cReq = Math.max(0, ...COMBAT_STATS.map((stat) => req[stat] ?? 0));
@@ -517,6 +512,8 @@ export const getBladeburnerTree = (
   moneyData: MoneyData,
   totalIncome: number,
   inBladeburner: boolean,
+  formulas: Formulas | MockFormulas,
+  bitNodeMultipliers: BitNodeMultipliers | null,
 ) => {
   const { player, factionRep, fragmentMultipliers } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
@@ -524,20 +521,25 @@ export const getBladeburnerTree = (
   const bladePrice = augmentationPrices[THE_BLADE] ?? 0;
   const bladeRepCost = augmentationRepReqs[THE_BLADE] ?? 0;
   const currentRep = factionRep?.['Bladeburners'] ?? 0;
-  const cbGoals = COMBAT_STATS.map((stat) =>
-    combatLevelsGoal(
+  const cbGoals = COMBAT_STATS.map((stat) => {
+    const req = combatRequirement(100, stat, fragmentMultipliers);
+    const t = skillTrainingTime(player, stat, req, formulas, bitNodeMultipliers);
+    return combatLevelsGoal(
       combatRequirement(100, stat, fragmentMultipliers),
       stat,
       player.skills,
-      null,
+      t,
       100,
-    ),
-  );
+    );
+  });
   const joinBlades = bladesJoinGoal(inBladeburner, [mutexGoal(cbGoals, '100 in combat stats')]);
   const deps = joinBlades.isDone() ? [] : [joinBlades];
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, deps);
   const timeSinceReset = (Date.now() - staticData.resetInfo.lastAugReset) / 1000;
   const repRate = currentRep / timeSinceReset;
+  if (repRate === 0) {
+    return waitGoal('Wait for rep data', 60, [joinBladeFaction]);
+  }
   const repGoal = factionRepGoal(
     'Bladeburners',
     bladeRepCost,
