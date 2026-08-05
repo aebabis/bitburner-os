@@ -7,6 +7,11 @@ import { getStaticData } from '../lib/data-store';
 import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
 
 export async function main(ns: NS) {
+  const { singularityData } = getStaticData(ns);
+  if (singularityData == null) {
+    throw new Error('grafting requires augmentation data to choose grafts');
+  }
+
   ns.disableLog('ALL');
   ns.ui.openTail();
   const WIDTH = 955;
@@ -14,11 +19,6 @@ export async function main(ns: NS) {
   const winHeight = globalThis.innerHeight;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   ns.ui.moveTail(249, winHeight - HEIGHT - 50);
-
-  const { singularityData } = getStaticData(ns);
-  if (singularityData == null) {
-    throw new Error('grafting requires augmentation data to choose grafts');
-  }
 
   const getInstallUtility = () => {
     const resetInfo = ns.getResetInfo();
@@ -52,7 +52,7 @@ export async function main(ns: NS) {
     const targets = getGraftTargets(ns, resetInfo.ownedAugs, entropy);
     const graftables = targets
       .filter((target) => target.graftPrice <= money)
-      .filter((target) => ttc == null || target.graftTime / 1000 < ttc);
+      .filter((target) => target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
     const needsBladeburnerFocus =
       [6, 7].includes(resetInfo.currentNode) && !resetInfo.ownedAugs.has("The Blade's Simulacrum");
@@ -74,8 +74,8 @@ export async function main(ns: NS) {
         const isCurrent =
           currentWork?.type === 'GRAFTING' && currentWork.augmentation === augmentation.name;
         const graftS = Math.ceil(graftTime / 1000);
-        const hasTime = ttc == null || graftS <= ttc;
-        const isEfficient = install == null || install.utility < utility;
+        const hasTime = graftS <= ttc;
+        const isEfficient = install != null && install.utility < utility;
         const nFormat = isCurrent ? C(34) : (s: string) => s;
         const mFormat = canAfford ? nFormat : C(52);
         const tFormat = hasTime ? nFormat : C(52);
