@@ -45,7 +45,8 @@ const go = async (ns: NS) => {
     for (const taskData of delegated) {
       const { script, host, numThreads, args, ticket, highPriority } = taskData;
       if (ns.getScriptRam(script, 'home') === 0) {
-        if (ticket != null && !(await closeTicket(ns)(ticket))) droppedTickets++;
+        droppedTickets++;
+        if (ticket != null) await closeTicket(ns)(ticket);
         continue;
       }
       const result = execOnBestServer(ns, script, host ?? null, numThreads, !!highPriority, args);
