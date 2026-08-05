@@ -432,6 +432,8 @@ export const buildFactionGoalTree = (
     formulas,
   );
 
+  if (repRate === 0) return null;
+
   const numQueued = queuedAugmentations.length;
   const costToAug = computeAugCost(augs, staticData, numQueued);
   const treeValue = augs.reduce((s, aug) => s + augValue(aug), 0);
