@@ -1,18 +1,31 @@
 import { stop } from './stop';
+import { ERROR, INFO } from './lib/colors';
+import { tprint } from './boot/util';
+
+const DOWNLOAD = '/download.ts';
+const DOWNLOAD_URL = 'https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/download.ts';
 
 export async function main(ns: NS) {
-  const { branch, wipe } = ns.flags([
-    ['branch', 'main'],
-    ['wipe', false],
-  ]);
+  const { wipe } = ns.flags([['wipe', false]]);
   await stop(ns);
-  if (wipe) ns.ls('home', '.ts').forEach((file) => ns.rm(file));
-  await ns.wget(
-    `https://raw.githubusercontent.com/aebabis/bitburner-os/${branch}/download.js`,
-    'download.ts',
-    'home',
-  );
-  const pid = ns.exec('download.ts', 'home', 1, '--branch', branch as string);
+
+  tprint(ns)(INFO + `  Downloading latest ${DOWNLOAD}`);
+
+  if (!(await ns.wget(DOWNLOAD_URL, DOWNLOAD, 'home'))) {
+    tprint(ns)(ERROR + `  Unable to download ${DOWNLOAD}`);
+    return;
+  }
+
+  // Reading new file invalidates in-game cache
+  ns.read(DOWNLOAD);
+
+  const pid = ns.exec(DOWNLOAD, 'home', 1, wipe ? '--wipe' : '');
+  if (pid === 0) {
+    tprint(ns)(ERROR + `  Could not start ${DOWNLOAD}. The OS is stopped and was NOT updated.`);
+    return;
+  }
   while (ns.isRunning(pid)) await ns.sleep(50);
-  ns.exec('start.ts', 'home');
+
+  tprint(ns)(INFO + '  Restarting');
+  ns.exec('/start.ts', 'home');
 }
