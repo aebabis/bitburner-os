@@ -19,7 +19,7 @@ export async function main(ns: NS) {
   // Reading new file invalidates in-game cache
   ns.read(DOWNLOAD);
 
-  const pid = ns.exec(DOWNLOAD, 'home', 1, wipe ? '--wipe' : '');
+  const pid = ns.exec(DOWNLOAD, 'home', 1, ...(wipe ? ['--wipe'] : []));
   if (pid === 0) {
     tprint(ns)(ERROR + `  Could not start ${DOWNLOAD}. The OS is stopped and was NOT updated.`);
     return;

@@ -21,7 +21,7 @@ type TreeEntry = { path: string; type: string };
 export async function main(ns: NS) {
   const { wipe } = ns.flags([['wipe', false]]);
 
-  ns.tprint(INFO + `Fetching file tree from ${RAW_ROOT}`);
+  ns.tprint(INFO + `Fetching file tree from ${TREE_URL}`);
 
   if (!(await ns.wget(TREE_URL, TREE_FILE))) {
     ns.tprint(ERROR + 'Could not fetch the file list from ' + TREE_URL);
