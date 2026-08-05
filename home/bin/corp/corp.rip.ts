@@ -251,7 +251,7 @@ export const $buyBoostMaterials =
       const { stored } = await $.corporation['getMaterial'](divisionName, cityName, material);
       const targetAmount = boostTargets[material];
       if (stored < targetAmount) {
-        const count = Math.min((targetAmount - stored) / 1000, Math.max(warehouseSize / 100));
+        const count = Math.min((targetAmount - stored) / 1000, warehouseSize / 100);
         await $buy(ns)(divisionName, cityName, material, count);
       } else if (stored - targetAmount > 10)
         await $sell(ns)(divisionName, cityName, material, 1, 'MP');

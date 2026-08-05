@@ -47,6 +47,7 @@ export async function main(ns: NS) {
       await plan.advance();
     }
 
+    let reportTable = '';
     if (nextAction !== 'START') {
       const { divisions } = await $.corporation['getCorporation']();
       if (divisions.includes(DivisionNames['Agriculture'])) {
@@ -65,17 +66,20 @@ export async function main(ns: NS) {
           const rows = BOOST_MATERIALS.map((material) => [
             material,
             ...cities.map((cityName) => {
-              const [have, need] = reports[cityName].boostMaterialProgress[material];
+              const report = reports[cityName];
+              if (report == null) return '-';
+              const [have, need] = report.boostMaterialProgress[material] ?? [];
               return `${f(have)}/${f(need)}`;
             }),
           ]);
-          ns.print(table(ns, columns, rows, { colors: true }));
+          reportTable = table(ns, columns, rows, { colors: true });
         }
       }
       const { dividendEarnings } = await $.corporation['getCorporation']();
       putMoneyData(ns, { dividendEarnings });
     }
     ns.clearLog();
+    ns.print('\n' + reportTable);
     ns.print(plan.getReport().join('\n'));
   }
 }

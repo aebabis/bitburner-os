@@ -215,6 +215,7 @@ export const createPlan = (
           if (numNeeded) console.log('still need ' + numNeeded + ' employees in ' + cityName);
           while (numNeeded > 0) {
             if (!(await $.corporation['hireEmployee'](divisionName, cityName))) return false;
+            numNeeded--;
           }
         }
         return (wasCompleted = await $rip(
@@ -382,7 +383,7 @@ export const createPlan = (
         }
         return true;
       };
-      steps.push(step('Advertise', { isDone, canStart, complete }));
+      steps.push(step(`Advertise ${divisionName}`, { isDone, canStart, complete }));
       return plan;
     },
 
@@ -415,8 +416,11 @@ export const createPlan = (
           }
         }
       };
+      const upgradeStr = Object.entries(upgrades)
+        .map(([name, count]) => `${count}x${name}`)
+        .join(', ');
       steps.push(
-        step(`Purchase upgrades: ${JSON.stringify(upgrades).replaceAll(/{}"/g, '')}`, {
+        step(`Purchase upgrades: ${upgradeStr}`, {
           isDone,
           canStart,
           complete,
