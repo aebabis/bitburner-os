@@ -12,7 +12,7 @@ import { $join as $joinBladeburners } from '../blades/burners.rip';
 
 const TRAVEL_COST = 200_000;
 
-const getSchool = (ns: NS, city: CityName) =>
+const getSchool = (ns: NS, city = ns.getPlayer().city) =>
   ({
     [ns.enums.CityName.Sector12]: ns.enums.LocationName.Sector12RothmanUniversity,
     [ns.enums.CityName.Chongqing]: null,
@@ -22,7 +22,7 @@ const getSchool = (ns: NS, city: CityName) =>
     [ns.enums.CityName.Volhaven]: ns.enums.LocationName.VolhavenZBInstituteOfTechnology,
   })[city] || null;
 
-const getGym = (ns: NS, city: CityName) =>
+const getGym = (ns: NS, city = ns.getPlayer().city) =>
   ({
     [ns.enums.CityName.Sector12]: ns.enums.LocationName.Sector12PowerhouseGym,
     [ns.enums.CityName.Chongqing]: null,
@@ -113,16 +113,16 @@ export async function main(ns: NS) {
   };
 
   const goToGym = async (stat?: 'strength' | 'defense' | 'dexterity' | 'agility') => {
-    if (!getGym(ns, ns.getPlayer().city)) {
+    if (!getGym(ns)) {
       await $.singularity['travelToCity']('Sector-12');
     }
-    const { city, skills } = ns.getPlayer();
+    const { skills } = ns.getPlayer();
     const statToTrain =
       stat ||
       (['strength', 'defense', 'dexterity', 'agility'] as const).reduce((s1, s2) =>
         skills[s1] < skills[s2] ? s1 : s2,
       );
-    const gym = getGym(ns, city);
+    const gym = getGym(ns);
     const currentWork = ns.singularity.getCurrentWork();
     const alreadyTrainingStat =
       currentWork?.type === 'CLASS' &&
@@ -181,6 +181,23 @@ export async function main(ns: NS) {
     }
   };
 
+  const $goToSchool = async () => {
+    const { city, money } = ns.getPlayer();
+    if (city !== 'Sector-12' && money >= TRAVEL_COST) {
+      await $.singularity['travelToCity']('Sector-12');
+    }
+    const school = getSchool(ns);
+    if (school == null) return;
+    const currentWork = ns.singularity.getCurrentWork();
+    if (
+      currentWork?.type !== 'CLASS' ||
+      currentWork.classType !== algorithms ||
+      currentWork.location !== school
+    ) {
+      await $.singularity['universityCourse'](school, algorithms, focus());
+    }
+  };
+
   const factionWork = async (player: Player, faction: FactionName) => {
     const form = hasFormulas(ns) ? ns.formulas : formulas(ns);
     const workTypes = factionWorkTypes[faction];
@@ -222,8 +239,8 @@ export async function main(ns: NS) {
     const bladesJoinGoal = findGoal('BLADES_JOIN');
     const workFaction = await getWorkFaction($, rootGoal, ns.getPlayer().factions);
 
-    const { city, money, skills } = ns.getPlayer();
-    const school = getSchool(ns, city);
+    const { money, skills } = ns.getPlayer();
+    const school = getSchool(ns);
     const canGoToSchool = school != null || money >= TRAVEL_COST;
     const neededHackingLevel = findGoal('HACKING_LEVEL')?.requirement ?? 0;
     const currentWork = ns.singularity.getCurrentWork();
@@ -237,13 +254,9 @@ export async function main(ns: NS) {
     }
 
     if (findGoal('HACKING_XP') && canGoToSchool) {
-      if (getSchool(ns, city) == null) await $.singularity['travelToCity']('Sector-12');
-      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus());
-    } else if (skills.hacking < neededHackingLevel) {
-      if (city !== 'Sector-12' && money >= TRAVEL_COST) {
-        await $.singularity['travelToCity']('Sector-12');
-      }
-      await $.singularity['universityCourse'](getSchool(ns, city)!, algorithms, focus());
+      await $goToSchool();
+    } else if (skills.hacking < neededHackingLevel && canGoToSchool) {
+      await $goToSchool();
     } else if (combatGoal != null) {
       await goToGym(combatGoal.stat);
     } else if (findGoal('KILLS')?.isDone() === false || findGoal('KARMA')?.isDone() === false) {
