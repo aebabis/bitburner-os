@@ -1,5 +1,6 @@
 import { by } from './util';
-import { getHostnames } from './data-store';
+import { getHostnames, getPlayerData, putRamPolicy, RamPolicySnapshot } from './data-store';
+import { THREADPOOL } from '../etc/config';
 
 type ExecProcess = { script: string; highPriority?: boolean };
 
@@ -7,6 +8,43 @@ export type RamPolicy = {
   /** Returns GB to reserve on home for the given process. */
   homeReserve: (process: ExecProcess) => number;
   /** Returns GB to deduct from the non-home pool (for service RMI overhead). */
+};
+
+const getHomeReserveRam = (ns: NS) => {
+  const POOL1 = `${THREADPOOL}-01`;
+  const MIN_HOME_RESERVE = 2.1; // Enough for majority of /usr
+  const MAX_HOME_RESERVE = 16; // Enough for everything except bitflume
+  const hostnames = getHostnames(ns);
+  const homeRam = ns.getServerMaxRam('home');
+  const pool1Ram = hostnames.includes(POOL1) ? ns.getServerMaxRam(POOL1) : 0;
+  return Math.min(Math.max(MIN_HOME_RESERVE, (homeRam + pool1Ram) / 10), MAX_HOME_RESERVE);
+};
+
+export const takeSnapshot = (
+  ns: NS,
+  currentServiceRam: number,
+  isLoveRunning: boolean,
+  isStanekRunning: boolean,
+) => {
+  const { currentWork } = getPlayerData(ns);
+  const totalRam = getRootServers(ns)
+    .map(({ maxRam }) => maxRam)
+    .reduce((a, b) => a + b, 0);
+  const homeReserve = getHomeReserveRam(ns);
+  const shouldShare = currentWork == null || currentWork.type === 'FACTION' || !isLoveRunning;
+  const workerRam = totalRam - currentServiceRam - homeReserve;
+  const allottedShareRam = shouldShare ? workerRam * 0.1 : 0;
+  const allottedStanekRam = isStanekRunning ? workerRam * 0.1 : 0;
+  const allottedBatchRam = workerRam - allottedShareRam - allottedStanekRam;
+  const snapshot: RamPolicySnapshot = {
+    totalRam,
+    homeReserve,
+    currentServiceRam,
+    allottedShareRam,
+    allottedStanekRam,
+    allottedBatchRam,
+  };
+  putRamPolicy(ns, snapshot);
 };
 
 export const HACKER_POLICY: RamPolicy = {
@@ -89,8 +127,10 @@ export const execOnBestServer = (
   const ramRequired = scriptRam * numThreads;
 
   if (host != null) {
-    const server = getRamInfo(ns, host, policy);
-    if (ramRequired <= server.ramAvailableTo(process)) {
+    const unusedRam = ns.getServerMaxRam(host) - ns.getServerUsedRam(host);
+    const reservedRam = host === 'home' && !highPriority ? getHomeReserveRam(ns) : 0;
+    const availableRam = Math.max(0, unusedRam - reservedRam);
+    if (ramRequired <= availableRam) {
       const pid = ns.exec(script, host, threadOrOptions, ...args);
       if (pid !== 0) return { pid, hostname: host, threads: numThreads };
     }

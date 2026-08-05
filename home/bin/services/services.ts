@@ -33,7 +33,8 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const playerLikesHacknet = false;
 
   const gangKarma = currentNode === 2 ? 0 : -54000;
-  const mustSelfFund = currentNode !== 3;
+  const inCorpNode = currentNode === 3;
+  const mustSelfFund = !inCorpNode;
   const corpCost = mustSelfFund ? 150e9 : 0;
 
   // Predicates for service viability (relevance).
@@ -75,7 +76,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
-    AnyHostService(ns, hasSingularity, canWork)('/bin/self/love.ts'),
+    AnyHostService(ns, hasSingularity, canWork, { highPriority: true })('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),
     AnyHostService(ns, hasThief, useThief)('/bin/thief.ts'),
@@ -84,12 +85,12 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
     AnyHostService(ns, enablePool, hasFormulas)('/bin/pool.ts'),
-    AnyHostService(ns, hasNerd)('/bin/nerd.ts'),
+    AnyHostService(ns, hasNerd, always, { highPriority: true })('/bin/nerd.ts'),
     AnyHostService(ns, always, couldTrade)('/bin/broker/trader.ts'),
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),
     AnyHostService(ns, enableHacknet)('/bin/hacknet.ts'),
     AnyHostService(ns, gangsAvailable, gangReady)('/bin/gang/don.ts'),
-    AnyHostService(ns, enableCorp, corpReady)('/bin/corp/corp.ts'),
+    AnyHostService(ns, enableCorp, corpReady, { highPriority: inCorpNode })('/bin/corp/corp.ts'),
     AnyHostService(ns, hasSingularity, always)('/bin/self/control.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/hinter.ts'),
     AnyHostService(ns, not(hasSingularity))('/bin/trailblazer.ts'),

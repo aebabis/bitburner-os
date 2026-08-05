@@ -5,6 +5,7 @@ import {
   PORT_SCH_REPORTING,
   PORT_PLAYER_DATA,
   PORT_MONEY_DATA,
+  PORT_RAM_POLICY,
 } from '../etc/ports.ts';
 
 const readData = (ns: NS, port: number) => Ports(ns).getPortHandle(port).peek();
@@ -192,3 +193,14 @@ export const getMoneyData = (ns: NS): MoneyData =>
   Object.assign({}, DEFAULT_MONEY_DATA, readData(ns, PORT_MONEY_DATA) || {});
 export const putMoneyData = (ns: NS, data: Partial<MoneyData>) =>
   putData(ns, PORT_MONEY_DATA, data);
+
+export type RamPolicySnapshot = {
+  totalRam: number;
+  homeReserve: number;
+  currentServiceRam: number;
+  allottedShareRam: number;
+  allottedStanekRam: number;
+  allottedBatchRam: number;
+};
+export const getRamPolicy = (ns: NS): RamPolicySnapshot | null => readData(ns, PORT_RAM_POLICY);
+export const putRamPolicy = (ns: NS, data: RamPolicySnapshot) => putData(ns, PORT_RAM_POLICY, data);

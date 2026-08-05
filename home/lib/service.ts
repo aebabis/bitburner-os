@@ -17,6 +17,7 @@ let count = 1;
 interface ServiceOptions {
   interval?: number;
   temporary?: boolean;
+  highPriority?: boolean;
 }
 
 export const Service =
@@ -24,7 +25,7 @@ export const Service =
     ns: NS,
     isViable = () => true,
     condition = (_ns: NS) => true,
-    { interval = 5000, temporary = true }: ServiceOptions = {},
+    { interval = 5000, temporary = true, highPriority = false }: ServiceOptions = {},
   ) =>
   (script: string, target: string | null = null, numThreads = 1, ...args: ScriptArg[]) => {
     const id = count++;
@@ -73,7 +74,7 @@ export const Service =
           script,
           target,
           { threads: numThreads, temporary },
-          false,
+          highPriority,
           args,
         );
         pid = newPid || null;

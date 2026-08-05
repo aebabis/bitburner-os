@@ -5,6 +5,7 @@ import {
   getPlayerData,
   getSchedulerReportData,
   getHostnames,
+  getRamPolicy,
 } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
 import { GrowingWindow, renderWindows } from '../lib/layout';
@@ -437,6 +438,16 @@ const getContractDisplay = (ns: NS) => {
   return heading + '\n' + table(ns, null, rows) + unsupportedText;
 };
 
+const __testRamPolicy = (ns: NS) => {
+  const ramPolicy = getRamPolicy(ns);
+  const heading = H(' RAM POLICY');
+  if (ramPolicy == null) {
+    return heading + '\n' + DIM(' (not loaded) ');
+  }
+  const rows = Object.entries(ramPolicy).map(([name, ram]) => [name, Math.round(ram)]);
+  return heading + '\n' + table(ns, null, rows);
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -455,6 +466,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getContractDisplay(ns)),
     hasBitNode(9, staticData) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
     hasBitNode(13, staticData) && new GrowingWindow(() => getStanekDisplay(ns)),
+    new GrowingWindow(() => __testRamPolicy(ns)),
   ].filter((win) => win != false);
   await ns.sleep(1);
   const WIDTH = 1450;

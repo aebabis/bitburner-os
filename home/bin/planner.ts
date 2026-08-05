@@ -3,7 +3,7 @@ import { putPlayerData, putSchedulerReportData, getStaticData } from '../lib/dat
 import { ENABLE, DISABLE, writeServices, checkQueue, getTableString } from '../lib/service-api';
 import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
-import { execOnBestServer } from '../lib/ram-router';
+import { execOnBestServer, takeSnapshot } from '../lib/ram-router';
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
 import { makePlayerData } from '../lib/player-data';
 
@@ -75,6 +75,16 @@ const go = async (ns: NS) => {
     });
   };
 
+  const isRunning = (script: string) =>
+    services.find((s) => s.script === script)?.isRunning() ?? false;
+
+  const runningServiceRam = () =>
+    services
+      .filter((service) => service.isRunning())
+      .map((service) => service.toData().ram)
+      .reduce((a, b) => a + b, 0);
+
+  const THIEVES = ['/bin/thief.ts', '/bin/angel.ts'];
   while (true) {
     await handleExecRequests();
     putPlayerData(ns, { player: player(ns), ...makePlayerData(ns) });
@@ -82,6 +92,12 @@ const go = async (ns: NS) => {
       try {
         updateTasks();
         showServices();
+        if (THIEVES.includes(service.script) && !service.isRunning()) {
+          const currentServiceRam = runningServiceRam() + service.toData().ram;
+          const isLoveRunning = isRunning('/bin/self/love.ts');
+          const isStanekRunning = isRunning('/bin/stanek.ts');
+          takeSnapshot(ns, currentServiceRam, isLoveRunning, isStanekRunning);
+        }
         await service.check();
       } catch (error) {
         console.error(error);
