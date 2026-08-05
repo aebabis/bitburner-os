@@ -253,9 +253,9 @@ export async function main(ns: NS) {
     } else if (workFaction != null) {
       await factionWork(ns.getPlayer(), workFaction);
     } else {
-      const locationGoal = findGoal('LOCATION');
-      if (locationGoal?.isDone() === false) {
-        await $.singularity['travelToCity'](locationGoal.city);
+      const locationGoals = rootGoal.prerequisites('LOCATION');
+      if (locationGoals.length > 0 && !locationGoals.some((g) => g.isDone())) {
+        await $.singularity['travelToCity'](locationGoals[0].city);
       } else if (canMakeMoney) {
         await makeMoney();
       } else {

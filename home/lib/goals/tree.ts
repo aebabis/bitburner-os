@@ -332,8 +332,11 @@ export const buildJoinSubtree = (
   if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
   const totalMoneyTarget = moneyTarget + bdMoney;
   if (totalMoneyTarget > 0) joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, totalIncome));
-  const [loc] = locationReqs;
-  if (loc) joinPrereqs.push(locationGoal(loc, city));
+  const locGoals = locationReqs.map((loc) => locationGoal(loc, city));
+  if (locGoals.length > 0) {
+    const locGoal = locGoals.length === 1 ? locGoals[0] : eitherGoal(locGoals);
+    joinPrereqs.push(locGoal);
+  }
 
   return factionJoinGoal(faction, factions, joinPrereqs);
 };
