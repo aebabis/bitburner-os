@@ -144,6 +144,11 @@ export type PlayerData = {
     hashes: number;
     capacity: number;
   };
+  contracts?: {
+    completed: number;
+    failures: number;
+    unsupported: CodingContractName[];
+  };
   hasGift?: boolean;
   stanekLayout?: {
     width: number;

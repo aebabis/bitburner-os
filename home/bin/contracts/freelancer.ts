@@ -1,6 +1,6 @@
 import { tprint } from '../../boot/util';
 import { ERROR, INFO } from '../../lib/colors';
-import { getHostnames } from '../../lib/data-store';
+import { getHostnames, getPlayerData, putPlayerData } from '../../lib/data-store';
 import { inPlace } from '../../lib/in-place';
 import { table } from '../../lib/table';
 import algorithms from './mapper';
@@ -10,7 +10,7 @@ const isContract = (file: string) => file.endsWith('.cct');
 type Contract = {
   filename: string;
   hostname: string;
-  type: string;
+  type: CodingContractName;
   data: unknown;
   tries: number;
 };
@@ -29,7 +29,7 @@ const getContracts = async (ns: NS) => {
 };
 
 const attemptContract = async (ns: NS, { filename, hostname, type, data }: Contract) => {
-  const algorithm = algorithms(type as keyof typeof algorithms);
+  const algorithm = algorithms(type);
   if (algorithm == null) return null;
   const answer = algorithm(data as never); // No idea
   try {
@@ -52,6 +52,10 @@ export async function main(ns: NS) {
   // Reserve highest cost RAM
   ns.codingcontract.attempt;
 
+  const contractNames = Object.values(ns.enums.CodingContractName);
+  const unsupported = contractNames.filter((name) => algorithms(name) == null);
+  let completed = getPlayerData(ns).contracts?.completed ?? 0;
+
   while (true) {
     const contracts = await getContracts(ns);
     for (const contract of contracts) {
@@ -59,7 +63,16 @@ export async function main(ns: NS) {
         try {
           if (!(await attemptContract(ns, contract))) {
             failures.add(contract.filename);
+          } else {
+            completed++;
           }
+          putPlayerData(ns, {
+            contracts: {
+              completed,
+              failures: failures.size,
+              unsupported,
+            },
+          });
         } catch (error) {
           tprint(ns)(ERROR + error);
         }
@@ -73,6 +86,7 @@ export async function main(ns: NS) {
     ]);
     ns.clearLog();
     ns.print('\n' + table(ns, ['HOST', 'FILE', 'TYPE', 'TRIES'], rows));
+    ns.print('\n\n Unsupported contracts: \n' + unsupported.join('\n'));
     await ns.sleep(1000);
   }
 }

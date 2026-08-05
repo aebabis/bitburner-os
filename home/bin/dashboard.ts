@@ -417,6 +417,26 @@ const getHacknetServersDisplay = (ns: NS) => {
   );
 };
 
+const getContractDisplay = (ns: NS) => {
+  const { contracts } = getPlayerData(ns);
+  const heading = H(' CONTRACTS');
+  if (contracts == null) {
+    return heading + '\n' + DIM(' (not loaded) ');
+  }
+  const { completed, failures, unsupported } = contracts;
+  const rows = [
+    ['Completed', completed],
+    ['Failures', failures],
+  ];
+  let unsupportedText = '';
+  if (unsupported.length > 0) {
+    unsupportedText =
+      `\n\n ${ERROR.BOLD('Unsupported Types:')} \n` +
+      unsupported.map((type) => ` ${ERROR(type)} `).join('\n');
+  }
+  return heading + '\n' + table(ns, null, rows) + unsupportedText;
+};
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
   ns.ui.openTail();
@@ -432,6 +452,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getExecutionTable(ns)),
     new GrowingWindow(() => getHackingTable(ns)),
     new GrowingWindow(() => getSourceFilesTable(ns)),
+    new GrowingWindow(() => getContractDisplay(ns)),
     hasBitNode(9, staticData) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
     hasBitNode(13, staticData) && new GrowingWindow(() => getStanekDisplay(ns)),
   ].filter((win) => win != false);

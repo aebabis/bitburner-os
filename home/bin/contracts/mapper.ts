@@ -28,11 +28,9 @@ const arr2d = (rows: number, cols: number) =>
 
 const map = {
   'Algorithmic Stock Trader I': (prices: number[]) => stockProfit(prices, 1),
-  'Algorithmic Stock Trader II': (prices: number[]) =>
-    stockProfit(prices, Infinity),
+  'Algorithmic Stock Trader II': (prices: number[]) => stockProfit(prices, Infinity),
   'Algorithmic Stock Trader III': (prices: number[]) => stockProfit(prices, 2),
-  'Algorithmic Stock Trader IV': ([n, p]: [number, number[]]) =>
-    stockProfit(p, n),
+  'Algorithmic Stock Trader IV': ([n, p]: [number, number[]]) => stockProfit(p, n),
   'Array Jumping Game': (track: number[]) => +!!fewestHops(track),
   'Array Jumping Game II': fewestHops,
   'Compression I: RLE Compression': rle,
@@ -51,11 +49,9 @@ const map = {
   'Square Root': squareRoot,
   'Subarray with Maximum Sum': maximumSubarraySum,
   'Total Ways to Sum': computeSumPermutations,
-  'Total Ways to Sum II': ([t, a]: [number, number[]]) =>
-    computeSumPermutationsII(t, a),
-  'Unique Paths in a Grid I': ([r, c]: [number, number]) =>
-    countPaths(arr2d(r, c)),
+  'Total Ways to Sum II': ([t, a]: [number, number[]]) => computeSumPermutationsII(t, a),
+  'Unique Paths in a Grid I': ([r, c]: [number, number]) => countPaths(arr2d(r, c)),
   'Unique Paths in a Grid II': countPaths,
 };
 
-export default (contractType: keyof typeof map) => map[contractType];
+export default (contractType: CodingContractName) => map[contractType as keyof typeof map] ?? null;
