@@ -86,7 +86,7 @@ const getUpgradeDetails = (ns: NS, upgrade: HacknetServerHashUpgrade) => {
 };
 
 const getTargetUpgrade = (ns: NS, goals: Goal) => {
-  const currentWork = ns.singularity.getCurrentWork();
+  const { currentWork } = getPlayerData(ns);
   const gymTypes = Object.values(ns.enums.GymType) as string[];
   const uniTypes = Object.values(ns.enums.UniversityClassType) as string[];
   const moneyGoal = goals.prerequisites('AUG_MONEY')[0];
