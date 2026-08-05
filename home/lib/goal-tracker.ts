@@ -9,7 +9,7 @@ const MIN_INTERVAL_MS = Math.floor(HISTORY_MS / MAX_SNAPSHOTS); // 1s — keeps 
 type GoalPlanEntry = {
   faction: string;
   utility: number;
-  timeToComplete: number | null;
+  timeToComplete: number;
 };
 type GoalSnapshot = {
   ts: number;
@@ -47,12 +47,7 @@ export const recordGoalSnapshot = (
       return {
         faction: p.prerequisites('FACTION_JOIN')[0]?.faction ?? '?',
         utility: p.utility(overhead),
-        timeToComplete:
-          ttcValues.length === 0
-            ? 0
-            : ttcValues.some((t) => !isFinite(t))
-              ? null
-              : Math.max(...ttcValues),
+        timeToComplete: ttcValues.length === 0 ? 0 : Math.max(...ttcValues),
       };
     }),
   });
