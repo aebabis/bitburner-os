@@ -3,7 +3,6 @@ const NUM_BN = 15;
 
 const getData = (ns: NS) => {
   const content = ns.read(BN_DATA);
-  ns.tprint(content);
   if (content === '') return [];
   else return JSON.parse(content);
 };
@@ -16,10 +15,18 @@ const getNextBN = (ns: NS, currentNode: number) => {
   return testOrder.find((bn) => data[bn] == null);
 };
 
+const WARNING =
+  'This program must leave the current bitnode to gather data. ' +
+  'Are you sure you want to do this?';
+
 export async function main(ns: NS) {
   ns.disableLog('ALL');
+  const { currentNode, lastNodeReset } = ns.getResetInfo();
+  const timeSinceReset = Date.now() - lastNodeReset;
+  if (timeSinceReset > 10000 && !(await ns.prompt(WARNING))) {
+    return;
+  }
   const { wipe } = ns.flags([['wipe', false]]);
-  const { currentNode } = ns.getResetInfo();
   if (wipe) {
     ns.write(BN_DATA, '', 'w');
   } else {
