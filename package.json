@@ -4,7 +4,6 @@
   "main": "download.js",
   "type": "module",
   "scripts": {
-    "start": "node make-download.js",
     "lint": "tsc --noEmit",
     "check-data-deps": "node --import tsx/esm scripts/check-data-deps.ts",
     "knip": "knip",

@@ -1,167 +1,56 @@
-const FILES = [
-  '/bin/access.ts',
-  '/bin/angel.ts',
-  '/bin/blades/burners.rip.ts',
-  '/bin/blades/burners.ts',
-  '/bin/blades/is-ready.ts',
-  '/bin/blades/report.ts',
-  '/bin/broker/dump.ts',
-  '/bin/broker/trader.ts',
-  '/bin/contracts/algorithms.ts',
-  '/bin/contracts/freelancer.ts',
-  '/bin/contracts/mapper.ts',
-  '/bin/contracts/tests.ts',
-  '/bin/corp/boost-solver.ts',
-  '/bin/corp/constants.ts',
-  '/bin/corp/corp.rip.ts',
-  '/bin/corp/corp.ts',
-  '/bin/corp/manage/agriculture.ts',
-  '/bin/corp/manage/chemicals.ts',
-  '/bin/corp/manage/tobacco.ts',
-  '/bin/corp/plan.rip.ts',
-  '/bin/corp/plans/tobacco-plan.ts',
-  '/bin/dashboard.ts',
-  '/bin/dispatch.ts',
-  '/bin/dnet/data.ts',
-  '/bin/dnet/dhud.tsx',
-  '/bin/dnet/dnet.ts',
-  '/bin/dnet/mole.ts',
-  '/bin/dnet/ports.ts',
-  '/bin/eight-gig.ts',
-  '/bin/gang/don.ts',
-  '/bin/gang/task-table.ts',
-  '/bin/gang/util.ts',
-  '/bin/goals-viz.ts',
-  '/bin/goals.ts',
-  '/bin/grafting.ts',
-  '/bin/hacknet.ts',
-  '/bin/hinter.ts',
-  '/bin/infect.ts',
-  '/bin/nerd.ts',
-  '/bin/nvim.ts',
-  '/bin/phil.ts',
-  '/bin/planner.ts',
-  '/bin/pool.ts',
-  '/bin/self/actualize.ts',
-  '/bin/self/aug/purchase-augs.ts',
-  '/bin/self/backdoor.ts',
-  '/bin/self/control.ts',
-  '/bin/self/hack.ts',
-  '/bin/self/love.ts',
-  '/bin/services/services.ts',
-  '/bin/share.ts',
-  '/bin/sleeves.ts',
-  '/bin/stanek.ts',
-  '/bin/sysadmin.ts',
-  '/bin/thief.ts',
-  '/bin/trailblazer.ts',
-  '/bin/workers/charge.ts',
-  '/bin/workers/grow.ts',
-  '/bin/workers/hack.ts',
-  '/bin/workers/share.ts',
-  '/bin/workers/weaken.ts',
-  'books.ts',
-  '/boot/boot.ts',
-  '/boot/call-graph.ts',
-  '/boot/data1.ts',
-  '/boot/data2.ts',
-  '/boot/data3.ts',
-  '/boot/data4.ts',
-  '/boot/data5.ts',
-  '/boot/data6.ts',
-  '/boot/defer.ts',
-  '/boot/network.ts',
-  '/boot/reset.ts',
-  '/boot/ui.ts',
-  '/boot/util.ts',
-  'download.ts',
-  '/etc/augmentations.ts',
-  '/etc/config.ts',
-  '/etc/filenames.ts',
-  '/etc/ports.ts',
-  '/lib/afk.ts',
-  '/lib/aug-select.ts',
-  '/lib/aug-weights.ts',
-  '/lib/backdoor.rip.ts',
-  '/lib/backdoor.ts',
-  '/lib/bitnode-sequence.ts',
-  '/lib/colors.ts',
-  '/lib/data-store.ts',
-  '/lib/events.ts',
-  '/lib/factions.ts',
-  '/lib/formulas.ts',
-  '/lib/goal-tracker.ts',
-  '/lib/goals/goals.ts',
-  '/lib/goals/nodes.ts',
-  '/lib/goals/tree.ts',
-  '/lib/grafting.ts',
-  '/lib/hacknet.ts',
-  '/lib/in-place.ts',
-  '/lib/layout.ts',
-  '/lib/modal.ts',
-  '/lib/nav.ts',
-  '/lib/nmap.rip.ts',
-  '/lib/nmap.ts',
-  '/lib/player-data.ts',
-  '/lib/ports.ts',
-  '/lib/query-service.ts',
-  '/lib/ram-router.ts',
-  '/lib/ram.ts',
-  '/lib/rmi.ts',
-  '/lib/scheduler-delegate.ts',
-  '/lib/service-api.ts',
-  '/lib/service.ts',
-  '/lib/sing.rip.ts',
-  '/lib/table.ts',
-  '/lib/test/aug-scoring.ts',
-  '/lib/test/data/BN4-mock.ts',
-  '/lib/test/faction-selection.ts',
-  '/lib/test/fixtures.ts',
-  '/lib/test/formulas.ts',
-  '/lib/test/goal-tree.ts',
-  '/lib/test/run-all.ts',
-  '/lib/test/run-sequencing.ts',
-  '/lib/test/test.ts',
-  '/lib/test-runner.ts',
-  '/lib/util.ts',
-  'log',
-  'readme.ts',
-  'start.ts',
-  'stop.ts',
-  'tmp',
-  'update.ts',
-  '/usr/bitflume.ts',
-  '/usr/data.ts',
-  '/usr/eval.ts',
-  '/usr/hass.ts',
-  '/usr/liquidate.ts',
-  '/usr/make-cct.ts',
-  '/usr/nmap.ts',
-  '/usr/path.ts',
-  '/usr/read.ts',
-  '/usr/recon.ts',
-  '/usr/reset.ts',
-  '/usr/servers.ts',
-  '/usr/services.ts',
-  '/usr/suite.ts',
-  '/usr/tail.ts',
-  '/usr/wipe.ts',
-];
+const REPO = 'aebabis/bitburner-os';
+const BRANCH = 'main';
+const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`;
+const RAW_ROOT = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/home`;
+const TREE_FILE = '/tmp/tree.json';
 
+const ERROR = '\u001b[38;5;124m';
+const INFO = '\u001b[38;5;63m';
+
+type TreeEntry = { path: string; type: string };
+
+/**
+ * Installer for OS. Automatically pulls all program files into home folder.
+ * @example
+ * USAGE:
+ * ```sh
+ * wget https://raw.githubusercontent.com/aebabis/bitburner-os/main/home/download.ts
+ * ./download.ts
+ * ```
+ */
 export async function main(ns: NS) {
-  const { branch } = ns.flags([['branch', 'main']]);
-  if (ns.args[0] != null) {
-    ns.tprint(
-      '\u001b[31mUnrecognized parameter(s): ' +
-        ns.args[0] +
-        '. To set a branch use --branch BRANCH',
-    );
+  const { wipe } = ns.flags([['wipe', false]]);
+
+  ns.tprint(INFO + `Fetching file tree from ${RAW_ROOT}`);
+
+  if (!(await ns.wget(TREE_URL, TREE_FILE))) {
+    ns.tprint(ERROR + 'Could not fetch the file list from ' + TREE_URL);
     return;
   }
-  for (const file of FILES) {
-    const downloadPath = `https://raw.githubusercontent.com/aebabis/bitburner-os/${branch}/home/${file}`;
-    await ns.wget(downloadPath, file);
-    ns.tprint(`Downloaded ${file}`);
+
+  if (wipe) ns.ls('home', '.ts').forEach((file) => ns.rm(file));
+
+  // Program code is in /home folder of repo. Remove leading `home` so top-level files land in `/`
+  const { tree } = JSON.parse(ns.read(TREE_FILE)) as { tree: TreeEntry[] };
+  const files = tree
+    .filter(({ type, path }) => type === 'blob' && path.startsWith('home/') && /\.tsx?$/.test(path))
+    .map(({ path }) => path.slice('home'.length));
+
+  if (files.length === 0) {
+    ns.tprint(ERROR + 'Error: Empty file set');
+    return;
   }
-  ns.tprint('Download complete');
+
+  const failed: string[] = [];
+  for (const file of files) {
+    if (await ns.wget(RAW_ROOT + file, file)) ns.tprint(INFO + 'Downloaded ' + file);
+    else failed.push(file);
+  }
+
+  if (failed.length > 0) {
+    ns.tprint(ERROR + `Failed to download ${failed.length} of ${files.length} files:`);
+    for (const file of failed) ns.tprint(ERROR + '  ' + file);
+    return;
+  }
+  ns.tprint(INFO + `Download complete (${files.length} files)`);
 }
