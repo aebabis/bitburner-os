@@ -94,14 +94,23 @@ const getTargetUpgrade = (ns: NS, goals: Goal) => {
     return getUpgradeDetails(ns, 'Improve Gym Training');
   } else if (currentWork?.type === 'CLASS' && uniTypes.includes(currentWork.classType)) {
     return getUpgradeDetails(ns, 'Improve Studying');
-  } else if (ns.corporation.hasCorporation() && (moneyGoal?.isDone() ?? true)) {
-    const corpFundsUpgrade = getUpgradeDetails(ns, 'Sell for Corporation Funds');
-    const corpResearchUpgrade = getUpgradeDetails(ns, 'Exchange for Corporation Research');
-    return corpFundsUpgrade.cost < corpResearchUpgrade.cost
-      ? corpFundsUpgrade
-      : corpResearchUpgrade;
   } else {
-    return getUpgradeDetails(ns, 'Sell for Money');
+    const candidates = [] as ReturnType<typeof getUpgradeDetails>[];
+    if (moneyGoal?.isDone() ?? true) {
+      if (ns.corporation.hasCorporation()) {
+        candidates.push(getUpgradeDetails(ns, 'Sell for Corporation Funds'));
+        candidates.push(getUpgradeDetails(ns, 'Exchange for Corporation Research'));
+      }
+      if (ns.bladeburner.inBladeburner()) {
+        candidates.push(getUpgradeDetails(ns, 'Exchange for Bladeburner Rank'));
+        candidates.push(getUpgradeDetails(ns, 'Exchange for Bladeburner SP'));
+      }
+    }
+    if (candidates.length > 0) {
+      return candidates.reduce((a, b) => (a.cost < b.cost ? a : b));
+    } else {
+      return getUpgradeDetails(ns, 'Sell for Money');
+    }
   }
 };
 
