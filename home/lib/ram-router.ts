@@ -34,8 +34,9 @@ export const takeSnapshot = (
   isStanekRunning: boolean,
 ) => {
   const { currentWork } = getPlayerData(ns);
-  const totalRam = getRootServers(ns)
-    .map(({ maxRam }) => maxRam)
+  const totalRam = getHostnames(ns)
+    .filter(ns.hasRootAccess)
+    .map(ns.getServerMaxRam)
     .reduce((a, b) => a + b, 0);
   const homeReserve = getHomeReserveRam(ns);
   const shouldShare = currentWork == null || currentWork.type === 'FACTION' || !isLoveRunning;
@@ -52,10 +53,6 @@ export const takeSnapshot = (
     allottedBatchRam,
   };
   putRamPolicy(ns, snapshot);
-};
-
-export const HACKER_POLICY: RamPolicy = {
-  homeReserve: () => 16,
 };
 
 const DEFAULT_POLICY: RamPolicy = {
@@ -82,29 +79,6 @@ const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT_POLICY
 };
 
 type RamInfo = ReturnType<typeof getRamInfo>;
-
-type RamAllowances = {
-  serviceRam: number;
-  hackingRam: number;
-  sharingRam: number;
-  stanekRam: number;
-};
-
-// TODO: sharingRam and hackingRam come from same pool
-// (sharingRam + hackingRam) is a guaranteed minimum that
-// scales with total.
-// Decide whether serviceRam is based on unused ram or *all* ram.
-// Both approaches suck.
-export const getRamAllowances = (ns: NS): RamAllowances => {
-  const rootServers = getRootServers(ns);
-  const maxRam = rootServers.map((server) => server.maxRam).reduce((a, b) => a + b, 0);
-  return {
-    serviceRam: Infinity,
-    hackingRam: (maxRam * 9) / 10,
-    sharingRam: maxRam / 10,
-    stanekRam: maxRam / 10, // Takes from hack RAM as able
-  };
-};
 
 const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
   getHostnames(ns)
@@ -217,36 +191,4 @@ export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
     targetThreads,
     unusedRam,
   };
-};
-/**
- * Returns available RAM per server as a flat record, suitable for
- * buildWorkerThreadAllocator. Applies the home reserve from policy and
- * deducts policy.
- * Servers where the script is not installed (getScriptRam returns 0) are
- * excluded via execOnBestServer's own check; no special-casing needed here.
- */
-export const getWorkerRam = (
-  ns: NS,
-  script: string,
-  policy: RamPolicy = DEFAULT_POLICY,
-): Record<string, number> => {
-  const normalScript = script.startsWith('/') ? script : '/' + script;
-  const result = getRootServers(ns, policy).reduce<Record<string, number>>((acc, info) => {
-    const available = info.ramAvailableTo({ script: normalScript });
-    if (available > 0) acc[info.hostname] = available;
-    return acc;
-  }, {});
-
-  let remaining = 0;
-  for (const hostname of Object.keys(result)
-    .filter((h) => h !== 'home')
-    .sort((a, b) => result[b] - result[a])) {
-    if (remaining <= 0) break;
-    const reduction = Math.min(result[hostname], remaining);
-    result[hostname] -= reduction;
-    if (result[hostname] <= 0) delete result[hostname];
-    remaining -= reduction;
-  }
-
-  return result;
 };

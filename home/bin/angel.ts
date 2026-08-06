@@ -1,7 +1,7 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR, WARN } from '../lib/colors';
 import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
-import { getWorkerRam, HACKER_POLICY } from '../lib/ram-router';
+import { getWorkerRamState } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
@@ -38,7 +38,7 @@ const getHackableServer = (ns: NS, hostname: string): HackableServer => {
   return server as HackableServer;
 };
 
-const getRootServerRam = (ns: NS) => getWorkerRam(ns, HACK, HACKER_POLICY);
+const getRootServerRam = (ns: NS) => getWorkerRamState(ns, HACK).unusedRam;
 
 const makeYielder = (ns: NS) => {
   let last = Date.now();

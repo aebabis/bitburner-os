@@ -20,7 +20,6 @@ Three separate mechanisms are used to deal with RAM costs:
 ### Spatial — `lib/ram-router.ts`
 - Finds a host with room and `ns.exec`s there.
 - Best-fit: sorts eligible servers ascending by free RAM and takes the first that fits, so large servers stay free for large jobs.
-- `RamPolicy.homeReserve` keeps a floor of free RAM on `home`. `HACKER_POLICY` is the hacking services' variant.
 
 ### Temporal — `lib/scheduler-delegate.ts`, `lib/rmi.ts`
 - A script that can't afford an API call asks another process to make it.
