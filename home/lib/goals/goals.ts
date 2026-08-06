@@ -77,7 +77,7 @@ export const getGoals = (ns: NS): Goal => {
   const karma = ns.heart.break();
   const ownedAugs = [...staticData.installedAugmentations, ...queuedAugmentations];
 
-  if (totalIncome === 0) {
+  if (totalIncome <= 0) {
     return reevaluateGoal(waitGoal('Wait for income data'));
   }
 
@@ -176,7 +176,7 @@ export const getGoals = (ns: NS): Goal => {
         staticData.bitNodeMultipliers,
       );
     }
-  } else if (ownedSF.get(7) === 3) {
+  } else if (ownedSF.get(7) === 3 && currentNode !== 8) {
     const joinTree = getBladeburnerJoinTree(
       playerData,
       ns.bladeburner.inBladeburner(),

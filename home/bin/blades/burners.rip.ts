@@ -9,7 +9,7 @@ export const $join = async (ns: NS) => {
   const wouldGainSimulacrum = ownedSF.get(7) === 3;
   const canAcceptGift = ownedSF.has(13) || currentNode === 13;
   const giftStillObtainable = [...ownedAugs.keys()].every((aug) => aug === NEUROFLUX);
-  const needsGift = canAcceptGift && giftStillObtainable;
+  const needsGift = canAcceptGift && giftStillObtainable && currentNode !== 8;
   if (wouldGainSimulacrum && needsGift) {
     tprint(ns)(WARN + "Bladeburners blocked by Stanek's Gift");
     return false;
