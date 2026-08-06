@@ -5,7 +5,7 @@ import { getWorkerRamState } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
-import { by } from '../lib/util';
+import { by, makeYielder } from '../lib/util';
 import { HACK, GROW, WEAK } from '../etc/filenames';
 import { tprint } from '../boot/util';
 
@@ -39,16 +39,6 @@ const getHackableServer = (ns: NS, hostname: string): HackableServer => {
 };
 
 const getRootServerRam = (ns: NS) => getWorkerRamState(ns, HACK).unusedRam;
-
-const makeYielder = (ns: NS) => {
-  let last = Date.now();
-  return async () => {
-    if (Date.now() - last > 200) {
-      await ns.sleep(0);
-      last = Date.now();
-    }
-  };
-};
 
 const getWeakThreads = (ns: NS, targetDecrease: number) => {
   let threads = 1;

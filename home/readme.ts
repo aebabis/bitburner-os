@@ -89,6 +89,10 @@ const UTILITIES = {
     command: 'home; lib/test/run-all.ts',
     desc: 'Run unit tests on script suite utilities and libraries',
   },
+  testcct: {
+    command: 'home; lib/test/cct-battery.ts',
+    desc: 'Mass-generate contracts and test the solvers',
+  },
   update: {
     command: 'home; killall; ./stop.ts update.ts',
     desc: 'Download most recent code from GitHub',

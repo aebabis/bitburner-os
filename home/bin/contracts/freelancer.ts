@@ -31,7 +31,7 @@ const getContracts = async (ns: NS) => {
 const attemptContract = async (ns: NS, { filename, hostname, type, data }: Contract) => {
   const algorithm = algorithms(type);
   if (algorithm == null) return null;
-  const answer = algorithm(data as never); // No idea
+  const answer = algorithm(structuredClone(data) as never); // No idea
   try {
     const outcome = await inPlace(ns).codingcontract['attempt'](answer, filename, hostname);
     if (outcome === '')

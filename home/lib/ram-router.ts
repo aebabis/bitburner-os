@@ -12,7 +12,7 @@ import { CHARGE, HACK, SHARE } from '../etc/filenames';
 const getHomeReserveRam = (ns: NS) => {
   const POOL1 = `${THREADPOOL}-01`;
   const MIN_HOME_RESERVE = 2.1; // Enough for majority of /usr
-  const MAX_HOME_RESERVE = 16; // Enough for everything except bitflume
+  const MAX_HOME_RESERVE = 20; // Enough for everything except bitflume
   const hostnames = getHostnames(ns);
   const homeRam = ns.getServerMaxRam('home');
   const pool1Ram = hostnames.includes(POOL1) ? ns.getServerMaxRam(POOL1) : 0;

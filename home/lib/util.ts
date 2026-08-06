@@ -83,3 +83,13 @@ export const binomLowerBound = (n: number, p: number, confidence: number): numbe
   const k = Math.floor(mean + z * stdDev + 0.5);
   return Math.max(0, Math.min(n, k));
 };
+
+export const makeYielder = (ns: NS) => {
+  let last = Date.now();
+  return async () => {
+    if (Date.now() - last > 200) {
+      await ns.sleep(0);
+      last = Date.now();
+    }
+  };
+};
