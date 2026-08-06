@@ -9,14 +9,6 @@ import {
 import { THREADPOOL } from '../etc/config';
 import { CHARGE, HACK, SHARE } from '../etc/filenames';
 
-type ExecProcess = { script: string; highPriority?: boolean };
-
-export type RamPolicy = {
-  /** Returns GB to reserve on home for the given process. */
-  homeReserve: (process: ExecProcess) => number;
-  /** Returns GB to deduct from the non-home pool (for service RMI overhead). */
-};
-
 const getHomeReserveRam = (ns: NS) => {
   const POOL1 = `${THREADPOOL}-01`;
   const MIN_HOME_RESERVE = 2.1; // Enough for majority of /usr
@@ -55,38 +47,7 @@ export const takeSnapshot = (
   putRamPolicy(ns, snapshot);
 };
 
-const DEFAULT_POLICY: RamPolicy = {
-  homeReserve: ({ script, highPriority }) => {
-    if (
-      script === '/bin/self/love.ts' ||
-      script === '/bin/nerd.ts' ||
-      script === '/bin/corp/corp.ts'
-    )
-      return 0;
-    return highPriority ? 2 : 4;
-  },
-};
-
-const getRamInfo = (ns: NS, hostname: string, policy: RamPolicy = DEFAULT_POLICY) => {
-  const maxRam = ns.getServerMaxRam(hostname);
-  const ramUsed = ns.getServerUsedRam(hostname);
-  const ramUnused = maxRam - ramUsed;
-  let ramAvailableTo = (_: ExecProcess) => ramUnused;
-  if (hostname === 'home') {
-    ramAvailableTo = (process) => Math.max(0, ramUnused - policy.homeReserve(process));
-  }
-  return { hostname, maxRam, ramUsed, ramUnused, ramAvailableTo };
-};
-
-type RamInfo = ReturnType<typeof getRamInfo>;
-
-const getRootServers = (ns: NS, policy: RamPolicy = DEFAULT_POLICY): RamInfo[] =>
-  getHostnames(ns)
-    .filter(ns.hasRootAccess)
-    .map((h) => getRamInfo(ns, h, policy))
-    .sort(by((s) => -s.ramUnused));
-
-export type ExecResult = {
+type ExecResult = {
   pid: number;
   hostname: string | null;
   threads: number;
@@ -99,10 +60,8 @@ export const execOnBestServer = (
   threadOrOptions: number | RunOptions,
   highPriority: boolean,
   args: ScriptArg[] = [],
-  policy: RamPolicy = DEFAULT_POLICY,
   scriptRam = ns.getScriptRam(script, 'home'),
 ): ExecResult => {
-  const process = { script, highPriority };
   const numThreads =
     typeof threadOrOptions === 'number' ? threadOrOptions : (threadOrOptions.threads ?? 1);
   const ramRequired = scriptRam * numThreads;
@@ -118,16 +77,27 @@ export const execOnBestServer = (
     return { pid: 0, hostname: null, threads: 0 };
   }
 
-  const rootServers = getRootServers(ns, policy);
-  const eligible = rootServers.filter((s) => ns.getScriptRam(script, s.hostname) > 0);
-  const isValid = (s: RamInfo) => s.ramAvailableTo(process) >= ramRequired;
-  const isUsable = (s: RamInfo) => s.ramAvailableTo(process) >= scriptRam;
-  const server =
-    eligible.filter(isValid).sort(by((s) => s.ramAvailableTo(process)))[0] ??
-    eligible.find(isUsable);
+  const eligibleServers = getHostnames(ns)
+    .filter(ns.hasRootAccess)
+    .filter((hostname) => ns.getScriptRam(script, hostname) > 0)
+    .map((hostname) => {
+      const maxRam = ns.getServerMaxRam(hostname);
+      const ramUsed = ns.getServerUsedRam(hostname);
+      const ramUnused = maxRam - ramUsed;
+      const reservedRam = hostname === 'home' && !highPriority ? getHomeReserveRam(ns) : 0;
+      const ramAvailable = ramUnused - reservedRam;
+      return { hostname, ramAvailable };
+    })
+    .filter(({ ramAvailable }) => ramAvailable >= scriptRam)
+    .sort(by((s) => s.ramAvailable));
 
+  // .at(-1) fallback only happens for multiple-thread exec jobs which in practice never happen.
+  // Typical case is to run on smallest server that can fit single thread.
+  const server =
+    eligibleServers.find(({ ramAvailable }) => ramAvailable >= ramRequired) ||
+    eligibleServers.at(-1);
   if (server != null) {
-    const maxThreads = Math.floor(server.ramAvailableTo(process) / scriptRam);
+    const maxThreads = Math.floor(server.ramAvailable / scriptRam);
     const threads = Math.min(numThreads, maxThreads);
     const options = typeof threadOrOptions === 'object' ? { ...threadOrOptions, threads } : threads;
     if (threads > 0) {
