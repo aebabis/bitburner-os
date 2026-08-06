@@ -9,7 +9,7 @@ export async function main(ns: NS) {
   // Reserve RAM
   ns.singularity.getAugmentationsFromFaction;
 
-  const $ = inPlace(ns);
+  const $ = inPlace(ns, 474e4); // pid sometimes conflicts with reserved ports
   const factions = Object.values(ns.enums.FactionName) as FactionName[];
   const companies = Object.values(ns.enums.CompanyName) as CompanyName[];
 
