@@ -75,18 +75,32 @@ const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: numbe
   };
 };
 
+const findBestFrame = (ns: NS, hostname: string, totalRam: number) => {
+  const maxFrames = Math.min(FRAME_LIMIT, Math.floor(ns.getWeakenTime(hostname) / FRAME_SPACING));
+  let frame = getFrame(ns, hostname, totalRam, 1);
+  if (frame == null) return null;
+  for (let i = 2; ; i++) {
+    const nextBiggest = getFrame(ns, hostname, totalRam, i);
+    if (nextBiggest == null) break;
+    if (nextBiggest.numFrames > maxFrames || nextBiggest.peakRam < 0.9 * totalRam) {
+      frame = nextBiggest;
+    } else {
+      break;
+    }
+  }
+  return frame;
+};
+
 const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
+  const unusable = { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
   const maxMoney = ns.getServerMaxMoney(hostname);
-  if (maxMoney === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
+  if (maxMoney === 0) return unusable;
   const hackPortion = ns.hackAnalyze(hostname);
-  if (hackPortion === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
-  const growFactor = 1 / (1 - hackPortion);
-  const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
-  const weak1Threads = getWeakThreads(SEC_PER_HACK); // hack security per thread
-  const weak2Threads = getWeakThreads(SEC_PER_GROW * growThreads);
-  const frameRam = 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
-  const numFrames = Math.max(0, Math.floor(totalRam / frameRam));
-  const money = maxMoney * hackPortion * numFrames;
+  if (hackPortion === 0) return unusable;
+  const frame = findBestFrame(ns, hostname, totalRam);
+  if (frame == null) return unusable;
+  const { hackThreads, numFrames } = frame;
+  const money = maxMoney * hackPortion * hackThreads * numFrames;
   const time = ns.getWeakenTime(hostname);
   const earningTime = HORIZON_MS - getSetupTime(ns, hostname, totalRam);
   const utility = Math.max(0, Math.floor(earningTime / time)) * money;
@@ -201,18 +215,8 @@ export async function main(ns: NS) {
     });
   } else {
     const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
-    const maxFrames = Math.min(FRAME_LIMIT, Math.floor(weakTime / FRAME_SPACING));
-
-    let frame = getFrame(ns, target, totalRam, 1)!;
-    for (let i = 1; true; i++) {
-      const nextBiggest = getFrame(ns, target, totalRam, i);
-      if (nextBiggest == null) break;
-      if (nextBiggest.numFrames > maxFrames || nextBiggest.peakRam < 0.9 * totalRam) {
-        frame = nextBiggest;
-      } else {
-        break;
-      }
-    }
+    const frame = findBestFrame(ns, target, totalRam);
+    if (frame == null) return;
 
     const { hackThreads, growThreads, weak1Threads, weak2Threads, numFrames } = frame;
 
