@@ -195,13 +195,13 @@ export async function main(ns: NS) {
           threads: growThreads,
           additionalMsec: weakTime - growTime + SPACING,
         },
-        { script: WEAK, threads: weak2Threads, additionalMsec: SPACING },
+        { script: WEAK, threads: weak2Threads, additionalMsec: 2 * SPACING },
       ],
       frameDuration: weakTime + SPACING,
     });
   } else {
     const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
-    const maxFrames = Math.min(FRAME_LIMIT, Math.floor(weakTime / SPACING));
+    const maxFrames = Math.min(FRAME_LIMIT, Math.floor(weakTime / FRAME_SPACING));
 
     let frame = getFrame(ns, target, totalRam, 1)!;
     for (let i = 1; true; i++) {
