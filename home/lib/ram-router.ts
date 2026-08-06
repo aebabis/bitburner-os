@@ -1,6 +1,13 @@
 import { by } from './util';
-import { getHostnames, getPlayerData, putRamPolicy, RamPolicySnapshot } from './data-store';
+import {
+  getHostnames,
+  getPlayerData,
+  getRamPolicy,
+  putRamPolicy,
+  RamPolicySnapshot,
+} from './data-store';
 import { THREADPOOL } from '../etc/config';
+import { CHARGE, HACK, SHARE } from '../etc/filenames';
 
 type ExecProcess = { script: string; highPriority?: boolean };
 
@@ -32,7 +39,7 @@ export const takeSnapshot = (
     .reduce((a, b) => a + b, 0);
   const homeReserve = getHomeReserveRam(ns);
   const shouldShare = currentWork == null || currentWork.type === 'FACTION' || !isLoveRunning;
-  const workerRam = totalRam - currentServiceRam - homeReserve;
+  const workerRam = Math.max(0, totalRam - currentServiceRam - homeReserve);
   const allottedShareRam = shouldShare ? workerRam * 0.1 : 0;
   const allottedStanekRam = isStanekRunning ? workerRam * 0.1 : 0;
   const allottedBatchRam = workerRam - allottedShareRam - allottedStanekRam;
@@ -158,6 +165,59 @@ export const execOnBestServer = (
   return { pid: 0, hostname: null, threads: 0 };
 };
 
+type WorkerType = typeof CHARGE | typeof HACK | typeof SHARE;
+export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
+  const normalScript = workerType.startsWith('/') ? workerType : '/' + workerType;
+  const scriptRam = ns.getScriptRam(workerType);
+  const snapshot = getRamPolicy(ns);
+  const rootHostnames = getHostnames(ns).filter(ns.hasRootAccess);
+
+  if (snapshot == null) {
+    return {
+      targetRamUse: 0,
+      currentWorkers: [],
+      currentRamUse: 0,
+      targetThreads: 0,
+      currentThreads: 0,
+      unusedRam: {},
+    };
+  }
+
+  const targetRamUse =
+    workerType === CHARGE
+      ? snapshot.allottedStanekRam
+      : workerType === SHARE
+        ? snapshot.allottedShareRam
+        : snapshot.allottedBatchRam;
+  const targetThreads = Math.floor(targetRamUse / scriptRam);
+
+  // Determine RAM already used by given service type.
+  const currentWorkers = rootHostnames.flatMap((hostname) =>
+    ns.ps(hostname).filter((ps) => ps.filename === normalScript),
+  );
+  const currentThreads = currentWorkers.map((ps) => ps.threads).reduce((a, b) => a + b, 0);
+  const currentRamUse = currentThreads * scriptRam;
+
+  const unusedRam = Object.fromEntries(
+    rootHostnames.map((hostname) => {
+      const maxRam = ns.getServerMaxRam(hostname);
+      const ramUsed = ns.getServerUsedRam(hostname);
+      const ramUnused = maxRam - ramUsed;
+      const ramReserved = hostname === 'home' ? getHomeReserveRam(ns) : 0;
+      const ramAvailable = Math.max(0, ramUnused - ramReserved);
+      return [hostname, ramAvailable];
+    }),
+  );
+
+  return {
+    targetRamUse,
+    currentWorkers,
+    currentRamUse,
+    currentThreads,
+    targetThreads,
+    unusedRam,
+  };
+};
 /**
  * Returns available RAM per server as a flat record, suitable for
  * buildWorkerThreadAllocator. Applies the home reserve from policy and
