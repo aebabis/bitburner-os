@@ -14,6 +14,11 @@ const FRAME_LIMIT = Math.floor(PROC_LIMIT / 4);
 // Weaken reduces security by 0.05 per thread (base rate)
 const getWeakThreads = (secDecrease: number) => Math.ceil(secDecrease / 0.05);
 
+const SEC_PER_HACK = 0.002;
+const SEC_PER_GROW = 0.004;
+const SEC_PER_WEAK = 0.05;
+const WEAK_PER_GROW = SEC_PER_GROW / SEC_PER_WEAK;
+
 const needsSetup = (ns: NS, hostname: string) => {
   const minSec = ns.getServerMinSecurityLevel(hostname);
   const curSec = ns.getServerSecurityLevel(hostname);
@@ -41,8 +46,8 @@ const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
   const maxMoney = ns.getServerMaxMoney(hostname);
   const money = Math.max(ns.getServerMoneyAvailable(hostname), 1);
   const totalGrowThreads = Math.ceil(ns.growthAnalyze(hostname, maxMoney / money));
-  const threadsPerPass = Math.max(1, Math.floor(totalRam / (1.75 * 2)));
-  return Math.ceil(totalGrowThreads / threadsPerPass) * (ns.getWeakenTime(hostname) + SPACING);
+  const growThreadsPerPass = Math.max(1, Math.floor(totalRam / (1.75 * (1 + WEAK_PER_GROW))));
+  return Math.ceil(totalGrowThreads / growThreadsPerPass) * (ns.getWeakenTime(hostname) + SPACING);
 };
 
 const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: number) => {
@@ -53,8 +58,8 @@ const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: numbe
   }
   const growFactor = 1 / (1 - hackThreads * hackPortion);
   const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
-  const weak1Threads = getWeakThreads(0.002 * hackThreads);
-  const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
+  const weak1Threads = getWeakThreads(SEC_PER_HACK * hackThreads);
+  const weak2Threads = getWeakThreads(SEC_PER_GROW * growThreads);
   const frameRam = hackThreads * 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
   const concurrentFrames = Math.ceil((weakTime + 3 * SPACING) / FRAME_SPACING);
   const peakRam = concurrentFrames * frameRam;
@@ -77,8 +82,8 @@ const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
   if (hackPortion === 0) return { hostname, money: 0, time: Infinity, incomeRate: 0, utility: 0 };
   const growFactor = 1 / (1 - hackPortion);
   const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
-  const weak1Threads = getWeakThreads(0.002); // hack security per thread
-  const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
+  const weak1Threads = getWeakThreads(SEC_PER_HACK); // hack security per thread
+  const weak2Threads = getWeakThreads(SEC_PER_GROW * growThreads);
   const frameRam = 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
   const numFrames = Math.max(0, Math.floor(totalRam / frameRam));
   const money = maxMoney * hackPortion * numFrames;
@@ -169,14 +174,13 @@ export async function main(ns: NS) {
     const secDiff = ns.getServerSecurityLevel(target) - ns.getServerMinSecurityLevel(target);
     const initWeakThreads = secDiff > 0 ? getWeakThreads(secDiff) : 0;
     const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
-    // Reserve RAM for initWeak, split remainder evenly between grow and weak2.
-    const growRamBudget = (totalRam - initWeakThreads * 1.75) / 2;
-    const maxGrowThreads = Math.max(1, Math.floor(growRamBudget / 1.75));
+    const gwRam = Math.max(0, totalRam - (initWeakThreads + 1) * 1.75);
+    const maxGrowThreads = Math.max(1, Math.floor(gwRam / (1.75 * (1 + WEAK_PER_GROW))));
     const maxMoney = ns.getServerMaxMoney(target);
     const currentMoney = Math.max(ns.getServerMoneyAvailable(target), 1);
     const growFactor = maxMoney / currentMoney;
     const growThreads = Math.min(maxGrowThreads, Math.ceil(ns.growthAnalyze(target, growFactor)));
-    const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
+    const weak2Threads = getWeakThreads(SEC_PER_GROW * growThreads);
 
     // One WGW pass: initWeak ends at +weakTime, grow ends at +weakTime+SPACING,
     // weak2 ends at +weakTime+SPACING (same window — both fix their respective security).
