@@ -51,7 +51,7 @@ const UTILITIES = {
   },
   lr: {
     command: 'home; cat log/last-reset.txt',
-    desc: 'Sell all stocks and stop spending',
+    desc: "Show last install's log",
   },
   makecct: {
     command: 'usr/make-cct.ts',
