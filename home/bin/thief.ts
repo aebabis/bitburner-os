@@ -46,14 +46,14 @@ const getSetupTime = (ns: NS, hostname: string, totalRam: number) => {
 };
 
 const getFrame = (ns: NS, hostname: string, totalRam: number, hackThreads: number) => {
-  const weakTime = ns.getWeakenTime();
+  const weakTime = ns.getWeakenTime(hostname);
   const hackPortion = ns.hackAnalyze(hostname);
   if (hackPortion * hackThreads >= 1) {
     return null;
   }
   const growFactor = 1 / (1 - hackThreads * hackPortion);
   const growThreads = Math.ceil(ns.growthAnalyze(hostname, growFactor));
-  const weak1Threads = getWeakThreads(0.002); // hack security per thread
+  const weak1Threads = getWeakThreads(0.002 * hackThreads);
   const weak2Threads = getWeakThreads(2 * 0.002 * growThreads);
   const frameRam = hackThreads * 1.7 + (weak1Threads + growThreads + weak2Threads) * 1.75;
   const concurrentFrames = Math.ceil((weakTime + 3 * SPACING) / FRAME_SPACING);
