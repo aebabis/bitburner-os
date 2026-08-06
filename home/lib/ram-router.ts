@@ -111,7 +111,7 @@ export const execOnBestServer = (
 
 type WorkerType = typeof CHARGE | typeof HACK | typeof SHARE;
 export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
-  const normalScript = workerType.startsWith('/') ? workerType : '/' + workerType;
+  const normalScript = workerType.slice(1);
   const scriptRam = ns.getScriptRam(workerType);
   const snapshot = getRamPolicy(ns);
   const rootHostnames = getHostnames(ns).filter(ns.hasRootAccess);
