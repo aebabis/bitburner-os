@@ -90,7 +90,7 @@ const UTILITIES = {
     desc: 'Run unit tests on script suite utilities and libraries',
   },
   testcct: {
-    command: 'home; lib/test/cct-battery.ts',
+    command: 'home; usr/cct-battery.ts',
     desc: 'Mass-generate contracts and test the solvers',
   },
   update: {

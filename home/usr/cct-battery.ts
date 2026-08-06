@@ -1,7 +1,7 @@
-import { tprint } from '../../boot/util';
-import { BRIGHT, ERROR } from '../../lib/colors';
-import algorithms from '../../bin/contracts/mapper';
-import { makeYielder } from '../util';
+import { tprint } from '../boot/util';
+import { BRIGHT, ERROR } from '../lib/colors';
+import algorithms from '../bin/contracts/mapper';
+import { makeYielder } from '../lib/util';
 
 export async function main(ns: NS) {
   const [numEach = 1000] = ns.args as number[];
