@@ -1,6 +1,6 @@
 import { CHARGE } from '../etc/filenames';
 import { getPlayerData, getStaticData, putPlayerData } from '../lib/data-store';
-import { getRamAllowances, getWorkerRam } from '../lib/ram-router';
+import { getWorkerRamState } from '../lib/ram-router';
 
 type FragmentPosition = [number, number, number, number];
 type FragmentFocus = GymType | 'hack' | 'cha' | 'bb';
@@ -223,17 +223,11 @@ export async function main(ns: NS) {
 
   ns.disableLog('ALL');
   const { resetInfo, scriptRam } = getStaticData(ns);
-  const RAM_PER_SHARE = scriptRam[CHARGE.replace(/^\//, '')];
-
-  const chargeThreads = new Map<number, number>();
+  const RAM_PER_THREAD = scriptRam[CHARGE.replace(/^\//, '')];
 
   let lastUpdate = 0;
   while (true) {
     ns.clearLog();
-    const currentThreads = [...chargeThreads.entries()]
-      .filter(([pid]) => ns.isRunning(pid))
-      .map(([, threads]) => threads)
-      .reduce((a, b) => a + b, 0);
 
     const currentLayout = ns.stanek
       .activeFragments()
@@ -259,20 +253,17 @@ export async function main(ns: NS) {
       .flatMap(({ x, y }) => [x, y]);
 
     if (coords.length > 0) {
+      const { targetThreads, currentThreads, unusedRam } = getWorkerRamState(ns, CHARGE);
       // Get target RAM usage
-      const { stanekRam } = getRamAllowances(ns);
-      const desiredThreads = Math.floor(stanekRam / RAM_PER_SHARE);
-      ns.print('Current threads: ' + currentThreads + '/' + desiredThreads);
-      if (currentThreads < desiredThreads) {
-        let threadsNeeded = desiredThreads - currentThreads;
-        const workerRam = getWorkerRam(ns, CHARGE);
-        for (const [hostname, ram] of Object.entries(workerRam)) {
-          const threads = Math.min(Math.floor(ram / RAM_PER_SHARE), threadsNeeded);
+      ns.print('Current threads: ' + currentThreads + '/' + targetThreads);
+      if (currentThreads < targetThreads) {
+        let threadsNeeded = targetThreads - currentThreads;
+        for (const [hostname, ram] of Object.entries(unusedRam)) {
+          const threads = Math.min(Math.floor(ram / RAM_PER_THREAD), threadsNeeded);
           if (threads) {
             const pid = ns.exec(CHARGE, hostname, { threads, temporary: true }, ...coords);
             if (pid !== 0) {
               threadsNeeded -= threads;
-              chargeThreads.set(pid, threads);
               if (!threadsNeeded) {
                 break;
               }
