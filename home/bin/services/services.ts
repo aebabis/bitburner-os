@@ -54,7 +54,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const inBladeNode = () =>
     [6, 7].includes(currentNode) || (hasPermanentBlade && currentNode !== 8);
   const canStanek = () => hasNode(13) && currentNode !== 8;
-  const canAutoGraft = () => hasNode(4) && hasNode(10) && currentNode !== 8;
+  const canAutoGraft = () => hasNode(4) && hasNode(10);
   const hasSleeves = () => hasNode(10);
 
   // Predicates for starting services

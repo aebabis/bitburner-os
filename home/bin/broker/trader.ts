@@ -2,7 +2,7 @@ import { by, formatTime } from '../../lib/util';
 import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
-import { getStaticData, putMoneyData } from '../../lib/data-store.ts';
+import { getMoneyData, getStaticData, putMoneyData } from '../../lib/data-store.ts';
 import { usingCorp } from '../../lib/query-service.ts';
 
 const getRequiredReserves = (ns: NS) => {
@@ -126,11 +126,15 @@ export async function main(ns: NS) {
     else dumpMode = ttc < 300;
 
     if (dumpMode) {
+      let { estimatedStockValue = 0 } = getMoneyData(ns);
       for (const sym of symbols) {
         const [shares] = positions[sym];
         if (shares > 0) {
-          if ((await $.stock['getSaleGain'](sym, shares, 'L')) > 0) {
+          const saleGain = await $.stock['getSaleGain'](sym, shares, 'L');
+          if (saleGain > 0) {
             await $.stock['sellStock'](sym, shares);
+            estimatedStockValue -= saleGain;
+            putMoneyData(ns, { estimatedStockValue });
           }
         }
       }
@@ -151,7 +155,7 @@ export async function main(ns: NS) {
         .sort(by((sym) => -forecasts[sym]));
 
       let moneyToSpend = getSpendableFunds(ns);
-      ns.print('$' + ns.format.number(moneyToSpend));
+      ns.print('Spendable: $' + ns.format.number(moneyToSpend));
 
       while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
         const sym = eligiblePurchases.shift()!;
@@ -167,10 +171,11 @@ export async function main(ns: NS) {
     putMoneyData(ns, { estimatedStockValue });
 
     if (inBN8) {
+      const { casinoIncome = 0 } = getMoneyData(ns);
       const player = await $['getPlayer']();
       const gains = estimatedStockValue + player.money - 250e6;
       const time = (Date.now() - resetInfo.lastAugReset) / 1000;
-      const stockIncome = Math.max(1, gains / time);
+      const stockIncome = Math.max(1, gains / time - casinoIncome);
       putMoneyData(ns, { stockIncome });
     }
 
