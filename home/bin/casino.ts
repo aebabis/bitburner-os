@@ -65,6 +65,7 @@ const playCoinFlips = async (ns: NS) => {
 
   let start = Date.now();
   let games = 0;
+  let wins = 0;
   while (true) {
     while (!atCoinFlipGame()) await goToCoinFlipGame(ns);
 
@@ -77,6 +78,7 @@ const playCoinFlips = async (ns: NS) => {
       } else {
         click(getButton('Tail!')!);
       }
+      wins++;
     } else {
       setWager(1);
       click(getButton('Head!')!);
@@ -90,6 +92,7 @@ const playCoinFlips = async (ns: NS) => {
     const time = Date.now() - start;
     const rate = games / (time / 1000);
     ns.clearLog();
+    ns.print('$' + ns.format.number(wins * 10000));
     ns.print(ns.format.number(rate) + 'Hz');
     ns.print('$' + ns.format.number(rate * 10000) + '/s');
     await ns.sleep(0);
