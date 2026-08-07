@@ -1,4 +1,4 @@
-import { by } from '../../lib/util';
+import { by, formatTime } from '../../lib/util';
 import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
@@ -6,7 +6,9 @@ import { getStaticData, putMoneyData } from '../../lib/data-store.ts';
 import { usingCorp } from '../../lib/query-service.ts';
 
 const getRequiredReserves = (ns: NS) => {
-  if (!ns.corporation.hasCorporation() && usingCorp(getStaticData(ns))) return 150e9;
+  const staticData = getStaticData(ns);
+  if (staticData.resetInfo.currentNode === 8) return 0;
+  if (!ns.corporation.hasCorporation() && usingCorp(staticData)) return 150e9;
   const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
   return typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
 };
@@ -70,6 +72,14 @@ const $getPortfolioValue = (
   })(symbols, positions);
 
 export async function main(ns: NS) {
+  ns.disableLog('ALL');
+  const { resetInfo } = getStaticData(ns);
+  const inBN8 = resetInfo.currentNode === 8;
+  if (inBN8) {
+    ns.ui.openTail();
+    putMoneyData(ns, { stockIncome: 1 });
+  }
+
   // Reserve RAM
   ns.stock.buyStock;
 
@@ -110,6 +120,8 @@ export async function main(ns: NS) {
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
 
+    ns.print('Est TTC: ' + formatTime(ttc));
+
     if (dumpMode) dumpMode = ttc < 600;
     else dumpMode = ttc < 300;
 
@@ -139,6 +151,7 @@ export async function main(ns: NS) {
         .sort(by((sym) => -forecasts[sym]));
 
       let moneyToSpend = getSpendableFunds(ns);
+      ns.print('$' + ns.format.number(moneyToSpend));
 
       while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
         const sym = eligiblePurchases.shift()!;
@@ -152,6 +165,14 @@ export async function main(ns: NS) {
 
     const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
     putMoneyData(ns, { estimatedStockValue });
+
+    if (inBN8) {
+      const player = await $['getPlayer']();
+      const gains = estimatedStockValue + player.money - 250e6;
+      const time = (Date.now() - resetInfo.lastAugReset) / 1000;
+      const stockIncome = Math.max(1, gains / time);
+      putMoneyData(ns, { stockIncome });
+    }
 
     ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
     const prices = await runInPlace(
