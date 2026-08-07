@@ -64,7 +64,7 @@ export async function main(ns: NS) {
   const canMakeMoney = resetInfo.currentNode !== 8;
 
   const afkTracker = makeAfkTracker(ns);
-  const focus = () => afkTracker.timeSinceAction() > 20000;
+  const focus = () => resetInfo.currentNode !== 8 && afkTracker.timeSinceAction() > 20000;
 
   if (resetInfo.currentNode === 8) {
     while (ns.getServerMaxRam('home') < 256 && (await $.singularity['upgradeHomeRam']()));
