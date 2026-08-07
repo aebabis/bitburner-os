@@ -15,6 +15,7 @@ export const getIncome = (ns: NS) => {
     dividendEarnings = 0,
     manualHackIncome = 0,
     darknetIncome = 0,
+    casinoIncome = 0,
   } = getMoneyData(ns);
   const totalIncome =
     hacknetIncome +
@@ -23,7 +24,8 @@ export const getIncome = (ns: NS) => {
     theftIncome +
     dividendEarnings +
     manualHackIncome +
-    darknetIncome;
+    darknetIncome +
+    casinoIncome;
   return {
     hacknetIncome,
     gangIncome,
@@ -32,6 +34,7 @@ export const getIncome = (ns: NS) => {
     dividendEarnings,
     manualHackIncome,
     darknetIncome,
+    casinoIncome,
     totalIncome,
     theftRatePerGB,
   };

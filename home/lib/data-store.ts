@@ -177,6 +177,7 @@ const DEFAULT_MONEY_DATA = {
   dividendEarnings: 0,
   darknetIncome: 0,
   manualHackIncome: 0,
+  casinoIncome: 0,
   totalIncome: 0,
 
   theftRatePerGB: 0,

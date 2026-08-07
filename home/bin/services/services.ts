@@ -34,6 +34,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   const gangKarma = currentNode === 2 ? 0 : -54000;
   const inCorpNode = currentNode === 3;
+  const inWorstNode = () => currentNode === 8;
   const mustSelfFund = !inCorpNode;
   const corpCost = mustSelfFund ? 150e9 : 0;
 
@@ -76,6 +77,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
 
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
+    AnyHostService(ns, inWorstNode)('/bin/casino.ts'),
     AnyHostService(ns, hasSingularity, canWork, { highPriority: true })('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),

@@ -181,6 +181,7 @@ const moneyTable = (ns: NS) => {
     totalIncome = 0,
     dividendEarnings = 0,
     darknetIncome = 0,
+    casinoIncome = 0,
   } = getIncome(ns);
   const rows = [
     [' Theft', `$${ns.format.number(theftIncome, 1)}/s`],
@@ -191,6 +192,7 @@ const moneyTable = (ns: NS) => {
     [' Corp', `$${ns.format.number(dividendEarnings, 1)}/s`],
     [' Dnet', `$${ns.format.number(darknetIncome, 1)}/s`],
   ];
+  if (casinoIncome) rows.push([' Casino', `$${ns.format.number(casinoIncome, 1)}/s`]);
   const top = H(' INCOME    ') + C(183)(`$${ns.format.number(totalIncome, 1)}/s`);
   return top + '\n' + table(ns, null, rows);
 };

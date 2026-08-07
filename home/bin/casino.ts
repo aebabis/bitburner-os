@@ -1,3 +1,5 @@
+import { putMoneyData } from '../lib/data-store';
+
 const getBadRngSequence = () => {
   const m = 1024;
   const a = 341;
@@ -18,11 +20,34 @@ const getButton = (content: string) =>
     (button) => button.innerText === content,
   );
 
+const getNavButton = (content: string) => {
+  const buttons = [
+    ...globalThis['document'].querySelectorAll('[role="button"]'),
+  ] as HTMLDivElement[];
+  return buttons.find((button) => {
+    return button.innerText === content || button.querySelector(`[aria-label="${content}"]`);
+  });
+};
+
+const getElem = (type: 'span' | 'h4' | 'p', content: string) =>
+  [...globalThis['document'].querySelectorAll(type)].find((elem) => elem.innerText === content);
+
 const atCoinFlipGame = () => getButton('Head!') != null;
 
-const goToCoinFlipGame = async (ns: NS) => {
-  ns.toast('Go to coin flip game');
-  await ns.sleep(5000);
+const goTowardCoinFlipGame = async (ns: NS) => {
+  if (getNavButton('Travel') == null) getNavButton('World')!.click();
+  else if (ns.getPlayer().city !== 'Aevum') getNavButton('Travel')!.click();
+  else if (getElem('h4', 'Iker Molina Casino') == null) {
+    if (getElem('p', 'Aevum') == null) {
+      getNavButton('City')!.click();
+    } else {
+      getElem('span', '¢')!.click();
+    }
+  } else {
+    const coinFlipButton = getButton('Play coin flip');
+    if (coinFlipButton) coinFlipButton.click();
+    else getButton('Stop playing')!.click();
+  }
 };
 
 const setWager = async (amount: number) => {
@@ -67,7 +92,7 @@ const playCoinFlips = async (ns: NS) => {
   let games = 0;
   let wins = 0;
   while (true) {
-    while (!atCoinFlipGame()) await goToCoinFlipGame(ns);
+    while (!atCoinFlipGame()) await goTowardCoinFlipGame(ns);
 
     if (foundRun) {
       const next = sequence.shift()!;
@@ -91,10 +116,14 @@ const playCoinFlips = async (ns: NS) => {
     games++;
     const time = Date.now() - start;
     const rate = games / (time / 1000);
+    const casinoIncome = rate * 10000;
+    putMoneyData(ns, { casinoIncome });
+
     ns.clearLog();
     ns.print('$' + ns.format.number(wins * 10000));
     ns.print(ns.format.number(rate) + 'Hz');
-    ns.print('$' + ns.format.number(rate * 10000) + '/s');
+    ns.print('$' + ns.format.number(casinoIncome) + '/s');
+
     await ns.sleep(0);
   }
 };
