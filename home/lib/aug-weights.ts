@@ -4,6 +4,7 @@ export const getAugWeights = (resetInfo: ResetInfo) => {
   const onBN = (num: number) => resetInfo.currentNode === num;
   const hasSF = (sf: number, level = 1) => (resetInfo.ownedSF.get(sf) ?? 0) >= level;
   const onBB = onBN(6) || onBN(7);
+  const on8 = onBN(8);
   return {
     hacking: onBB ? 2 : 5,
     hacking_chance: onBB ? 2 : 5,
@@ -12,13 +13,13 @@ export const getAugWeights = (resetInfo: ResetInfo) => {
 
     faction_rep: onBB ? 1 : 10,
 
-    hacking_money: 2,
+    hacking_money: on8 ? 0 : 2,
     hacking_grow: 2,
     company_rep: 1,
-    work_money: 1,
-    crime_money: 0,
-    crime_success: 0,
-    dnet_money: onBN(15) ? 1 : hasSF(15) ? 0.1 : 0,
+    work_money: on8 ? 0 : 1,
+    crime_money: on8 ? 0 : 0.1,
+    crime_success: on8 ? 0 : 0.1,
+    dnet_money: onBN(15) ? 1 : hasSF(15) && !on8 ? 0.1 : 0,
 
     strength: onBB ? 5 : 1,
     defense: onBB ? 5 : 1,
@@ -31,11 +32,11 @@ export const getAugWeights = (resetInfo: ResetInfo) => {
     charisma: onBN(15) ? 20 : hasSF(15) ? 1 : 0,
     charisma_exp: onBN(15) ? 20 : hasSF(15) ? 1 : 0,
 
-    hacknet_node_money: onBN(9) ? 5 : hasSF(9) ? 1 : 0,
-    hacknet_node_purchase_cost: onBN(9) ? 5 : hasSF(9) ? 1 : 0,
-    hacknet_node_ram_cost: onBN(9) ? 5 : hasSF(9) ? 1 : 0,
-    hacknet_node_core_cost: onBN(9) ? 5 : hasSF(9) ? 1 : 0,
-    hacknet_node_level_cost: onBN(9) ? 5 : hasSF(9) ? 1 : 0,
+    hacknet_node_money: onBN(9) ? 5 : hasSF(9) && !on8 ? 1 : 0,
+    hacknet_node_purchase_cost: onBN(9) ? 5 : hasSF(9) && !on8 ? 1 : 0,
+    hacknet_node_ram_cost: onBN(9) ? 5 : hasSF(9) && !on8 ? 1 : 0,
+    hacknet_node_core_cost: onBN(9) ? 5 : hasSF(9) && !on8 ? 1 : 0,
+    hacknet_node_level_cost: onBN(9) ? 5 : hasSF(9) && !on8 ? 1 : 0,
 
     bladeburner_max_stamina: onBB ? 5 : hasSF(7, 3) ? 1 : 0,
     bladeburner_stamina_gain: onBB ? 5 : hasSF(7, 3) ? 1 : 0,
