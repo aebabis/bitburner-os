@@ -34,10 +34,13 @@ const getElem = (type: 'span' | 'h4' | 'p', content: string) =>
 
 const atCoinFlipGame = () => getButton('Head!') != null;
 
-const goTowardCoinFlipGame = async (ns: NS) => {
+const goTowardCoinFlipGame = (ns: NS) => {
   if (getNavButton('Travel') == null) getNavButton('World')!.click();
-  else if (ns.getPlayer().city !== 'Aevum') getNavButton('Travel')!.click();
-  else if (getElem('h4', 'Iker Molina Casino') == null) {
+  else if (ns.getPlayer().city !== 'Aevum') {
+    const A = getElem('span', 'A');
+    if (A) A.click();
+    else getNavButton('Travel')!.click();
+  } else if (getElem('h4', 'Iker Molina Casino') == null) {
     if (getElem('p', 'Aevum') == null) {
       getNavButton('City')!.click();
     } else {
@@ -92,7 +95,10 @@ const playCoinFlips = async (ns: NS) => {
   let games = 0;
   let wins = 0;
   while (true) {
-    while (!atCoinFlipGame()) await goTowardCoinFlipGame(ns);
+    while (!atCoinFlipGame()) {
+      goTowardCoinFlipGame(ns);
+      await ns.sleep(0);
+    }
 
     if (foundRun) {
       const next = sequence.shift()!;
