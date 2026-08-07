@@ -126,15 +126,13 @@ export async function main(ns: NS) {
     else dumpMode = ttc < 300;
 
     if (dumpMode) {
-      let { estimatedStockValue = 0 } = getMoneyData(ns);
       for (const sym of symbols) {
         const [shares] = positions[sym];
         if (shares > 0) {
+          putMoneyData(ns, { estimatedStockValue: 0 });
           const saleGain = await $.stock['getSaleGain'](sym, shares, 'L');
           if (saleGain > 0) {
             await $.stock['sellStock'](sym, shares);
-            estimatedStockValue -= saleGain;
-            putMoneyData(ns, { estimatedStockValue });
           }
         }
       }
