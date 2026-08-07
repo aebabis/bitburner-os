@@ -157,6 +157,7 @@ export type PlayerData = {
     fragments: ActiveFragment[];
   };
   fragmentMultipliers?: Record<FragmentType, number>;
+  unlockedAchievements?: string[];
 
   homeRam: number;
   wseAccount: boolean;

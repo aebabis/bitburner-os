@@ -1,4 +1,4 @@
-import { Augmentation, putStaticData } from '../lib/data-store';
+import { Augmentation, putPlayerData, putStaticData } from '../lib/data-store';
 import { defer } from './defer';
 import { tprint } from './util';
 import { STR } from '../lib/colors';
@@ -101,6 +101,9 @@ export async function main(ns: NS) {
     crimeStats[crimeType] = await $.singularity['getCrimeStats'](crimeType);
   }
 
+  tprint(ns)(STR + '  Loading Achievements');
+  const unlockedAchievements = await $.singularity['getUnlockedAchievements']();
+
   putStaticData(ns, {
     singularityData: {
       factionAugmentations,
@@ -119,6 +122,7 @@ export async function main(ns: NS) {
       crimeStats,
     },
   });
+  putPlayerData(ns, { unlockedAchievements });
 
   // Go to next step in the boot sequence
   await defer(ns)(...ns.args);
