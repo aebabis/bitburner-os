@@ -2,7 +2,7 @@ import { by, formatTime } from '../../lib/util';
 import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
-import { getMoneyData, getStaticData, putMoneyData } from '../../lib/data-store.ts';
+import { getMoneyData, getStaticData, putMoneyData, putPlayerData } from '../../lib/data-store.ts';
 import { usingCorp } from '../../lib/query-service.ts';
 
 const getRequiredReserves = (ns: NS) => {
@@ -167,6 +167,7 @@ export async function main(ns: NS) {
 
     const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
     putMoneyData(ns, { estimatedStockValue });
+    putPlayerData(ns, { player: ns.getPlayer() });
 
     if (inBN8) {
       const { casinoIncome = 0 } = getMoneyData(ns);

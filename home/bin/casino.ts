@@ -212,8 +212,8 @@ const playRoulette = async (ns: NS) => {
   }
 
   const buildPrngs = () => {
-    const window = Date.now() - tableJoinTime;
-    const seeds = Array(window + 1)
+    const timeWindow = Date.now() - tableJoinTime;
+    const seeds = Array(timeWindow + 10)
       .fill(0)
       .map((_, i) => tableJoinTime + i);
     return seeds.map((time) => makeWHRNG(time));
