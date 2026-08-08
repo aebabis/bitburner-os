@@ -273,7 +273,7 @@ export async function main(ns: NS) {
         await makeMoney();
       } else {
         const achievements = await $.singularity['getUnlockedAchievements']();
-        if (!achievements.includes('KARMA')) {
+        if (!achievements.includes('KARMA_1000000')) {
           await $commitCrime('Homicide');
         } else {
           // In BN8, grind favor

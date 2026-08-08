@@ -373,6 +373,7 @@ export async function main(ns: NS) {
     const goals = getGoals(ns);
     const isPlayerGrafting = (await $currentWork())?.type === 'GRAFTING';
     const factionRepGoal = goals.prerequisites('FACTION_REP')[0];
+    const factionJoinGoal = goals.prerequisites('FACTION_JOIN')[0];
     // TODO: Make sleeves check for Daedalus EITHER branch and pursue shorter one
     const combatGoal = goals.prerequisites('COMBAT_LEVEL').find((goal) => !goal.isDone());
     const karma = ns.heart.break();
@@ -385,8 +386,8 @@ export async function main(ns: NS) {
         await $gymWorkout(sleeveInfo, ns.enums.GymType[combatGoal.stat]);
       }
       return 'combat';
-    } else if (isPlayerGrafting && factionRepGoal != null) {
-      const { faction } = factionRepGoal;
+    } else if (isPlayerGrafting && (factionRepGoal != null || factionJoinGoal != null)) {
+      const { faction } = factionRepGoal || factionJoinGoal;
       const [lead, ...helpers] = sleeves;
       const workType = factionWorkTypes[faction][0];
       await $workForFaction(lead, faction, workType);
