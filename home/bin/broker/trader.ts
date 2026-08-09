@@ -10,10 +10,15 @@ import {
   putPlayerData,
 } from '../../lib/data-store.ts';
 import { usingCorp } from '../../lib/query-service.ts';
+import { getServices } from '../../lib/service-api.ts';
 
 const getRequiredReserves = (ns: NS) => {
   const staticData = getStaticData(ns);
-  if (staticData.resetInfo.currentNode === 8) return 10e6;
+  if (staticData.resetInfo.currentNode === 8) {
+    const services = getServices(ns);
+    const casinoService = services?.find((service) => service.name === 'casino');
+    return casinoService?.allowed ? 50e6 : 1e6;
+  }
   if (!ns.corporation.hasCorporation() && usingCorp(staticData)) return 150e9;
   const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
   return typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
