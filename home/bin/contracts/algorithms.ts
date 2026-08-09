@@ -357,3 +357,14 @@ export const squareRoot = (bigInt: bigint) => {
     ? lowerBound
     : upperBound;
 };
+
+export const minimumTrianglePath = (triangle: number[][]) => {
+  const clone = structuredClone(triangle);
+  for (let y = clone.length - 2; y >= 0; y--) {
+    const row = clone[y];
+    for (let x = 0; x < row.length; x++) {
+      row[x] += Math.min(clone[y + 1][x], clone[y + 1][x + 1]);
+    }
+  }
+  return clone[0][0];
+};

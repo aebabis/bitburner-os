@@ -19,6 +19,7 @@ import {
   rle,
   twoColor,
   squareRoot,
+  minimumTrianglePath,
 } from './algorithms';
 
 const arr2d = (rows: number, cols: number) =>
@@ -42,6 +43,7 @@ const map = {
   'HammingCodes: Encoded Binary to Integer': hammingCorrect,
   'HammingCodes: Integer to Encoded Binary': hammingEncode,
   'Merge Overlapping Intervals': mergeIntervals,
+  'Minimum Path Sum in a Triangle': minimumTrianglePath,
   'Proper 2-Coloring of a Graph': twoColor,
   'Sanitize Parentheses in Expression': fixParensOpt,
   'Shortest Path in a Grid': pathToCorner,
