@@ -278,7 +278,7 @@ export async function main(ns: NS) {
         } else {
           // In BN8, grind rep or favor
           const joinGoal = rootGoal.prerequisites('FACTION_JOIN')[0];
-          if (joinGoal) {
+          if (joinGoal && joinGoal.isDone()) {
             await factionWork(ns.getPlayer(), joinGoal.faction);
           } else {
             const factionsByFavor = Object.entries(factionFavor)
