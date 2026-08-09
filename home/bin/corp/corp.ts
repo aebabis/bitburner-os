@@ -22,6 +22,9 @@ export async function main(ns: NS) {
 
   const $ = inPlace(ns, ns.pid);
 
+  // service precondition for execution is meeting all requirements of corporation.
+  // This check can only fail if seed money is spent while service is loading. In this
+  // case, we hold the RAM reserve and spin until money is replenished.
   while (!ns.corporation.hasCorporation()) {
     const selfFund = resetInfo.currentNode !== 3;
     while (!(await $createCorporation(ns)(selfFund))) {

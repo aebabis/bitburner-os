@@ -33,6 +33,7 @@ export const getTobaccoPlan = (
     .waitForInvestment(2, 500e9)
 
     .openDivision('Tobacco', TobDiv)
+    // Plants is Tobacco's only required material
     .setupExport(AgDiv, TobDiv, 'Plants')
     .setupExport(AgDiv, ChemDiv, 'Plants') // Replace old one so tobacco gets 1st dibs
     .assignEmployees(TobDiv, [1, 1, 0, 1, 0, 0])

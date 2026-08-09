@@ -20,6 +20,8 @@ export const formatTime = (seconds: number | null, emptyZero = false) => {
   }
 };
 
+// TODO: Make this throw an error when a numeric comparator result is NaN
+// TODO: Make this take an asc/desc param so consumer is less likely to use a unary `-` which conceals type errors
 export const by = <T>(prop: ((elem: T) => string | number) | keyof T) => {
   if (typeof prop === 'function') {
     return (a: T, b: T) => {

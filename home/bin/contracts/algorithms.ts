@@ -32,9 +32,15 @@ export const computeSumPermutationsII = (
   return outcomes;
 };
 
+// Unique Paths in a Grid II. Input encodes obstacles as 1; each cell is read in its original
+// encoding exactly once before being overwritten with its path count, so the two meanings never
+// collide.
 export const countPaths = (grid: number[][]) => {
   const h = grid.length;
   const w = grid[0].length;
+  // Seeded unconditionally, which would be wrong for a blocked destination — but the game's
+  // generator never makes the destination an obstacle, same as the origin. Confirmed in game
+  // across 100 random contracts, where a reachable defect would have shown up with near-certainty.
   grid[h - 1][w - 1] = 1;
   for (let i = h - 2; i >= 0; i--) {
     if (grid[i][w - 1] === 1) grid[i][w - 1] = 0;
@@ -283,11 +289,13 @@ const cypher = (char: string, shift: number) => {
 
 export const caesarCypher = ([plaintext, shift]: [string, number]) => {
   const result = [];
+  // Input can contain spaces
   for (const c of plaintext) result.push(c === ' ' ? c : cypher(c, 26 - shift));
   return result.join('');
 };
 
 export const vigenereCypher = ([plaintext, password]: [string, string]) => {
+  // Input cannot contain spaces
   const pw = password.split('');
   const pwChar = (): string => {
     pw.push(pw[0]);

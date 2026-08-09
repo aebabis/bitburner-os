@@ -91,6 +91,8 @@ const go = async (ns: NS) => {
     for (const service of services) {
       try {
         updateTasks();
+        // Rendering each pass necessary to keep table fresh,
+        // as service updates are async
         showServices();
         if (THIEVES.includes(service.script) && !service.isRunning()) {
           const currentServiceRam = runningServiceRam() + service.toData().ram;

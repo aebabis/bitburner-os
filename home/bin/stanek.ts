@@ -214,7 +214,7 @@ export async function main(ns: NS) {
     ns.stanek.activeFragments();
   } catch {
     // Dodge RAM cost of acceptGift, as it only happens once.
-    // Calling it here instead of bootloader allows service manager override.
+    // Accepting gift here instead of bootloader allows service manager override.
     if (ns.stanek['acceptGift']()) {
       putPlayerData(ns, { hasGift: true });
     }

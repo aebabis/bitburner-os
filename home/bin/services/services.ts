@@ -19,7 +19,9 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const { currentNode, ownedSF, ownedAugs } = resetInfo;
   const stockConstants = ns.stock.getConstants();
   const stockStarterCost = stockConstants.TixApiCost + stockConstants.MarketDataTixApi4SCost;
+  // SF5.2 grants Formulas.exe at the start of every run
   const hasPermanentFormulas = (ownedSF.get(5) ?? 0) >= 2;
+  // SF7.3 grants The Blade's Simulacrum upon joining the Bladeburner division
   const hasPermanentBlade = (ownedSF.get(7) ?? 0) === 3;
 
   const always = () => true;

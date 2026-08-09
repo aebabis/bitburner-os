@@ -414,8 +414,12 @@ export async function main(ns: NS) {
     await ns.sleep(50);
   }
 
+  // Reports earnings from dead children
   const { onlineMoneyMade, onlineRunningTime } = ns.getRunningScript()!;
   if (totalBatchRam) {
+    // Only record successful batches. Batches are only aborted when a fresh batch
+    // is projected to make more income, so reporting a monotonically increasing
+    // income against the player's increasing stats is actually more accurate.
     const theftIncome = onlineMoneyMade / onlineRunningTime;
     putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / totalBatchRam });
   }

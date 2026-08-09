@@ -131,6 +131,8 @@ export const getGoals = (ns: NS): Goal => {
       : null;
 
   const selectedFaction = bestPlan?.prerequisites('FACTION_JOIN')[0]?.faction ?? null;
+  // Record selectedFaction for the purposes of visually verifying faction math.
+  // Tracks best faction, even if a non-faction goal tree is chosen.
   recordGoalSnapshot(plans, selectedFaction, overhead);
 
   const inSlumSnakes = player.factions?.includes('Slum Snakes');

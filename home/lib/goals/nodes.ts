@@ -401,6 +401,9 @@ export const hacknetGoal = (
 
 export const labyrinthGoal = (labyAugsHeld: number) => {
   return goal('LABYRINTH', 'Acquire labyrinth aug #' + (labyAugsHeld + 1), () => false, {
+    // Estimated time to traverse maze. True value varies a lot, but in BN15, the priority
+    // is to favor the maze once the player is in it.
+    // TODO: Make mole.ts estimate actual time remaining.
     ownTime: () => 5 * 60,
   });
 };

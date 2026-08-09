@@ -245,7 +245,7 @@ export async function main(ns: NS) {
   putMoneyData(ns, { theft: { target, money, time, incomeRate, endTime } });
 
   const updateMoneyData = () => {
-    const { onlineMoneyMade } = ns.getRunningScript()!;
+    const { onlineMoneyMade } = ns.getRunningScript()!; // Reports earning from dead children
     const theftIncome = onlineMoneyMade / (weakTime / 1000);
     if (theftIncome > getMoneyData(ns).theftIncome) {
       putMoneyData(ns, { theftIncome, theftRatePerGB: theftIncome / ramUsed });

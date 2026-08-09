@@ -108,6 +108,9 @@ const $tor = async (ns: NS, port = ns.pid) => {
   })(hostnames);
   const portData = ns.readPort(TOR_PORT);
   const purchases = (portData === 'NULL PORT DATA' ? {} : portData) as TorPurchases;
+  // Purchases given input if not already held. The game prevents double-purchase;
+  // purchaseTor and purchaseProgram return true if the program is already owned.
+  // Guarding only exists to prevent unnecessary async call.
   const $purchase = async (program: ProgramName | 'Tor') =>
     (purchases[program] ||=
       program === 'Tor'

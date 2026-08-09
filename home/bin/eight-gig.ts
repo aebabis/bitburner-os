@@ -12,5 +12,8 @@ export async function main(ns: NS) {
     await ns.hack(n00dles);
   }
   await ns.sleep(5000);
+  // Using run here since run already used above.
+  // planner.ts can still start in BN1.1 because
+  // eight-gig and planner are less than 8GB total
   ns.run('/bin/planner.ts');
 }

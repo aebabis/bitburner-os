@@ -79,6 +79,9 @@ const getBodyScript = (ns: NS) => (func: () => unknown) => {
 const runScript =
   (ns: NS, port: number) =>
   async (script: string, ...args: ScriptArg[]) => {
+    // Yield exact amount of RAM to be immediately consumed by child process.
+    // Only failure mode is for RAM to be taken after child dies but before
+    // parent reclaims the RAM. This is rare, and no known solution exists.
     const ram = ns.getScriptRam(script);
     const startingRam = ns.ramOverride();
     const desiredNewRam = +(startingRam - ram).toFixed(2);
