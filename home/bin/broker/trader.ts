@@ -135,32 +135,31 @@ export async function main(ns: NS) {
     const ttc = Math.max(goalTTC, graftTime);
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
+    let estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
 
     if (dumpMode) dumpMode = ttc < 600;
     else dumpMode = ttc < 300;
 
     reportDataRows.push(['Est TTC', formatTime(ttc)]);
 
-    if (dumpMode) {
-      for (const sym of symbols) {
-        const [shares] = positions[sym];
-        if (shares > 0) {
-          putMoneyData(ns, { estimatedStockValue: 0 });
-          const saleGain = await $.stock['getSaleGain'](sym, shares, 'L');
-          if (saleGain > 0) {
-            await $.stock['sellStock'](sym, shares);
-          }
-        }
+    const sellIfProfitable = async (sym: string) => {
+      const [shares] = positions[sym];
+      if (shares === 0) return;
+      const saleGain = await $.stock['getSaleGain'](sym, shares, 'L');
+      if (saleGain > 0) {
+        positions[sym][0] = 0;
+        estimatedStockValue = Math.max(0, estimatedStockValue - saleGain);
+        putMoneyData(ns, { estimatedStockValue });
+        await $.stock['sellStock'](sym, shares);
       }
+    };
+
+    if (dumpMode) {
+      for (const sym of symbols) await sellIfProfitable(sym);
     } else {
       // Sell all stocks forecast to drop
       for (const sym of symbols) {
-        const [shares] = positions[sym];
-        if (forecasts[sym] < 0.5 && shares > 0) {
-          if ((await $.stock['getSaleGain'](sym, shares, 'L')) > 0) {
-            await $.stock['sellStock'](sym, shares);
-          }
-        }
+        if (forecasts[sym] < 0.5) await sellIfProfitable(sym);
       }
 
       const eligiblePurchases = symbols
@@ -176,12 +175,14 @@ export async function main(ns: NS) {
         const maxPurchase = maxShares[sym] - positions[sym][0];
         const shares = await $getMaxPurchase(ns, sym, maxPurchase, moneyToSpend);
         const price = await $.stock['buyStock'](sym, shares);
-        positions[sym][0] += shares;
-        moneyToSpend -= shares * price;
+        if (price !== 0) {
+          positions[sym][0] += shares;
+          estimatedStockValue += await $.stock['getSaleGain'](sym, shares, 'L');
+          moneyToSpend -= shares * price;
+        }
       }
     }
 
-    const estimatedStockValue = await $getPortfolioValue(ns, symbols, positions);
     putMoneyData(ns, { estimatedStockValue });
     putPlayerData(ns, { player: ns.getPlayer() });
 
@@ -194,7 +195,7 @@ export async function main(ns: NS) {
       putMoneyData(ns, { stockIncome });
     }
 
-    reportDataRows.push(['ESTIMATED VALUE', '$' + ns.format.number(estimatedStockValue, 3)]);
+    reportDataRows.push(['Estimated Value', '$' + ns.format.number(estimatedStockValue, 3)]);
     const prices = await runInPlace(
       ns,
       ns.pid,

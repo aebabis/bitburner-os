@@ -40,6 +40,16 @@ export async function main(ns: NS) {
     };
   };
 
+  // Safeguard heuristic to prevent otherwise-efficient grafting
+  // when it is no longer needed.
+  const closeToObjective = () => {
+    // Currently only important in BN8 (sigh).
+    return (
+      ns.getResetInfo().currentNode === 8 &&
+      getGoals(ns).prerequisites('FACTION_JOIN')[0]?.faction === 'Daedalus'
+    );
+  };
+
   while (true) {
     ns.clearLog();
     const { money, city, entropy } = ns.getPlayer();
@@ -57,7 +67,7 @@ export async function main(ns: NS) {
     const needsBladeburnerFocus =
       [6, 7].includes(resetInfo.currentNode) && !resetInfo.ownedAugs.has("The Blade's Simulacrum");
 
-    if (!isGrafting && graftables.length > 0 && !needsBladeburnerFocus) {
+    if (!isGrafting && graftables.length > 0 && !needsBladeburnerFocus && !closeToObjective()) {
       const { augmentation, utility, graftTime } = graftables[0];
       if (install != null && utility > install.utility) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
