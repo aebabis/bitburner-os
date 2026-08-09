@@ -485,11 +485,19 @@ export const buildFactionGoalTree = (
 
   // Path 3: Donation — faction has enough favor; buy remaining rep with money
   const donationPath = (): [Goal[], Action[]] => {
-    const donationRate = formulas?.reputation?.donationForRep(1, player) ?? Infinity;
-    const donationCost = Math.max(0, repReq - currentRep) * donationRate;
-    const moneyGoal = augMoneyGoal(costToAug + donationCost, liquidAssets, totalIncome);
+    const donationRate = formulas.reputation.donationForRep(1, player);
+
+    // Compute time until donation assuming player also grinds rep
+    const effectiveCost = (repReq - currentRep) * donationRate + costToAug - liquidAssets;
+    const effectiveIncome = totalIncome + repRate * donationRate;
+    const timeToGoal = Math.max(0, effectiveCost / effectiveIncome);
+
+    const moneyToEarn = Math.ceil(timeToGoal * totalIncome);
+    const targetRep = currentRep + timeToGoal * repRate;
+    const moneyGoal = augMoneyGoal(liquidAssets + moneyToEarn, liquidAssets, totalIncome);
+    const repGoal = factionRepGoal(faction, targetRep, currentRep, joinGoal, repRate);
     return [
-      [joinGoal, moneyGoal],
+      [joinGoal, repGoal, moneyGoal],
       [buyRepAction(faction, repReq - currentRep), ...augs.map(buyAugAction)],
     ];
   };
