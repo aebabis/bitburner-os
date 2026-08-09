@@ -130,7 +130,8 @@ const playCoinFlips = async (ns: NS, lose = false) => {
     while (sequence.slice(0, setupRun.length).some((n, i) => n !== setupRun[i])) {
       sequence.push(sequence.shift()!);
       if (safeguard-- <= 0) {
-        throw new Error('Failed to find sequence. Playing too fast?');
+        setupRun.length = 0;
+        return;
       }
     }
     if (setupRun.length >= 20) {
