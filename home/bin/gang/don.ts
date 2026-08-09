@@ -2,7 +2,7 @@ import { putMoneyData } from '../../lib/data-store';
 import { isRepBound } from '../../lib/goals/goals';
 import { inPlace } from '../../lib/in-place';
 import { table } from '../../lib/table';
-import { by, randPort } from '../../lib/util';
+import { by } from '../../lib/util';
 import { getFightWinRates, needsPower } from './util';
 
 export async function main(ns: NS) {
@@ -15,7 +15,7 @@ export async function main(ns: NS) {
   ns.ui.resizeTail(300, 160);
   ns.ui.moveTail(350 + 249 + 4, 2);
 
-  const $ns = inPlace(ns, randPort());
+  const $ns = inPlace(ns, ns.pid);
 
   while (!ns.gang.inGang()) {
     await $ns.gang['createGang']('Slum Snakes');

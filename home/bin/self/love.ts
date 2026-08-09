@@ -1,7 +1,7 @@
 import { getStaticData, putPlayerData } from '../../lib/data-store';
 import { getGoals, getPlanningHorizon, isRepBound } from '../../lib/goals/goals';
 import { Goal, GoalOfType, GoalType } from '../../lib/goals/nodes';
-import { binomLowerBound, by, randPort } from '../../lib/util';
+import { binomLowerBound, by } from '../../lib/util';
 import { inPlace, runInPlace } from '../../lib/in-place';
 import { $nmap } from '../../lib/nmap.rip';
 import { $getBackdoorPath } from '../../lib/backdoor.rip';
@@ -37,7 +37,7 @@ export async function main(ns: NS) {
 
   ns.singularity.commitCrime;
 
-  const runPort = randPort();
+  const runPort = ns.pid;
   const $ = inPlace(ns, runPort);
   const $rip = runInPlace(ns, runPort);
 

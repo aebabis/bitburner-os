@@ -41,10 +41,6 @@ export const by = <T>(prop: ((elem: T) => string | number) | keyof T) => {
   };
 };
 
-const RESERVED_PORTS = 1024;
-export const randPort = () =>
-  RESERVED_PORTS + 1 + Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER - RESERVED_PORTS));
-
 export const length = (str: string) => str.toString().replaceAll(COLOR_REGEX, '').length;
 
 export const small = (number: string | number) =>
