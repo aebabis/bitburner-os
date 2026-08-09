@@ -126,7 +126,8 @@ There is no build step. `home/**/*.ts` is what the game runs.
 
 | Command | Purpose |
 | --- | --- |
-| `yarn lint` | `tsc --noEmit`. |
+| `yarn lint` | `tsc --noEmit`, then `eslint .`. |
+| | ESLint is type-aware and exists mainly for the checks tsc cannot do. The one that earns its keep is `@typescript-eslint/no-unsafe-unary-minus`: TypeScript does not constrain the operand of unary `-`, so `-somePromise` compiles and evaluates to NaN. Base `no-unused-vars` is off — it counts parameters in type signatures as unused bindings (~1050 false positives) and `noUnusedLocals` already covers the real cases. |
 | `yarn knip` | Dead code and unused exports. The entry list in `knip.json` is maintained by hand and must track the service registry plus every rmi/exec target and manual tool — a stale entry reports live code as dead. |
 | `yarn check-data-deps` | Data-store fields written but never read. Descends one level into `singularityData`/`graftingData`. It cannot follow a store passed as a *function parameter*, so a field read only that way is reported as an orphan and is a false positive. |
 | `/usr/suite.ts` | In-game: RAM cost of every root script. |

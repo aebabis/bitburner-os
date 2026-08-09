@@ -27,7 +27,7 @@ export async function main(ns: NS) {
 const getFunctionProgram = (func: () => unknown) => {
   const body = func
     .toString()
-    .replaceAll(/(ns[A-Za-z\.]*)\['([^']*)']/g, (_str, match1, match2) => `${match1}.${match2}`);
+    .replaceAll(/(ns[A-Za-z.]*)\['([^']*)']/g, (_str, match1, match2) => `${match1}.${match2}`);
   return `
 export async function main(ns: NS) {
   const args = ns.readPort(ns.args[0]);

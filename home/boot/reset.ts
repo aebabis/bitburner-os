@@ -31,7 +31,7 @@ export async function main(ns: NS) {
 
   // Deleting old logs
   tprint(ns)(STR + '  Pruning log/');
-  const resetLogs = ns.ls('home').filter((file) => file.match(/log\/reset\-\d+\.txt/));
+  const resetLogs = ns.ls('home').filter((file) => file.match(/log\/reset-\d+\.txt/));
   const history = 50;
   for (const file of resetLogs.slice(0, -history)) ns.rm(file, 'home');
 

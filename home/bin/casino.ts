@@ -98,21 +98,29 @@ const goTowardRouletteTable = (ns: NS) => {
 
 const money = (ns: NS) => Math.floor(ns.getServerMoneyAvailable('home'));
 
+// Helper for generating React events
+const fireReactHandler = (element: Element, handler: 'onChange' | 'onClick', event: unknown) => {
+  const key = Object.keys(element).find((k) => k.startsWith('__reactProps$'));
+  const props = key == null ? null : (element as unknown as Record<string, unknown>)[key];
+  const fn = (props as Record<string, unknown> | null)?.[handler];
+  if (typeof fn !== 'function') {
+    throw new Error(`No React ${handler} on element — the game's UI internals have changed`);
+  }
+  return fn.call(props, event);
+};
+
 const setWager = async (ns: NS, amount: number) => {
   if (amount > money(ns)) return false;
   const input = globalThis['document'].querySelector('input')!;
   await Promise.all([
-    input[Object.keys(input)[1]].onChange({
-      isTrusted: true,
-      target: { value: `${amount}` },
-    }),
+    fireReactHandler(input, 'onChange', { isTrusted: true, target: { value: `${amount}` } }),
     ns.sleep(0),
   ]);
   return amount <= money(ns);
 };
 
 const click = (button: HTMLButtonElement) => {
-  button[Object.keys(button)[1]].onClick({ isTrusted: true });
+  fireReactHandler(button, 'onClick', { isTrusted: true });
 };
 
 const HEADS = 0;

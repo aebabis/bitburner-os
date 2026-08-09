@@ -36,14 +36,15 @@ const showNetwork = (ns: NS) => {
     network[hostname] = [...neighbors];
   }
 
-  const comparator: DarkwebServerComparator = sort === 'alpha' ?
-  ([h1], [h2]) => h1.localeCompare(h2) :
-  ([h1], [h2]) => {
-    const canAccessH1 = passwordData[h1] != null || ns.ps(h1).length > 0;
-    const canAccessH2 = passwordData[h2] != null || ns.ps(h2).length > 0;
-    if (canAccessH1 && canAccessH2) return h1.localeCompare(h2);
-    else return +canAccessH1 - +canAccessH2;
-  }
+  const comparator: DarkwebServerComparator =
+    sort === 'alpha'
+      ? ([h1], [h2]) => h1.localeCompare(h2)
+      : ([h1], [h2]) => {
+          const canAccessH1 = passwordData[h1] != null || ns.ps(h1).length > 0;
+          const canAccessH2 = passwordData[h2] != null || ns.ps(h2).length > 0;
+          if (canAccessH1 && canAccessH2) return h1.localeCompare(h2);
+          else return +canAccessH1 - +canAccessH2;
+        };
 
   const rows = Object.entries(network)
     .filter(([hostname]) => ns.dnet.getServerDetails(hostname).isOnline)
@@ -59,39 +60,39 @@ const showNetwork = (ns: NS) => {
     const { passwordHint } = ns.dnet.getServerDetails(hostname);
     if (passwordHint.length <= maxLength) return passwordHint;
     else return passwordHint.slice(0, maxLength) + '...';
-  }
+  };
   ns.printRaw(
-    <table style={{fontSize: 10 }}>
+    <table style={{ fontSize: 10 }}>
       <thead>
         <tr>
-          <th style={{textAlign: 'left'}}>hostname</th>
-          <th style={{textAlign: 'left'}}>hint</th>
-          <th style={{textAlign: 'left'}}>neighbors</th>
+          <th style={{ textAlign: 'left' }}>hostname</th>
+          <th style={{ textAlign: 'left' }}>hint</th>
+          <th style={{ textAlign: 'left' }}>neighbors</th>
         </tr>
       </thead>
       <tbody>
-      {
-        rows.map(([hostname, neighbors]) => (
+        {rows.map(([hostname, neighbors]) => (
           <tr>
             <td style={{ color: getListingColor(hostname) }}>{hostname}</td>
             <td>{getHintText(hostname)}</td>
-            <td>{neighbors.sort().map((neighbor) => (
-              <button
-                style={{
-                  ...buttonStyles,
-                  color: hasMole(neighbor) ? 'skyblue' : '#444',
-                }}
-                disabled={!hasMole(neighbor)}
-                onClick={() => queue.push(neighbor)}
-              >
-                {neighbor}
-              </button>))}
+            <td>
+              {neighbors.sort().map((neighbor) => (
+                <button
+                  style={{
+                    ...buttonStyles,
+                    color: hasMole(neighbor) ? 'skyblue' : '#444',
+                  }}
+                  disabled={!hasMole(neighbor)}
+                  onClick={() => queue.push(neighbor)}
+                >
+                  {neighbor}
+                </button>
+              ))}
             </td>
           </tr>
-        ))
-      }
+        ))}
       </tbody>
-    </table>
+    </table>,
   );
 };
 

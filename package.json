@@ -4,7 +4,7 @@
   "main": "download.js",
   "type": "module",
   "scripts": {
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && eslint .",
     "check-data-deps": "node --import tsx/esm scripts/check-data-deps.ts",
     "knip": "knip",
     "prepare": "husky"
@@ -33,10 +33,11 @@
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
     "tsx": "^4.22.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.66.0"
   },
   "lint-staged": {
-    "*.{js,ts,json}": "prettier --write"
+    "*.{js,ts,tsx,json}": "prettier --write"
   },
   "dependencies": {
     "acorn": "^8.16.0",
