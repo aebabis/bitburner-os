@@ -15,7 +15,7 @@ import {
   type Goal,
 } from '../goals/nodes';
 import { isRepBound, buildFactionGoalTree } from '../goals/tree';
-import { computeRepReq, computeAugCost, computeResetOverhead } from '../aug-select';
+import { computeRepReq, computeAugCost, computeRepRate, computeResetOverhead } from '../aug-select';
 import { mockStaticData } from './fixtures';
 import { getMockFormulas } from '../formulas';
 import { buildPerson } from './fixtures';
@@ -580,13 +580,76 @@ export async function main(ns: NS) {
       assert.ok(repAction, 'should have a BUY_REP action');
     });
 
-    it('money goal includes donation cost', () => {
-      const tree = buildFactionGoalTree(ns, 'F' as FactionName, donationData());
+    // The fixture's default income ($1/s) is negligible next to a 1e6 money/rep donation
+    // rate, so the plan degenerates to a pure grind. Raising it puts the two rep sources
+    // on comparable footing, which is the case worth pinning down.
+    const blendedData = () => ({ ...donationData(), totalIncome: 2_500_000 });
+
+    // liquidAssets and currentRep are both 0 in this fixture, so the solve reduces to
+    // t = (repReq * donationRate + augCost) / (totalIncome + repRate * donationRate).
+    const expectedTimeToGoal = (data: ReturnType<typeof blendedData>) => {
+      const donationRate = mockFormulas.reputation.donationForRep(1, {} as Person);
+      const repRate = computeRepRate(
+        'F' as FactionName,
+        undefined,
+        { F: 150 } as any,
+        data.player,
+        0,
+        mockFormulas as any,
+      );
+      return {
+        repRate,
+        timeToGoal:
+          (50_000 * donationRate + 1_000_000) / (data.totalIncome + repRate * donationRate),
+      };
+    };
+
+    it('splits the rep requirement between grinding and donating', () => {
+      const data = blendedData();
+      const tree = buildFactionGoalTree(ns, 'F' as FactionName, data);
+      assert.ok(tree);
+      const repGoal = tree.deps.find((g) => g.type === 'FACTION_REP')!;
+      const { repRate, timeToGoal } = expectedTimeToGoal(data);
+      const expected = timeToGoal * repRate;
+      assert.ok(
+        Math.abs(repGoal.requirement - expected) < 1e-6,
+        `rep goal should target ${expected}, got ${repGoal.requirement}`,
+      );
+      // Sanity check that the fixture actually exercises the blend rather than either extreme
+      assert.ok(
+        repGoal.requirement > 0 && repGoal.requirement < 50_000,
+        'rep goal should target part of the requirement, leaving the rest to the donation',
+      );
+    });
+
+    it('money goal covers the donation and the augs at the planned install time', () => {
+      const data = blendedData();
+      const tree = buildFactionGoalTree(ns, 'F' as FactionName, data);
       assert.ok(tree);
       const moneyGoal = tree.deps.find((g) => g.type === 'AUG_MONEY')!;
-      // donationForRep(50000, player) = 50000 * 1e6 / 1 = 5e10; augCost = 1e6
-      const expectedDonation = mockFormulas.reputation.donationForRep(50_000, {} as Person);
-      assert.equal(moneyGoal.requirement, 1_000_000 + expectedDonation);
+      const { timeToGoal } = expectedTimeToGoal(data);
+      // liquidAssets is 0 here, so the requirement is purely what gets earned by then
+      assert.equal(moneyGoal.requirement, Math.ceil(timeToGoal * data.totalIncome));
+      // Grinding concurrently means never banking the full donation up front
+      const fullDonation = mockFormulas.reputation.donationForRep(50_000, {} as Person);
+      assert.ok(
+        moneyGoal.requirement >= 1_000_000 && moneyGoal.requirement < 1_000_000 + fullDonation,
+        'money goal should fall between the aug cost and the aug cost plus a full donation',
+      );
+    });
+
+    it('money and rep goals are scheduled to complete together', () => {
+      // The solve exists to line these up: money buys the rep the grind did not cover.
+      const data = blendedData();
+      const tree = buildFactionGoalTree(ns, 'F' as FactionName, data);
+      assert.ok(tree);
+      const moneyGoal = tree.deps.find((g) => g.type === 'AUG_MONEY')!;
+      const repGoal = tree.deps.find((g) => g.type === 'FACTION_REP')!;
+      const { timeToGoal } = expectedTimeToGoal(data);
+      assert.ok(
+        Math.abs(moneyGoal.ownTime() - repGoal.ownTime()) < 1,
+        `expected both goals near ${timeToGoal}s, got money=${moneyGoal.ownTime()} rep=${repGoal.ownTime()}`,
+      );
     });
   });
 
