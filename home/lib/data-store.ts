@@ -182,6 +182,7 @@ const DEFAULT_MONEY_DATA = {
   casinoIncome: 0,
   totalIncome: 0,
 
+  casinoEarnings: 0,
   theftRatePerGB: 0,
   theft: {
     target: '',

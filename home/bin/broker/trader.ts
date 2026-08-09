@@ -187,11 +187,15 @@ export async function main(ns: NS) {
     putPlayerData(ns, { player: ns.getPlayer() });
 
     if (inBN8) {
-      const { casinoIncome = 0 } = getMoneyData(ns);
+      const { casinoEarnings = 0 } = getMoneyData(ns);
       const player = await $['getPlayer']();
-      const gains = estimatedStockValue + player.money - 250e6;
+      // In BN8, stocks and gambling are the only sources of income
+      // and money is not spent during an install cycle. Determining
+      // earnings empirically is easier than tracking stock profits
+      // across multiple purchases.
+      const gains = estimatedStockValue + player.money - 250e6 - casinoEarnings;
       const time = (Date.now() - resetInfo.lastAugReset) / 1000;
-      const stockIncome = Math.max(1, gains / time - casinoIncome);
+      const stockIncome = Math.max(1, gains / time);
       putMoneyData(ns, { stockIncome });
     }
 

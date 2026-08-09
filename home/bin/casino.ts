@@ -1,4 +1,4 @@
-import { putMoneyData } from '../lib/data-store';
+import { getMoneyData, putMoneyData } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 
 const getBadRngSequence = () => {
@@ -123,6 +123,27 @@ const click = (button: HTMLButtonElement) => {
   fireReactHandler(button, 'onClick', { isTrusted: true });
 };
 
+const reportEarnings = (ns: NS, netChange: number) => {
+  const { casinoEarnings = 0 } = getMoneyData(ns);
+  putMoneyData(ns, { casinoEarnings: casinoEarnings + netChange });
+};
+
+const isAccused = (ns: NS) => {
+  const accusation = getElem('span', /cheater/);
+  if (accusation == null) return false;
+  let container: HTMLElement | null = accusation;
+  while (container != null) {
+    const closeButton = container.querySelector('button');
+    if (closeButton) {
+      closeButton.click();
+      break;
+    }
+    container = container['parentElement'];
+  }
+  disableService(ns);
+  return true;
+};
+
 const HEADS = 0;
 const TAILS = 1;
 type Flip = typeof HEADS | typeof TAILS;
@@ -158,7 +179,6 @@ const playCoinFlips = async (ns: NS, lose = false) => {
 
   let start = Date.now();
   let games = 0;
-  let wins = 0;
   while (!metGoal()) {
     while (!atCoinFlipGame()) {
       goTowardCoinFlipGame(ns);
@@ -169,23 +189,24 @@ const playCoinFlips = async (ns: NS, lose = false) => {
       return;
     }
 
+    const wager = foundRun ? 10000 : 1;
+    await setWager(ns, wager);
+
+    let choice = HEADS;
     if (foundRun) {
       const next = sequence.shift()!;
       sequence.push(next);
-      await setWager(ns, 10000);
-      const choice = lose ? ((1 - next) as Flip) : next;
-      if (choice === HEADS) {
-        click(getButton('Head!')!);
-      } else {
-        click(getButton('Tail!')!);
-      }
-      wins++;
-    } else {
-      await setWager(ns, 1);
-      click(getButton('Head!')!);
-      await ns.sleep(0);
-      const h4 = [...globalThis['document'].querySelectorAll('h4')].at(-1)!;
-      setupRun.push(h4.innerText === 'win!' ? HEADS : TAILS);
+      choice = lose ? ((1 - next) as Flip) : next;
+    }
+    const buttonText = choice === HEADS ? 'Head!' : 'Tail!';
+    click(getButton(buttonText)!);
+    await ns.sleep(0);
+    if (isAccused(ns)) return;
+    const h4 = [...globalThis['document'].querySelectorAll('h4')].at(-1)!;
+    const won = h4.innerText === 'win!';
+    reportEarnings(ns, won ? wager : -wager);
+    if (!foundRun) {
+      setupRun.push(won ? HEADS : TAILS);
       await checkPrediction();
     }
 
@@ -193,10 +214,9 @@ const playCoinFlips = async (ns: NS, lose = false) => {
     const time = Date.now() - start;
     const rate = games / (time / 1000);
     const casinoIncome = rate * 10000;
-    putMoneyData(ns, { casinoIncome });
+    putMoneyData(ns, { casinoIncome }); // Approximate
 
     ns.clearLog();
-    ns.print('$' + ns.format.number(wins * 10000));
     ns.print(ns.format.number(rate) + 'Hz');
     ns.print('$' + ns.format.number(casinoIncome) + '/s');
 
@@ -248,8 +268,11 @@ const playRoulette = async (ns: NS) => {
     if (getElem('h4', 'playing') == null) return null;
     while (getElem('h4', 'playing')) await ns.sleep(0);
     const outcome = getOutcome();
+    const won = outcome === choice;
+    // Wager only deducted on loss; payoff is 36:1
+    reportEarnings(ns, won ? wager * 36 : -wager);
     ns.print('Selection: ' + choice);
-    ns.print('Outcome:   ' + outcome + ` (${outcome === choice ? 'win' : 'lose'})`);
+    ns.print('Outcome:   ' + outcome + ` (${won ? 'win' : 'lose'})`);
     return outcome;
   };
 
@@ -300,20 +323,7 @@ const playRoulette = async (ns: NS) => {
 
     const outcome = await play(choice, wager);
 
-    const accusation = getElem('span', /cheater/);
-    if (accusation) {
-      let container: HTMLElement | null = accusation;
-      while (container != null) {
-        const closeButton = container.querySelector('button');
-        if (closeButton) {
-          closeButton.click();
-          break;
-        }
-        container = container['parentElement'];
-      }
-      disableService(ns);
-      return;
-    }
+    if (isAccused(ns)) return;
 
     if (outcome == null) return;
 
