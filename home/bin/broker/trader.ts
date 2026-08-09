@@ -120,7 +120,7 @@ export async function main(ns: NS) {
   let dumpMode = false;
 
   while (true) {
-    ns.clearLog();
+    const reportDataRows = [] as string[][];
 
     const { currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
     const isGrafting = currentWork?.type === 'GRAFTING' && graftCompletionTime > Date.now();
@@ -131,10 +131,10 @@ export async function main(ns: NS) {
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
 
-    ns.print('Est TTC: ' + formatTime(ttc));
-
     if (dumpMode) dumpMode = ttc < 600;
     else dumpMode = ttc < 300;
+
+    reportDataRows.push(['Est TTC', formatTime(ttc)]);
 
     if (dumpMode) {
       for (const sym of symbols) {
@@ -164,7 +164,7 @@ export async function main(ns: NS) {
         .sort(by((sym) => -forecasts[sym]));
 
       let moneyToSpend = getSpendableFunds(ns);
-      ns.print('Spendable: $' + ns.format.number(moneyToSpend));
+      reportDataRows.push(['Spendable', '$' + ns.format.number(moneyToSpend)]);
 
       while (moneyToSpend > MIN_ORDER && eligiblePurchases.length > 0) {
         const sym = eligiblePurchases.shift()!;
@@ -189,7 +189,7 @@ export async function main(ns: NS) {
       putMoneyData(ns, { stockIncome });
     }
 
-    ns.print('ESTIMATED VALUE: $' + ns.format.number(estimatedStockValue, 3));
+    reportDataRows.push(['ESTIMATED VALUE', '$' + ns.format.number(estimatedStockValue, 3)]);
     const prices = await runInPlace(
       ns,
       ns.pid,
@@ -208,7 +208,12 @@ export async function main(ns: NS) {
         forecasts[sym].toFixed(3).replace(/^0/, '') || '',
         '$' + ns.format.number(prices[sym]),
       ]);
+    ns.clearLog();
+    ns.print('\n');
+    ns.print(table(ns, null, reportDataRows));
+    ns.print('\n');
     ns.print(table(ns, columns, rows, { colors: true }));
+    ns.print('\n');
     await ns.stock.nextUpdate();
   }
 }
