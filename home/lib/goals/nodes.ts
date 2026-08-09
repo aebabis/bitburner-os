@@ -408,11 +408,20 @@ export const labyrinthGoal = (labyAugsHeld: number) => {
   });
 };
 
+// Placeholder goal representing transient lack of information. Defaults to short time
+// value as most derived information used by goal engine becomes available shortly after boot.
 export const waitGoal = (desc = 'Wait for data', time = 10, deps: Goal[] = []) => {
   return goal('WAIT', desc, () => false, { ownTime: () => time, deps });
 };
 
+// Sentinel time for a goal that will never be met and therefore must never be chosen.
+// Uses MAX_SAFE_INTEGER instead of Infinity so that numeric calcuations never create NaN.
 export const NEVER = Number.MAX_SAFE_INTEGER;
+
+// Represents goal that can never be met because it includes a requirement prohibited
+// by the player's current circumstances (e.g. requires a services that needs Formulas.exe
+// when the player doesn't have it).
+// Large time ensures it will never be chosen by goal engine if another option exists.
 export const neverGoal = () => {
   return goal('NEVER', 'Wait forever', () => false, { ownTime: () => NEVER });
 };

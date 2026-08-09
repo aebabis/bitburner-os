@@ -9,6 +9,7 @@ import {
   karmaGoal,
   labyrinthGoal,
   mutexGoal,
+  NEVER,
   neverGoal,
   waitGoal,
   type Goal,
@@ -82,24 +83,21 @@ export async function main(ns: NS) {
         assert.equal(eitherGoal([slow, fast]).timeToComplete(), 100);
       });
 
-      it('timeToComplete() prefers a finite branch over an unpriceable one', () => {
+      it('timeToComplete() prefers a reachable branch over an unreachable one', () => {
         const finite = augMoneyGoal(100, 0, 1); // 100s
         assert.equal(eitherGoal([neverGoal(), finite]).timeToComplete(), 100);
       });
 
-      it('timeToComplete() is unpriceable when every branch is', () => {
-        assert.equal(
-          eitherGoal([neverGoal(), neverGoal()]).timeToComplete(),
-          Number.MAX_SAFE_INTEGER,
-        );
+      it('timeToComplete() is NEVER when every branch is unreachable', () => {
+        assert.equal(eitherGoal([neverGoal(), neverGoal()]).timeToComplete(), NEVER);
       });
     });
   });
 
   describe('timeToComplete', () => {
-    it('an unpriceable dep makes its dependent unpriceable', () => {
+    it('an unreachable dep makes its dependent unreachable', () => {
       const joinGoal = factionJoinGoal('F' as FactionName, [], [neverGoal()]);
-      assert.equal(joinGoal.timeToComplete(), Number.MAX_SAFE_INTEGER);
+      assert.equal(joinGoal.timeToComplete(), NEVER);
     });
 
     it('sums depsMax + ownTime for a chain', () => {
