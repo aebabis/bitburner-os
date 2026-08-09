@@ -1,3 +1,4 @@
+import { RED_PILL } from '../etc/augmentations.ts';
 import { AugWeights, getAugEvaluator, scoreAug, statlessAugValue } from './aug-weights.ts';
 import { SF4StaticData, StaticData } from './data-store.ts';
 import { getMockFormulas, MockFormulas } from './formulas.ts';
@@ -154,6 +155,15 @@ export const findOptimalBatch = (
 ) => {
   const { singularityData } = staticData;
   const { augmentationPrereqs, factionFavor, factionWorkTypes } = singularityData;
+
+  if (
+    staticData.resetInfo.currentNode === 8 &&
+    faction === 'Daedalus' &&
+    player.skills.hacking >= 3000 &&
+    !staticData.resetInfo.ownedAugs.has(RED_PILL)
+  ) {
+    return { utility: 100, batch: [RED_PILL] };
+  }
 
   const canDonate = (factionFavor?.[faction] ?? 0) >= (staticData.favorToDonate ?? Infinity);
   const donationRate = canDonate
