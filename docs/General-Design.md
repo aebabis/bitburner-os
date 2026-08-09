@@ -59,6 +59,8 @@ Three separate mechanisms are used to deal with RAM costs:
 - Since data goes through ports, it must be data a port accepts (no Promises).
 - Since scripts are generated from script text, they cannot use closures. Data must be passed in as arguments.
 - Since `in-place.ts` has a RAM overhead of ~4GB, it is only used programs with multiple large API calls.
+- Since `inPlace` and `runInPlace` replace synchronous NS API calls with async ones, they are not used
+  in situations where atomicity is more valuable than RAM (e.g. `nerd.ts`)
 
 ## Planner
 - The Planner manages the execution of services

@@ -320,6 +320,7 @@ export async function main(ns: NS) {
     $rip(() => {
       const action = ns.singularity['getCurrentWork']();
       if (action == null) return null;
+      // Remove unserializable Promise
       const { nextCompletion, ...copy } = action;
       return copy;
     })();
