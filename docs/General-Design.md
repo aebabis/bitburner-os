@@ -5,6 +5,15 @@
 - The deferred execution of scripts using the `rmi` API allows "programs" to be run in a piecemeal fashion to get around RAM constraints.
 - While having different top-level scripts for different BitNodes and configurations is occasionally useful (e.g. in the bootloader), it is to be avoided where possible. Instead, the services make decisions based on constraints and farm out work accordingly.
 - `globalThis` and the DOM API are used for visualizers and profiling tools but avoided for game automation. An exception to this is using event listeners to handle focus without flickering. Requiring manual play for BN1.1 is an intential decision.
+- Currying (`(ns) => (args) => …`) is used to separate injection of `NS` from the actual input of operations.
+
+## Loops and yielding
+- Because scripts run on the same JS thread as the game itself, infinite loops are often fatal.
+  When writing unbounded loops, two strategies are used:
+- **Iteration cap** — for a pure computation (e.g. algorithms.ts), while-loops are given a seconary
+  limit to protect against bugs in the algorithm (`while (hasNextStep() && counter++ < 10000)`).
+- **Time-based yield** — for long-running work, sleeping inside loops is done every 200ms using
+  `makeYielder(ns)`. Used by `bin/angel.ts`'s frame search and `usr/cct-battery.ts`.
 
 ## File System
 - `etc` holds constants only — port numbers, script paths, tunables, static aug data. No `ns` usage.
@@ -13,8 +22,22 @@
 - `bin` contains services and worker scripts
 - `usr` is human-facing CLI tools. Nothing in `bin` depends on them.
 
+### File paths and the leading slash
+- **The game has no folder concept.** Directories exist only as substrings used to filter file
+  listings, so `ns.wget` and `ns.write` create any implied path automatically — writing
+  `/tmp/tree.json` on a fresh install needs no setup.
+- **Most game APIs accept a leading slash as optional**, including `ns.ls`'s *filter* argument
+  (`ns.ls('home', '/bin/dnet/')` returns a non-empty list). The slash matters in exactly one place:
+  *interpreting values the game returns*. `ns.ls` returns `bin/dnet/mole.ts` unslashed, so a
+  slashed literal compared against its output silently fails to match.
+
 ## RAM
 RAM is the primary architectural constraint. Most of what looks unusual in the codebase is an answer to it.
+
+Home RAM defaults to 32GB once BN1.1 is beaten, and never drops below that on a node reset — so any
+SF implies a home of at least 32GB, and sub-32GB homes exist only in a first playthrough. That is
+the whole reason `bin/eight-gig.ts` exists, and why nothing else needs to plan for a tiny home.
+
 Three separate mechanisms are used to deal with RAM costs:
 
 ### Spatial — `lib/ram-router.ts`
@@ -65,6 +88,11 @@ Three separate mechanisms are used to deal with RAM costs:
 - `staticData` is everything constant for an install cycle, including most singularity data, written at boot time.
 - `playerData` dynamic data associated with the player, including Player, Stanek configuration, and Bladeburner stats.
 - `moneyData` is per-source income rates, written by the income-producing services and used for opportunity-cost math.
+- **Boot-computed data is not defended.** Boot always runs before anything reads a store, so a field
+  populated at boot is non-optional and is read directly. A `?? 0` or `!= null` guard on one is not
+  harmless caution: it converts a boot-order fault into a plausible-looking wrong number. A getter
+  returns `{}` for an unwritten port, so these faults already fail quietly — the guard removes the
+  one chance of noticing. Absent guards here are the design, not an oversight.
 
 ## Boot Sequence
 - `boot.ts` builds a chain of stages, each of which `ns.spawn`s the next.
@@ -78,6 +106,7 @@ Three separate mechanisms are used to deal with RAM costs:
 - Generally, it chooses a single faction to attempt to join and a list of augmentations to buy before installing.
 - The faction and augmentations chosen are based on the utility of the augmentations (determined by a weighted scoring of their stat boosts) divided by its estimated time cost (which includes money).
 - The function is functional; it is designed to be stateless and to return the same the value for the same inputs.
+- `ownTime()` and `timeToComplete()` return `number` — never `null`, never `undefined`. "Cannot be estimated" is a large *finite* sentinel rather than `Infinity`, so it sorts last while arithmetic on it still yields a number instead of `NaN`. A `?? 0` / `?? Infinity` / `!= null` on a time value is therefore dead code; the vocabulary for the various flavours of unknown is in `lib/goals/nodes.ts`.
 - The engine has a low program RAM requirement.
 - Consumers of the goals graph make decisions based on antipated timing and resouce availability.
   - For example, `sysadmin` avoids buying more servers if it believes an install is imminent
@@ -91,3 +120,19 @@ Three separate mechanisms are used to deal with RAM costs:
 ## Vocabulary
 - The NS API uses "purchasedAugmentations" to refer to both installed augs and augs purchased during the current run. The OS code uses the term `installedAugmentations` for augmentations the player started an install cycle with and `queuedAugmentations` to refer to augmentations purchased during the current install cycle. `ownedAugmentations` refers to all augmentations purchased whether installed or not (the union of installed and purchased).
 - An *install cycle* is the span between two aug installs; a *node reset* is entering a new BitNode.
+
+## Verification
+There is no build step. `home/**/*.ts` is what the game runs.
+
+| Command | Purpose |
+| --- | --- |
+| `yarn lint` | `tsc --noEmit`. |
+| `yarn knip` | Dead code and unused exports. The entry list in `knip.json` is maintained by hand and must track the service registry plus every rmi/exec target and manual tool — a stale entry reports live code as dead. |
+| `yarn check-data-deps` | Data-store fields written but never read. Descends one level into `singularityData`/`graftingData`. It cannot follow a store passed as a *function parameter*, so a field read only that way is reported as an orphan and is a false positive. |
+| `/usr/suite.ts` | In-game: RAM cost of every root script. |
+| `/lib/test/run-all.ts` | In-game unit tests. |
+| `/usr/cct-battery.ts` | In-game: generates dummy contracts per type, solves and attempts each, reports only failures. A separate tool from `run-all.ts`, not a suite entry — it is slow and needs `ns`. |
+
+**A script's total RAM cost is only knowable in game.** Per-call costs are citable from
+`.bitburner/NetscriptDefinitions.d.ts`, but a total summed by hand from an import closure is not
+reliable. Run `/usr/suite.ts`; do not derive a total.
