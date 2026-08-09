@@ -3,7 +3,7 @@ import { getGoals } from '../lib/goals/goals';
 import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
-import { getStaticData } from '../lib/data-store';
+import { getStaticData, putPlayerData } from '../lib/data-store';
 import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
 
 export async function main(ns: NS) {
@@ -58,10 +58,12 @@ export async function main(ns: NS) {
       [6, 7].includes(resetInfo.currentNode) && !resetInfo.ownedAugs.has("The Blade's Simulacrum");
 
     if (!isGrafting && graftables.length > 0 && !needsBladeburnerFocus) {
-      const { augmentation, utility } = graftables[0];
+      const { augmentation, utility, graftTime } = graftables[0];
       if (install != null && utility > install.utility) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
-          ns.grafting.graftAugmentation(augmentation.name, ns.singularity.isFocused());
+          if (ns.grafting.graftAugmentation(augmentation.name, ns.singularity.isFocused())) {
+            putPlayerData(ns, { graftCompletionTime: Date.now() + graftTime });
+          }
         }
       }
     }

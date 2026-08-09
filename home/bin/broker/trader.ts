@@ -2,7 +2,13 @@ import { by, formatTime } from '../../lib/util';
 import { getGoals } from '../../lib/goals/goals.ts';
 import { inPlace, runInPlace } from '../../lib/in-place.ts';
 import { table } from '../../lib/table.ts';
-import { getMoneyData, getStaticData, putMoneyData, putPlayerData } from '../../lib/data-store.ts';
+import {
+  getMoneyData,
+  getPlayerData,
+  getStaticData,
+  putMoneyData,
+  putPlayerData,
+} from '../../lib/data-store.ts';
 import { usingCorp } from '../../lib/query-service.ts';
 
 const getRequiredReserves = (ns: NS) => {
@@ -116,7 +122,12 @@ export async function main(ns: NS) {
   while (true) {
     ns.clearLog();
 
-    const ttc = getGoals(ns).timeToComplete();
+    const { currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
+    const isGrafting = currentWork?.type === 'GRAFTING' && graftCompletionTime > Date.now();
+    const graftTime = isGrafting ? (graftCompletionTime - Date.now()) / 1000 : 0;
+
+    const goalTTC = getGoals(ns).timeToComplete();
+    const ttc = Math.max(goalTTC, graftTime);
     const positions = await $getPositions(ns, symbols);
     const forecasts = await $getForecasts(ns, symbols);
 

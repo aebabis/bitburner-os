@@ -276,17 +276,22 @@ export async function main(ns: NS) {
         if (!achievements.includes('KARMA_1000000')) {
           await $commitCrime('Homicide');
         } else {
-          // In BN8, grind favor
-          const factionsByFavor = Object.entries(factionFavor)
-            .sort(by(([, favor]) => -favor))
-            .map(([faction]) => faction) as FactionName[];
-          const grindFaction = factionsByFavor.find((faction) =>
-            ns.getPlayer().factions.includes(faction),
-          );
-          if (grindFaction) {
-            await factionWork(ns.getPlayer(), grindFaction);
+          // In BN8, grind rep or favor
+          const joinGoal = rootGoal.prerequisites('FACTION_JOIN')[0];
+          if (joinGoal) {
+            await factionWork(ns.getPlayer(), joinGoal.faction);
           } else {
-            await makeMoney(); // For stats
+            const factionsByFavor = Object.entries(factionFavor)
+              .sort(by(([, favor]) => -favor))
+              .map(([faction]) => faction) as FactionName[];
+            const grindFaction = factionsByFavor.find((faction) =>
+              ns.getPlayer().factions.includes(faction),
+            );
+            if (grindFaction) {
+              await factionWork(ns.getPlayer(), grindFaction);
+            } else {
+              await makeMoney(); // For stats
+            }
           }
         }
       }
