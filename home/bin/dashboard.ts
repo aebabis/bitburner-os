@@ -19,6 +19,7 @@ import { Goal, NEUROFLUX } from '../lib/goals/nodes';
 import { SHARE } from '../etc/filenames';
 import { getNextBitnode } from '../lib/bitnode-sequence';
 import { getAugEvaluator, getPlayerUtility } from '../lib/aug-weights';
+import { formulas } from '../lib/formulas';
 
 const H = BRIGHT.BOLD;
 
@@ -86,27 +87,30 @@ const getRunStats = (ns: NS) => {
   const augs = [...resetInfo.ownedSF.keys()].length;
   const utility = getPlayerUtility(resetInfo, player.mults);
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);
+  const [work1, work2] = getWork(ns);
   const row1 = [
     H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
-    H('CASH ') + MONEY(` $${ns.format.number(money, 1)}`.padStart(7)),
+    H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
+    H('CASH ') + MONEY(` $${ns.format.number(money, 1)}`.padStart(8)),
     H('STOCK') + stock,
     H('KARMA') + ' ' + karma,
     H('AUGS') + ' ' + augs,
     H('UTILITY') + ' ' + ns.format.number(utility),
-    getWork(ns),
-    getSpecialAugs(ns),
+    work1,
   ];
   const row2 = [
     `${DIM(`↳ ${nextBN}.${nextLevel}`)} ${DIM(augTime)}`,
+    getSpecialAugs(ns),
     '',
-    H('  HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    DIM(`   ↳ ${`+$${ns.format.number(estEarnings, 1)}`.padStart(7)}`),
+    '',
+    DIM(`   ↳ ${`+$${ns.format.number(estEarnings, 1)}`.padStart(8)}`),
     '',
     DIM(`Kills  ${numPeopleKilled}`),
     DIM(`   ↳ +${newAugCount}`),
     getInstallValueStr(),
+    work2,
   ];
   return table(ns, null, [row1, row2]);
 };
@@ -225,31 +229,40 @@ const moneyTable = (ns: NS) => {
   return top + '\n' + table(ns, null, rows);
 };
 
-const getWork = (ns: NS) => {
-  const { factionRep, currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
+const getWork = (ns: NS): [string, string] => {
+  const { singularityData } = getStaticData(ns);
+  const { player, factionRep, currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
   const WORK = H('WORK');
-  if (!hasBitNode(4, getStaticData(ns))) return `${WORK} ${MEDIUM('(unknown)')} `;
-  if (currentWork == null) return `${WORK} ${MEDIUM('(idle)')} `;
+  if (!hasBitNode(4, getStaticData(ns))) return [`${WORK} ${MEDIUM('(unknown)')} `, ''];
+  if (currentWork == null) return [`${WORK} ${MEDIUM('(idle)')} `, ''];
   if (currentWork.type === 'FACTION') {
-    const { factionName } = currentWork;
+    const { factionName, factionWorkType } = currentWork;
     const rep = Math.floor(factionRep?.[factionName] ?? 0);
-    return `${WORK} Working for ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
+    const favor = singularityData!.factionFavor[factionName];
+    const repGain = formulas(ns).work.factionGains(player, factionWorkType, favor).reputation;
+    return [
+      `${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `,
+      DIM(`     ${ns.format.number(repGain)}/s`),
+    ];
   } else if (currentWork.type === 'COMPANY') {
-    return `${WORK} Working for ${currentWork.companyName} `;
+    return [`${WORK} ${currentWork.companyName} `, ''];
   } else if (currentWork.type === 'CRIME') {
-    return `${WORK} ${currentWork.crimeType} `;
+    return [`${WORK} ${currentWork.crimeType} `, ''];
   } else if (currentWork.type === 'CLASS') {
-    return `${WORK} Studying ${currentWork.classType} `;
+    return [`${WORK} Studying ${currentWork.classType} `, ''];
   } else if (currentWork.type === 'GRAFTING') {
     const graftTimeLeft =
       graftCompletionTime !== 0
         ? formatTime(Math.round((graftCompletionTime - Date.now()) / 1000))
         : '(time unknown)';
-    return `${WORK} Grafting ${currentWork.augmentation} ${MEDIUM(graftTimeLeft)} `;
+    return [
+      `${WORK} Grafting ${MEDIUM(graftTimeLeft)} `,
+      DIM(`     ↳ ${currentWork.augmentation}`),
+    ];
   } else if (currentWork.type === 'CREATE_PROGRAM') {
-    return `${WORK} Developing ${currentWork.programName} `;
+    return [`${WORK} Developing ${currentWork.programName} `, ''];
   }
-  return `${WORK} UNKNOWN ${currentWork} `;
+  return [`${WORK} UNKNOWN ${currentWork} `, ''];
 };
 
 const getSpecialAugs = (ns: NS) => {
