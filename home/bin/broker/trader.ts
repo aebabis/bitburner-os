@@ -14,13 +14,15 @@ import { getServices } from '../../lib/service-api.ts';
 
 const getRequiredReserves = (ns: NS) => {
   const staticData = getStaticData(ns);
+  const { graftPriceReserve = 0 } = getMoneyData(ns);
+  if (graftPriceReserve !== 0) return graftPriceReserve + 1;
   if (staticData.resetInfo.currentNode === 8) {
     const casinoService = getServices(ns)?.find(({ name }) => name === 'casino');
-    if (casinoService?.allowed) return 50e6;
+    if (casinoService?.allowed) return 50e6 + graftPriceReserve;
   }
-  if (!ns.corporation.hasCorporation() && usingCorp(staticData)) return 150e9;
-  const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement;
-  return typeof requiredOnHand === 'string' ? 1e9 : requiredOnHand || 1e9;
+  if (!ns.corporation.hasCorporation() && usingCorp(staticData)) return 150e9 + graftPriceReserve;
+  const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement ?? 0;
+  return requiredOnHand + graftPriceReserve;
 };
 
 const getSpendableFunds = (ns: NS) => {

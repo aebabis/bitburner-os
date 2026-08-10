@@ -191,6 +191,7 @@ const DEFAULT_MONEY_DATA = {
     incomeRate: 0,
     endTime: 0,
   },
+  graftPriceReserve: 0,
 };
 export type MoneyData = typeof DEFAULT_MONEY_DATA;
 export const getMoneyData = (ns: NS): MoneyData =>
