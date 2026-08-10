@@ -3,11 +3,12 @@ import {
   getHostnames,
   getPlayerData,
   getRamPolicy,
+  getStaticData,
   putRamPolicy,
   RamPolicySnapshot,
 } from './data-store';
 import { THREADPOOL } from '../etc/config';
-import { CHARGE, HACK, SHARE } from '../etc/filenames';
+import { CHARGE, GROW, HACK, SHARE, WEAK } from '../etc/filenames';
 
 const getHomeReserveRam = (ns: NS) => {
   const POOL1 = `${THREADPOOL}-01`;
@@ -109,10 +110,24 @@ export const execOnBestServer = (
   return { pid: 0, hostname: null, threads: 0 };
 };
 
-type WorkerType = typeof CHARGE | typeof HACK | typeof SHARE;
-export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
-  const normalScript = workerType.slice(1);
-  const scriptRam = ns.getScriptRam(workerType);
+const workerPrograms = {
+  charge: [CHARGE.slice(1)],
+  share: [SHARE.slice(1)],
+  hack: [HACK, GROW, WEAK].map((s) => s.slice(1)),
+} as const;
+
+type WorkerRamState = {
+  targetRamUse: number;
+  currentWorkers: ProcessInfo[];
+  currentRamUse: number;
+  currentThreads: number;
+  unusedRam: Record<string, number>;
+  budgetedRam: Record<string, number>;
+};
+
+type WorkerType = keyof typeof workerPrograms;
+const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
+  const { scriptRam } = getStaticData(ns);
   const snapshot = getRamPolicy(ns);
   const rootHostnames = getHostnames(ns).filter(ns.hasRootAccess);
 
@@ -121,26 +136,27 @@ export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
       targetRamUse: 0,
       currentWorkers: [],
       currentRamUse: 0,
-      targetThreads: 0,
       currentThreads: 0,
       unusedRam: {},
+      budgetedRam: {},
     };
   }
 
   const targetRamUse =
-    workerType === CHARGE
+    workerType === 'charge'
       ? snapshot.allottedStanekRam
-      : workerType === SHARE
+      : workerType === 'share'
         ? snapshot.allottedShareRam
         : snapshot.allottedBatchRam;
-  const targetThreads = Math.floor(targetRamUse / scriptRam);
 
   // Determine RAM already used by given service type.
   const currentWorkers = rootHostnames.flatMap((hostname) =>
-    ns.ps(hostname).filter((ps) => ps.filename === normalScript),
+    ns.ps(hostname).filter((ps) => workerPrograms[workerType].includes(ps.filename)),
   );
+  const currentRamUse = currentWorkers
+    .map((ps) => ps.threads * scriptRam[ps.filename])
+    .reduce((a, b) => a + b, 0);
   const currentThreads = currentWorkers.map((ps) => ps.threads).reduce((a, b) => a + b, 0);
-  const currentRamUse = currentThreads * scriptRam;
 
   const unusedRam = Object.fromEntries(
     rootHostnames.map((hostname) => {
@@ -153,12 +169,33 @@ export const getWorkerRamState = (ns: NS, workerType: WorkerType) => {
     }),
   );
 
+  // Share of RAM workerType is allowed to draw from.
+  // Matches unusedRam when all other workers are at capacity
+  const budgetedRam: Record<string, number> = {};
+  let unbudgeted = targetRamUse;
+  for (const [hostname, ramAvailable] of Object.entries(unusedRam).sort(by(([, ram]) => -ram))) {
+    const ramBudgeted = Math.min(ramAvailable, unbudgeted);
+    if (ramBudgeted <= 0) break;
+    budgetedRam[hostname] = ramBudgeted;
+    unbudgeted -= ramBudgeted;
+  }
+
   return {
     targetRamUse,
     currentWorkers,
     currentRamUse,
     currentThreads,
-    targetThreads,
     unusedRam,
+    budgetedRam,
   };
+};
+
+export const getBatchRamState = (ns: NS) => getRamState(ns, 'hack');
+
+export const getWorkerRamState = (ns: NS, workerType: 'charge' | 'share') => {
+  const state = getRamState(ns, workerType);
+  const workerProgram = workerPrograms[workerType][0];
+  const ramPerThread = getStaticData(ns).scriptRam[workerProgram];
+  const targetThreads = Math.floor(state.targetRamUse / ramPerThread);
+  return { ...state, targetThreads };
 };

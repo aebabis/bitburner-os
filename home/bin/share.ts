@@ -10,7 +10,7 @@ export async function main(ns: NS) {
   while (true) {
     const { targetThreads, currentThreads, currentWorkers, unusedRam } = getWorkerRamState(
       ns,
-      SHARE,
+      'share',
     );
     const maxDesiredThreads = targetThreads * 1.1;
 

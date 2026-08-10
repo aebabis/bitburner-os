@@ -2,9 +2,9 @@ import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { HACK, GROW, WEAK } from '../etc/filenames';
 import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
 import { buildWorkerThreadAllocator } from '../lib/ram';
-import { getWorkerRamState } from '../lib/ram-router';
+import { getBatchRamState } from '../lib/ram-router';
 
-const getRootServerRam = (ns: NS) => getWorkerRamState(ns, HACK).unusedRam;
+const getBudgetedRam = (ns: NS) => getBatchRamState(ns).budgetedRam;
 
 const SPACING = 50;
 const FRAME_SPACING = 200;
@@ -114,7 +114,7 @@ const evaluateTarget = (ns: NS, hostname: string, totalRam: number) => {
 };
 
 const getTarget = (ns: NS) => {
-  const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
+  const totalRam = Object.values(getBudgetedRam(ns)).reduce((a, b) => a + b, 0);
   const evaluations = getPossibleTargets(ns).map((hostname) =>
     evaluateTarget(ns, hostname, totalRam),
   );
@@ -187,7 +187,7 @@ export async function main(ns: NS) {
   if (needsSetup(ns, target)) {
     const secDiff = ns.getServerSecurityLevel(target) - ns.getServerMinSecurityLevel(target);
     const initWeakThreads = secDiff > 0 ? getWeakThreads(secDiff) : 0;
-    const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
+    const totalRam = Object.values(getBudgetedRam(ns)).reduce((a, b) => a + b, 0);
     const gwRam = Math.max(0, totalRam - (initWeakThreads + 1) * 1.75);
     const maxGrowThreads = Math.max(1, Math.floor(gwRam / (1.75 * (1 + WEAK_PER_GROW))));
     const maxMoney = ns.getServerMaxMoney(target);
@@ -214,7 +214,7 @@ export async function main(ns: NS) {
       frameDuration: weakTime + SPACING,
     });
   } else {
-    const totalRam = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
+    const totalRam = Object.values(getBudgetedRam(ns)).reduce((a, b) => a + b, 0);
     const frame = findBestFrame(ns, target, totalRam);
     if (frame == null) return;
 
@@ -260,7 +260,7 @@ export async function main(ns: NS) {
     if (delay > 0) await ns.sleep(delay);
     updateMoneyData();
 
-    const assign = makeAssign(getRootServerRam(ns));
+    const assign = makeAssign(getBudgetedRam(ns));
     const runners = entry.jobs.map(({ script, threads, additionalMsec }) => {
       ramUsed += threads * (script === HACK ? 1.7 : 1.75);
       return assign(script, threads, additionalMsec);

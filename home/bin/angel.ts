@@ -1,7 +1,7 @@
 import { HORIZON_MS, THREADPOOL } from '../etc/config';
 import { ERROR, WARN } from '../lib/colors';
 import { getHostnames, getMoneyData, putMoneyData } from '../lib/data-store';
-import { getWorkerRamState } from '../lib/ram-router';
+import { getBatchRamState } from '../lib/ram-router';
 import { getGoals } from '../lib/goals/goals';
 import { buildWorkerThreadAllocator } from '../lib/ram';
 import { table } from '../lib/table';
@@ -38,7 +38,7 @@ const getHackableServer = (ns: NS, hostname: string): HackableServer => {
   return server as HackableServer;
 };
 
-const getRootServerRam = (ns: NS) => getWorkerRamState(ns, HACK).unusedRam;
+const getBudgetedRam = (ns: NS) => getBatchRamState(ns).budgetedRam;
 
 const getWeakThreads = (ns: NS, targetDecrease: number) => {
   let threads = 1;
@@ -117,7 +117,7 @@ const needsSetup = (server: HackableServer) =>
 
 const getSetupTime = async (ns: NS, hostname: string, minFrameRam: number) => {
   const server = getHackableServer(ns, hostname);
-  const threadsAvail = Object.values(getRootServerRam(ns))
+  const threadsAvail = Object.values(getBudgetedRam(ns))
     .map((ram) => Math.floor(ram / 1.75))
     .reduce((a, b) => a + b, 0);
   let rtt = 0;
@@ -164,7 +164,7 @@ const evaluateTarget = async (
   };
   const [hackThreads, growThreads, weakThreads] = await getHgwFrame(ns, whenReady, 0);
   const frameRam = hackThreads * 1.7 + growThreads * 1.75 + weakThreads * 1.75;
-  const numFrames = Object.values(getRootServerRam(ns))
+  const numFrames = Object.values(getBudgetedRam(ns))
     .map((ram) => Math.floor(ram / frameRam))
     .reduce((a, b) => a + b, 0);
   const hackPercent = ns.formulas.hacking.hackPercent(whenReady, ns.getPlayer());
@@ -270,7 +270,7 @@ const selectTarget = async (ns: NS, minFrameRam: number) => {
 };
 
 const printTable = async (ns: NS) => {
-  const serverRam = getRootServerRam(ns);
+  const serverRam = getBudgetedRam(ns);
   const totalRamAvailable = Object.values(serverRam).reduce((a, b) => a + b, 0);
   // Minimum ram size of HGW frame to prevent too many processes
   const minFrameRam = totalRamAvailable / FRAME_LIMIT;
@@ -322,7 +322,7 @@ export async function main(ns: NS) {
     if (pid) pids.push(pid);
   };
 
-  const totalRamAvailable = Object.values(getRootServerRam(ns)).reduce((a, b) => a + b, 0);
+  const totalRamAvailable = Object.values(getBudgetedRam(ns)).reduce((a, b) => a + b, 0);
   // Minimum ram size of HGW frame to prevent too many processes
   const minFrameRam = totalRamAvailable / FRAME_LIMIT;
   debug('Total: ' + ns.format.ram(totalRamAvailable));
@@ -354,7 +354,7 @@ export async function main(ns: NS) {
 
   saveBatchInfo();
 
-  const alloc = buildWorkerThreadAllocator(getRootServerRam(ns));
+  const alloc = buildWorkerThreadAllocator(getBudgetedRam(ns));
 
   let totalBatchRam = 0;
   const assign = (script: string, threads: number, additionalMsec: number) => {

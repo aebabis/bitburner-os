@@ -253,7 +253,7 @@ export async function main(ns: NS) {
       .flatMap(({ x, y }) => [x, y]);
 
     if (coords.length > 0) {
-      const { targetThreads, currentThreads, unusedRam } = getWorkerRamState(ns, CHARGE);
+      const { targetThreads, currentThreads, unusedRam } = getWorkerRamState(ns, 'charge');
       // Get target RAM usage
       ns.print('Current threads: ' + currentThreads + '/' + targetThreads);
       if (currentThreads < targetThreads) {
