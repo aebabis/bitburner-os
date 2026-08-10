@@ -3,7 +3,7 @@ import { getGoals } from '../lib/goals/goals';
 import { table } from '../lib/table';
 import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
-import { getStaticData, putMoneyData, putPlayerData } from '../lib/data-store';
+import { getStaticData, putMoneyData, putPlayerData, putStaticData } from '../lib/data-store';
 import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
 
 export async function main(ns: NS) {
@@ -15,7 +15,7 @@ export async function main(ns: NS) {
 
   ns.disableLog('ALL');
   ns.ui.openTail();
-  const WIDTH = 955;
+  const WIDTH = 775;
   const HEIGHT = 500;
   const winHeight = globalThis.innerHeight;
   ns.ui.resizeTail(WIDTH, HEIGHT);
@@ -60,6 +60,7 @@ export async function main(ns: NS) {
     ns.clearLog();
     const { money, city, entropy } = ns.getPlayer();
     const resetInfo = ns.getResetInfo();
+    putStaticData(ns, { resetInfo });
     const ttc = getGoals(ns).timeToComplete();
     const currentWork = ns.singularity.getCurrentWork();
     const isGrafting = currentWork?.type === 'GRAFTING';
@@ -119,13 +120,14 @@ export async function main(ns: NS) {
         const graftS = Math.ceil(graftTime / 1000);
         const hasTime = graftS <= ttc;
         const isEfficient = install != null && install.utility < utility;
+        const trunc = (name: string) => (name.length <= 33 ? name : name.slice(0, 30) + '...');
         const nFormat = isCurrent ? C(34) : isPending ? INFO : (s: string) => s;
         const mFormat = canAfford ? nFormat : C(52);
         const tFormat = hasTime ? nFormat : C(52);
         const uFormat = isEfficient ? nFormat : C(52);
         const vFormat = netValue > 0 ? nFormat : C(52);
         return [
-          nFormat(augmentation.name),
+          nFormat(trunc(augmentation.name)),
           nFormat(augmentation.factions.length + ''),
           nFormat(numberFormat(value)),
           vFormat(numberFormat(netValue)),
