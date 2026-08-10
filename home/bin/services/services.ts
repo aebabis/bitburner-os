@@ -89,9 +89,12 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const canShare = () => player(ns).skills.hacking > 100;
   const hasDarkscape = () => ns.fileExists('DarkscapeNavigator.exe', 'home');
 
+  const casinoService = AnyHostService(ns, always)('/bin/casino.ts');
+  const usePool = () => !casinoService.toData().allowed && hasFormulas();
+
   const services = [
     Service(ns, always, always)('/bin/planner.ts', 'home'),
-    AnyHostService(ns, always)('/bin/casino.ts'),
+    casinoService,
     AnyHostService(ns, hasSingularity, canWork, { highPriority: true })('/bin/self/love.ts'),
     AnyHostService(ns)('/bin/access.ts'),
     AnyHostService(ns, hasAngel, useAngel)('/bin/angel.ts'),
@@ -100,7 +103,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     AnyHostService(ns)('/bin/dashboard.ts'),
     Service(ns, always, hasDarkscape)('/bin/dnet/dnet.ts', 'home'),
     AnyHostService(ns)('/bin/contracts/freelancer.ts'),
-    AnyHostService(ns, enablePool, hasFormulas)('/bin/pool.ts'),
+    AnyHostService(ns, enablePool, usePool)('/bin/pool.ts'),
     AnyHostService(ns, hasNerd, always, { highPriority: true })('/bin/nerd.ts'),
     AnyHostService(ns, always, couldTrade)('/bin/broker/trader.ts'),
     AnyHostService(ns, inBladeNode, useBlade)('/bin/blades/burners.ts'),
