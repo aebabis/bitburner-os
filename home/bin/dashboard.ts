@@ -58,6 +58,7 @@ const getRunStats = (ns: NS) => {
   };
 
   const goals = getGoals(ns);
+  const ttc = goals.timeToComplete();
   const hasNFG = resetInfo.ownedAugs.has(NEUROFLUX);
   const augsToInstall = goals.actions
     .filter((action) => action.type === 'BUY_AUG')
@@ -75,9 +76,11 @@ const getRunStats = (ns: NS) => {
 
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${resetInfo.currentNode}`;
+  const nodeTime = (Date.now() - resetInfo.lastNodeReset) / 1000;
+  const nextStart = nodeTime + ttc;
   const uptime = formatTime(onlineRunningTime);
   const augRunningTime = (Date.now() - resetInfo.lastAugReset) / 1000;
-  const bnTime = ` ${formatTime((Date.now() - resetInfo.lastNodeReset) / 1000)}`;
+  const bnTime = formatTime(nodeTime);
   const augTime = formatTime(augRunningTime).padStart(bnTime.length);
   const time = uptime;
   const estEarnings = goals.timeToComplete() * totalIncome;
@@ -89,7 +92,8 @@ const getRunStats = (ns: NS) => {
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);
   const [work1, work2] = getWork(ns);
   const row1 = [
-    H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
+    H(BN) + '.' + BRIGHT(getSF()),
+    bnTime,
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
@@ -101,9 +105,10 @@ const getRunStats = (ns: NS) => {
     work1,
   ];
   const row2 = [
-    `${DIM(`↳ ${nextBN}.${nextLevel}`)} ${DIM(augTime)}`,
+    `${DIM(`↳ ${nextBN}.${nextLevel}`)}`,
+    DIM(formatTime(nextStart)),
+    `${DIM(augTime)}`,
     getSpecialAugs(ns),
-    '',
     '',
     DIM(`   ↳ ${`+$${ns.format.number(estEarnings, 1)}`.padStart(8)}`),
     '',
