@@ -56,6 +56,18 @@ export async function main(ns: NS) {
   const unsupported = contractNames.filter((name) => algorithms(name) == null);
   let completed = getPlayerData(ns).contracts?.completed ?? 0;
 
+  const saveContractInfo = () => {
+    putPlayerData(ns, {
+      contracts: {
+        completed,
+        failures: failures.size,
+        unsupported,
+      },
+    });
+  };
+
+  saveContractInfo();
+
   while (true) {
     const contracts = await getContracts(ns);
     for (const contract of contracts) {
@@ -66,13 +78,7 @@ export async function main(ns: NS) {
           } else {
             completed++;
           }
-          putPlayerData(ns, {
-            contracts: {
-              completed,
-              failures: failures.size,
-              unsupported,
-            },
-          });
+          saveContractInfo();
         } catch (error) {
           tprint(ns)(ERROR + error);
         }
