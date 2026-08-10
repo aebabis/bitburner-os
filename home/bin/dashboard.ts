@@ -81,8 +81,7 @@ const getRunStats = (ns: NS) => {
   const uptime = formatTime(onlineRunningTime);
   const augRunningTime = (Date.now() - resetInfo.lastAugReset) / 1000;
   const bnTime = formatTime(nodeTime);
-  const augTime = formatTime(augRunningTime).padStart(bnTime.length);
-  const time = uptime;
+  const augTime = formatTime(augRunningTime).padStart(uptime.length);
   const moneyStr = ` $${ns.format.number(money, 1)}`;
   const estEarnings = `+$${ns.format.number(goals.timeToComplete() * totalIncome, 1)}`;
   const moneyLen = Math.max(moneyStr.length, estEarnings.length);
@@ -96,7 +95,7 @@ const getRunStats = (ns: NS) => {
   const row1 = [
     H(BN) + '.' + BRIGHT(getSF()),
     bnTime,
-    H('UP') + ' ' + time,
+    H('UP') + ' ' + uptime,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
     H('CASH') + MONEY(`${moneyStr}`.padStart(moneyLen)),
