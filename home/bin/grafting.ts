@@ -51,10 +51,11 @@ export async function main(ns: NS) {
     );
   };
 
-  const PURCHASE_WAITING_PERIOD = 5000;
+  const PURCHASE_WAITING_PERIOD = 10000;
   let pendingAug = '';
   let cooldownStart = 0;
 
+  let mostRecentGraft = '';
   while (true) {
     ns.clearLog();
     const { money, city, entropy } = ns.getPlayer();
@@ -64,16 +65,18 @@ export async function main(ns: NS) {
     const isGrafting = currentWork?.type === 'GRAFTING';
     const numberFormat = (n: number) => (isNaN(n) ? 'NaN' : ns.format.number(n));
 
-    const targets = getGraftTargets(ns, resetInfo.ownedAugs, entropy);
-    const graftables = targets
-      .filter((target) => target.graftPrice <= money)
-      .filter((target) => target.graftTime / 1000 < ttc);
     const install = getInstallUtility();
+    const targets = getGraftTargets(ns, resetInfo.ownedAugs, entropy);
+    const graftCandidates = targets
+      .filter((target) => target.augmentation.name !== mostRecentGraft)
+      .filter((target) => target.graftPrice <= money)
+      .filter((target) => target.graftTime / 1000 < ttc)
+      .filter((target) => install != null && target.utility > install.utility);
     const needsBladeburnerFocus =
       [6, 7].includes(resetInfo.currentNode) && !resetInfo.ownedAugs.has("The Blade's Simulacrum");
 
-    if (graftables.length > 0) {
-      const { augmentation } = graftables[0];
+    if (graftCandidates.length > 0) {
+      const { augmentation } = graftCandidates[0];
       if (pendingAug !== augmentation.name) {
         pendingAug = augmentation.name;
         cooldownStart = Date.now();
@@ -82,14 +85,19 @@ export async function main(ns: NS) {
       pendingAug = '';
     }
 
-    if (!isGrafting && graftables.length > 0 && !needsBladeburnerFocus && !closeToObjective()) {
-      const { augmentation, utility, graftTime, graftPrice } = graftables[0];
+    if (
+      !isGrafting &&
+      graftCandidates.length > 0 &&
+      !needsBladeburnerFocus &&
+      !closeToObjective()
+    ) {
+      const { augmentation, graftTime, graftPrice } = graftCandidates[0];
       putMoneyData(ns, { graftPriceReserve: graftPrice });
-      const isGraftEfficient = install != null && utility > install.utility;
       const hasMetCooldown = Date.now() - cooldownStart >= PURCHASE_WAITING_PERIOD;
-      if (isGraftEfficient && hasMetCooldown) {
+      if (hasMetCooldown) {
         if (city === 'New Tokyo' || ns.singularity.travelToCity('New Tokyo')) {
           if (ns.grafting.graftAugmentation(augmentation.name, ns.singularity.isFocused())) {
+            mostRecentGraft = augmentation.name;
             pendingAug = '';
             putPlayerData(ns, { graftCompletionTime: Date.now() + graftTime });
             putMoneyData(ns, { graftPriceReserve: 0 });
@@ -107,7 +115,7 @@ export async function main(ns: NS) {
         const canAfford = graftPrice <= money;
         const isCurrent =
           currentWork?.type === 'GRAFTING' && currentWork.augmentation === augmentation.name;
-        const isPending = currentWork?.type !== 'GRAFTING' && augmentation.name === pendingAug;
+        const isPending = augmentation.name === pendingAug;
         const graftS = Math.ceil(graftTime / 1000);
         const hasTime = graftS <= ttc;
         const isEfficient = install != null && install.utility < utility;
