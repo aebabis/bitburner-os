@@ -68,10 +68,10 @@ export const renderWindows = (windows: Window[], WIDTH: number) => {
     })
     .sort((a: RenderResult, b: RenderResult) => {
       // Hack for giving topbar priority
-      if (a.height === 1) {
+      if (a.height <= 2 && a.width > 50) {
         return -1;
       }
-      if (b.height === 1) {
+      if (b.height <= 2 && b.width > 50) {
         return 1;
       }
       // All other boxes are sorted by vertical height descending

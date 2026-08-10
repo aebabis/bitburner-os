@@ -18,6 +18,7 @@ import { by } from '../lib/util';
 import { Goal } from '../lib/goals/nodes';
 import { SHARE } from '../etc/filenames';
 import { getNextBitnode } from '../lib/bitnode-sequence';
+import { getPlayerUtility } from '../lib/aug-weights';
 
 const H = BRIGHT.BOLD;
 
@@ -65,22 +66,27 @@ const getRunStats = (ns: NS) => {
   const stock = accessTixApi
     ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padEnd(6))
     : DIM('  TIX'.padEnd(6));
+  const augs = [...resetInfo.ownedSF.keys()].length;
+  const utility = getPlayerUtility(resetInfo, player.mults);
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);
-  return [
-    ' ' + H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
-    H('UP') + ' ' + time,
-    H('CITY') + ' ' + city,
-    H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH') + MONEY(` $${ns.format.number(money, 1).padEnd(6)}`),
-    H('PORTFOLIO') + stock,
+  const row1 = [
+    [H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime, H('UP') + ' ' + time].join('  '),
+    [
+      H('CITY') + ' ' + city,
+      H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
+      H('CASH') + MONEY(` $${ns.format.number(money, 1).padEnd(6)}`),
+      H('PORTFOLIO') + stock,
+    ].join('  '),
     H('KILLS') + ' ' + numPeopleKilled,
     H('KARMA') + ' ' + karma,
+    H('AUGS') + ' ' + augs,
+    H('UTILITY') + ' ' + ns.format.number(utility),
+  ];
+  const row2 = [
+    [`${DIM(`↳ ${nextBN}.${nextLevel}`)}`, getSpecialAugs(ns)].join('   '),
     getWork(ns),
-    '',
-    getSpecialAugs(ns),
-    '',
-    `→ ${nextBN}.${nextLevel}`,
-  ].join('  ');
+  ];
+  return table(ns, null, [row1, row2]);
 };
 
 const getPlayerLevels = (ns: NS) => {
@@ -198,26 +204,27 @@ const moneyTable = (ns: NS) => {
 };
 
 const getWork = (ns: NS) => {
-  const { factionRep, currentWork } = getPlayerData(ns);
+  const { factionRep, currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
   const WORK = H('WORK');
+  const graftTimeLeft = Math.round((Date.now() - graftCompletionTime) / 1000);
   if (!hasBitNode(4, getStaticData(ns))) return ` ${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
   if (currentWork.type === 'FACTION') {
     const { factionName } = currentWork;
     const rep = Math.floor(factionRep?.[factionName] ?? 0);
-    return ` ${WORK} Working for ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
+    return `${WORK} Working for ${factionName} ${MEDIUM(`(${rep} rep)`)} `;
   } else if (currentWork.type === 'COMPANY') {
-    return ` ${WORK} Working for ${currentWork.companyName} `;
+    return `${WORK} Working for ${currentWork.companyName} `;
   } else if (currentWork.type === 'CRIME') {
-    return ` ${WORK} ${currentWork.crimeType} `;
+    return `${WORK} ${currentWork.crimeType} `;
   } else if (currentWork.type === 'CLASS') {
-    return ` ${WORK} Studying ${currentWork.classType} `;
+    return `${WORK} Studying ${currentWork.classType} `;
   } else if (currentWork.type === 'GRAFTING') {
-    return ` ${WORK} Grafting ${currentWork.augmentation} `;
+    return `${WORK} Grafting ${currentWork.augmentation} ${MEDIUM(formatTime(graftTimeLeft))} `;
   } else if (currentWork.type === 'CREATE_PROGRAM') {
-    return ` ${WORK} Developing ${currentWork.programName} `;
+    return `${WORK} Developing ${currentWork.programName} `;
   }
-  return ` ${WORK} UNKNOWN ${currentWork} `;
+  return `${WORK} UNKNOWN ${currentWork} `;
 };
 
 const getSpecialAugs = (ns: NS) => {
@@ -230,7 +237,7 @@ const getSpecialAugs = (ns: NS) => {
     // getDisplay('', 'CR', 22, 46),
     getDisplay('Neuroreceptor Management Implant', 'NR', 220),
     getDisplay('DataJack', 'DJ', 166),
-    getDisplay('violet Congruity Implant', 'vCI', 57),
+    getDisplay('violet Congruity Implant', 'v', 57),
     getDisplay('QLink', 'QL', 27),
     getDisplay('The Red Pill', 'RP', 124),
   ];
@@ -472,7 +479,7 @@ export async function main(ns: NS) {
   ].filter((win) => win != false);
   await ns.sleep(1);
   const WIDTH = 1450;
-  const HEIGHT = 400;
+  const HEIGHT = 500;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;
   if (clientWidth) ns.ui.moveTail(clientWidth - WIDTH - 2, 2);
