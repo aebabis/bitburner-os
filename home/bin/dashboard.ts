@@ -15,10 +15,10 @@ import { getServices } from '../lib/service-api';
 import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
-import { Goal } from '../lib/goals/nodes';
+import { Goal, NEUROFLUX } from '../lib/goals/nodes';
 import { SHARE } from '../etc/filenames';
 import { getNextBitnode } from '../lib/bitnode-sequence';
-import { getPlayerUtility } from '../lib/aug-weights';
+import { getAugEvaluator, getPlayerUtility } from '../lib/aug-weights';
 
 const H = BRIGHT.BOLD;
 
@@ -43,11 +43,12 @@ const formatTime = (seconds: number | null, emptyZero = false) => {
 };
 
 const getRunStats = (ns: NS) => {
-  const { resetInfo } = getStaticData(ns);
+  const { resetInfo, singularityData } = getStaticData(ns);
   const { player, accessTixApi } = getPlayerData(ns);
   const { city, hp, numPeopleKilled, money } = player;
   const { onlineRunningTime = 0 } = ns.getRunningScript('/bin/planner.ts', 'home') || {};
   const { estimatedStockValue = 0 } = getMoneyData(ns);
+  const { totalIncome } = getIncome(ns);
 
   const getSF = () => {
     const prevSF = resetInfo.ownedSF.get(resetInfo.currentNode) ?? 0;
@@ -55,36 +56,57 @@ const getRunStats = (ns: NS) => {
     return Math.min(prevSF + 1, maxSF);
   };
 
+  const goals = getGoals(ns);
+  const hasNFG = resetInfo.ownedAugs.has(NEUROFLUX);
+  const augsToInstall = goals.actions
+    .filter((action) => action.type === 'BUY_AUG')
+    .map((action) => action.name);
+  const uniqueAugs = new Set(augsToInstall);
+  if (hasNFG) uniqueAugs.delete(NEUROFLUX);
+  const newAugCount = uniqueAugs.size;
+  const getInstallValueStr = () => {
+    if (singularityData == null) return '';
+    const scoreAug = getAugEvaluator(resetInfo, singularityData.augmentationStats);
+    if (scoreAug == null) return '';
+    const value = augsToInstall.map(scoreAug).reduce((a, b) => a + b, 0);
+    return DIM(`      ↳ +${ns.format.number(value)}`);
+  };
+
   const karma = Math.trunc(ns.heart.break());
   const BN = `BN${resetInfo.currentNode}`;
   const uptime = formatTime(onlineRunningTime);
   const augRunningTime = (Date.now() - resetInfo.lastAugReset) / 1000;
-  const hasFullUptime = augRunningTime - onlineRunningTime < 10;
-  const bnTime = formatTime((Date.now() - resetInfo.lastNodeReset) / 1000);
-  const augTime = formatTime(augRunningTime);
-  const time = hasFullUptime ? uptime : uptime + '/' + augTime;
+  const bnTime = ` ${formatTime((Date.now() - resetInfo.lastNodeReset) / 1000)}`;
+  const augTime = formatTime(augRunningTime).padStart(bnTime.length);
+  const time = uptime;
+  const estEarnings = goals.timeToComplete() * totalIncome;
   const stock = accessTixApi
-    ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padEnd(6))
+    ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padStart(6))
     : DIM('  TIX'.padEnd(6));
   const augs = [...resetInfo.ownedSF.keys()].length;
   const utility = getPlayerUtility(resetInfo, player.mults);
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);
   const row1 = [
-    [H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime, H('UP') + ' ' + time].join('  '),
-    [
-      H('CITY') + ' ' + city,
-      H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-      H('CASH') + MONEY(` $${ns.format.number(money, 1).padEnd(6)}`),
-      H('PORTFOLIO') + stock,
-    ].join('  '),
-    H('KILLS') + ' ' + numPeopleKilled,
+    H(BN) + '.' + BRIGHT(getSF()) + ' ' + bnTime,
+    H('UP') + ' ' + time,
+    H('CITY') + ' ' + city,
+    H('CASH ') + MONEY(` $${ns.format.number(money, 1)}`.padStart(7)),
+    H('STOCK') + stock,
     H('KARMA') + ' ' + karma,
     H('AUGS') + ' ' + augs,
     H('UTILITY') + ' ' + ns.format.number(utility),
+    getWork(ns),
+    getSpecialAugs(ns),
   ];
   const row2 = [
-    [`${DIM(`↳ ${nextBN}.${nextLevel}`)}`, getSpecialAugs(ns)].join('   '),
-    getWork(ns),
+    `${DIM(`↳ ${nextBN}.${nextLevel}`)} ${DIM(augTime)}`,
+    '',
+    H('  HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
+    DIM(`   ↳ ${`+$${ns.format.number(estEarnings, 1)}`.padStart(7)}`),
+    '',
+    DIM(`Kills  ${numPeopleKilled}`),
+    DIM(`   ↳ +${newAugCount}`),
+    getInstallValueStr(),
   ];
   return table(ns, null, [row1, row2]);
 };
@@ -206,7 +228,6 @@ const moneyTable = (ns: NS) => {
 const getWork = (ns: NS) => {
   const { factionRep, currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
   const WORK = H('WORK');
-  const graftTimeLeft = Math.round((Date.now() - graftCompletionTime) / 1000);
   if (!hasBitNode(4, getStaticData(ns))) return `${WORK} ${MEDIUM('(unknown)')} `;
   if (currentWork == null) return `${WORK} ${MEDIUM('(idle)')} `;
   if (currentWork.type === 'FACTION') {
@@ -220,7 +241,11 @@ const getWork = (ns: NS) => {
   } else if (currentWork.type === 'CLASS') {
     return `${WORK} Studying ${currentWork.classType} `;
   } else if (currentWork.type === 'GRAFTING') {
-    return `${WORK} Grafting ${currentWork.augmentation} ${MEDIUM(formatTime(graftTimeLeft))} `;
+    const graftTimeLeft =
+      graftCompletionTime !== 0
+        ? formatTime(Math.round((graftCompletionTime - Date.now()) / 1000))
+        : '(time unknown)';
+    return `${WORK} Grafting ${currentWork.augmentation} ${MEDIUM(graftTimeLeft)} `;
   } else if (currentWork.type === 'CREATE_PROGRAM') {
     return `${WORK} Developing ${currentWork.programName} `;
   }
