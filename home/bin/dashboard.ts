@@ -207,8 +207,8 @@ const getWork = (ns: NS) => {
   const { factionRep, currentWork, graftCompletionTime = 0 } = getPlayerData(ns);
   const WORK = H('WORK');
   const graftTimeLeft = Math.round((Date.now() - graftCompletionTime) / 1000);
-  if (!hasBitNode(4, getStaticData(ns))) return ` ${WORK} ${MEDIUM('(unknown)')} `;
-  if (currentWork == null) return ` ${WORK} ${MEDIUM('(idle)')} `;
+  if (!hasBitNode(4, getStaticData(ns))) return `${WORK} ${MEDIUM('(unknown)')} `;
+  if (currentWork == null) return `${WORK} ${MEDIUM('(idle)')} `;
   if (currentWork.type === 'FACTION') {
     const { factionName } = currentWork;
     const rep = Math.floor(factionRep?.[factionName] ?? 0);
