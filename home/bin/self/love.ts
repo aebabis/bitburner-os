@@ -66,10 +66,6 @@ export async function main(ns: NS) {
   const afkTracker = makeAfkTracker(ns);
   const focus = () => resetInfo.currentNode !== 8 && afkTracker.timeSinceAction() > 20000;
 
-  if (resetInfo.currentNode === 8) {
-    while (ns.getServerMaxRam('home') < 256 && (await $.singularity['upgradeHomeRam']()));
-  }
-
   await ns.sleep(200); // Hack to prevent RAM contention during initial scheduler cycle
   await $.singularity['applyToCompany']("Joe's Guns", 'Employee');
 
@@ -313,7 +309,7 @@ export async function main(ns: NS) {
     if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await $sing(ns, runPort)(rootGoal);
 
-    if (ns.getServerMaxRam('home') <= 64) {
+    if (ns.getServerMaxRam('home') < 256) {
       await $.singularity['upgradeHomeRam']();
     }
 
