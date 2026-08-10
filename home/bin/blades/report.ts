@@ -65,14 +65,14 @@ export const showInfo =
       ns.print('\n');
       const columns = [
         ' CITY',
-        { name: '     EST POP', align: 'right' },
+        { name: '    EST POP', align: 'right' },
         { name: ' CMTY', align: 'right' },
         { name: ' CHAOS', align: 'right' },
       ];
       const rows = Object.entries(cities)
         .sort(by(([, stats]) => -stats.estimatedPopulation))
         .map(([city, stats]) => [
-          ' ' + city + (city === currentCity ? '*' : ''),
+          (' ' + city + (city === currentCity ? '*' : '')).padEnd(10),
           ns.format.number(stats.estimatedPopulation).padStart(8),
           stats.communities,
           ns.format.number(stats.chaos).replace(/^0/, ' '),
