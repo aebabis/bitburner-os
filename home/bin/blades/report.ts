@@ -1,12 +1,11 @@
 import { BRIGHT, C, MEDIUM, NORMAL } from '../../lib/colors';
 import { table } from '../../lib/table';
+import { setupTail } from '../../lib/tail';
 import { by, formatTime } from '../../lib/util';
 import { BladeCities, BladeCurrentAction, BladeSkills } from './burners.rip';
 
 export const openTail = (ns: NS) => {
-  ns.disableLog('ALL');
-  ns.ui.openTail();
-  ns.ui.resizeTail(355, 440);
+  setupTail(ns, { width: 355, height: 440, left: 775, bottom: 50 });
 };
 
 const contentWidth = (ns: NS) =>

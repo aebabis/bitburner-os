@@ -5,6 +5,7 @@ import { formatTime } from '../lib/util';
 import { getGraftTargets } from '../lib/grafting';
 import { getStaticData, putMoneyData, putPlayerData, putStaticData } from '../lib/data-store';
 import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
+import { setupTail } from '../lib/tail';
 
 export async function main(ns: NS) {
   const { singularityData } = getStaticData(ns);
@@ -14,12 +15,7 @@ export async function main(ns: NS) {
   putMoneyData(ns, { graftPriceReserve: 0 });
 
   ns.disableLog('ALL');
-  ns.ui.openTail();
-  const WIDTH = 775;
-  const HEIGHT = 500;
-  const winHeight = globalThis.innerHeight;
-  ns.ui.resizeTail(WIDTH, HEIGHT);
-  ns.ui.moveTail(249, winHeight - HEIGHT - 50);
+  setupTail(ns, { width: 775, height: 440, left: 0, bottom: 50 });
 
   const getInstallUtility = () => {
     const resetInfo = ns.getResetInfo();
