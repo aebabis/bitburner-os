@@ -83,7 +83,9 @@ const getRunStats = (ns: NS) => {
   const bnTime = formatTime(nodeTime);
   const augTime = formatTime(augRunningTime).padStart(bnTime.length);
   const time = uptime;
-  const estEarnings = goals.timeToComplete() * totalIncome;
+  const moneyStr = ` $${ns.format.number(money, 1)}`;
+  const estEarnings = `+$${ns.format.number(goals.timeToComplete() * totalIncome, 1)}`;
+  const moneyLen = Math.max(moneyStr.length, estEarnings.length);
   const stock = accessTixApi
     ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padStart(6))
     : DIM('  TIX'.padEnd(6));
@@ -97,20 +99,21 @@ const getRunStats = (ns: NS) => {
     H('UP') + ' ' + time,
     H('CITY') + ' ' + city,
     H('HP') + ' ' + C(170)(`${hp.current}/${hp.max}`),
-    H('CASH ') + MONEY(` $${ns.format.number(money, 1)}`.padStart(8)),
+    H('CASH') + MONEY(`${moneyStr}`.padStart(moneyLen)),
     H('STOCK') + stock,
     H('KARMA') + ' ' + karma,
     H('AUGS') + ' ' + augs,
     H('UTILITY') + ' ' + ns.format.number(utility),
     work1,
+    getSpecialAugs(ns),
   ];
   const row2 = [
     `${DIM(`↳ ${nextBN}.${nextLevel}`)}`,
     DIM(formatTime(nextStart)),
-    `${DIM(augTime)}`,
-    getSpecialAugs(ns),
+    `   ${DIM(augTime)}`,
     '',
-    DIM(`   ↳ ${`+$${ns.format.number(estEarnings, 1)}`.padStart(8)}`),
+    '',
+    DIM(`  ↳ ${`${estEarnings}`.padStart(moneyLen)}`),
     '',
     DIM(`Kills  ${numPeopleKilled}`),
     DIM(`   ↳ +${newAugCount}`),
@@ -245,10 +248,9 @@ const getWork = (ns: NS): [string, string] => {
     const rep = Math.floor(factionRep?.[factionName] ?? 0);
     const favor = singularityData!.factionFavor[factionName];
     const repGain = formulas(ns).work.factionGains(player, factionWorkType, favor).reputation;
-    return [
-      `${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)} `,
-      DIM(`     ${ns.format.number(repGain)}/s`),
-    ];
+    const workStr = `${WORK} ${factionName} ${MEDIUM(`(${rep} rep)`)}`;
+    const repStr = DIM(`     ${ns.format.number(repGain)}rep/s`);
+    return [workStr, repStr];
   } else if (currentWork.type === 'COMPANY') {
     return [`${WORK} ${currentWork.companyName} `, ''];
   } else if (currentWork.type === 'CRIME') {
