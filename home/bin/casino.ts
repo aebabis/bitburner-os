@@ -1,4 +1,4 @@
-import { getMoneyData, putMoneyData } from '../lib/data-store';
+import { getMoneyData, getPlayerData, putMoneyData } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 
 const getBadRngSequence = () => {
@@ -65,9 +65,11 @@ const goTowardCasino = (ns: NS) => {
     getNavButton('World')!.click();
     return false;
   } else if (ns.getPlayer().city !== 'Aevum') {
-    const A = getElem('span', 'A');
-    if (A) A.click();
-    else getNavButton('Travel')!.click();
+    if (ns.getPlayer().money >= 200000) {
+      const A = getElem('span', 'A');
+      if (A) A.click();
+      else getNavButton('Travel')!.click();
+    }
     return false;
   } else if (getElem('h4', 'Iker Molina Casino') == null) {
     if (getElem('p', 'Aevum') == null) {
@@ -129,10 +131,10 @@ const reportEarnings = (ns: NS, netChange: number) => {
   putMoneyData(ns, { casinoEarnings: casinoEarnings + netChange });
 };
 
-const isAccused = (ns: NS) => {
-  const accusation = getElem('span', /cheater/);
-  if (accusation == null) return false;
-  let container: HTMLElement | null = accusation;
+const closedOverlay = (regex: RegExp) => {
+  const overlay = getElem('span', regex);
+  if (overlay == null) return false;
+  let container: HTMLElement | null = overlay;
   while (container != null) {
     const closeButton = container.querySelector('button');
     if (closeButton) {
@@ -141,9 +143,19 @@ const isAccused = (ns: NS) => {
     }
     container = container['parentElement'];
   }
-  disableService(ns);
   return true;
 };
+
+const isAccused = (ns: NS) => {
+  if (closedOverlay(/cheater/)) {
+    disableService(ns);
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const isBroke = () => closedOverlay(/enough money/);
 
 const HEADS = 0;
 const TAILS = 1;
@@ -203,6 +215,7 @@ const playCoinFlips = async (ns: NS, lose = false) => {
     click(getButton(buttonText)!);
     await ns.sleep(0);
     if (isAccused(ns)) return;
+    if (isBroke()) return;
     const h4 = [...globalThis['document'].querySelectorAll('h4')].at(-1)!;
     const won = h4.innerText === 'win!';
     reportEarnings(ns, won ? wager : -wager);
@@ -325,6 +338,7 @@ const playRoulette = async (ns: NS) => {
     const outcome = await play(choice, wager);
 
     if (isAccused(ns)) return;
+    if (isBroke()) return;
 
     if (outcome == null) return;
 
@@ -348,6 +362,14 @@ const playRoulette = async (ns: NS) => {
 
 export async function main(ns: NS) {
   const { debt } = ns.flags([['debt', false]]);
+  const { currentWork } = getPlayerData(ns);
+  if (ns.getPlayer().money > 100e9) {
+    disableService(ns);
+    return;
+  }
+  if (currentWork?.type === 'CLASS') {
+    return;
+  }
   ns.disableLog('ALL');
   ns.ui.openTail();
   ns.ui.resizeTail(100, 100);
