@@ -120,6 +120,7 @@ const setWager = async (ns: NS, amount: number) => {
 };
 
 const click = (button: HTMLButtonElement) => {
+  globalThis['document'].body.click(); // Use "real" click to keep AFK tracker alive
   fireReactHandler(button, 'onClick', { isTrusted: true });
 };
 
