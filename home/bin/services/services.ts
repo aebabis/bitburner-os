@@ -23,6 +23,17 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasPermanentFormulas = (ownedSF.get(5) ?? 0) >= 2;
   // SF7.3 grants The Blade's Simulacrum upon joining the Bladeburner division
   const hasPermanentBlade = (ownedSF.get(7) ?? 0) === 3;
+  const getCachedGoals = (() => {
+    let lastHit = Date.now();
+    let goals = getGoals(ns);
+    return () => {
+      if (Date.now() - lastHit > 250) {
+        lastHit = Date.now();
+        goals = getGoals(ns);
+      }
+      return goals;
+    };
+  })();
 
   const always = () => true;
   const not = (predicate: () => boolean) => () => !predicate();
@@ -69,7 +80,9 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
     ns.corporation.hasCorporation() ||
     (ns.corporation.canCreateCorporation(mustSelfFund) === 'Success' && money() >= corpCost);
   const buyingBlade = () =>
-    getGoals(ns).actions.some((action) => action.type === 'BUY_AUG' && action.name === THE_BLADE);
+    getCachedGoals().actions.some(
+      (action) => action.type === 'BUY_AUG' && action.name === THE_BLADE,
+    );
   const preferBlade = () => inBladeNode() && buyingBlade();
   const useBlade = () => hasSimulacrum() || preferBlade();
   const canWork = () => hasSimulacrum() || !preferBlade();
