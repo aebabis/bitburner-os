@@ -1,55 +1,25 @@
 const NULL = 'NULL PORT DATA';
 
-export function replacer(_key: string, value: unknown) {
-  if (value instanceof Map) {
-    return {
-      dataType: 'Map',
-      value: Array.from(value.entries()), // or with spread: value: [...value]
-    };
-  } else if (value === Infinity) {
-    return {
-      dataType: 'number',
-      value: 'Infinity',
-    };
-  } else {
-    return value;
-  }
-}
-
-function reviver(_key: string, value: unknown) {
-  if (typeof value === 'object' && value !== null) {
-    if ('dataType' in value) {
-      if (value.dataType === 'Map' && 'value' in value) {
-        return new Map(value.value as [string, unknown][]);
-      }
-      if (value.dataType === 'number' && 'value' in value && value.value === 'Infinity') {
-        return Infinity;
-      }
-    }
-  }
-  return value;
-}
-
-const s = (data: unknown) => {
+const assertWritable = (data: unknown) => {
   if (data === null) throw new Error('Cannot write null. This interface uses null for "empty"');
-  return JSON.stringify({ data }, replacer);
+  return data;
 };
-const p = (packet: string) => JSON.parse(packet, reviver).data;
 
 export default (ns: NS) => {
   const readPort = (handle: number) => {
-    const packet = ns.getPortHandle(handle).read();
-    if (packet === NULL) return null;
-    return p(packet);
+    const data = ns.getPortHandle(handle).read();
+    if (data === NULL) return null;
+    return data;
   };
-  const writePort = (handle: number, data: unknown) => ns.getPortHandle(handle).write(s(data));
+  const writePort = (handle: number, data: unknown) =>
+    ns.getPortHandle(handle).write(assertWritable(data));
   const tryWritePort = (handle: number, data: unknown) =>
-    ns.getPortHandle(handle).tryWrite(s(data));
+    ns.getPortHandle(handle).tryWrite(assertWritable(data));
   const blockingWritePort = async (handle: number, data: unknown, timeout = 60000) => {
     let start = Date.now();
     let outcome = false;
     while (true) {
-      outcome = ns.getPortHandle(handle).tryWrite(s(data));
+      outcome = ns.getPortHandle(handle).tryWrite(assertWritable(data));
       if (!outcome && Date.now() - start <= timeout) await ns.sleep(50);
       else break;
     }
@@ -58,9 +28,9 @@ export default (ns: NS) => {
   const clearPort = (handle: number) => ns.getPortHandle(handle).clear();
 
   const peek = (handle: number) => {
-    const packet = ns.getPortHandle(handle).peek();
-    if (packet === NULL) return null;
-    return p(packet);
+    const data = ns.getPortHandle(handle).peek();
+    if (data === NULL) return null;
+    return data;
   };
   const full = (handle: number) => ns.getPortHandle(handle).full();
   const empty = (handle: number) => ns.getPortHandle(handle).empty();

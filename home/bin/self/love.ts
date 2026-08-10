@@ -319,6 +319,8 @@ export async function main(ns: NS) {
 
     await selectPlayerAction(rootGoal);
 
+    // stringifying and parsing removes nextCompletion which
+    // cannot be stored in a port
     const currentWork = JSON.parse(JSON.stringify(ns.singularity.getCurrentWork()));
     putPlayerData(ns, { currentWork });
     await ns.sleep(200);

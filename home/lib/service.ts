@@ -91,7 +91,7 @@ export const Service =
       id,
       name: shortname,
       script,
-      status: statusCode(),
+      status: statusCode().toString(),
       isRunning: isRunning(),
       allowed: enabled && condition(ns),
       pid,

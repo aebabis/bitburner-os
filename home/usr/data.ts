@@ -1,5 +1,13 @@
-import { replacer } from '../lib/ports.ts';
 import { getHostnames, getStaticData, getPlayerData, getMoneyData } from '../lib/data-store.ts';
+
+// Ensure that JSON.stringify handles all output.
+const replacer = (_key: string, value: unknown) => {
+  if (value instanceof Map) return Object.fromEntries(value.entries());
+  if (value === Infinity) return 'Infinity';
+  if (value === -Infinity) return '-Infinity';
+  if (typeof value === 'number' && Number.isNaN(value)) return 'NaN';
+  return value;
+};
 
 export async function main(ns: NS) {
   const OPTIONS = {
