@@ -85,6 +85,8 @@ const go = async (ns: NS) => {
       .reduce((a, b) => a + b, 0);
 
   const THIEVES = ['/bin/thief.ts', '/bin/angel.ts'];
+  const anyThiefRunning = () => services.some((s) => THIEVES.includes(s.script) && s.isRunning());
+
   while (true) {
     await handleExecRequests();
     putPlayerData(ns, { player: player(ns), ...makePlayerData(ns) });
@@ -94,8 +96,9 @@ const go = async (ns: NS) => {
         // Rendering each pass necessary to keep table fresh,
         // as service updates are async
         showServices();
-        if (THIEVES.includes(service.script) && !service.isRunning()) {
-          const currentServiceRam = runningServiceRam() + service.toData().ram;
+        const data = service.toData();
+        if (THIEVES.includes(service.script) && data.allowed && !anyThiefRunning()) {
+          const currentServiceRam = runningServiceRam() + data.ram;
           const isLoveRunning = isRunning('/bin/self/love.ts');
           const isStanekRunning = isRunning('/bin/stanek.ts');
           takeSnapshot(ns, currentServiceRam, isLoveRunning, isStanekRunning);
