@@ -517,7 +517,6 @@ const ramPolicyTable = (ns: NS) => {
   }
   const workerRam = getCachedRamStates(ns);
   const fmtRam = (gb: number, pad = 1) => ns.format.ram(gb, 2).padStart(pad);
-  const freeRam = Object.values(workerRam.batch.unusedRam).reduce((a, b) => a + b, 0);
 
   const { allottedBatchRam, allottedShareRam, allottedStanekRam, totalRam } = policy;
   const batchInfo = workerRam['batch'];
@@ -526,10 +525,13 @@ const ramPolicyTable = (ns: NS) => {
   const batchThreads = `${batchInfo.currentThreads}`;
   const shareThreads = `${shareInfo.currentThreads}/${shareInfo.targetThreads}`;
   const stanekThreads = `${chargeInfo.currentThreads}/${chargeInfo.targetThreads}`;
+  const batchRam = batchInfo.currentRamUse;
+  const shareRam = shareInfo.currentRamUse;
+  const chargeRam = chargeInfo.currentRamUse;
+  const serviceRam = policy.currentServiceRam;
+  const usedRam = batchRam + shareRam + chargeRam + serviceRam;
   const numeratorLength = Math.max(
-    ...[totalRam, batchInfo.currentRamUse, shareInfo.currentRamUse, chargeInfo.currentRamUse].map(
-      (num) => fmtRam(num).length,
-    ),
+    ...[totalRam, batchRam, shareRam, chargeRam, serviceRam].map((num) => fmtRam(num).length),
   );
 
   const formatRam = (ram: number, allotted?: number, shouldWarn = true) => {
@@ -546,11 +548,11 @@ const ramPolicyTable = (ns: NS) => {
     { name: DIM('THREADS') },
   ];
   const rows = [
-    ['batch', formatRam(batchInfo.currentRamUse, allottedBatchRam), DIM(batchThreads)],
-    ['share', formatRam(shareInfo.currentRamUse, allottedShareRam), DIM(shareThreads)],
-    ['stanek', formatRam(chargeInfo.currentRamUse, allottedStanekRam), DIM(stanekThreads)],
+    ['batch', formatRam(batchRam, allottedBatchRam), DIM(batchThreads)],
+    ['share', formatRam(shareRam, allottedShareRam), DIM(shareThreads)],
+    ['stanek', formatRam(chargeRam, allottedStanekRam), DIM(stanekThreads)],
     ['services', formatRam(policy.currentServiceRam)],
-    ['free', formatRam(freeRam, policy.homeReserve, false)],
+    ['free', formatRam(totalRam - usedRam, policy.homeReserve, false)],
   ];
 
   return table(ns, columns, rows);
