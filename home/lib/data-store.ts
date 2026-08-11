@@ -206,6 +206,7 @@ export type RamPolicySnapshot = {
   allottedShareRam: number;
   allottedStanekRam: number;
   allottedBatchRam: number;
+  stanekHost: string | null;
 };
 export const getRamPolicy = (ns: NS): RamPolicySnapshot | null => readData(ns, PORT_RAM_POLICY);
 export const putRamPolicy = (ns: NS, data: RamPolicySnapshot) => putData(ns, PORT_RAM_POLICY, data);

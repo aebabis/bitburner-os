@@ -223,7 +223,8 @@ export async function main(ns: NS) {
 
   ns.disableLog('ALL');
   const { resetInfo, scriptRam } = getStaticData(ns);
-  const RAM_PER_THREAD = scriptRam[CHARGE.replace(/^\//, '')];
+  const CHARGE_FILE = CHARGE.replace(/^\//, '');
+  const RAM_PER_THREAD = scriptRam[CHARGE_FILE];
 
   let lastUpdate = 0;
   while (true) {
@@ -252,24 +253,23 @@ export async function main(ns: NS) {
       .filter((fragment) => fragment.type !== ns.enums.FragmentType.Booster)
       .flatMap(({ x, y }) => [x, y]);
 
-    if (coords.length > 0) {
-      const { targetThreads, currentThreads, unusedRam } = getWorkerRamState(ns, 'charge');
-      // Get target RAM usage
-      ns.print('Current threads: ' + currentThreads + '/' + targetThreads);
-      if (currentThreads < targetThreads) {
-        let threadsNeeded = targetThreads - currentThreads;
-        for (const [hostname, ram] of Object.entries(unusedRam)) {
-          const threads = Math.min(Math.floor(ram / RAM_PER_THREAD), threadsNeeded);
-          if (threads) {
-            const pid = ns.exec(CHARGE, hostname, { threads, temporary: true }, ...coords);
-            if (pid !== 0) {
-              threadsNeeded -= threads;
-              if (!threadsNeeded) {
-                break;
-              }
-            }
-          }
-        }
+    const { targetThreads, currentWorkers, stanekHost } = getWorkerRamState(ns, 'charge');
+    if (coords.length > 0 && stanekHost != null) {
+      const hostProcesses = ns.ps(stanekHost).filter((ps) => ps.filename === CHARGE_FILE);
+      // Stanek provides most charge when all threads belong to single process.
+      // Kill all processes outside of current host
+      for (const { pid } of currentWorkers) {
+        if (!hostProcesses.some((ps) => ps.pid === pid)) ns.kill(pid);
+      }
+      const currentThreads = hostProcesses.reduce((total, ps) => total + ps.threads, 0);
+      // Ensure exactly one worker process and correct number of threads
+      if (hostProcesses.length !== 1 || currentThreads !== targetThreads) {
+        for (const { pid } of hostProcesses) ns.kill(pid);
+        const freeRam = ns.getServerMaxRam(stanekHost) - ns.getServerUsedRam(stanekHost);
+        const possibleThreads = Math.floor(freeRam / RAM_PER_THREAD);
+        const actualThreads = Math.min(targetThreads, possibleThreads);
+        ns.exec(CHARGE, stanekHost, { threads: actualThreads, temporary: true }, ...coords);
+        ns.print(`CHARGE: ${actualThreads}/${targetThreads} threads on ${stanekHost}`);
       }
     }
     putPlayerData(ns, {

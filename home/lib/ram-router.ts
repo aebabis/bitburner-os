@@ -20,6 +20,56 @@ const getHomeReserveRam = (ns: NS) => {
   return Math.min(Math.max(MIN_HOME_RESERVE, (homeRam + pool1Ram) / 10), MAX_HOME_RESERVE);
 };
 
+// Worker RAM is split three ways. Batch takes the remainder, so only these are named.
+const SHARE_ALLOTMENT = 0.1;
+const STANEK_ALLOTMENT = 0.1;
+
+const getWorkerRam = (totalRam: number, currentServiceRam: number, homeReserve: number) =>
+  Math.max(0, totalRam - currentServiceRam - homeReserve);
+
+/** RAM a host can offer charge workers. Measured from max rather than current usage,
+ *  so the figure does not fall away as stanek fills the host. */
+const getChargeCapacity = (ns: NS, hostname: string, homeReserve: number) =>
+  Math.max(0, ns.getServerMaxRam(hostname) - (hostname === 'home' ? homeReserve : 0));
+
+/** Stanek charges with a single process and its effect scales on that one process's
+ *  thread count, so the whole allotment belongs on the largest single host rather than
+ *  spread across the network. THREADPOOL-01 is excluded because `infect.ts` fullInfects
+ *  it, making it the one pool server whose RAM services can take.
+ *
+ *  Ranked on max RAM rather than capacity, because both home and purchased servers only
+ *  ever double: any host that is larger at all is at least twice as large, which no core
+ *  bonus can overturn (8 cores is 1.4375x). That leaves cores relevant only to ties, and
+ *  home takes those — it holds at least as many cores as a purchased server's one. The
+ *  tie only pays off if home's cores have been upgraded, which nothing here does
+ *  automatically. At one core home is the worse pick by the home reserve, which costs
+ *  most when home is small: 64GB home against a 64GB pool server is ~9% of effect, a
+ *  1TB pair under 1%. */
+const getStanekHost = (ns: NS) => {
+  const POOL1 = `${THREADPOOL}-01`;
+  const candidates = getHostnames(ns).filter(
+    (hostname) =>
+      hostname.startsWith(THREADPOOL) && hostname !== POOL1 && ns.hasRootAccess(hostname),
+  );
+  return ['home', ...candidates].reduce((best, hostname) =>
+    ns.getServerMaxRam(hostname) > ns.getServerMaxRam(best) ? hostname : best,
+  );
+};
+
+/** Charge's allotment, capped by what its one host can physically hold. Recomputed from
+ *  live host RAM rather than read back from the snapshot, so a server upgraded during a
+ *  long batch is picked up on stanek's next tick. Safe to move under a frozen snapshot
+ *  because batch and share are withheld from this host either way. */
+const getStanekRam = (
+  ns: NS,
+  workerRam: number,
+  stanekHost: string | null,
+  homeReserve: number,
+) => {
+  if (stanekHost == null) return 0;
+  return Math.min(workerRam * STANEK_ALLOTMENT, getChargeCapacity(ns, stanekHost, homeReserve));
+};
+
 export const takeSnapshot = (
   ns: NS,
   currentServiceRam: number,
@@ -33,9 +83,12 @@ export const takeSnapshot = (
     .reduce((a, b) => a + b, 0);
   const homeReserve = getHomeReserveRam(ns);
   const shouldShare = currentWork == null || currentWork.type === 'FACTION' || !isLoveRunning;
-  const workerRam = Math.max(0, totalRam - currentServiceRam - homeReserve);
-  const allottedShareRam = shouldShare ? workerRam * 0.1 : 0;
-  const allottedStanekRam = isStanekRunning ? workerRam * 0.1 : 0;
+  const workerRam = getWorkerRam(totalRam, currentServiceRam, homeReserve);
+  const allottedShareRam = shouldShare ? workerRam * SHARE_ALLOTMENT : 0;
+  const stanekHost = isStanekRunning ? getStanekHost(ns) : null;
+  // Clamped, so the three allotments still sum to workerRam and a host too small to
+  // hold the full share hands the difference to batch rather than stranding it.
+  const allottedStanekRam = getStanekRam(ns, workerRam, stanekHost, homeReserve);
   const allottedBatchRam = workerRam - allottedShareRam - allottedStanekRam;
   const snapshot: RamPolicySnapshot = {
     totalRam,
@@ -44,6 +97,7 @@ export const takeSnapshot = (
     allottedShareRam,
     allottedStanekRam,
     allottedBatchRam,
+    stanekHost,
   };
   putRamPolicy(ns, snapshot);
 };
@@ -123,6 +177,7 @@ type WorkerRamState = {
   currentThreads: number;
   unusedRam: Record<string, number>;
   budgetedRam: Record<string, number>;
+  stanekHost: string | null;
 };
 
 type WorkerType = keyof typeof workerPrograms;
@@ -139,12 +194,17 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
       currentThreads: 0,
       unusedRam: {},
       budgetedRam: {},
+      stanekHost: null,
     };
   }
 
+  const { stanekHost, homeReserve } = snapshot;
+  const workerRam = getWorkerRam(snapshot.totalRam, snapshot.currentServiceRam, homeReserve);
+  const stanekRam = getStanekRam(ns, workerRam, stanekHost, homeReserve);
+
   const targetRamUse =
     workerType === 'charge'
-      ? snapshot.allottedStanekRam
+      ? stanekRam
       : workerType === 'share'
         ? snapshot.allottedShareRam
         : snapshot.allottedBatchRam;
@@ -163,8 +223,9 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
       const maxRam = ns.getServerMaxRam(hostname);
       const ramUsed = ns.getServerUsedRam(hostname);
       const ramUnused = maxRam - ramUsed;
-      const ramReserved = hostname === 'home' ? getHomeReserveRam(ns) : 0;
-      const ramAvailable = Math.max(0, ramUnused - ramReserved);
+      const homeReserve = hostname === 'home' ? getHomeReserveRam(ns) : 0;
+      const stanekReserve = workerType !== 'charge' && hostname === stanekHost ? stanekRam : 0;
+      const ramAvailable = Math.max(0, ramUnused - homeReserve - stanekReserve);
       return [hostname, ramAvailable];
     }),
   );
@@ -187,6 +248,7 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
     currentThreads,
     unusedRam,
     budgetedRam,
+    stanekHost,
   };
 };
 
