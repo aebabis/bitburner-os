@@ -16,10 +16,10 @@ import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal, NEUROFLUX } from '../lib/goals/nodes';
-import { SHARE } from '../etc/filenames';
 import { getNextBitnode } from '../lib/bitnode-sequence';
 import { getAugEvaluator, getPlayerUtility } from '../lib/aug-weights';
 import { formulas } from '../lib/formulas';
+import { NRMI, RED_PILL, vIOLET } from '../etc/augmentations';
 
 const H = BRIGHT.BOLD;
 
@@ -280,11 +280,12 @@ const getSpecialAugs = (ns: NS) => {
   };
   const specialAugDisplays = [
     // getDisplay('', 'CR', 22, 46),
-    getDisplay('Neuroreceptor Management Implant', 'NR', 220),
+    getDisplay(NEUROFLUX, `${resetInfo.ownedAugs.get(NEUROFLUX) ?? 'NFG'}`, 28),
+    getDisplay(NRMI, 'NR', 214),
     getDisplay('DataJack', 'DJ', 166),
-    getDisplay('violet Congruity Implant', 'v', 57),
+    getDisplay(vIOLET, 'v', 57),
     getDisplay('QLink', 'QL', 27),
-    getDisplay('The Red Pill', 'RP', 124),
+    getDisplay(RED_PILL, 'RP', 124),
   ];
   if (!(resetInfo.ownedSF.has(4) || resetInfo.currentNode === 4)) {
     specialAugDisplays.unshift(
