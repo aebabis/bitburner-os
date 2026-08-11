@@ -8,7 +8,6 @@ import {
   getRamPolicy,
 } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
-import { getBatchRamState, getWorkerRamState } from '../lib/ram-router';
 import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
@@ -183,10 +182,11 @@ const threadpoolTable = (ns: NS) => {
 const goalsTable = (ns: NS) => {
   const root = getGoals(ns);
   const rows = [];
+  const trunc = (str: string) => (str.length > 50 ? str.slice(0, 47) + '...' : str);
   const walk = (goal: Goal, depth: number) => {
     for (const dep of goal.deps) walk(dep, depth + 1);
     rows.push([
-      '  '.repeat(depth) + goal.toString(),
+      trunc('  '.repeat(depth) + goal.toString()),
       MEDIUM(formatTime(goal.timeToComplete(), true)),
     ]);
   };
@@ -331,6 +331,7 @@ const getServiceTable = (ns: NS) => {
 
 const getSchedulerTable = (ns: NS) => {
   const {
+    numProcesses = 0,
     inputFull,
     outputFull,
     heartbeat,
@@ -338,6 +339,7 @@ const getSchedulerTable = (ns: NS) => {
     enqueueFails = 0,
     droppedTickets = 0,
   } = getSchedulerReportData(ns);
+  const { sharePower = 1 } = getPlayerData(ns);
   const age = heartbeat == null ? null : Date.now() - heartbeat;
   const heartbeatStr =
     age == null
@@ -354,8 +356,6 @@ const getSchedulerTable = (ns: NS) => {
         : `${waitSec}s`;
   const queue = enqueueFails + ' fails';
   const tickets = droppedTickets + ' dropped';
-  const processes = getHostnames(ns).flatMap((hostname) => ns.ps(hostname));
-  const sharePs = processes.filter((ps) => ps.filename.includes(SHARE.slice(1)));
   const rows = [
     ['SCHEDULER'],
     ['Heartbeat  ' + heartbeatStr],
@@ -364,9 +364,8 @@ const getSchedulerTable = (ns: NS) => {
     ['Output     ' + (outputFull ? ERROR('full') : 'open')],
     ['Queue      ' + (enqueueFails > 0 ? ERROR(queue) : queue)],
     ['Tickets    ' + (droppedTickets > 0 ? ERROR(tickets) : tickets)],
-    ['Processes  ' + processes.length],
-    ['Share Thd  ' + sharePs.map((ps) => ps.threads).reduce((a, b) => a + b, 0)],
-    ['Share Pwr  ' + ns.format.number(ns.getSharePower(), 3)],
+    ['Processes  ' + numProcesses],
+    ['Share Pwr  ' + ns.format.number(sharePower)],
   ];
   return table(ns, null, rows, { colors: true });
 };
@@ -494,11 +493,7 @@ const getContractDisplay = (ns: NS) => {
 
 const getCachedRamStates = (() => {
   const RAM_STATE_TTL = 200;
-  const buildRamStates = (ns: NS) => ({
-    batch: getBatchRamState(ns),
-    share: getWorkerRamState(ns, 'share'),
-    charge: getWorkerRamState(ns, 'charge'),
-  });
+  const buildRamStates = (ns: NS) => getSchedulerReportData(ns);
   let lastHit = 0;
   let states: ReturnType<typeof buildRamStates> | null = null;
   return (ns: NS) => {
@@ -519,9 +514,9 @@ const ramPolicyTable = (ns: NS) => {
   const fmtRam = (gb: number, pad = 1) => ns.format.ram(gb, 2).padStart(pad);
 
   const { allottedBatchRam, allottedShareRam, allottedStanekRam, totalRam } = policy;
-  const batchInfo = workerRam['batch'];
-  const shareInfo = workerRam['share']; // Avoiding false RAM cost
-  const chargeInfo = workerRam['charge'];
+  const batchInfo = workerRam.batchRamState;
+  const shareInfo = workerRam.shareRamState;
+  const chargeInfo = workerRam.chargeRamState;
   const batchThreads = `${batchInfo.currentThreads}`;
   const shareThreads = `${shareInfo.currentThreads}/${shareInfo.targetThreads}`;
   const stanekThreads = `${chargeInfo.currentThreads}/${chargeInfo.targetThreads}`;

@@ -1,5 +1,5 @@
 import { SHARE } from '../etc/filenames';
-import { getStaticData } from '../lib/data-store';
+import { getStaticData, putPlayerData } from '../lib/data-store';
 import { getWorkerRamState } from '../lib/ram-router';
 
 export async function main(ns: NS) {
@@ -39,6 +39,7 @@ export async function main(ns: NS) {
     } else {
       ns.print(`Threads in target range: ${currentThreads}/${targetThreads}`);
     }
+    putPlayerData(ns, { sharePower: ns.getSharePower() });
     await ns.sleep(10000);
   }
 }

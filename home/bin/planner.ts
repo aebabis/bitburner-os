@@ -1,9 +1,19 @@
-import { putPlayerData, putSchedulerReportData, getStaticData } from '../lib/data-store';
+import {
+  putPlayerData,
+  putSchedulerReportData,
+  getStaticData,
+  getHostnames,
+} from '../lib/data-store';
 
 import { ENABLE, DISABLE, writeServices, checkQueue, getTableString } from '../lib/service-api';
 import { getAllServices } from './services/services';
 import { getDelegatedTasks, closeTicket } from '../lib/scheduler-delegate';
-import { execOnBestServer, takeSnapshot } from '../lib/ram-router';
+import {
+  execOnBestServer,
+  getBatchRamState,
+  getWorkerRamState,
+  takeSnapshot,
+} from '../lib/ram-router';
 import { PORT_SCH_DELEGATE_TASK, PORT_SCH_RETURN } from '../etc/ports';
 import { makePlayerData } from '../lib/player-data';
 
@@ -64,6 +74,7 @@ const go = async (ns: NS) => {
 
   const updateReports = () => {
     putSchedulerReportData(ns, {
+      numProcesses: getHostnames(ns).flatMap((hostname) => ns.ps(hostname)).length,
       lastRuns,
       lastCancellations,
       heartbeat: Date.now(),
@@ -72,6 +83,9 @@ const go = async (ns: NS) => {
       enqueueFails: 0,
       inputFull: ns.getPortHandle(PORT_SCH_DELEGATE_TASK).full(),
       outputFull: ns.getPortHandle(PORT_SCH_RETURN).full(),
+      batchRamState: getBatchRamState(ns),
+      shareRamState: getWorkerRamState(ns, 'share'),
+      chargeRamState: getWorkerRamState(ns, 'charge'),
     });
   };
 

@@ -28,7 +28,14 @@ export const getHostnames = (ns: NS): string[] => readData(ns, PORT_HOSTNAMES);
 export const putHostnames = (ns: NS, hostnames: string[]) =>
   replaceData(ns, PORT_HOSTNAMES, hostnames);
 
+type WorkerRamSummary = {
+  currentThreads: number;
+  targetThreads: number;
+  currentRamUse: number;
+};
+
 type SchedulerReportData = {
+  numProcesses: number;
   inputFull: boolean;
   outputFull: boolean;
   heartbeat: number;
@@ -37,6 +44,9 @@ type SchedulerReportData = {
   droppedTickets: number;
   lastRuns: Record<string, number>;
   lastCancellations: Record<string, number>;
+  batchRamState: Omit<WorkerRamSummary, 'targetThreads'>;
+  shareRamState: WorkerRamSummary;
+  chargeRamState: WorkerRamSummary;
 };
 export const getSchedulerReportData = (ns: NS): SchedulerReportData =>
   readData(ns, PORT_SCH_REPORTING) || {};
@@ -159,6 +169,7 @@ export type PlayerData = {
   fragmentMultipliers?: Record<FragmentType, number>;
   graftCompletionTime?: number;
   unlockedAchievements?: string[];
+  sharePower?: number;
 
   homeRam: number;
   wseAccount: boolean;
