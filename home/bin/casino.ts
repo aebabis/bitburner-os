@@ -1,6 +1,11 @@
 import { getMoneyData, getPlayerData, putMoneyData } from '../lib/data-store';
 import { disableService } from '../lib/service-api';
 
+// Cash value that triggers early termination,
+// preventing UI from blocking when player
+// doesn't need money
+const TARGET_MONEY = 100e9;
+
 const getBadRngSequence = () => {
   const m = 1024;
   const a = 341;
@@ -328,7 +333,7 @@ const playRoulette = async (ns: NS) => {
     await ns.sleep(0);
   }
 
-  while (true) {
+  while (ns.getPlayer().money < TARGET_MONEY) {
     if (prngs.length === 0) prngs = buildPrngs();
 
     const knowsFuture = prngs.length === 1;
@@ -363,7 +368,7 @@ const playRoulette = async (ns: NS) => {
 export async function main(ns: NS) {
   const { debt } = ns.flags([['debt', false]]);
   const { currentWork } = getPlayerData(ns);
-  if (ns.getPlayer().money > 100e9) {
+  if (ns.getPlayer().money >= TARGET_MONEY) {
     disableService(ns);
     return;
   }
