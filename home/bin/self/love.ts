@@ -309,10 +309,6 @@ export async function main(ns: NS) {
     if (ns.singularity.getCurrentWork()) ns.singularity.setFocus(focus());
     await $sing(ns, runPort)(rootGoal);
 
-    if (ns.getServerMaxRam('home') < 256) {
-      await $.singularity['upgradeHomeRam']();
-    }
-
     await selectPlayerAction(rootGoal);
 
     // stringifying and parsing removes nextCompletion which

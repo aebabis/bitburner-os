@@ -1,5 +1,5 @@
 import { ERROR } from './colors';
-import { putPlayerData } from './data-store';
+import { getStaticData, putPlayerData } from './data-store';
 import { Goal } from './goals/nodes';
 import { inPlace, runInPlace } from './in-place';
 import { $nmap } from './nmap.rip';
@@ -155,6 +155,37 @@ export const $checkInstall =
     }
   };
 
+let homeRamInfoCache = {
+  bnTimestamp: 0,
+  currentRam: 0,
+  upgradeCost: 0,
+};
+export const $manageHomeRam =
+  (ns: NS, port = ns.pid) =>
+  async (resetInfo: ResetInfo) => {
+    const currentRam = ns.getServerMaxRam('home');
+    if (
+      homeRamInfoCache.bnTimestamp !== resetInfo.lastNodeReset ||
+      homeRamInfoCache.currentRam !== currentRam
+    ) {
+      homeRamInfoCache = {
+        bnTimestamp: resetInfo.lastNodeReset,
+        currentRam,
+        upgradeCost: await inPlace(ns, port).singularity['getUpgradeHomeRamCost'](),
+      };
+    }
+    if (resetInfo.currentNode === 8) {
+      if (currentRam < 256) {
+        await inPlace(ns, port).singularity['upgradeHomeRam']();
+      }
+    } else if (
+      homeRamInfoCache.upgradeCost < 10e9 &&
+      ns.getPlayer().money >= homeRamInfoCache.upgradeCost
+    ) {
+      await inPlace(ns, port).singularity['upgradeHomeRam']();
+    }
+  };
+
 export const $sing =
   (ns: NS, port = ns.pid) =>
   async (goalTree: Goal) => {
@@ -163,6 +194,7 @@ export const $sing =
 
     const factionTargets = goalTree.prerequisites('FACTION_JOIN').map((g) => g.faction!);
     await $joinFactions(ns, port)(factionTargets);
+    await $manageHomeRam(ns, port)(getStaticData(ns).resetInfo);
 
     const factionRep = await $getFactionRep(ns, port);
     const queuedAugmentations = await $getQueuedAugmentations(ns, port);
