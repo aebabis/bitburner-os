@@ -8,11 +8,12 @@ import {
   getRamPolicy,
 } from '../lib/data-store';
 import { getGoals } from '../lib/goals/goals';
+import { getBatchRamState, getWorkerRamState } from '../lib/ram-router';
 import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG, NORMAL } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal, NEUROFLUX } from '../lib/goals/nodes';
@@ -491,14 +492,74 @@ const getContractDisplay = (ns: NS) => {
   return heading + '\n' + table(ns, null, rows) + unsupportedText;
 };
 
-const __testRamPolicy = (ns: NS) => {
-  const ramPolicy = getRamPolicy(ns);
-  const heading = H(' RAM POLICY');
-  if (ramPolicy == null) {
-    return heading + '\n' + DIM(' (not loaded) ');
+const getCachedRamStates = (() => {
+  const RAM_STATE_TTL = 200;
+  const buildRamStates = (ns: NS) => ({
+    batch: getBatchRamState(ns),
+    share: getWorkerRamState(ns, 'share'),
+    charge: getWorkerRamState(ns, 'charge'),
+  });
+  let lastHit = 0;
+  let states: ReturnType<typeof buildRamStates> | null = null;
+  return (ns: NS) => {
+    if (states == null || Date.now() - lastHit > RAM_STATE_TTL) {
+      lastHit = Date.now();
+      states = buildRamStates(ns);
+    }
+    return states;
+  };
+})();
+
+const ramPolicyTable = (ns: NS) => {
+  const policy = getRamPolicy(ns);
+  if (policy == null) {
+    return H(' RAM') + '\n' + DIM(' (not loaded) ');
   }
-  const rows = Object.entries(ramPolicy).map(([name, ram]) => [name, Math.round(ram)]);
-  return heading + '\n' + table(ns, null, rows);
+  const workerRam = getCachedRamStates(ns);
+  const fmtRam = (gb: number) => ns.format.ram(gb, 2);
+  const freeRam = Object.values(workerRam.batch.unusedRam).reduce((a, b) => a + b, 0);
+
+  const { allottedBatchRam, allottedShareRam, allottedStanekRam, totalRam } = policy;
+  const batchInfo = workerRam['batch'];
+  const shareInfo = workerRam['share']; // Avoiding false RAM cost
+  const chargeInfo = workerRam['charge'];
+
+  // Actual above alloted means a consumer has overrun its share of the snapshot.
+  // stanek is the expected offender: its workers never shrink once placed.
+  const actual = (alloted: number, used: number) => {
+    const str = fmtRam(used);
+    return used > alloted ? WARN(str) : str;
+  };
+  const columns = [
+    { name: H('RAM') },
+    { align: 'right', name: C(183)(fmtRam(totalRam)) },
+    { name: NORMAL.BOLD('ALLOTTED') },
+    { name: NORMAL.BOLD('THREADS') },
+  ];
+  const rows = [
+    [
+      'batch',
+      actual(allottedBatchRam, batchInfo.currentRamUse),
+      fmtRam(allottedBatchRam),
+      `${batchInfo.currentThreads}`,
+    ],
+    [
+      'share',
+      actual(allottedShareRam, shareInfo.currentRamUse),
+      fmtRam(allottedShareRam),
+      `${shareInfo.currentThreads}/${shareInfo.targetThreads}`,
+    ],
+    [
+      'stanek',
+      actual(allottedStanekRam, chargeInfo.currentRamUse),
+      fmtRam(allottedStanekRam),
+      `${chargeInfo.currentThreads}/${chargeInfo.targetThreads}`,
+    ],
+    ['services', fmtRam(policy.currentServiceRam)],
+    ['free', fmtRam(freeRam), fmtRam(policy.homeReserve)],
+  ];
+
+  return table(ns, columns, rows);
 };
 
 export async function main(ns: NS) {
@@ -519,7 +580,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => getContractDisplay(ns)),
     hasBitNode(9, staticData) && new GrowingWindow(() => getHacknetServersDisplay(ns)),
     hasBitNode(13, staticData) && new GrowingWindow(() => getStanekDisplay(ns)),
-    new GrowingWindow(() => __testRamPolicy(ns)),
+    new GrowingWindow(() => ramPolicyTable(ns)),
   ].filter((win) => win != false);
   await ns.sleep(1);
   const WIDTH = 1450;
