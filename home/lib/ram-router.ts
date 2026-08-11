@@ -186,6 +186,11 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
   const snapshot = getRamPolicy(ns);
   const rootHostnames = getHostnames(ns).filter(ns.hasRootAccess);
 
+  const getRunningWorkers = (workerType: WorkerType, hostnames = rootHostnames) =>
+    hostnames.flatMap((hostname) =>
+      ns.ps(hostname).filter((ps) => workerPrograms[workerType].includes(ps.filename)),
+    );
+
   if (snapshot == null) {
     return {
       targetRamUse: 0,
@@ -209,14 +214,16 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
         ? snapshot.allottedShareRam
         : snapshot.allottedBatchRam;
 
+  const stanekProcesses = getRunningWorkers('charge', stanekHost ? [stanekHost] : []);
+  const workersOfType = getRunningWorkers(workerType);
+  const ramOf = (processes: ProcessInfo[]) =>
+    processes.map((ps) => ps.threads * scriptRam[ps.filename]).reduce((a, b) => a + b, 0);
+  const threadsOf = (processes: ProcessInfo[]) =>
+    processes.map((ps) => ps.threads).reduce((a, b) => a + b, 0);
+
   // Determine RAM already used by given service type.
-  const currentWorkers = rootHostnames.flatMap((hostname) =>
-    ns.ps(hostname).filter((ps) => workerPrograms[workerType].includes(ps.filename)),
-  );
-  const currentRamUse = currentWorkers
-    .map((ps) => ps.threads * scriptRam[ps.filename])
-    .reduce((a, b) => a + b, 0);
-  const currentThreads = currentWorkers.map((ps) => ps.threads).reduce((a, b) => a + b, 0);
+  const currentRamUse = ramOf(workersOfType);
+  const currentThreads = threadsOf(workersOfType);
 
   const unusedRam = Object.fromEntries(
     rootHostnames.map((hostname) => {
@@ -224,7 +231,12 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
       const ramUsed = ns.getServerUsedRam(hostname);
       const ramUnused = maxRam - ramUsed;
       const homeReserve = hostname === 'home' ? getHomeReserveRam(ns) : 0;
-      const stanekReserve = workerType !== 'charge' && hostname === stanekHost ? stanekRam : 0;
+      const stanekReserve =
+        workerType === 'charge'
+          ? 0
+          : hostname === stanekHost
+            ? Math.max(0, stanekRam - ramOf(stanekProcesses))
+            : 0;
       const ramAvailable = Math.max(0, ramUnused - homeReserve - stanekReserve);
       return [hostname, ramAvailable];
     }),
@@ -243,7 +255,7 @@ const getRamState = (ns: NS, workerType: WorkerType): WorkerRamState => {
 
   return {
     targetRamUse,
-    currentWorkers,
+    currentWorkers: workersOfType,
     currentRamUse,
     currentThreads,
     unusedRam,

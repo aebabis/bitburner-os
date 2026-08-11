@@ -253,7 +253,10 @@ export async function main(ns: NS) {
       .filter((fragment) => fragment.type !== ns.enums.FragmentType.Booster)
       .flatMap(({ x, y }) => [x, y]);
 
-    const { targetThreads, currentWorkers, stanekHost } = getWorkerRamState(ns, 'charge');
+    const { targetThreads, currentWorkers, unusedRam, stanekHost } = getWorkerRamState(
+      ns,
+      'charge',
+    );
     if (coords.length > 0 && stanekHost != null) {
       const hostProcesses = ns.ps(stanekHost).filter((ps) => ps.filename === CHARGE_FILE);
       // Stanek provides most charge when all threads belong to single process.
@@ -261,16 +264,18 @@ export async function main(ns: NS) {
       for (const { pid } of currentWorkers) {
         if (!hostProcesses.some((ps) => ps.pid === pid)) ns.kill(pid);
       }
-      const currentThreads = hostProcesses.reduce((total, ps) => total + ps.threads, 0);
-      // Ensure exactly one worker process and correct number of threads
-      if (hostProcesses.length !== 1 || currentThreads !== targetThreads) {
+      const hostThreads = hostProcesses.reduce((total, ps) => total + ps.threads, 0);
+      const availableRam = unusedRam[stanekHost] + hostThreads * RAM_PER_THREAD;
+      const desiredThreads = Math.min(targetThreads, Math.floor(availableRam / RAM_PER_THREAD));
+      const largestThreads = hostProcesses.reduce((most, ps) => Math.max(most, ps.threads), 0);
+      if (
+        desiredThreads > 0 &&
+        (hostProcesses.length !== 1 || hostProcesses[0].threads < desiredThreads)
+      ) {
         for (const { pid } of hostProcesses) ns.kill(pid);
-        const freeRam = ns.getServerMaxRam(stanekHost) - ns.getServerUsedRam(stanekHost);
-        const possibleThreads = Math.floor(freeRam / RAM_PER_THREAD);
-        const actualThreads = Math.min(targetThreads, possibleThreads);
-        ns.exec(CHARGE, stanekHost, { threads: actualThreads, temporary: true }, ...coords);
-        ns.print(`CHARGE: ${actualThreads}/${targetThreads} threads on ${stanekHost}`);
+        ns.exec(CHARGE, stanekHost, { threads: desiredThreads, temporary: true }, ...coords);
       }
+      ns.print(`CHARGE: ${largestThreads}/${targetThreads} threads on ${stanekHost}`);
     }
     putPlayerData(ns, {
       stanekLayout: {
