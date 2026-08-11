@@ -1,5 +1,5 @@
 import { ERROR } from './colors';
-import { getStaticData, putPlayerData } from './data-store';
+import { getMoneyData, getStaticData, putPlayerData } from './data-store';
 import { Goal } from './goals/nodes';
 import { inPlace, runInPlace } from './in-place';
 import { $nmap } from './nmap.rip';
@@ -162,7 +162,7 @@ let homeRamInfoCache = {
 };
 export const $manageHomeRam =
   (ns: NS, port = ns.pid) =>
-  async (resetInfo: ResetInfo) => {
+  async (goalTree: Goal, resetInfo: ResetInfo) => {
     const currentRam = ns.getServerMaxRam('home');
     if (
       homeRamInfoCache.bnTimestamp !== resetInfo.lastNodeReset ||
@@ -178,11 +178,20 @@ export const $manageHomeRam =
       if (currentRam < 256) {
         await inPlace(ns, port).singularity['upgradeHomeRam']();
       }
-    } else if (
-      homeRamInfoCache.upgradeCost < 10e9 &&
-      ns.getPlayer().money >= homeRamInfoCache.upgradeCost
-    ) {
-      await inPlace(ns, port).singularity['upgradeHomeRam']();
+    } else {
+      const money = ns.getPlayer().money;
+      const neededMoney = [
+        ...goalTree.prerequisites('MONEY'),
+        ...goalTree.prerequisites('AUG_MONEY'),
+      ].reduce((total, goal) => total + goal.requirement, 0);
+      const { estimatedStockValue } = getMoneyData(ns);
+      const allowedSpend = Math.max(10e9, (estimatedStockValue + money - neededMoney) / 10);
+      if (
+        homeRamInfoCache.upgradeCost <= allowedSpend &&
+        ns.getPlayer().money >= homeRamInfoCache.upgradeCost
+      ) {
+        await inPlace(ns, port).singularity['upgradeHomeRam']();
+      }
     }
   };
 
@@ -194,7 +203,7 @@ export const $sing =
 
     const factionTargets = goalTree.prerequisites('FACTION_JOIN').map((g) => g.faction!);
     await $joinFactions(ns, port)(factionTargets);
-    await $manageHomeRam(ns, port)(getStaticData(ns).resetInfo);
+    await $manageHomeRam(ns, port)(goalTree, getStaticData(ns).resetInfo);
 
     const factionRep = await $getFactionRep(ns, port);
     const queuedAugmentations = await $getQueuedAugmentations(ns, port);
