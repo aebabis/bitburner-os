@@ -13,7 +13,7 @@ import { GrowingWindow, renderWindows } from '../lib/layout';
 import { getTailModal, getModalColumnCount } from '../lib/modal';
 import { table } from '../lib/table';
 import { getServices } from '../lib/service-api';
-import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG, NORMAL } from '../lib/colors';
+import { C, WARN, MEDIUM, BRIGHT, ERROR, MONEY, DIM, BG } from '../lib/colors';
 import { getIncome, hasBitNode } from '../lib/query-service';
 import { by } from '../lib/util';
 import { Goal, NEUROFLUX } from '../lib/goals/nodes';
@@ -516,47 +516,41 @@ const ramPolicyTable = (ns: NS) => {
     return H(' RAM') + '\n' + DIM(' (not loaded) ');
   }
   const workerRam = getCachedRamStates(ns);
-  const fmtRam = (gb: number) => ns.format.ram(gb, 2);
+  const fmtRam = (gb: number, pad = 1) => ns.format.ram(gb, 2).padStart(pad);
   const freeRam = Object.values(workerRam.batch.unusedRam).reduce((a, b) => a + b, 0);
 
   const { allottedBatchRam, allottedShareRam, allottedStanekRam, totalRam } = policy;
   const batchInfo = workerRam['batch'];
   const shareInfo = workerRam['share']; // Avoiding false RAM cost
   const chargeInfo = workerRam['charge'];
+  const batchThreads = `${batchInfo.currentThreads}`;
+  const shareThreads = `${shareInfo.currentThreads}/${shareInfo.targetThreads}`;
+  const stanekThreads = `${chargeInfo.currentThreads}/${chargeInfo.targetThreads}`;
+  const numeratorLength = Math.max(
+    ...[totalRam, batchInfo.currentRamUse, shareInfo.currentRamUse, chargeInfo.currentRamUse].map(
+      (num) => fmtRam(num).length,
+    ),
+  );
 
-  // Actual above alloted means a consumer has overrun its share of the snapshot.
-  // stanek is the expected offender: its workers never shrink once placed.
-  const actual = (alloted: number, used: number) => {
-    const str = fmtRam(used);
-    return used > alloted ? WARN(str) : str;
+  const formatRam = (ram: number, allotted?: number, shouldWarn = true) => {
+    const num = fmtRam(ram, numeratorLength);
+    if (allotted == null) return num;
+    const den = DIM('/' + fmtRam(allotted));
+    if (ram > allotted && shouldWarn) return `${WARN(num)}${den}`;
+    return `${num}${den}`;
   };
+
   const columns = [
     { name: H('RAM') },
-    { align: 'right', name: C(183)(fmtRam(totalRam)) },
-    { name: NORMAL.BOLD('ALLOTTED') },
-    { name: NORMAL.BOLD('THREADS') },
+    { name: C(183)(fmtRam(totalRam, numeratorLength)) },
+    { name: DIM('THREADS') },
   ];
   const rows = [
-    [
-      'batch',
-      actual(allottedBatchRam, batchInfo.currentRamUse),
-      fmtRam(allottedBatchRam),
-      `${batchInfo.currentThreads}`,
-    ],
-    [
-      'share',
-      actual(allottedShareRam, shareInfo.currentRamUse),
-      fmtRam(allottedShareRam),
-      `${shareInfo.currentThreads}/${shareInfo.targetThreads}`,
-    ],
-    [
-      'stanek',
-      actual(allottedStanekRam, chargeInfo.currentRamUse),
-      fmtRam(allottedStanekRam),
-      `${chargeInfo.currentThreads}/${chargeInfo.targetThreads}`,
-    ],
-    ['services', fmtRam(policy.currentServiceRam)],
-    ['free', fmtRam(freeRam), fmtRam(policy.homeReserve)],
+    ['batch', formatRam(batchInfo.currentRamUse, allottedBatchRam), DIM(batchThreads)],
+    ['share', formatRam(shareInfo.currentRamUse, allottedShareRam), DIM(shareThreads)],
+    ['stanek', formatRam(chargeInfo.currentRamUse, allottedStanekRam), DIM(stanekThreads)],
+    ['services', formatRam(policy.currentServiceRam)],
+    ['free', formatRam(freeRam, policy.homeReserve, false)],
   ];
 
   return table(ns, columns, rows);
