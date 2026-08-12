@@ -88,7 +88,7 @@ const getRunStats = (ns: NS) => {
   const stock = accessTixApi
     ? MONEY(` $${ns.format.number(estimatedStockValue, 1)}`.padStart(6))
     : DIM('  TIX'.padEnd(6));
-  const augs = [...resetInfo.ownedSF.keys()].length;
+  const augs = [...resetInfo.ownedAugs.keys()].length;
   const utility = getPlayerUtility(resetInfo, player.mults);
   const [nextBN, nextLevel] = getNextBitnode(resetInfo);
   const [work1, work2] = getWork(ns);
