@@ -109,7 +109,7 @@ const getRunStats = (ns: NS) => {
   const row2 = [
     `${DIM(`↳ ${nextBN}.${nextLevel}`)}`,
     DIM(formatTime(nextStart)),
-    `   ${DIM(augTime)}`,
+    `${DIM(augTime.padStart(uptime.length + 3))}`,
     '',
     '',
     DIM(`  ↳ ${`${estEarnings}`.padStart(moneyLen)}`),
@@ -575,7 +575,7 @@ export async function main(ns: NS) {
     new GrowingWindow(() => ramPolicyTable(ns)),
   ].filter((win) => win != false);
   await ns.sleep(1);
-  const WIDTH = 1450;
+  const WIDTH = 1500;
   const HEIGHT = 500;
   ns.ui.resizeTail(WIDTH, HEIGHT);
   const clientWidth = eval('doc' + 'ument.body')?.clientWidth;

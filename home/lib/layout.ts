@@ -14,12 +14,16 @@ const CELL = /((?:\x1b\[[0-9;]+m)*.(?:\x1b\[[0-9;]+m)?)/g;
 export class GrowingWindow {
   minWidth: number;
   minHeight: number;
+  heightHistory: Map<number, number>;
+  debounceTime: number;
   stretch: boolean;
   getContent: () => string[];
 
-  constructor(getContent: () => string, stretch = false) {
+  constructor(getContent: () => string, stretch = false, debounceTime = 15000) {
     this.minWidth = 1;
     this.minHeight = 1;
+    this.heightHistory = new Map();
+    this.debounceTime = debounceTime;
     this.stretch = stretch;
     this.getContent = () => {
       const rows = getContent().split('\n');
@@ -27,15 +31,29 @@ export class GrowingWindow {
         this.minWidth,
         ...rows.map((s) => s.replace(COLOR_CODES, '').length),
       );
-      this.minHeight = Math.max(this.minHeight, rows.length);
+      const height = rows.length;
+      this.heightHistory.set(height, Date.now());
       return rows;
     };
+  }
+
+  _getHeight() {
+    const { heightHistory, debounceTime } = this;
+    let height = 1;
+    for (const [pastHeight, timestamp] of heightHistory.entries()) {
+      if (Date.now() - timestamp > debounceTime) {
+        heightHistory.delete(pastHeight);
+      } else {
+        height = Math.max(height, pastHeight);
+      }
+    }
+    return height;
   }
 
   render(WIDTH: number) {
     const text = this.getContent();
     const width = this.stretch ? WIDTH - 2 : Math.min(WIDTH - 2, this.minWidth);
-    const height = this.minHeight;
+    const height = this._getHeight();
     return { text, width, height };
   }
 }
