@@ -1,138 +1,18 @@
-import { KEYWORD, NORMAL } from './lib/colors';
+import { Alias, ALIASES, CORE_ALIASES, SHORTHAND_ALIASES, UTILITY_ALIASES } from './etc/aliases';
+import { KEYWORD, NORMAL, WARN } from './lib/colors';
 import { sendTerminalCommand } from './lib/nav';
 import { table } from './lib/table';
 
-const MAIN = {
-  start: 'Boots the system and services',
-  stop: 'Kill all scripts on all servers',
-  restart: 'Kill all scripts and start again',
-  services: 'View and manually control services',
-};
-
-const SHORTHAND = {
-  c: 'connect',
-  bd: 'backdoor',
-  h: 'home',
-  b: 'buy port programs',
-};
-
-const UTILITIES = {
-  'aug-table': {
-    command: 'dispatch bin/goals.ts aug-table',
-    desc: 'Show augmentation scoring table',
-  },
-  bitflume: {
-    command: 'home; killall; ./usr/bitflume.ts',
-    desc: 'Go to BN of choice',
-  },
-  config: {
-    command: './config.ts',
-    desc: 'Global config variables',
-  },
-  data: {
-    command: 'usr/data.ts',
-    desc: 'View stored by various services',
-  },
-  dhud: {
-    command: 'home; usr/tail.ts dhud',
-    desc: 'Open the darknet server table',
-  },
-  dispatch: {
-    command: 'bin/dispatch.ts',
-    desc: 'Tell planner to run a program',
-  },
-  eval: {
-    command: 'usr/eval.ts',
-    desc: 'Run "ns.api.call()" from the command line',
-  },
-  liquidate: {
-    command: 'dispatch usr/liquidate.ts',
-    desc: 'Sell all stocks and stop spending',
-  },
-  lr: {
-    command: 'home; cat log/last-reset.txt',
-    desc: "Show last install's log",
-  },
-  makecct: {
-    command: 'usr/make-cct.ts',
-    desc: 'Create a test coding contract',
-  },
-  nmap: {
-    command: 'usr/nmap.ts',
-    desc: 'Graphical network map',
-  },
-  read: {
-    command: 'usr/read.ts',
-    desc: 'Open a file in a live reader',
-  },
-  readme: {
-    command: './readme.ts',
-    desc: 'View this help',
-  },
-  reset: {
-    command: 'usr/reset.ts',
-    desc: 'Soft reset',
-  },
-  servers: {
-    command: 'dispatch usr/servers.ts',
-    desc: 'List non-purchased servers',
-  },
-  services: {
-    command: 'usr/services.ts',
-    desc: 'View and manage installed services',
-  },
-  tail: {
-    command: 'home; usr/tail.ts',
-    desc: 'Open tail window by PID or partial filename match',
-  },
-  test: {
-    command: 'home; lib/test/run-all.ts',
-    desc: 'Run unit tests on script suite utilities and libraries',
-  },
-  testcct: {
-    command: 'home; usr/cct-battery.ts',
-    desc: 'Mass-generate contracts and test the solvers',
-  },
-  update: {
-    command: 'home; killall; ./stop.ts update.ts',
-    desc: 'Download most recent code from GitHub',
-  },
-};
-
-const UTILITY_ALIASES = Object.fromEntries(
-  Object.entries(UTILITIES).map(([alias, entry]) => [alias, entry.command]),
-);
-const UTILITY_DESCRIPTIONS = Object.fromEntries(
-  Object.entries(UTILITIES).map(([alias, entry]) => [alias, entry.desc]),
-);
-
-const ALIASES = {
-  // Main
-  start: 'home; ./start.ts',
-  stop: 'home; kill /bin/planner.ts; ./stop.ts',
-  restart: 'home; kill /bin/planner.ts; ./stop.ts start.ts',
-  services: './services.ts',
-
-  // Shorthand
-  c: 'connect',
-  bd: 'backdoor',
-  h: 'home',
-  b: 'buy BruteSSH.exe; buy FTPCrack.exe; buy relaySMTP.exe; buy HTTPWorm.exe; buy SQLInject.exe',
-
-  // Other utilities
-  ...UTILITY_ALIASES,
-};
-
-const getLines = (commands: Record<string, string>) => {
+const getLines = (commands: Record<string, Alias>) => {
   const lines = [];
-  for (const [command, desc] of Object.entries(commands))
-    lines.push(KEYWORD.BOLD + command, NORMAL + '  ' + desc);
+  for (const [name, alias] of Object.entries(commands))
+    lines.push(KEYWORD.BOLD + name, NORMAL + '  ' + alias.desc);
   return lines;
 };
 
 const getHelp = (ns: NS) => {
-  const column1 = getLines(UTILITY_DESCRIPTIONS);
-  const column2 = [...getLines(MAIN), ' ', ...getLines(SHORTHAND)];
+  const column1 = getLines(UTILITY_ALIASES);
+  const column2 = [...getLines(CORE_ALIASES), ' ', ...getLines(SHORTHAND_ALIASES)];
   const iters = Math.max(column1.length, column2.length);
   const rows = [];
   for (let i = 0; i < iters; i++) rows.push([column1[i] || '', column2[i] || '']);
@@ -141,7 +21,7 @@ const getHelp = (ns: NS) => {
 
 const getAliases = () =>
   Object.entries(ALIASES)
-    .map(([alias, command]) => `alias ${alias}=${JSON.stringify(command)}`)
+    .map(([name, alias]) => `alias ${name}=${JSON.stringify(alias.command)}`)
     .join(';');
 
 export async function main(ns: NS) {
@@ -149,7 +29,14 @@ export async function main(ns: NS) {
   if (command == null) {
     ns.tprint('\n' + getHelp(ns) + '\n\n');
   } else if (command === 'alias') {
-    await sendTerminalCommand(ns)(getAliases());
-    ns.tprint(KEYWORD.BOLD + 'Aliases loaded');
+    if ('alias' in ns.ui && typeof ns.ui.alias === 'function') {
+      for (const [name, alias] of Object.entries(ALIASES)) {
+        ns.tprint(WARN + 'ns.ui.alias has dropped. Remove deprecated code');
+        ns.ui.alias(name, alias.command);
+      }
+    } else {
+      await sendTerminalCommand(ns)(getAliases());
+      ns.tprint(KEYWORD.BOLD + 'Aliases loaded');
+    }
   }
 }

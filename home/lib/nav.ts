@@ -21,7 +21,7 @@ const tabGroups = Object.fromEntries(
 
 const groupFor = (tab: Tab) => tabGroups[tab];
 
-export const isFocused = () => doc.querySelector('.MuiDrawer-root') == null;
+export const isFocusing = () => doc.querySelector('.MuiDrawer-root') == null;
 export const isExpanded = (group: TabGroup) =>
   getDrawerButton(group).nextElementSibling?.tagName === 'DIV';
 
@@ -48,7 +48,7 @@ const clickDrawerTab = (tab: string) => {
 };
 
 export const goToTab = (ns: NS) => async (tab: Tab) => {
-  if (isFocused()) {
+  if (isFocusing()) {
     clickButton('Do something else simultaneously');
     await ns.sleep(1);
   }
