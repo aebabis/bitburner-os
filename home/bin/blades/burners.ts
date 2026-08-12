@@ -159,12 +159,14 @@ export async function main(ns: NS) {
       const currentAction = await $getCurrentAction(ns);
       return currentAction != null && currentAction.time > 2000;
     };
-    if (hasStaminaPenalty && !(await $wouldLoseProgress())) {
-      await $.bladeburner['stopBladeburnerAction']();
-      if (hasBlade) {
-        await $start('General', 'Training');
-      } else {
-        await $train('agility');
+    if (hasStaminaPenalty) {
+      if (!(await $wouldLoseProgress())) {
+        await $.bladeburner['stopBladeburnerAction']();
+        if (hasBlade) {
+          await $start('General', 'Training');
+        } else {
+          await $train('agility');
+        }
       }
     } else if (cities[city].chaos > 10) {
       await $start('General', 'Diplomacy');
