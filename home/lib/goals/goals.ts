@@ -20,6 +20,7 @@ import {
   karmaGoal,
   labyrinthGoal,
   waitGoal,
+  finishGraftingGoal,
 } from './nodes.ts';
 import { HORIZON_MS } from '../../etc/config.ts';
 import {
@@ -35,6 +36,7 @@ import { gangsAllowed, getIncome } from '../query-service.ts';
 import { recordGoalSnapshot } from '../goal-tracker.ts';
 import { hasBladeburnerReadyMults } from '../../bin/blades/is-ready.ts';
 import { RED_PILL, THE_BLADE } from '../../etc/augmentations.ts';
+import { getCurrentGraft } from '../grafting.ts';
 
 // Computes additional overhead if the player was given a free BN9
 // server at the start of the run to account for the time it would
@@ -105,6 +107,10 @@ export const getGoals = (ns: NS): Goal => {
     computeResetOverhead(staticData) +
     startingServerOverhead(staticData, totalIncome, hacknetIncome);
 
+  const graft = getCurrentGraft(staticData, playerData);
+  const graftGoal =
+    graft == null ? null : finishGraftingGoal(graft.augmentation, graft.timeLeft / 1000);
+
   const planData = {
     player,
     staticData,
@@ -120,6 +126,7 @@ export const getGoals = (ns: NS): Goal => {
     fragmentMultipliers,
     hacknetServers: hacknet?.servers,
     bladeburnerRepRate,
+    graftGoal,
   };
 
   const plans = getAccessibleFactions(staticData, player, ownedAugs)
@@ -145,6 +152,7 @@ export const getGoals = (ns: NS): Goal => {
       karma,
       formulas,
       fragmentMultipliers,
+      graftGoal,
     });
     return reevaluateGoal(joinGoal);
   }
@@ -161,6 +169,7 @@ export const getGoals = (ns: NS): Goal => {
       karma,
       formulas,
       fragmentMultipliers,
+      graftGoal,
     });
     return reevaluateGoal(karmaGoal(-54000, karma, [joinGoal]));
   }
@@ -176,6 +185,7 @@ export const getGoals = (ns: NS): Goal => {
         ns.bladeburner.inBladeburner(),
         formulas,
         staticData.bitNodeMultipliers,
+        graftGoal,
       );
     }
   } else if (ownedSF.get(7) === 3 && currentNode !== 8) {
@@ -184,6 +194,7 @@ export const getGoals = (ns: NS): Goal => {
       ns.bladeburner.inBladeburner(),
       formulas,
       staticData.bitNodeMultipliers,
+      graftGoal,
     );
     if (!joinTree.isDone() && joinTree.timeToComplete() < 60) return reevaluateGoal(joinTree);
   }
@@ -202,6 +213,7 @@ export const getGoals = (ns: NS): Goal => {
       karma,
       formulas,
       fragmentMultipliers,
+      graftGoal,
     });
     const ttc = covTree.timeToComplete();
     if (ttc < 4 * 60) {

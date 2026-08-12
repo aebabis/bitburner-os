@@ -21,6 +21,7 @@ export type GoalType =
   | 'KILLS'
   | 'KARMA'
   | 'LOCATION'
+  | 'FINISH_GRAFTING'
   | 'MONEY'
   | 'AUG_MONEY'
   | 'HORIZON'
@@ -183,8 +184,10 @@ export const hackingLevelGoal = (
   hackReq: number,
   currentHacking: number,
   trainingTime: number,
+  deps: Goal[] = [],
 ) => ({
   ...goal('HACKING_LEVEL', `Hacking ≥ ${Math.ceil(hackReq)}`, () => currentHacking >= hackReq, {
+    deps,
     ownTime: () => trainingTime,
   }),
   requirement: hackReq,
@@ -217,8 +220,9 @@ export const combatLevelsGoal = (
   };
 };
 
-export const killsGoal = (killsRequired: number, numPeopleKilled: number) => ({
+export const killsGoal = (killsRequired: number, numPeopleKilled: number, deps: Goal[] = []) => ({
   ...goal('KILLS', `Kill ${killsRequired} people`, () => numPeopleKilled >= killsRequired, {
+    deps,
     ownTime: () => (killsRequired - numPeopleKilled) * 3,
   }),
   requirement: killsRequired,
@@ -242,12 +246,21 @@ export const moneyPrereqGoal = (moneyTarget: number, currentMoney: number, total
   };
 };
 
-export const locationGoal = (location: CityName, currentLocation: CityName) => ({
+export const locationGoal = (location: CityName, currentLocation: CityName, deps: Goal[] = []) => ({
   ...goal('LOCATION', 'Visit ' + location, () => currentLocation === location, {
+    deps,
     ownTime: () => 0,
   }),
   city: location,
 });
+
+/**
+ * Represents in-progress graft. Blocks all goals that require player action.
+ */
+export const finishGraftingGoal = (augmentation: string, timeLeft: number) =>
+  goal('FINISH_GRAFTING', `Finish grafting ${augmentation}`, () => timeLeft <= 0, {
+    ownTime: () => Math.max(0, timeLeft),
+  });
 
 export const factionJoinGoal = (
   faction: FactionName,
@@ -273,6 +286,7 @@ export const factionRepGoal = (
   currentRep: number,
   dep: Goal,
   repRate: number,
+  deps: Goal[] = [],
 ) => {
   assertFinitePositive(repRate, 'repRate');
   return {
@@ -281,7 +295,7 @@ export const factionRepGoal = (
       `Gain ${Math.round(requirement)} rep (${faction})`,
       () => currentRep >= requirement,
       {
-        deps: [dep],
+        deps: [dep, ...deps],
         ownTime: () => Math.max(0, requirement - currentRep) / repRate,
       },
     ),
@@ -322,6 +336,7 @@ export const factionFavorGoal = (
   currentRep: number,
   repRate: number,
   dep: Goal,
+  deps: Goal[] = [],
 ) => {
   assertFinitePositive(repRate, 'repRate');
   const remaining = Math.max(0, neededRep - currentRep);
@@ -331,7 +346,7 @@ export const factionFavorGoal = (
       `${Math.round(neededRep)} rep for favor (${faction})`,
       () => currentRep >= neededRep,
       {
-        deps: [dep],
+        deps: [dep, ...deps],
         ownTime: () => remaining / repRate,
       },
     ),
@@ -364,9 +379,14 @@ export const eitherGoal = (branches: Goal[]) => {
 // matter). Satisfied once every part is satisfied; unlike the default AND aggregation (max of
 // deps' times, which assumes parts progress concurrently), estimated time is the sum across
 // parts.
-export const mutexGoal = (parts: Goal[], desc = parts.map((p) => p.desc).join(' & ')) => {
-  const base = goal('MUTEX', desc, () => parts.every((p) => p.isDone()), {
-    deps: parts,
+export const mutexGoal = (
+  parts: Goal[],
+  desc = parts.map((p) => p.desc).join(' & '),
+  deps: Goal[] = [], // Dependencies shared by multiple parts. Time is counted only once
+) => {
+  const isDone = () => parts.every((p) => p.isDone());
+  const base = goal('MUTEX', desc, isDone, {
+    deps: [...deps, ...parts],
     ownTime: () => 0,
   });
   let _ttc: number;
@@ -374,7 +394,10 @@ export const mutexGoal = (parts: Goal[], desc = parts.map((p) => p.desc).join(' 
     ...base,
     timeToComplete: (): number => {
       if (_ttc !== undefined) return _ttc;
-      return (_ttc = parts.map((p) => p.timeToComplete()).reduce((a, b) => a + b, 0));
+      if (isDone()) return (_ttc = 0);
+      const depsMax = deps.length === 0 ? 0 : Math.max(...deps.map((d) => d.timeToComplete()));
+      const partsSum = parts.map((p) => p.timeToComplete()).reduce((a, b) => a + b, 0);
+      return (_ttc = depsMax + partsSum);
     },
   };
 };

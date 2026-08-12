@@ -9,6 +9,7 @@ import {
   karmaGoal,
   labyrinthGoal,
   mutexGoal,
+  finishGraftingGoal,
   NEVER,
   neverGoal,
   waitGoal,
@@ -151,6 +152,44 @@ export async function main(ns: NS) {
       const b = augMoneyGoal(300, 0, 1); // 300s
       assert.equal(mutexGoal([a, b]).timeToComplete(), 400);
       assert.equal(eitherGoal([a, b]).timeToComplete(), 100);
+    });
+  });
+
+  describe('grafting blocks player actions', () => {
+    // A graft occupies the player until it finishes, so it is a dep of every goal
+    // needing a player action. These are the properties that makes load-bearing.
+    const graft = () => finishGraftingGoal('Aug', 600); // 600s left
+
+    it('serializes ahead of the goal it blocks rather than overlapping it', () => {
+      // Rep needs 100s of grinding, but none of it can start for 600s.
+      const joinGoal = factionJoinGoal('F' as FactionName, ['F' as FactionName]);
+      const rep = factionRepGoal('F' as FactionName, 100, 0, joinGoal, 1, [graft()]);
+      assert.equal(rep.timeToComplete(), 700);
+    });
+
+    it('is counted once for a mutex, not once per part', () => {
+      // The trap: mutex sums its parts, so attaching the blocker to each of the four
+      // combat stats instead of the mutex would bill the graft four times over.
+      const a = augMoneyGoal(100, 0, 1); // 100s
+      const b = augMoneyGoal(300, 0, 1); // 300s
+      assert.equal(mutexGoal([a, b], 'combat', [graft()]).timeToComplete(), 1000);
+    });
+
+    it('costs nothing once its parts are already satisfied', () => {
+      // A met requirement should not inherit the wait -- there is no action left to block.
+      const done = augMoneyGoal(100, 100, 1);
+      assert.equal(mutexGoal([done], 'combat', [graft()]).timeToComplete(), 0);
+    });
+
+    it('leaves passive goals alone', () => {
+      // Income accrues during a graft, so money goals are never gated on one.
+      assert.equal(augMoneyGoal(50, 0, 1).timeToComplete(), 50);
+    });
+
+    it('reports done, and free, when no time is left on it', () => {
+      const finished = finishGraftingGoal('Aug', 0);
+      assert.equal(finished.isDone(), true);
+      assert.equal(finished.timeToComplete(), 0);
     });
   });
 

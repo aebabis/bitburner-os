@@ -119,6 +119,7 @@ export const combatMutexGoal = (
   formulas: MockFormulas | Formulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
   fragmentMultipliers: Record<FragmentType, number> | undefined,
+  blockers: Goal[] = [],
 ) =>
   mutexGoal(
     COMBAT_STATS.map((stat) => {
@@ -127,6 +128,7 @@ export const combatMutexGoal = (
       return combatLevelsGoal(req, stat, player.skills, t, combatReq);
     }),
     `${combatReq} in combat stats`,
+    blockers,
   );
 
 const getHacknetGoal = (
@@ -214,6 +216,7 @@ export const buildJoinSubtree = (
     formulas,
     fragmentMultipliers,
     hacknetServers = [],
+    graftGoal = null,
   }: {
     player: Player;
     staticData: SF4StaticData;
@@ -223,11 +226,14 @@ export const buildJoinSubtree = (
     formulas: MockFormulas | Formulas;
     fragmentMultipliers?: Record<FragmentType, number>;
     hacknetServers?: NodeStats[];
+    graftGoal?: Goal | null;
   },
 ) => {
   const { factions, skills, city } = player;
   const { serverBackdoorRequirements } = staticData;
   const { factionRequirements } = staticData.singularityData;
+
+  const gate = graftGoal ? [graftGoal] : [];
 
   if (factions.includes(faction)) {
     return factionJoinGoal(faction, factions, []);
@@ -282,7 +288,7 @@ export const buildJoinSubtree = (
   if (hackReq != null) {
     const req = hackingRequirement(hackReq, fragmentMultipliers);
     const t = skillTrainingTime(player, 'hacking', req, formulas, staticData.bitNodeMultipliers);
-    joinPrereqs.push(hackingLevelGoal(req, skills.hacking ?? 0, t));
+    joinPrereqs.push(hackingLevelGoal(req, skills.hacking ?? 0, t, gate));
   }
   if (combatReq != null) {
     joinPrereqs.push(
@@ -292,6 +298,7 @@ export const buildJoinSubtree = (
         formulas,
         staticData.bitNodeMultipliers,
         fragmentMultipliers,
+        gate,
       ),
     );
   }
@@ -301,7 +308,7 @@ export const buildJoinSubtree = (
     if (req.hacking) {
       const hReq = hackingRequirement(req.hacking, fragmentMultipliers);
       const t = skillTrainingTime(player, 'hacking', hReq, formulas, staticData.bitNodeMultipliers);
-      return hackingLevelGoal(hReq, skills.hacking ?? 0, t);
+      return hackingLevelGoal(hReq, skills.hacking ?? 0, t, gate);
     }
     const cReq = Math.max(0, ...COMBAT_STATS.map((stat) => req[stat] ?? 0));
     if (cReq > 0) {
@@ -311,6 +318,7 @@ export const buildJoinSubtree = (
         formulas,
         staticData.bitNodeMultipliers,
         fragmentMultipliers,
+        gate,
       );
     }
     return null;
@@ -328,11 +336,11 @@ export const buildJoinSubtree = (
     .filter((g) => g != null);
   joinPrereqs.push(...someConditionGoals);
 
-  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0));
-  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma));
+  if (killsReq) joinPrereqs.push(killsGoal(killsReq, player.numPeopleKilled ?? 0, gate));
+  if (karmaReq) joinPrereqs.push(karmaGoal(karmaReq, karma, gate));
   const totalMoneyTarget = moneyTarget + bdMoney;
   if (totalMoneyTarget > 0) joinPrereqs.push(moneyPrereqGoal(totalMoneyTarget, money, totalIncome));
-  const locGoals = locationReqs.map((loc) => locationGoal(loc, city));
+  const locGoals = locationReqs.map((loc) => locationGoal(loc, city, gate));
   if (locGoals.length > 0) {
     const locGoal = locGoals.length === 1 ? locGoals[0] : eitherGoal(locGoals);
     joinPrereqs.push(locGoal);
@@ -370,6 +378,7 @@ interface FactionGoalTreeProps {
   fragmentMultipliers?: Record<FragmentType, number>;
   hacknetServers?: NodeStats[];
   bladeburnerRepRate?: number; // computed separately by burners.ts
+  graftGoal?: Goal | null; // in-progress graft blocking all player actions
 }
 export const buildFactionGoalTree = (
   ns: NS,
@@ -389,9 +398,12 @@ export const buildFactionGoalTree = (
     fragmentMultipliers,
     hacknetServers,
     bladeburnerRepRate = 0,
+    graftGoal = null,
   }: FactionGoalTreeProps,
 ): Plan | null => {
   const { augmentationStats, factionWorkTypes, factionFavor } = staticData.singularityData;
+  const gate = graftGoal ? [graftGoal] : [];
+  const graftTime = graftGoal?.timeToComplete() ?? 0;
   const augWeights = getAugWeights(staticData.resetInfo);
   const augValue = (aug: string) => augValueFromStats(augWeights, aug, augmentationStats);
 
@@ -407,6 +419,7 @@ export const buildFactionGoalTree = (
     formulas,
     fragmentMultipliers,
     hacknetServers,
+    graftGoal,
   });
   const joinTime = joinGoal.timeToComplete();
 
@@ -444,8 +457,8 @@ export const buildFactionGoalTree = (
   // Path 1: Early install — existing queued augs are cheaper to install now than waiting
   if (shouldEarlyInstall(numQueued, augs.length, costToAug, liquidAssets, totalIncome)) {
     const earlyValue = queuedAugmentations.reduce((s, aug) => s + augValue(aug), 0);
-    return plan([], queuedAugmentations.map(buyAugAction), (overhead) =>
-      earlyValue > 0 ? earlyValue / overhead : 0,
+    return plan(gate, queuedAugmentations.map(buyAugAction), (overhead) =>
+      earlyValue > 0 ? earlyValue / (overhead + graftTime) : 0,
     );
   }
 
@@ -473,7 +486,7 @@ export const buildFactionGoalTree = (
     const pastRep = formulas.reputation.calculateFavorToRep(currentFavor);
     const totalNeededRep = formulas.reputation.calculateFavorToRep(favorToDonate);
     const repToInstall = totalNeededRep - pastRep;
-    const favorGoal = factionFavorGoal(faction, repToInstall, currentRep, repRate, joinGoal);
+    const favorGoal = factionFavorGoal(faction, repToInstall, currentRep, repRate, joinGoal, gate);
     return plan([favorGoal], [], (nextOverhead) => {
       const tFavor = favorGoal.timeToComplete();
       if (tFavor == null || treeValue === 0) return 0;
@@ -495,7 +508,7 @@ export const buildFactionGoalTree = (
     const moneyToEarn = Math.ceil(timeToGoal * totalIncome);
     const targetRep = currentRep + timeToGoal * repRate;
     const moneyGoal = augMoneyGoal(liquidAssets + moneyToEarn, liquidAssets, totalIncome);
-    const repGoal = factionRepGoal(faction, targetRep, currentRep, joinGoal, repRate);
+    const repGoal = factionRepGoal(faction, targetRep, currentRep, joinGoal, repRate, gate);
     return [
       [joinGoal, repGoal, moneyGoal],
       [buyRepAction(faction, repReq - currentRep), ...augs.map(buyAugAction)],
@@ -504,7 +517,7 @@ export const buildFactionGoalTree = (
 
   // Path 4: Normal — grind faction rep
   const normalPath = (): [Goal[], Action[]] => {
-    const repGoal = factionRepGoal(faction, repReq, currentRep, joinGoal, repRate);
+    const repGoal = factionRepGoal(faction, repReq, currentRep, joinGoal, repRate, gate);
     const moneyGoal = augMoneyGoal(costToAug, liquidAssets, totalIncome);
     return [[repGoal, moneyGoal], augs.map(buyAugAction)];
   };
@@ -522,6 +535,7 @@ export const getBladeburnerJoinTree = (
   inBladeburner: boolean,
   formulas: Formulas | MockFormulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
+  graftGoal: Goal | null = null,
 ) => {
   const cbGoal = combatMutexGoal(
     100,
@@ -529,6 +543,7 @@ export const getBladeburnerJoinTree = (
     formulas,
     bitNodeMultipliers,
     playerData.fragmentMultipliers,
+    graftGoal ? [graftGoal] : [],
   );
   return bladesJoinGoal(inBladeburner, [cbGoal]);
 };
@@ -541,6 +556,7 @@ export const getBladeburnerTree = (
   inBladeburner: boolean,
   formulas: Formulas | MockFormulas,
   bitNodeMultipliers: BitNodeMultipliers | null,
+  graftGoal: Goal | null = null,
 ) => {
   const { player, factionRep, bladeburnerRepRate = 0 } = playerData;
   const { estimatedStockValue = 0 } = moneyData;
@@ -553,6 +569,7 @@ export const getBladeburnerTree = (
     inBladeburner,
     formulas,
     bitNodeMultipliers,
+    graftGoal,
   );
   const deps = joinBlades.isDone() ? [] : [joinBlades];
   const joinBladeFaction = factionJoinGoal('Bladeburners', player.factions, deps);
@@ -565,6 +582,7 @@ export const getBladeburnerTree = (
     currentRep,
     joinBladeFaction,
     bladeburnerRepRate,
+    graftGoal ? [graftGoal] : [],
   );
   const augMoney = augMoneyGoal(bladePrice, player.money + estimatedStockValue, totalIncome);
   return installGoal([repGoal, augMoney], [buyAugAction(THE_BLADE)]);
