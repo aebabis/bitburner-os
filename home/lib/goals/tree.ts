@@ -356,7 +356,10 @@ export const isRepBound = (root: Goal) => {
   const [amg] = root.prerequisites('AUG_MONEY');
   // No money target at all: rep is the only thing left to wait on.
   if (amg == null) return true;
-  return amg.timeToComplete() <= maxRepTime;
+  // If install goal is donation, then rep time and money
+  // time will be nearly equal by construction. Make rep
+  // win ties.
+  return maxRepTime > amg.timeToComplete() - 1;
 };
 
 /**
