@@ -176,7 +176,7 @@ export type BladeSkills = Awaited<ReturnType<ReturnType<typeof $upgradeSkills>>>
 export const $startAction =
   (ns: NS) => async (type: BladeburnerActionType, name: BladeburnerActionName) => {
     const currentAction = await inPlace(ns, ns.pid).bladeburner['getCurrentAction']();
-    if (currentAction && currentAction.type === type && currentAction.name === name) {
+    if (currentAction?.type === type && currentAction.name === name) {
       return false;
     }
     return await inPlace(ns, ns.pid).bladeburner['startAction'](type, name);

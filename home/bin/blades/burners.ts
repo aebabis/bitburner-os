@@ -161,7 +161,6 @@ export async function main(ns: NS) {
     };
     if (hasStaminaPenalty) {
       if (!(await $wouldLoseProgress())) {
-        await $.bladeburner['stopBladeburnerAction']();
         if (hasBlade) {
           await $start('General', 'Training');
         } else {
