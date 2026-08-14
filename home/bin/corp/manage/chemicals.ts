@@ -15,7 +15,7 @@ export const $manageChemicals =
     materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
     industryData: Record<CorpIndustryName, CorpIndustryData>,
   ) =>
-  async () => {
+  async (boostBudget: number) => {
     const INDUSTRY = 'Chemical';
 
     const divisionName = DivisionNames[INDUSTRY];
@@ -24,6 +24,7 @@ export const $manageChemicals =
 
     if (division == null) return;
 
+    let budget = boostBudget;
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -42,12 +43,14 @@ export const $manageChemicals =
         requiredMaterials,
         'Chemicals',
       );
-      await $buyBoostMaterials(ns, materialData, industryData)(
+      const { spent } = await $buyBoostMaterials(ns, materialData, industryData)(
         INDUSTRY,
         cityName,
-        warehouse.size,
+        warehouse,
         outputVolume,
+        budget,
       );
+      budget -= spent;
       await $sell(ns)(divisionName, cityName, 'Chemicals', 'MAX', 'MP');
     }
   };

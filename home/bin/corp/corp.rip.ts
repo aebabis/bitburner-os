@@ -238,27 +238,50 @@ export const $buyBoostMaterials =
   async (
     industry: CorpIndustryName,
     cityName: CityName,
-    warehouseSize: number,
+    warehouse: Warehouse,
     outputVolume: number,
-  ): Promise<BoostMaterialProgress> => {
-    const BUFFER = warehouseSize * 0.1;
-    const boostVolume = warehouseSize - BUFFER - MAX_INPUT_VOLUME - outputVolume;
+    budget: number,
+  ): Promise<{ progress: BoostMaterialProgress; spent: number }> => {
+    const BUFFER = warehouse.size * 0.1;
+    const boostVolume = warehouse.size - BUFFER - MAX_INPUT_VOLUME - outputVolume;
     const $ = inPlace(ns, ns.pid);
     const divisionName = DivisionNames[industry];
     const boostTargets = getBoostTargets(materialData, industryData, industry, boostVolume);
     const boostPortions = {} as BoostMaterialProgress;
+
+    let remainingBudget = budget;
+    let room = Math.max(0, warehouse.size - warehouse.sizeUsed - BUFFER);
+
     for (const material of BOOST_MATERIALS) {
-      const { stored } = await $.corporation['getMaterial'](divisionName, cityName, material);
+      const { stored, marketPrice, buyAmount, desiredSellAmount } = await $.corporation[
+        'getMaterial'
+      ](divisionName, cityName, material);
       const targetAmount = boostTargets[material];
-      if (stored < targetAmount) {
-        const count = Math.min((targetAmount - stored) / 1000, warehouseSize / 100);
-        await $buy(ns)(divisionName, cityName, material, count);
-      } else if (stored - targetAmount > 10)
-        await $sell(ns)(divisionName, cityName, material, 1, 'MP');
-      else await $buy(ns)(divisionName, cityName, material, 0);
       boostPortions[material] = [stored, targetAmount];
+
+      if (buyAmount > 0) {
+        await $.corporation['buyMaterial'](divisionName, cityName, material, 0);
+      }
+
+      if (stored < targetAmount) {
+        if (String(desiredSellAmount) !== '0') {
+          await $.corporation['sellMaterial'](divisionName, cityName, material, '0', 'MP*100');
+        }
+        const { size } = materialData[material];
+        const amountNeeded = targetAmount - stored;
+        const amountAffordable = Math.floor(remainingBudget / marketPrice);
+        const amountSupportable = room / size;
+        const amount = Math.min(amountNeeded, amountAffordable, amountSupportable);
+        if (amount > 0) {
+          await $.corporation['bulkPurchase'](divisionName, cityName, material, amount);
+          remainingBudget -= amount * marketPrice;
+          room -= amount * size;
+        }
+      } else if (stored - targetAmount > 10) {
+        await $sell(ns)(divisionName, cityName, material, 1, 'MP');
+      }
     }
-    return boostPortions;
+    return { progress: boostPortions, spent: budget - remainingBudget };
   };
 
 export const $manageProducts =

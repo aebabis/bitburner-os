@@ -19,7 +19,7 @@ export const $manageTobacco =
     materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
     industryData: Record<CorpIndustryName, CorpIndustryData>,
   ) =>
-  async () => {
+  async (boostBudget: number) => {
     const $ = inPlace(ns, ns.pid);
     const INDUSTRY = 'Tobacco';
 
@@ -55,6 +55,7 @@ export const $manageTobacco =
     }
 
     const report = {} as Record<CityName, { boostMaterialProgress: BoostMaterialProgress }>;
+    let budget = boostBudget;
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -69,12 +70,12 @@ export const $manageTobacco =
       );
       const outputVolume = productStats.productionAmount * productStats.size;
 
-      const boostMaterialProgress = await $buyBoostMaterials(ns, materialData, industryData)(
-        INDUSTRY,
-        cityName,
-        warehouse.size,
-        outputVolume,
-      );
+      const { progress: boostMaterialProgress, spent } = await $buyBoostMaterials(
+        ns,
+        materialData,
+        industryData,
+      )(INDUSTRY, cityName, warehouse, outputVolume, budget);
+      budget -= spent;
       await $.corporation['sellProduct'](
         divisionName,
         cityName,

@@ -14,7 +14,7 @@ export const $manageAgriculture =
     materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
     industryData: Record<CorpIndustryName, CorpIndustryData>,
   ) =>
-  async () => {
+  async (boostBudget: number) => {
     const INDUSTRY = 'Agriculture';
 
     const divisionName = DivisionNames[INDUSTRY];
@@ -22,6 +22,7 @@ export const $manageAgriculture =
 
     if (division == null) return;
 
+    let budget = boostBudget;
     for (const cityName of division.cities) {
       await $handleMorale(ns)(divisionName, cityName);
       const warehouse = await $getWarehouse(ns)(divisionName, cityName);
@@ -34,12 +35,14 @@ export const $manageAgriculture =
         materialData,
         industryData,
       )(INDUSTRY, cityName);
-      await $buyBoostMaterials(ns, materialData, industryData)(
+      const { spent } = await $buyBoostMaterials(ns, materialData, industryData)(
         INDUSTRY,
         cityName,
-        warehouse.size,
+        warehouse,
         outputVolume,
+        budget,
       );
+      budget -= spent;
       await $sell(ns)(divisionName, cityName, 'Food', 'MAX', 'MP');
       await $sell(ns)(divisionName, cityName, 'Plants', 'MAX', 'MP');
     }

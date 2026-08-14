@@ -40,27 +40,28 @@ export async function main(ns: NS) {
   const industryData = await $getIndustryData(ns);
   const plan = getTobaccoPlan(ns, industryData, materialData);
 
+  const STATES: CorpStateName[] = ['START', 'PURCHASE', 'PRODUCTION', 'EXPORT', 'SALE'];
+  let reportTable = '';
+
   while (true) {
-    const STATES = ['START', 'PURCHASE', 'PRODUCTION', 'EXPORT', 'SALE'];
     const lastAction = await ns.corporation.nextUpdate();
-    const prevIndex = STATES.indexOf(lastAction);
-    const nextAction = STATES.at(prevIndex + 1 - STATES.length);
+    const isNewCycle = lastAction === STATES.at(-1);
 
-    if (lastAction === 'START') {
+    if (isNewCycle) {
       await plan.advance();
-    }
 
-    let reportTable = '';
-    if (nextAction !== 'START') {
-      const { divisions } = await $.corporation['getCorporation']();
+      reportTable = '';
+      const { divisions, funds, dividendEarnings } = await $.corporation['getCorporation']();
+      const maxBoostSpend = 0.01 * funds;
+      const divisionBoostBudget = maxBoostSpend / Math.max(1, divisions.length);
       if (divisions.includes(DivisionNames['Agriculture'])) {
-        await $manageAgriculture(ns, materialData, industryData)();
+        await $manageAgriculture(ns, materialData, industryData)(divisionBoostBudget);
       }
       if (divisions.includes(DivisionNames['Chemical'])) {
-        await $manageChemicals(ns, materialData, industryData)();
+        await $manageChemicals(ns, materialData, industryData)(divisionBoostBudget);
       }
       if (divisions.includes(DivisionNames['Tobacco'])) {
-        const reports = await $manageTobacco(ns, materialData, industryData)();
+        const reports = await $manageTobacco(ns, materialData, industryData)(divisionBoostBudget);
         if (reports) {
           const fmt = new Intl.NumberFormat('en', { notation: 'compact' });
           const f = (n: number) => fmt.format(Math.round(n * 1000) / 1000);
@@ -78,7 +79,6 @@ export async function main(ns: NS) {
           reportTable = table(ns, columns, rows, { colors: true });
         }
       }
-      const { dividendEarnings } = await $.corporation['getCorporation']();
       putMoneyData(ns, { dividendEarnings });
     }
     ns.clearLog();
