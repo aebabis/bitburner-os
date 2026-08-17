@@ -1,6 +1,7 @@
 import { CHARGE } from '../etc/filenames';
 import { getPlayerData, getStaticData, putPlayerData } from '../lib/data-store';
 import { getWorkerRamState } from '../lib/ram-router';
+import { disableService } from '../lib/service-api';
 
 type FragmentPosition = [number, number, number, number];
 type FragmentFocus = GymType | 'hack' | 'cha' | 'bb';
@@ -165,7 +166,7 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
     if (focus === 'bb') return BB_5_5();
     return HACK_5_5();
   }
-  throw new Error(`Layout not found: ${focus} (${width}x${height})`);
+  return null;
 };
 
 const setupGift = (ns: NS, positions: FragmentPosition[]) => {
@@ -238,6 +239,10 @@ export async function main(ns: NS) {
     const width = ns.stanek.giftWidth();
     const height = ns.stanek.giftHeight();
     const layout = getLayout(focus, width, height);
+    if (layout == null) {
+      disableService(ns);
+      throw new Error(`Layout not found: ${focus} (${width}x${height})`);
+    }
 
     if (!areLayoutsSame(currentLayout, layout)) {
       // 10s cooldown on swaps to prevent thrashing
