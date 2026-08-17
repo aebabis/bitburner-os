@@ -219,9 +219,10 @@ export const findOptimalBatch = (
     );
 
     const totalValue = purchase.reduce((s, a) => s + a.value, 0);
-    const totalPrice = purchase.reduce(
-      (s, a, n) => s + a.effectiveBasePrice * 1.9 ** (numQueued + n),
-      0,
+    const totalPrice = computeAugCost(
+      purchase.map((a) => a.name),
+      staticData,
+      numQueued,
     );
     const bindingRepCost = Math.max(...purchase.map((a) => a.repReq));
     const bindingRep = Math.max(0, bindingRepCost - currentRep);
