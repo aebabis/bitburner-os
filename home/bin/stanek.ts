@@ -6,6 +6,14 @@ import { disableService } from '../lib/service-api';
 type FragmentPosition = [number, number, number, number];
 type FragmentFocus = GymType | 'hack' | 'cha' | 'bb';
 
+const HACK_3_3 = (): FragmentPosition[] => [
+  [0, 0, 3, 1],
+  [1, 0, 3, 25],
+];
+const HACK_4_3 = (): FragmentPosition[] => [
+  [2, 0, 1, 0],
+  [0, 0, 3, 1],
+];
 const HACK_5_5 = (): FragmentPosition[] => [
   [3, 0, 1, 101],
   [0, 0, 3, 6],
@@ -165,6 +173,10 @@ const getLayout = (focus: FragmentFocus, width: number, height: number) => {
   } else if (width === 5 && height === 5) {
     if (focus === 'bb') return BB_5_5();
     return HACK_5_5();
+  } else if (width >= 4 && height >= 3) {
+    return HACK_4_3();
+  } else if (width === 3 && height === 3) {
+    return HACK_3_3();
   }
   return null;
 };
