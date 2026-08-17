@@ -139,11 +139,11 @@ const $backup = (ns: NS, port = ns.pid) =>
 export const $checkInstall =
   (ns: NS, port = ns.pid) =>
   async (goalTree: Goal) => {
-    if (
-      ns.singularity.getCurrentWork()?.type !== 'GRAFTING' &&
-      goalTree.type === 'INSTALL' &&
-      goalTree.deps.every((g) => g.isDone())
-    ) {
+    const currentWork = ns.singularity.getCurrentWork();
+    const bbAction = ns.bladeburner.inBladeburner() ? ns.bladeburner.getCurrentAction() : null;
+    if (currentWork?.type === 'GRAFTING') return;
+    if (bbAction?.type === ns.enums.BladeburnerActionType.BlackOp) return;
+    if (goalTree.type === 'INSTALL' && goalTree.deps.every((g) => g.isDone())) {
       // Make sure stocks have been sold before proceeding
       if (
         goalTree
