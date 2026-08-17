@@ -58,4 +58,5 @@ export const getTobaccoPlan = (
     .waitForInvestment(3, 15e11)
 
     .purchaseUpgrades({ 'Project Insight': 40 })
-    .purchaseUpgrades({ 'Smart Factories': 20, 'Smart Storage': 20, 'Wilson Analytics': 5 });
+    .purchaseUpgrades({ 'Smart Factories': 20, 'Smart Storage': 20, 'Wilson Analytics': 5 })
+    .purchaseUpgradesByCost(Infinity);
