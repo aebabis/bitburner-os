@@ -93,4 +93,11 @@ export const getTobaccoPlan = (
 
     .purchaseUpgradesByCost(500e12)
     .buyUnlock('Shady Accounting')
-    .purchaseUpgradesByCost(Infinity);
+    .expandOffices(AgDiv, [20, 20, 5, 20, 1, 0])
+    .explode(
+      [
+        [TobDiv, Infinity],
+        [AgDiv, 200],
+      ],
+      [AgDiv, ChemDiv, HardDiv, MineDiv, RefDiv, TobDiv, WatDiv],
+    );

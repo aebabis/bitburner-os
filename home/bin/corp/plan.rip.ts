@@ -8,6 +8,17 @@ type Step = {
   complete: () => Promise<boolean>;
 };
 
+type EmployeeCounts = [number, number, number, number, number, number];
+
+const EMPLOYEE_SEQUENCE = [
+  'Operations',
+  'Engineer',
+  'Business',
+  'Management',
+  'Research & Development',
+  'Intern',
+] as Exclude<CorpEmployeePosition, 'Unassigned'>[];
+
 export const getIndustrySetupCost =
   (ns: NS, industryData: Record<CorpIndustryName, CorpIndustryData>) =>
   (industryName: CorpIndustryName) => {
@@ -15,6 +26,41 @@ export const getIndustrySetupCost =
     const setupCost = 6 * (constants.officeInitialCost + constants.warehouseInitialCost);
     return industryData[industryName].startingCost + setupCost;
   };
+
+const $assignEmployees =
+  (ns: NS) =>
+  (divisionName: DivisionName, cities: CityName[], employeeAllocation: EmployeeCounts) =>
+    runInPlace(
+      ns,
+      ns.pid,
+    )(
+      (
+        divisionName: DivisionName,
+        cities: CityName[],
+        employeeAllocation: EmployeeCounts,
+        seq: typeof EMPLOYEE_SEQUENCE,
+      ) => {
+        let allSet = true;
+        for (const cityName of cities) {
+          for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
+            allSet =
+              allSet &&
+              ns.corporation['setJobAssignment'](divisionName, cityName, seq[roleIndex], 0);
+          }
+          for (let roleIndex = 0; roleIndex < employeeAllocation.length; roleIndex++) {
+            allSet =
+              allSet &&
+              ns.corporation['setJobAssignment'](
+                divisionName,
+                cityName,
+                seq[roleIndex],
+                employeeAllocation[roleIndex],
+              );
+          }
+        }
+        return allSet;
+      },
+    )(divisionName, cities, employeeAllocation, EMPLOYEE_SEQUENCE);
 
 const step = (
   description: string,
@@ -60,16 +106,7 @@ export const createPlan = (
   industryData: Record<CorpIndustryName, CorpIndustryData>,
   materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
 ) => {
-  type EmployeeCounts = [number, number, number, number, number, number];
   const CITIES = Object.values(ns.enums.CityName);
-  const EMPLOYEE_SEQUENCE = [
-    'Operations',
-    'Engineer',
-    'Business',
-    'Management',
-    'Research & Development',
-    'Intern',
-  ] as Exclude<CorpEmployeePosition, 'Unassigned'>[];
   const $ = inPlace(ns, ns.pid);
   const $rip = runInPlace(ns, ns.pid);
   let currentStepIndex = 0;
@@ -475,6 +512,107 @@ export const createPlan = (
       };
       steps.push(
         step(`Purchase upgrades under $${ns.format.number(priceLimit)}`, {
+          isDone,
+          canStart,
+          complete,
+        }),
+      );
+      return plan;
+    },
+
+    explode: (adDivisions: [DivisionName, number][], growDivisions: DivisionName[]) => {
+      const UPGRADE_NAMES: CorpUpgradeName[] = [
+        'Smart Factories',
+        'Smart Storage',
+        'Wilson Analytics',
+        'Nuoptimal Nootropic Injector Implants',
+        'Speech Processor Implants',
+        'Neural Accelerators',
+        'FocusWires',
+        'ABC SalesBots',
+        'Project Insight',
+      ];
+      const isDone = async () => false;
+      const canStart = async () => true;
+      const complete = async () => {
+        // Buy AdVert
+        for (const [divisionName, target] of adDivisions) {
+          const division = await $.corporation['getDivision'](divisionName);
+          if (division.awareness > target) continue;
+          while (true) {
+            const cost = await $.corporation['getHireAdVertCost'](divisionName);
+            const { funds } = await $.corporation['getCorporation']();
+            if (cost > funds) break;
+            await $.corporation['hireAdVert'](divisionName);
+          }
+        }
+        // Buy upgrades
+        while (true) {
+          const { funds } = await $.corporation['getCorporation']();
+          const [upgrade, cost] = await $rip((UPGRADE_NAMES: CorpUpgradeName[]) => {
+            const cost = (upgrade: CorpUpgradeName) =>
+              ns.corporation['getUpgradeLevelCost'](upgrade);
+            return UPGRADE_NAMES.map(
+              (upgrade) => [upgrade, cost(upgrade)] as [CorpUpgradeName, number],
+            ).reduce(([u1, c1], [u2, c2]) => (c1 < c2 ? [u1, c1] : [u2, c2]));
+          })(UPGRADE_NAMES);
+
+          if (cost > funds) break;
+          try {
+            await $.corporation['levelUpgrade'](upgrade);
+          } catch (error) {
+            break;
+          }
+        }
+        const { revenue, expenses } = await $.corporation['getCorporation']();
+        const profit = revenue - expenses;
+        const spendCap = profit / 100;
+        // Upgrade warehouses
+        for (const divisionName of growDivisions) {
+          for (const cityName of CITIES) {
+            const cost = await $.corporation['getUpgradeWarehouseCost'](divisionName, cityName);
+            if (cost > spendCap) continue;
+            try {
+              await $.corporation['upgradeWarehouse'](divisionName, cityName);
+            } catch (error) {
+              continue;
+            }
+          }
+        }
+        // Expand offices
+        for (const divisionName of growDivisions) {
+          for (const cityName of CITIES) {
+            const cost = await $.corporation['getOfficeSizeUpgradeCost'](divisionName, cityName, 1);
+            if (cost > spendCap) continue;
+            try {
+              await $.corporation['upgradeOfficeSize'](divisionName, cityName, 1);
+              while (true) {
+                const office = await $.corporation['getOffice'](divisionName, cityName);
+                if (office.size === office.numEmployees) break;
+                await $.corporation['hireEmployee'](divisionName, cityName);
+              }
+              const { numEmployees } = await $.corporation['getOffice'](divisionName, cityName);
+              const researchers = 1;
+              const business = Math.floor(numEmployees / 10);
+              const management = Math.floor((numEmployees - researchers - business) / 3);
+              const engineers = Math.floor(
+                (numEmployees - researchers - business - management) / 2,
+              );
+              const operations = numEmployees - engineers - management - business - researchers;
+              await $assignEmployees(ns)(
+                divisionName,
+                [cityName],
+                [operations, engineers, business, management, researchers, 0],
+              );
+            } catch (error) {
+              continue;
+            }
+          }
+        }
+        return false;
+      };
+      steps.push(
+        step('Buy stuff', {
           isDone,
           canStart,
           complete,
