@@ -9,17 +9,15 @@ import {
   $sell,
 } from '../corp.rip';
 
-export const $manageChemicals =
+export const $manageMaterialIndustry =
   (
     ns: NS,
     materialData: Record<CorpMaterialName, CorpMaterialConstantData>,
     industryData: Record<CorpIndustryName, CorpIndustryData>,
   ) =>
-  async (boostBudget: number) => {
-    const INDUSTRY = 'Chemical';
-
-    const divisionName = DivisionNames[INDUSTRY];
-    const { requiredMaterials } = industryData[INDUSTRY];
+  async (industry: CorpIndustryName, boostBudget: number) => {
+    const divisionName = DivisionNames[industry];
+    const { requiredMaterials, producedMaterials } = industryData[industry];
     const division = await $getDivision(ns)(divisionName);
 
     if (division == null) return;
@@ -36,21 +34,25 @@ export const $manageChemicals =
         ns,
         materialData,
         industryData,
-      )(INDUSTRY, cityName);
-      await $buyProductionMaterials(ns, materialData)(
-        INDUSTRY,
-        cityName,
-        requiredMaterials,
-        'Chemicals',
-      );
+      )(industry, cityName);
+      for (const material of Object.keys(requiredMaterials)) {
+        await $buyProductionMaterials(ns, materialData)(
+          industry,
+          cityName,
+          requiredMaterials,
+          material as CorpMaterialName,
+        );
+      }
       const { spent } = await $buyBoostMaterials(ns, materialData, industryData)(
-        INDUSTRY,
+        industry,
         cityName,
         warehouse,
         outputVolume,
         budget,
       );
       budget -= spent;
-      await $sell(ns)(divisionName, cityName, 'Chemicals', 'MAX', 'MP');
+      for (const material of producedMaterials || []) {
+        await $sell(ns)(divisionName, cityName, material as CorpMaterialName, 'MAX', 'MP');
+      }
     }
   };
