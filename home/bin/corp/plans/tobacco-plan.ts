@@ -80,7 +80,7 @@ export const getTobaccoPlan = (
 
     .openDivision('Computer Hardware', HardDiv)
     .setupExport(HardDiv, WatDiv, 'Hardware')
-    .expandOffices(HardDiv, [4, 4, 2, 4, 1, 0])
+    .expandOffices(HardDiv, [10, 8, 2, 8, 1, 0])
 
     .openDivision('Refinery', RefDiv)
     .setupExport(RefDiv, HardDiv, 'Metal')

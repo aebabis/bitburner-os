@@ -1,5 +1,6 @@
 import { DivisionNames } from '../constants';
 import {
+  $research,
   $buyBoostMaterials,
   $buyProductionMaterials,
   $getDivision,
@@ -8,6 +9,21 @@ import {
   $handleMorale,
   $sell,
 } from '../corp.rip';
+
+const DEFAULT_RESEARCH_SEQUENCE: CorpResearchName[] = [
+  'Hi-Tech R&D Laboratory',
+  'Overclock',
+  'Sti.mu',
+  'Drones',
+  'Drones - Assembly',
+  'Drones - Transport',
+  'Self-Correcting Assemblers',
+  'Automatic Drug Administration',
+  'Go-Juice',
+  'CPH4 Injections',
+  'AutoBrew',
+  'AutoPartyManager',
+];
 
 export const $manageMaterialIndustry =
   (
@@ -21,6 +37,8 @@ export const $manageMaterialIndustry =
     const division = await $getDivision(ns)(divisionName);
 
     if (division == null) return;
+
+    await $research(ns)(division, DEFAULT_RESEARCH_SEQUENCE);
 
     let budget = boostBudget;
     for (const cityName of division.cities) {

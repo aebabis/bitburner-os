@@ -95,6 +95,19 @@ export const $handleMorale = (ns: NS) => async (divisionName: DivisionName, city
   return { boughtTea, partyCost };
 };
 
+export const $research = (ns: NS) => async (division: Division, sequence: CorpResearchName[]) => {
+  const $ = inPlace(ns, ns.pid);
+  const $rip = runInPlace(ns, ns.pid);
+  const nextResearch = await $rip((divisionName: DivisionName, sequence: CorpResearchName[]) =>
+    sequence.find((tech) => !ns.corporation['hasResearched'](divisionName, tech)),
+  )(division.name, sequence);
+  if (nextResearch == null) return;
+  const cost = await $.corporation['getResearchCost'](division.name, nextResearch);
+  if (cost * 2 < division.researchPoints) {
+    await $.corporation['research'](division.name, nextResearch);
+  }
+};
+
 export const $getDivision = (ns: NS) => async (divisionName: DivisionName) => {
   try {
     return await inPlace(ns, ns.pid).corporation['getDivision'](divisionName);
