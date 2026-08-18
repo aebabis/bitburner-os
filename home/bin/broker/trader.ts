@@ -17,7 +17,9 @@ const getRequiredReserves = (ns: NS) => {
   const { graftPriceReserve = 0 } = getMoneyData(ns);
   const casinoService = getServices(ns)?.find(({ name }) => name === 'casino');
   if (casinoService?.allowed) return 50e6 + graftPriceReserve;
-  if (!ns.corporation.hasCorporation() && usingCorp(staticData)) return 150e9 + graftPriceReserve;
+  if (!ns.corporation.hasCorporation() && usingCorp(staticData, getPlayerData(ns))) {
+    return 150e9 + graftPriceReserve;
+  }
   const requiredOnHand = getGoals(ns).prerequisites('MONEY')[0]?.requirement ?? 0;
   return requiredOnHand + graftPriceReserve;
 };

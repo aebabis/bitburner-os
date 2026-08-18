@@ -1,6 +1,6 @@
 import { THE_BLADE } from '../../etc/augmentations';
 import { AnyHostService, Service } from '../../lib/service';
-import { getStaticData } from '../../lib/data-store';
+import { getPlayerData, getStaticData } from '../../lib/data-store';
 import { getGoals } from '../../lib/goals/goals';
 import { gangsAllowed, hasBitNode, usingCorp } from '../../lib/query-service';
 
@@ -59,7 +59,7 @@ export const getAllServices = (ns: NS, player: (_ns: NS) => Player) => {
   const hasSingularity = () => hasNode(4);
   const enablePool = () => hasNode(9) && currentNode !== 8;
   const enableHacknet = () => playerLikesHacknet && !enablePool() && currentNode !== 8;
-  const enableCorp = () => usingCorp(staticData);
+  const enableCorp = () => usingCorp(staticData, getPlayerData(ns));
   const hasSimulacrum = () =>
     ownedAugs.has(THE_BLADE) || (hasPermanentBlade && ns.bladeburner.inBladeburner());
   const preferAngel = () => hasFormulas();

@@ -1,4 +1,4 @@
-import { getMoneyData, StaticData } from './data-store';
+import { getMoneyData, PlayerData, StaticData } from './data-store';
 
 export const hasBitNode = (bn: number, staticData: StaticData) => {
   const { resetInfo } = staticData;
@@ -45,9 +45,11 @@ export const gangsAllowed = (staticData: StaticData) => {
   return hasBitNode(2, staticData) && !bitNodeOptions.disableGang && currentNode !== 8;
 };
 
-export const usingCorp = (staticData: StaticData) => {
+export const usingCorp = (staticData: StaticData, playerData: PlayerData) => {
   const { resetInfo } = staticData;
+  const { unlockedAchievements } = playerData;
   if (resetInfo.bitNodeOptions.disableCorporation) return false;
+  if (resetInfo.currentNode === 2) return unlockedAchievements?.includes('NEUROFLUX_255') === false;
   if (resetInfo.currentNode === 3) return true;
   if ([10, 12].includes(resetInfo.currentNode)) return (resetInfo.ownedSF.get(3) ?? 0) === 3;
   return false;
