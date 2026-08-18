@@ -64,6 +64,11 @@ export async function main(ns: NS) {
 
     const install = getInstallUtility();
     const targets = getGraftTargets(ns, resetInfo.ownedAugs, entropy);
+    if (targets.length === 0) {
+      disableService(ns);
+      ns.ui.closeTail();
+      return;
+    }
     const graftCandidates = targets
       .filter((target) => target.augmentation.name !== mostRecentGraft)
       .filter((target) => target.graftPrice <= money)
