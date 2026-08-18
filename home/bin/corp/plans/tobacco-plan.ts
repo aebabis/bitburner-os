@@ -4,6 +4,7 @@ import { createPlan, getIndustrySetupCost } from '../plan.rip';
 const AgDiv = DivisionNames['Agriculture'];
 const ChemDiv = DivisionNames['Chemical'];
 const TobDiv = DivisionNames['Tobacco'];
+const WatDiv = DivisionNames['Water Utilities'];
 
 export const getTobaccoPlan = (
   ns: NS,
@@ -60,10 +61,20 @@ export const getTobaccoPlan = (
     .purchaseUpgrades({ 'Project Insight': 40 })
     .purchaseUpgrades({ 'Smart Factories': 20, 'Smart Storage': 20, 'Wilson Analytics': 5 })
     .purchaseUpgradesByCost(100e9)
+
     .expandOffices(TobDiv, [7, 4, 4, 4, 2, 0])
     .expandOffices(TobDiv, [14, 10, 8, 10, 8, 0], 'Sector-12')
     .purchaseUpgradesByCost(200e9)
     .expandOffices(TobDiv, [14, 10, 8, 8, 10, 0])
     .purchaseUpgradesByCost(400e9)
     .expandOffices(TobDiv, [20, 16, 12, 12, 10, 0])
+
+    .openDivision('Water Utilities', WatDiv)
+    .setupExport(WatDiv, AgDiv, 'Water')
+    .setupExport(WatDiv, ChemDiv, 'Water')
+    .expandOffices(WatDiv, [4, 4, 2, 4, 1, 0])
+    .expandOffices(AgDiv, [4, 4, 2, 4, 1, 0])
+
+    .purchaseUpgradesByCost(500e12)
+    .buyUnlock('Shady Accounting')
     .purchaseUpgradesByCost(Infinity);

@@ -139,7 +139,7 @@ export const createPlan = (
       fromDivision: DivisionName,
       toDivision: DivisionName,
       material: CorpMaterialName,
-      amount = '(-IPROD-IINV)/10',
+      amount = '(-IPROD-IINV)',
     ) => {
       let wasCompleted = false; // assignEmployees overrides post-competion isDone check because results are asyncronous
       const isDone = async () => wasCompleted;

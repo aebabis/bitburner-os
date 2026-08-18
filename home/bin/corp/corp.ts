@@ -12,6 +12,7 @@ import { $manageChemicals } from './manage/chemicals';
 import { $manageTobacco } from './manage/tobacco';
 import { table } from '../../lib/table';
 import { getTobaccoPlan } from './plans/tobacco-plan';
+import { $manageWater } from './manage/water';
 
 export async function main(ns: NS) {
   typeof ns.corporation.createCorporation;
@@ -59,6 +60,9 @@ export async function main(ns: NS) {
       }
       if (divisions.includes(DivisionNames['Chemical'])) {
         await $manageChemicals(ns, materialData, industryData)(divisionBoostBudget);
+      }
+      if (divisions.includes(DivisionNames['Water Utilities'])) {
+        await $manageWater(ns, materialData, industryData)(divisionBoostBudget);
       }
       if (divisions.includes(DivisionNames['Tobacco'])) {
         const reports = await $manageTobacco(ns, materialData, industryData)(divisionBoostBudget);
