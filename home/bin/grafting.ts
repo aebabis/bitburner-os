@@ -6,6 +6,7 @@ import { getGraftTargets } from '../lib/grafting';
 import { getStaticData, putMoneyData, putPlayerData, putStaticData } from '../lib/data-store';
 import { getAugEvaluator, getEntropyCost, getPlayerUtility } from '../lib/aug-weights';
 import { setupTail } from '../lib/tail';
+import { disableService } from '../lib/service-api';
 
 export async function main(ns: NS) {
   const { singularityData } = getStaticData(ns);
