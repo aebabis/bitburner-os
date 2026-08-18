@@ -298,8 +298,9 @@ export const $manageProducts =
     if (corp.funds < 2e9) {
       return;
     }
+    const investment = Math.max(corp.funds / 100, 1e9);
     if (currentProducts.length === 0) {
-      await $.corporation['makeProduct'](divisionName, hq, brand1, 1e9, 1e9);
+      await $.corporation['makeProduct'](divisionName, hq, brand1, investment, investment);
       return null;
     } else if (currentProducts.length === 1) {
       const product = await $.corporation['getProduct'](divisionName, hq, currentProducts[0]);
@@ -307,7 +308,7 @@ export const $manageProducts =
         return null;
       }
       const nextName = product.name === brand1 ? brand2 : brand1;
-      await $.corporation['makeProduct'](divisionName, hq, nextName, 1e9, 1e9);
+      await $.corporation['makeProduct'](divisionName, hq, nextName, investment, investment);
       return product;
     } else {
       const product1 = await $.corporation['getProduct'](divisionName, hq, currentProducts[0]);
